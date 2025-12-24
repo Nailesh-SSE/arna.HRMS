@@ -8,8 +8,6 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
 {
     public void Configure(EntityTypeBuilder<Attendance> builder)
     {
-        builder.ToTable("AttendanceRecords");
-
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.Date)

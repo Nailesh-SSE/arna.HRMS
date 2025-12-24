@@ -8,8 +8,6 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
 {
     public void Configure(EntityTypeBuilder<LeaveRequest> builder)
     {
-        builder.ToTable("LeaveRequests");
-
         builder.HasKey(lr => lr.Id);
 
         builder.Property(lr => lr.TotalDays)

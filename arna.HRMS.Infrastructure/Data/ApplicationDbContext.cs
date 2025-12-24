@@ -1,16 +1,14 @@
 ﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data.Configurations;
-using arna.HRMS.Infrastructure.Data.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Data
 {
 
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, int>
+    public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
         }
 
@@ -20,6 +18,7 @@ namespace arna.HRMS.Infrastructure.Data
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
         public DbSet<Timesheet> Timesheets { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -33,41 +32,101 @@ namespace arna.HRMS.Infrastructure.Data
             builder.ApplyConfiguration(new TimesheetConfiguration());
             builder.ApplyConfiguration(new UserConfiguration());
 
-            // Seed Identity Roles
-            builder.Entity<ApplicationRole>().HasData(
-                new ApplicationRole
+            // ===== Users =====
+            builder.Entity<User>().HasData(
+                new User
                 {
                     Id = 1,
-                    Name = "Admin",
-                    NormalizedName = "ADMIN",
-                    Description = "Administrator with full permissions",
-                    ConcurrencyStamp = Guid.NewGuid().ToString()
-                },
-                new ApplicationRole
-                {
-                    Id = 2,
-                    Name = "HR",
-                    NormalizedName = "HR",
-                    Description = "Human Resources role",
-                    ConcurrencyStamp = Guid.NewGuid().ToString()
-                },
-                new ApplicationRole
-                {
-                    Id = 3,
-                    Name = "Manager",
-                    NormalizedName = "MANAGER",
-                    Description = "Manager role with team oversight",
-                    ConcurrencyStamp = Guid.NewGuid().ToString()
-                },
-                new ApplicationRole
-                {
-                    Id = 4,
-                    Name = "Employee",
-                    NormalizedName = "EMPLOYEE",
-                    Description = "Standard employee role",
-                    ConcurrencyStamp = Guid.NewGuid().ToString()
+                    Username = "SuperAdmin",
+                    Email = "superadmin123@gmail.com",
+                    PasswordHash = HashPassword("superadmin@123"),
+                    FirstName = "Super",
+                    LastName = "Admin",
+                    PhoneNumber = "9999999999",
+                    Role = UserRole.SuperAdmin,
+                    RefreshToken = null,
+                    RefreshTokenExpiryTime = null,
+                    Password = "superadmin@123"
                 }
             );
+
+            // ===== Departments =====
+            builder.Entity<Department>().HasData(
+                new Department
+                {
+                    Id = 1,
+                    Name = "Human Resources",
+                    Code = "HR",
+                    Description = "Handles recruitment, payroll, and employee relations",
+                    ParentDepartmentId = 1
+                },
+                new Department
+                {
+                    Id = 2,
+                    Name = "Information Technology",
+                    Code = "IT",
+                    Description = "Manages IT infrastructure and software systems",
+                    ParentDepartmentId = 2
+                },
+                new Department
+                {
+                    Id = 3,
+                    Name = "Finance",
+                    Code = "FIN",
+                    Description = "Responsible for accounting and financial management",
+                    ParentDepartmentId = 3
+                },
+                new Department
+                {
+                    Id = 4,
+                    Name = "Administration",
+                    Code = "ADMIN",
+                    Description = "Office administration and facilities management",
+                    ParentDepartmentId = 4
+                }
+            );
+
+            // ===== Roles =====
+            builder.Entity<Role>().HasData(
+                new Role
+                {
+                    Id = 1,
+                    Name = "SuperAdmin",
+                    Description = "Super Administrator with full permissions"
+                },
+                new Role
+                {
+                    Id = 2,
+                    Name = "Admin",
+                    Description = "Administrator with full permissions"
+                },
+                new Role
+                {
+                    Id = 3,
+                    Name = "HR",
+                    Description = "Human Resources role"
+                },
+                new Role
+                {
+                    Id = 4,
+                    Name = "Manager",
+                    Description = "Manager role with team oversight"
+                },
+                new Role
+                {
+                    Id = 5,
+                    Name = "Employee",
+                    Description = "Standard employee role"
+                }
+            );
+        }
+
+        private string HashPassword(string password)
+        {
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(password);
+            var hash = sha.ComputeHash(bytes);
+            return Convert.ToBase64String(hash);
         }
 
     }

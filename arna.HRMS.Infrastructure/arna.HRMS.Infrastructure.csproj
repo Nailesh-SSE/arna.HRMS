@@ -26,4 +26,8 @@
     <ProjectReference Include="..\arna.HRMS\arna.HRMS.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>
