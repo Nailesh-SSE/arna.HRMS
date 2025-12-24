@@ -8,8 +8,6 @@ public class TimesheetConfiguration : IEntityTypeConfiguration<Timesheet>
 {
     public void Configure(EntityTypeBuilder<Timesheet> builder)
     {
-        builder.ToTable("TimeSheets");
-
         builder.HasKey(t => t.Id);
 
         builder.Property(t => t.TotalHours)

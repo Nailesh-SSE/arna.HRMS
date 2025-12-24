@@ -6,7 +6,6 @@ public class Department : BaseEntity
     public string Code { get; set; }
     public string Description { get; set; }
     public int? ParentDepartmentId { get; set; }
-    public bool IsActive { get; set; }
 
     // Navigation Properties
     public Department ParentDepartment { get; set; }

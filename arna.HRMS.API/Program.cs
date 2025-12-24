@@ -133,7 +133,7 @@ public class Program
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(
                 builder.Configuration.GetConnectionString("DefaultConnection"),
-                sqlOptions => sqlOptions.MigrationsAssembly("EmployeeManagement.Infrastructure")
+                sqlOptions => sqlOptions.MigrationsAssembly("arna.HRMS.Infrastructure")
             )
         );
 

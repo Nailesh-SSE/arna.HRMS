@@ -1,5 +1,5 @@
-﻿namespace EmployeeManagement.Infrastructure.Interfaces;
+﻿//namespace EmployeeManagement.Infrastructure.Interfaces;
 
-public interface ITimesheetService
-{
-}
+//public interface ITimesheetService
+//{
+//}
