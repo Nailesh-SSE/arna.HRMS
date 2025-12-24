@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "arna.HRMS.Web and arna.HRMS.API",
+    "Projects": [
+      {
+        "Path": "arna.HRMS\\arna.HRMS.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "arna.HRMS.API\\arna.HRMS.API.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

@@ -1,0 +1,21 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/arna.HRMS/CopilotIndices/17.13.439.2385
+/.vs
+/arna.HRMS/bin/Debug/net8.0
+/arna.HRMS/obj/Debug/net8.0
+/arna.HRMS/obj
+/arna.HRMS.API/bin/Debug/net8.0
+/arna.HRMS.API/obj
+/arna.HRMS.Core/bin/Debug/net8.0
+/arna.HRMS.Core/obj
+/arna.HRMS.Infrastructure/bin/Debug/net8.0
+/arna.HRMS.Infrastructure/obj/Debug/net8.0
+/arna.HRMS.Infrastructure/obj
+/arna.HRMS.Tests/bin/Debug/net8.0
+/arna.HRMS.Tests/obj
+/EmployeeManagement/obj
+/EmployeeManagement.Core/obj
+/EmployeeManagement.Infrastructure/obj

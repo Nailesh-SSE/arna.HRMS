@@ -1,0 +1,43 @@
+
+Set Default Project
+
+Make sure the default project is EmployeeManagement.Infrastructure before running commands.
+
+1. Create Migration
+  .NET CLI
+
+  dotnet ef migrations add <MigrationName> --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+
+  Package Manager Console
+
+  Add-Migration <MigrationName> -s EmployeeManagement.API
+  
+
+2. Update Database (apply latest migration)
+  .NET CLI
+
+  dotnet ef database update --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+
+  Package Manager Console (PMC)
+
+  Update-Database -s EmployeeManagement.API
+
+
+3. Update Database to a Specific Migration
+  .NET CLI
+
+  dotnet ef database update <MigrationName> --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+
+  Package Manager Console (PMC)
+
+  Update-Database <MigrationName> -s EmployeeManagement.API
+
+
+4. Remove Last Migration (Rollback before applying)
+   .NET CLI
+   
+   dotnet ef migrations remove --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+
+   Package Manager Console (PMC)
+
+   Remove-Migration -s EmployeeManagement.API

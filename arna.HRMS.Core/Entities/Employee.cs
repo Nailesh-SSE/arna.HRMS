@@ -1,0 +1,24 @@
+﻿namespace arna.HRMS.Core.Entities;
+
+public class Employee : BaseEntity
+{
+    public string EmployeeNumber { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string Email { get; set; }
+    public string PhoneNumber { get; set; }
+    public DateTime DateOfBirth { get; set; }
+    public DateTime HireDate { get; set; }
+    public int DepartmentId { get; set; }
+    public int? ManagerId { get; set; }
+    public string Position { get; set; }
+    public decimal Salary { get; set; }
+
+    // Navigation Properties
+    public Department Department { get; set; }
+    public Employee Manager { get; set; }
+    public ICollection<Employee> Subordinates { get; set; }
+    public ICollection<Attendance> Attendances { get; set; }
+    public ICollection<LeaveRequest> LeaveRequests { get; set; }
+    public ICollection<Timesheet> Timesheets { get; set; }
+}

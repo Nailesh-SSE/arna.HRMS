@@ -1,0 +1,306 @@
+﻿@using arna.HRMS.ClientServices.Employee
+@inherits LayoutComponentBase
+@inject IEmployeeService EmployeeService
+@inject NavigationManager Nav
+
+<style>
+    /* ===== LAYOUT ===== */
+    .layout {
+        display: flex;
+        height: 100vh;
+        background: #f5f7fb;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidenav {
+        width: 240px;
+        background: #0b1d39;
+        color: white;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .sidenav .brand {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .nav-item {
+        padding: 10px 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        color: #e4e7ec;
+        margin-bottom: 6px;
+    }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: #1f3c88;
+            color: white;
+        }
+
+    .profile-box {
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255,255,255,.2);
+    }
+
+    /* ===== MAIN ===== */
+    .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ===== TOP BAR ===== */
+    .topbar {
+        background: white;
+        padding: 14px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    /* ===== TIMER BADGE ===== */
+    .timer-badge {
+        background: #e6f4ea;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* ===== NOTIFICATION DOT ===== */
+    .notif-dot {
+        width: 8px;
+        height: 8px;
+        background: red;
+        border-radius: 50%;
+        position: absolute;
+        top: 0;
+        right: 0;
+    }
+
+    /* ===== AVATAR ===== */
+    .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #6366f1;
+        color: white;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    /* ===== NOTIFICATION CARD ===== */
+    .notification-card {
+        background: white;
+        margin: 16px;
+        padding: 14px 18px;
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(0,0,0,.1);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 420px;
+    }
+
+    .content {
+        padding: 20px;
+        overflow-y: auto;
+    }
+</style>
+
+<div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidenav">
+        <div class="brand">
+            <i class="bi bi-stack"></i> WorkFlow
+        </div>
+
+        <div class="nav-item active">
+            <i class="bi bi-grid"></i> Dashboard
+        </div>
+
+        <div class="nav-item">
+            <i class="bi bi-people"></i> Employees
+        </div>
+
+        <div class="nav-item">
+            <i class="bi bi-calendar-check"></i> Attendance
+        </div>
+
+        <div class="nav-item">
+            <i class="bi bi-clock-history"></i> Timesheet
+        </div>
+
+        <div class="profile-box d-flex align-items-center gap-2 mt-4">
+            <div class="avatar">@Initials</div>
+            <div>
+                <div class="fw-semibold">My Profile</div>
+                <small class="text-muted">Employee</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOP BAR -->
+        <div class="topbar">
+            <h5 class="mb-0">@GreetingMessage</h5>
+
+            <div class="top-actions">
+
+                <!-- CLOCK BUTTON -->
+                <button class="btn btn-success d-flex align-items-center gap-2"
+                        @onclick="ToggleClock">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    @ClockButtonText
+                </button>
+
+                <!-- RUNNING TIMER -->
+                @if (IsClockedIn)
+                {
+                    <div class="timer-badge">
+                        <i class="bi bi-record-circle-fill text-success"></i>
+                        @RunningTime
+                    </div>
+                }
+
+                <!-- NOTIFICATION ICON -->
+                <div class="position-relative">
+                    <i class="bi bi-bell fs-5"></i>
+                    @if (ShowNotification)
+                    {
+                        <span class="notif-dot"></span>
+                    }
+                </div>
+
+                <!-- PROFILE -->
+                <div class="avatar">@Initials</div>
+            </div>
+        </div>
+
+        <!-- NOTIFICATION CARD -->
+        @if (ShowNotification)
+        {
+            <div class="notification-card">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <div>@NotificationText</div>
+            </div>
+        }
+
+        <!-- PAGE CONTENT -->
+        <div class="content">
+            @Body
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    string Initials = "NA";
+    string GreetingMessage = "";
+
+    bool IsClockedIn = false;
+    DateTime ClockInTime;
+    DateTime? ClockOutTime;
+
+    string RunningTime = "00:00:00";
+    string ClockButtonText = "Clock In";
+
+    bool ShowNotification = false;
+    string NotificationText = "";
+
+    System.Timers.Timer? timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        SetGreeting();
+
+        var emp = await EmployeeService.GetEmployeeByIdAsync(3);
+        if (emp != null)
+            Initials = $"{emp.FirstName[0]}{emp.LastName[0]}".ToUpper();
+    }
+
+    void SetGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+
+        GreetingMessage =
+            hour < 12 ? "Good morning!" :
+            hour < 17 ? "Good afternoon!" :
+            "Good evening!";
+    }
+
+    void ToggleClock()
+    {
+        if (!IsClockedIn)
+        {
+            ClockInTime = DateTime.Now;
+            IsClockedIn = true;
+            ClockButtonText = "Clock Out";
+
+            NotificationText = $"Clocked In at {ClockInTime:hh:mm:ss tt}";
+            ShowNotification = true;
+
+            StartTimer();
+        }
+        else
+        {
+            ClockOutTime = DateTime.Now;
+            IsClockedIn = false;
+            ClockButtonText = "Clock In";
+
+            StopTimer();
+
+            var total = ClockOutTime.Value - ClockInTime;
+            NotificationText =
+                $"Clocked Out at {ClockOutTime:hh:mm:ss tt} | Total {total:hh\\:mm\\:ss}";
+
+            ShowNotification = true;
+            RunningTime = "00:00:00";
+        }
+    }
+
+    void StartTimer()
+    {
+        timer = new System.Timers.Timer(1000);
+        timer.Elapsed += (_, _) =>
+        {
+            var elapsed = DateTime.Now - ClockInTime;
+            RunningTime = elapsed.ToString(@"hh\:mm\:ss");
+            InvokeAsync(StateHasChanged);
+        };
+        timer.Start();
+    }
+
+    void StopTimer()
+    {
+        timer?.Stop();
+        timer?.Dispose();
+    }
+}
