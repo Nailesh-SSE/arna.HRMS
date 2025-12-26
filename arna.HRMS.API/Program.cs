@@ -43,8 +43,8 @@ public class Program
                 ValidateAudience = true,
                 ValidateLifetime = true,
                 ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings["Issuer"] ?? "EmployeeManagementAPI",
-                ValidAudience = jwtSettings["Audience"] ?? "EmployeeManagementUsers",
+                ValidIssuer = jwtSettings["Issuer"] ?? "arna.HRMS.API",
+                ValidAudience = jwtSettings["Audience"] ?? "arna.HRMS.Users",
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
                 ClockSkew = TimeSpan.Zero
             };
@@ -62,7 +62,7 @@ public class Program
         {
             c.SwaggerDoc("v1", new()
             {
-                Title = "Employee Management API",
+                Title = "arna HRMS API",
                 Version = "v1",
                 Description = "API for managing employees with JWT authentication and role-based authorization"
             });

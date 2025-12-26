@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Services.Auth;
+﻿namespace arna.HRMS.ClientServices.Auth;
 
 public class TokenProvider
 {

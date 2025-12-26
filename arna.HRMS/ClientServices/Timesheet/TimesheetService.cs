@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Services.Timesheet;
+﻿namespace arna.HRMS.ClientServices.Timesheet;
 
 public class TimesheetService
 {

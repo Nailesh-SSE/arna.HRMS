@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Services.Attendance;
+﻿namespace arna.HRMS.ClientServices.Attendance;
 
 public class ClockService
 {
