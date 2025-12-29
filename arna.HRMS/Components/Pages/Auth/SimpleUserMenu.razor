@@ -1,0 +1,66 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<AuthorizeView>
+    <Authorized>
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                    id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <Icon Name="IconName.PersonCircle" />
+                @context.User.Identity?.Name
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                <li>
+                    <div class="dropdown-item-text">
+                        <small class="text-muted">Welcome back!</small><br>
+                        <strong>@context.User.FindFirst("FullName")?.Value</strong>
+                    </div>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <Button class="dropdown-item text-danger" @onclick="HandleLogout">
+                        <Icon Name="IconName.BoxArrowRight" /> Logout
+                    </Button>
+                </li>
+            </ul>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <!-- Show login button when user is not authenticated -->
+        <Button class="btn btn-outline-primary" @onclick="@(() => NavigationManager.NavigateTo("/login"))">
+            <Icon Name="IconName.Person" /> Login
+        </Button>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private async Task HandleLogout()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                var authProvider = AuthenticationStateProvider as CustomAuthStateProvider;
+                if (authProvider != null)
+                {
+                    await authProvider.MarkUserAsLoggedOut();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Logout error: {ex.Message}");
+        }
+        finally
+        {
+            // Always redirect
+            NavigationManager.NavigateTo("/login", forceLoad: true);
+        }
+    }
+}

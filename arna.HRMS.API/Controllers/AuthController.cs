@@ -79,4 +79,20 @@ public class AuthController : ControllerBase
             });
         }
     }
+
+    [HttpPost("logout")]
+    public ActionResult LogOut()
+    {
+        try
+        {
+            TestTokenStore.Token = null;
+            _logger.LogInformation("User logged out successfully");
+            return Ok(new { IsSuccess = true, Message = "Logged out successfully" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout");
+            return StatusCode(500, new { IsSuccess = false, Message = "An internal error occurred during logout" });
+        }
+    }
 }

@@ -1,5 +1,8 @@
 ﻿@page "/"
 @inject NavigationManager NavigationManager
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthProvider
 
 <PageTitle>Home</PageTitle>
 
@@ -10,36 +13,101 @@
     }
 </style>
 
-<h4 class="fw-bold mb-4">My Access</h4>
+@if (IsLoading)
+{
+    <div class="text-center">
+        <Spinner Type="SpinnerType.Border" />
+    </div>
+}
+else if (IsAuthenticated)
+{
 
-<div class="container">
+    <h4 class="fw-bold mb-4">My Access</h4>
 
-    <div class="row justify-content-center g-4 text-center">
+    <div class="container">
 
-        @foreach (var item in MenuItems)
-        {
-            <div class="col-6 col-md-2">
-                <div class="ratio ratio-1x1 mx-auto" style="max-width:150px;">
-                    <div class="card shadow-sm border-0 menu-card d-flex justify-content-center align-items-center"
-                         role="button" @onclick='() => NavigateTo(item.Route)'>
+        <div class="row justify-content-center g-4 text-center">
 
-                        <img src="@item.Icon"
-                             style="width:110%; height:110%; object-fit:contain;" />
+            @foreach (var item in MenuItems)
+            {
+                <div class="col-6 col-md-2">
+                    <div class="ratio ratio-1x1 mx-auto" style="max-width:150px;">
+                        <div class="card shadow-sm border-0 menu-card d-flex justify-content-center align-items-center"
+                             role="button" @onclick='() => NavigateTo(item.Route)'>
 
+                            <img src="@item.Icon"
+                                 style="width:110%; height:110%; object-fit:contain;" />
+
+                        </div>
                     </div>
-                </div>
 
-                <small class="fw-semibold d-block mt-1">@item.Label</small>
-            </div>
-        }
+                    <small class="fw-semibold d-block mt-1">@item.Label</small>
+                </div>
+            }
+
+        </div>
 
     </div>
-
-</div>
+}
+else
+{
+    @if (hasCheckedAuth)
+    {
+        <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Redirecting to login...</span>
+                </div>
+                <p class="text-muted">Redirecting to login page...</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Checking authentication...</span>
+            </div>
+        </div>
+    }
+}
 
 @code {
-
+    private bool hasCheckedAuth = false;
+    private bool _redirectInitiated = false;
+    protected bool IsLoading { get; private set; } = true;
+    protected string CurrentUserFullName { get; private set; } = string.Empty;
+    private bool IsAuthenticated;
     private record MenuItem(string Label, string Icon, string Route);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        IsAuthenticated = user.Identity?.IsAuthenticated == true;
+        hasCheckedAuth = true;
+        if (IsAuthenticated)
+        {
+            CurrentUserFullName =
+                user.FindFirst(ClaimTypes.Name)?.Value
+                ?? user.Identity?.Name
+                ?? "User";
+        }
+
+        IsLoading = false;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!_redirectInitiated && hasCheckedAuth && !IsAuthenticated)
+        {
+            _redirectInitiated = true;
+            var currentRelativeUrL = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+            NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString("/" + currentRelativeUrL)}", forceLoad: true);
+        }
+    }
 
     private List<MenuItem> MenuItems = new()
     {

@@ -58,7 +58,7 @@ public class UserServices : IUserServices
     public async Task<User?> GetUserByUserNameAndEmail(string userNameOrEmail)
     {
         var users = await _userRepository.GetUserAsync();
-        var user = users.FirstOrDefault(x => x.Username == userNameOrEmail || x.Email == userNameOrEmail) ?? null; 
+        var user = users.FirstOrDefault(x => x.Username.ToLower() == userNameOrEmail.ToLower() || x.Email.ToLower() == userNameOrEmail.ToLower()) ?? null; 
         if (user == null) return null;
         return user;
     }
