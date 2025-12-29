@@ -1,5 +1,279 @@
-﻿<h3>ClockInOut</h3>
+﻿@implements IDisposable
+@using arna.HRMS.Models.DTOs
+@using arna.HRMS.ClientServices.Attendance
+@using arna.HRMS.Core.DTOs.Requests
+@using arna.HRMS.Models.Enums
+@inject IClockService ClockService
+<style>
+    /* LIVE CLOCK PILL */
+    .clock-pill {
+        background-color: #e6f7ee;
+        color: #14532d;
+        border: 1px solid #22c55e;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        background-color: #22c55e;
+        border-radius: 50%;
+    }
+
+    .clock-pill i {
+        font-size: 14px;
+        color: #22c55e;
+        background: none;
+    }
+
+    .time-text {
+        letter-spacing: 0.5px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* TIME INFO CAPSULE (STATIC STRING TIME) */
+    .time-info-pill {
+        background-color: #f1f5f9;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 13px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+    }
+
+        .time-info-pill .label {
+            font-size: 12px;
+            color: #475569;
+        }
+
+        .time-info-pill .value {
+            font-variant-numeric: tabular-nums;
+        }
+</style>
+
+<div class="d-flex align-items-center gap-2">
+
+    <!-- LIVE CLOCK (WORKING TIMER) -->
+    <span class="clock-pill">
+        <span class="status-dot"></span>
+        <i class="bi bi-clock"></i>
+        <span class="time-text">@CurrentTime</span>
+    </span>
+
+    <!-- CLOCK IN / CLOCK OUT BUTTON -->
+    @if (IsClockedIn)
+    {
+        <button class="btn btn-danger btn-sm d-flex align-items-center gap-1 rounded-end"
+                @onclick="ClockOutAsync">
+            <i class="bi bi-clock"></i>
+        </button>
+    }
+    else
+    {
+        <button class="btn btn-success btn-sm d-flex align-items-center gap-1 rounded-end"
+                @onclick="ClockInAsync">
+            <i class="bi bi-clock"></i>
+        </button>
+    }
+
+    <!-- STATIC TIME CAPSULE (STRING TIME ONLY) -->
+    @if (!string.IsNullOrEmpty(ActionLabel))
+    {
+        <span class="time-info-pill">
+            <span class="label">@ActionLabel</span>
+            <span class="value">@ActionTime</span>
+        </span>
+    }
+
+</div>
+
+<!-- TOAST -->
+@if (ShowToast)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index:2000">
+        <div class="toast show shadow-lg border-0 rounded-3">
+            <div class="toast-body d-flex align-items-start gap-3">
+                <div class="text-success fs-5">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">Attendance</div>
+                    <div class="text-muted small">@ToastMessage</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
 
+    private bool IsClockedIn;
+    private int? AttendanceId;
+
+    private TimeOnly In;
+    private TimeOnly Out;
+
+    private double AccumulatedHours = 0;
+
+    private string CurrentTime = "";
+    private string? ActionLabel;
+    private string? ActionTime;
+
+    private bool ShowToast;
+    private string ToastMessage = "";
+
+    private System.Timers.Timer? _timer;
+
+    // TEMP: replace with logged-in user id later
+    private int employeeId = 3;
+
+    protected override void OnInitialized()
+    {
+        StartClock();
+    }
+
+    // =========================
+    // CLOCK IN
+    // =========================
+    private async Task ClockInAsync()
+    {
+        if (IsClockedIn)
+            return;
+
+        IsClockedIn = true;
+
+        In = TimeOnly.FromDateTime(DateTime.Now);
+        ActionLabel = "Clock In";
+        ActionTime = DateTime.Now.ToString("HH:mm:ss");
+
+        // CREATE attendance ONLY once per day
+        if (AttendanceId == null)
+        {
+            var createDto = new AttendanceDto
+            {
+                EmployeeId = employeeId,
+                Date = DateTime.Today,
+                CheckInTime = In.ToTimeSpan(),
+                Notes = "Clocked in",
+                WorkingHours = 0
+            };
+
+            var created = await ClockService.CreateAttendanceAsync(createDto);
+            AttendanceId = created.Id;
+
+            AccumulatedHours = 0;
+        }
+
+        ShowNotification($"Clocked in at {ActionTime}");
+    }
+
+    // =========================
+    // CLOCK OUT
+    // =========================
+    private async Task ClockOutAsync()
+    {
+        if (!IsClockedIn || AttendanceId == null)
+            return;
+
+        IsClockedIn = false;
+
+        Out = TimeOnly.FromDateTime(DateTime.Now);
+        ActionLabel = "Clock Out";
+        ActionTime = DateTime.Now.ToString("HH:mm:ss");
+
+        var sessionHours =
+            (Out.ToTimeSpan() - In.ToTimeSpan()).TotalHours;
+
+        if (sessionHours < 0)
+            sessionHours = 0;
+
+        // ACCUMULATE WHOLE DAY HOURS
+        AccumulatedHours += sessionHours;
+
+        var Dto = new AttendanceDto
+        {
+            EmployeeId = employeeId,
+            Date = DateTime.Today,
+            CheckOutTime = Out.ToTimeSpan(),
+            WorkingHours = AccumulatedHours,
+            Notes = "Shift Clock out"
+        };
+
+        await ClockService.CreateAttendanceAsync(Dto);
+
+        ShowNotification(
+            $"Clocked out at {ActionTime} | Total {AccumulatedHours:F2} hrs"
+        );
+    }
+
+    // =========================
+    // STATUS CALCULATION
+    // =========================
+    private AttendanceStatuses CalculateStatus(double workingHours)
+    {
+        if (workingHours >= 7.5)
+            return AttendanceStatuses.Present;
+
+        if (workingHours < 5.0)
+            return AttendanceStatuses.HalfDay;
+
+        if (workingHours < 7.0)
+            return AttendanceStatuses.Late;
+
+        return AttendanceStatuses.Absent;
+    }
+
+    // =========================
+    // LIVE CLOCK
+    // =========================
+    private void StartClock()
+    {
+        UpdateCurrentTime();
+
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += (_, _) =>
+        {
+            UpdateCurrentTime();
+            InvokeAsync(StateHasChanged);
+        };
+        _timer.Start();
+    }
+
+    private void UpdateCurrentTime()
+    {
+        CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    // =========================
+    // TOAST NOTIFICATION
+    // =========================
+    private async void ShowNotification(string message)
+    {
+        ToastMessage = message;
+        ShowToast = true;
+        StateHasChanged();
+
+        await Task.Delay(2500);
+
+        ShowToast = false;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
 }
+
+

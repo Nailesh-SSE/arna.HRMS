@@ -1,3 +1,4 @@
+using arna.HRMS.ClientServices.Attendance;
 using arna.HRMS.ClientServices.Employee;
 using arna.HRMS.Components;
 
@@ -23,6 +24,10 @@ public class Program
             client.BaseAddress = new Uri("https://localhost:7134/");  // API base URL
         });
         builder.Services.AddBlazorBootstrap();
+        builder.Services.AddHttpClient<IClockService, ClockService>(client =>
+        {
+            client.BaseAddress = new Uri("https://localhost:7134/");  // API base URL
+        });
 
 
 

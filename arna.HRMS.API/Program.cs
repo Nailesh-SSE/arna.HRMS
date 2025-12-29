@@ -1,11 +1,9 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Data;
+﻿using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Handler;
 using arna.HRMS.Infrastructure.Interfaces;
+using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services;
-using arna.HRMS.Models.DTOs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -92,42 +90,8 @@ public class Program
             });
         });
 
-        // ✅ AutoMapper INLINE configuration (NO extra files)
-        builder.Services.AddAutoMapper(cfg =>
-        {
-            // INSERT
-            cfg.CreateMap<CreateEmployeeRequest, Employee>();
-
-            // UPDATE and ".ForMember(dest => dest.ManagerId, opt => opt.Ignore());" is for testing because it not accept ManagerID as null or 0
-            cfg.CreateMap<UpdateEmployeeRequest, Employee>(); 
-
-            // RESPONSE
-            cfg.CreateMap<Employee, EmployeeDto>();
-        });
-
-        builder.Services.AddAutoMapper(cfg =>
-        {
-            // INSERT
-            cfg.CreateMap<CreateDepartmentRequest, Department>();
-
-            // UPDATE 
-            cfg.CreateMap<UpdateDepartmentRequest, Department>();
-
-            // RESPONSE
-            cfg.CreateMap<Department, DepartmentDto>();
-        });
-
-        builder.Services.AddAutoMapper(cfg =>
-        {
-            // INSERT
-            cfg.CreateMap<CreateUserRequest, User>();
-
-            // UPDATE and ".ForMember(dest => dest.ManagerId, opt => opt.Ignore());" is for testing because it not accept ManagerID as null or 0
-            cfg.CreateMap<UpdateUserRequest, User>();
-
-            // RESPONSE
-            cfg.CreateMap<User, UserDto>();
-        });
+        //Mapping
+        builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 
         // Register DbContext
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -142,9 +106,11 @@ public class Program
         builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+        builder.Services.AddScoped<IAttendanceService, AttendanceService>();
         builder.Services.AddScoped<IUserServices, UserServices>();
         builder.Services.AddScoped<DepartmentRepository>();
         builder.Services.AddScoped<EmployeeRepository>();
+        builder.Services.AddScoped<AttendanceRepository>();
         builder.Services.AddScoped<UserRepository>();
 
         // Register Authentication & JWT Services

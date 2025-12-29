@@ -1,0 +1,75 @@
+﻿@using arna.HRMS.Models.DTOs
+@using arna.HRMS.ClientServices.Employee
+@inject IEmployeeService EmployeeService
+
+<header class="bg-white border-bottom px-4 py-3
+               d-flex justify-content-between align-items-center sticky-top">
+
+    <h5 class="mb-0">@Greeting, @employee.FirstName @employee.LastName</h5>
+
+    <div class="d-flex align-items-center gap-3">
+
+        <!-- Clock -->
+        <arna.HRMS.Components.Pages.Attendance.ClockInOut />
+
+        <!-- Bell -->
+        <div class="position-relative">
+            <i class="bi bi-bell fs-5"></i>
+            <span class="position-absolute top-0 start-100 translate-middle
+                         bg-danger rounded-circle"
+                  style="width:8px;height:8px"></span>
+        </div>
+
+        <!-- Avatar -->
+        <div class="rounded-circle bg-secondary text-white d-flex
+                align-items-center justify-content-center overflow-hidden"
+             style="width:40px;height:40px;">
+
+            <span class="fw-semibold">
+                @EmpF@EmpL
+            </span>
+        </div>
+
+    </div>
+</header>
+
+@code {
+
+    private EmployeeDto employee = new EmployeeDto();
+    private int employeeId = 3;
+
+    private char EmpF;
+    private char EmpL;
+
+    private string Greeting = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        employee = await EmployeeService.GetEmployeeByIdAsync(employeeId)
+                   ?? new EmployeeDto();
+
+        // Safe initials
+        EmpF = !string.IsNullOrEmpty(employee.FirstName)
+            ? employee.FirstName[0]
+            : '?';
+
+        EmpL = !string.IsNullOrEmpty(employee.LastName)
+            ? employee.LastName[0]
+            : '?';
+
+        SetGreeting();
+    }
+
+    private void SetGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+
+        Greeting = hour switch
+        {
+            >= 5 and < 12 => "Good Morning",
+            >= 12 and < 17 => "Good Afternoon",
+            >= 17 and < 21 => "Good Evening",
+            _ => "Good Night"
+        };
+    }
+}

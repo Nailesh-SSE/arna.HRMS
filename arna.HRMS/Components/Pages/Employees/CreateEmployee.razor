@@ -221,8 +221,8 @@
             await EmployeeService.CreateEmployeeAsync(dto);
         }
 
-        NavigationManager.NavigateTo("/employees/employeelist");
+        NavigationManager.NavigateTo("/employee/employeelist");
     }
 
-    private void GoBack() => NavigationManager.NavigateTo("/employees/employeelist");
+    private void GoBack() => NavigationManager.NavigateTo("/employee/employeelist");
 }
