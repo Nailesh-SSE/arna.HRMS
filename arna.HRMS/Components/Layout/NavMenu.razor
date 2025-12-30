@@ -1,25 +1,153 @@
-﻿@* <div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">EmployeeManagement</a>
+﻿@inject NavigationManager Nav
+@using arna.HRMS.Models.DTOs
+@using arna.HRMS.ClientServices.Employee
+@inject IEmployeeService EmployeeService
+
+<style>
+    .custom-sidebar{
+        transition: width .3s;
+        z-index: 1040;
+    }
+
+    .collapse-btn {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        position: absolute;
+        right: -13px;
+        top: 55px;
+        box-shadow: 0 4px 12px rgba(0,0,0,.15);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .collapse-btn svg {
+            width: 12px;
+            height: 12px;
+            stroke: #111827;
+            stroke-width: 2;
+            fill: none;
+            transition: transform .2s ease;
+        }
+
+    .custom-sidebar.collapsed .collapse-btn svg {
+        transform: rotate(180deg);
+    }
+</style>
+
+<div class="position-fixed top-0 start-0 vh-100 bg-dark text-white d-flex flex-column custom-sidebar"
+     style="width:@(Collapsed ? "80px" : "264px")">
+
+    <!-- Logo -->
+    <div class="d-flex align-items-center gap-2 p-3 border-bottom border-secondary">
+        <div class="bg-primary rounded d-flex align-items-center justify-content-center"
+             style="width:36px;height:36px;">
+            <i class="bi bi-buildings fs-5"></i>
+        </div>
+
+        @if (!Collapsed)
+        {
+            <span class="fw-bold fs-5">Arna Technosoft</span>
+        }
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav nav-pills flex-column gap-1 px-2 py-3">
+        <NavLink href="/" Match="NavLinkMatch.All"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-grid fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Dashboard</span>
+            }
+        </NavLink>
+
+        <NavLink href="/employee/employeelist"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-people fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Employees</span>
+            }
+        </NavLink>
+
+        <NavLink href="/attendance"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-calendar-check fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Attendance</span>
+            }
+        </NavLink>
+
+        <NavLink href="/leave"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-calendar2 fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Leave</span>
+            }
+        </NavLink>
+
+        <NavLink href="/project"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-folder fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Projects</span>
+            }
+        </NavLink>
+
+        <NavLink href="/timesheet"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-clock fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Timesheet</span>
+            }
+        </NavLink>
+
+        <NavLink href="/reports"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-bar-chart fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Reports</span>
+            }
+        </NavLink>
+
+        <NavLink href="/profile"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-person fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>My Profile</span>
+            }
+        </NavLink>
+    </nav>
+
+    <!-- Collapse Button -->
+    <div class="collapse-btn" @onclick="OnToggle">
+        <svg viewBox="0 0 24 24">
+            <polyline points="15 6 9 12 15 18" />
+        </svg>
     </div>
 </div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+@code {
+    [CascadingParameter] public bool Collapsed { get; set; }
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/employee/detail">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Employee Detail
-            </NavLink>
-        </div>
-    </nav>
-</div>
-
- *@
+    [Parameter] public EventCallback OnToggle { get; set; }
+}

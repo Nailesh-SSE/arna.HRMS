@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Services.Common;
+﻿namespace arna.HRMS.ClientServices.Common;
 
 public class FileService
 {

@@ -1,7 +1,7 @@
-﻿@page "/employee/detail"
+﻿@page "/profile"
 
 @using arna.HRMS.ClientServices.Employee
-@using arna.HRMS.Services
+@using arna.HRMS.ClientServices
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 
@@ -20,7 +20,7 @@
         border: 1px solid #e1e1e1;
     }
 
-    .sidebar {
+    .details-sidebar {
         width: 260px;
         background: #f8f9fa;
         padding: 25px;
@@ -45,24 +45,24 @@
         font-weight: 700;
     }
 
-    .sidebar-title {
+    .detail-sidebar-title {
         margin-top: 20px;
         color: gray;
         font-size: 12px;
     }
 
-    .sidebar-menu {
+    .detail-sidebar-menu {
         list-style: none;
         padding-left: 0;
         margin-top: 10px;
     }
 
-        .sidebar-menu li {
+        .detail-sidebar-menu li {
             padding: 6px 0;
             cursor: pointer;
         }
 
-            .sidebar-menu li.active {
+            .detail-sidebar-menu li.active {
                 font-weight: bold;
             }
 
@@ -133,7 +133,7 @@
         <div class="employee-card shadow">
 
             <!-- SIDEBAR -->
-            <div class="sidebar">
+            <div class="details-sidebar">
 
                 <div class="profile-picture">
                     @employee.FirstName[0]@employee.LastName[0]
@@ -150,8 +150,8 @@
 
                 <hr />
 
-                <h6 class="sidebar-title">PROFILE</h6>
-                <ul class="sidebar-menu">
+                <h6 class="detail-sidebar-title">PROFILE</h6>
+                <ul class="detail-sidebar-menu">
                     <li class="active">Overview</li>
                     <li>Personal</li>
                     <li>Employment</li>

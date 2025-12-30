@@ -40,7 +40,7 @@ public class EmployeeService(HttpClient HttpClient) : IEmployeeService
     }
     public async Task UpdateEmployeeAsync(int id, EmployeeDto employeeDto)
     {
-        var updateRequest = new UpdateEmployeeRequest
+        var updateRequest = new EmployeeDto
         {
             Id= employeeDto.Id,
             EmployeeNumber = employeeDto.EmployeeNumber,

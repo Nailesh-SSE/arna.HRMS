@@ -1,5 +1,158 @@
-﻿<h3>Login</h3>
+﻿@page "/login"
+@layout LoginLayout
+@using Microsoft.AspNetCore.Authorization
+@using arna.HRMS.Components.Layout
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity.Data
+@using arna.HRMS.ClientServices.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ILogger<Login> Logger
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<style>
+    .login-background{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 15px !important;
+    }
+
+    .card-background{
+        max-width: 420px;
+        width: 100%;
+        border-radius: 10px;
+    }
+
+</style>
+
+<PageTitle>Arna Technosoft - Login</PageTitle>
+
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center login-background">
+    <div class="card shadow-sm border-0 card-background">
+        <div class="card-body p-4">
+
+            <div class="text-center mb-4">
+                <img src="Images/ArnaLogo.png"
+                     class="img-fluid mb-3"
+                     style="max-height:70px;"
+                     alt="Arna Technosoft" />
+                <h5 class="fw-semibold">Sign in to your account</h5>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger text-center py-2">
+                    @errorMessage
+                </div>
+            }
+
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Username</label>
+                    <InputText @bind-Value="loginModel.Username"
+                               class="form-control"
+                               placeholder="Enter username"
+                               autofocus />
+                    <ValidationMessage For="@(() => loginModel.Username)" class="text-danger small" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Password</label>
+                    <div class="input-group">
+                        <InputText @bind-Value="loginModel.Password"
+                                   type="@passwordInputType"
+                                   class="form-control"
+                                   placeholder="Enter password" />
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                @onclick="TogglePasswordVisibility">
+                            <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                        </button>
+                    </div>
+                    <ValidationMessage For="@(() => loginModel.Password)" class="text-danger small" />
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit"
+                            class="btn btn-primary btn-lg"
+                            disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Sign In
+                    </button>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+</div>
 
 @code {
+    private LoginModel loginModel = new();
+    private string? errorMessage;
+    private bool isLoading;
+    private bool showPassword;
 
+    private string passwordInputType => showPassword ? "text" : "password";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+        isLoading = true;
+
+        try
+        {
+            var success = await AuthService.LoginAsync(new LoginRequest
+            {
+                Email = loginModel.Username,
+                Password = loginModel.Password
+            });
+
+            if (!success)
+            {
+                errorMessage = "Invalid username or password.";
+                return;
+            }
+
+            Logger.LogInformation("User {User} logged in", loginModel.Username);
+            NavigationManager.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Login failed");
+            errorMessage = "Something went wrong. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    public class LoginModel
+    {
+        [Required]
+        public string Username { get; set; } = string.Empty;
+
+        [Required]
+        public string Password { get; set; } = string.Empty;
+    }
 }

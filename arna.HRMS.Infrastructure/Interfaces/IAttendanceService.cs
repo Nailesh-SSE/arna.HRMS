@@ -1,5 +1,14 @@
-﻿namespace arna.HRMS.Infrastructure.Interfaces;
+﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Models.DTOs;
+
+namespace arna.HRMS.Infrastructure.Interfaces;
 
 public interface IAttendanceService
 {
+    Task<List<AttendanceDto>> GetAttendanceAsync();
+    Task<AttendanceDto?> GetAttendenceByIdAsync(int id);
+    Task<AttendanceDto> CreateAttendanceAsync(Attendance attendance);
+    //Task<AttendanceDto> UpdateAttendanceAsync(Attendance attendance);
+    //Task<Attendance?> GetAttendanceEntityByIdAsync(int id);
+
 }

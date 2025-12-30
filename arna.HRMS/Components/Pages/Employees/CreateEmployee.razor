@@ -4,7 +4,7 @@
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
-@using arna.HRMS.Services
+@using arna.HRMS.ClientServices
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject NavigationManager NavigationManager
@@ -221,8 +221,8 @@
             await EmployeeService.CreateEmployeeAsync(dto);
         }
 
-        NavigationManager.NavigateTo("/employees/employeelist");
+        NavigationManager.NavigateTo("/employee/employeelist");
     }
 
-    private void GoBack() => NavigationManager.NavigateTo("/employees/employeelist");
+    private void GoBack() => NavigationManager.NavigateTo("/employee/employeelist");
 }

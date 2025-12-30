@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace arna.HRMS.Infrastructure.Services;
@@ -22,19 +23,11 @@ public class JwtService : IJwtService
 
     public string GenerateAccessToken(User user)
     {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new ArgumentNullException("JWT SecretKey not configured");
-        var issuer = jwtSettings["Issuer"] ?? "EmployeeManagementAPI";
-        var audience = jwtSettings["Audience"] ?? "EmployeeManagementUsers";
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim("username", user.Username),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Name, user.Email),
             new Claim(JwtRegisteredClaimNames.Name, user.FullName),
             new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -44,42 +37,24 @@ public class JwtService : IJwtService
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
 
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!)
+        );
+
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
+            issuer: _configuration["JwtSettings:Issuer"],
+            audience: _configuration["JwtSettings:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddDays(8),
-            signingCredentials: credentials
+            expires: DateTime.UtcNow.AddMinutes(2),
+            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
     public string GenerateRefreshToken()
-    {
-        var randomNumber = new byte[32];
-        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
-    }
+        => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
-    public async Task<bool> ValidateRefreshTokenAsync(int userId, string refreshToken)
-    {
-        try
-        {
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
-            {
-                return false;
-            }
-
-            return true;
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
 
     public async Task SaveRefreshTokenAsync(int userId, string refreshToken)
     {
@@ -89,7 +64,7 @@ public class JwtService : IJwtService
             if (user != null)
             {
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(30); 
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(2); 
                 await _context.SaveChangesAsync();
             }
         }

@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Services.Leave;
+﻿namespace arna.HRMS.ClientServices.Leave;
 
 public class LeaveService
 {

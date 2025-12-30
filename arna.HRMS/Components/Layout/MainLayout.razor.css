@@ -36,6 +36,11 @@ main {
         text-overflow: ellipsis;
     }
 
+.user-menu-container {
+    display: flex;
+    align-items: center;
+}
+
 @media (max-width: 640.98px) {
     .top-row {
         justify-content: space-between;
@@ -53,7 +58,7 @@ main {
 
     .sidebar {
         width: 250px;
-        height: 100vh;
+        height: 100%;
         position: sticky;
         top: 0;
     }
