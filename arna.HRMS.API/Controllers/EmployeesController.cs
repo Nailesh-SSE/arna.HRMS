@@ -38,7 +38,6 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPost]
-    //[Authorize(Roles = "Admin,HR")]
     public async Task<ActionResult<EmployeeDto>> CreateEmployee(CreateEmployeeRequest employeeDto)
     {
         var employee = _mapper.Map<Employee>(employeeDto);
@@ -61,7 +60,6 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    //[Authorize(Roles = "Admin,HR")]
     public async Task<IActionResult> UpdateEmployee(int id, UpdateEmployeeRequest employeeDto)
     {
         if (id != employeeDto.Id) return BadRequest();
