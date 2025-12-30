@@ -26,7 +26,7 @@ public class EmployeesController : ControllerBase
     public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployees()
     {
         var employees = await _employeeService.GetEmployeesAsync(); 
-        return Ok(_mapper.Map<IEnumerable<EmployeeDto>>(employees));
+        return Ok(employees);
     }
 
     [HttpGet("{id}")]

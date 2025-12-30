@@ -28,6 +28,7 @@ public class Program
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
         builder.Services.AddScoped<IClockService, ClockService>();
+        builder.Services.AddScoped<IUsersService, UsersService>();
 
         builder.Services.AddAuthorizationCore();
         builder.Services.AddScoped<ProtectedLocalStorage>();

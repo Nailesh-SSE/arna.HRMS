@@ -1,9 +1,10 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Models.DTOs
 {
-    public class UserDto
+    public class UserDto : BaseEntity
     {
         public int Id { get; set; }
 
@@ -36,6 +37,7 @@ namespace arna.HRMS.Models.DTOs
         [Required(ErrorMessage = "Role is required")]
         public UserRole Role { get; set; }
 
-        public bool IsActive { get; set; }
+        public string PhoneNumber { get; set; }
+        public int EmployeeId { get; set; }
     }
 }

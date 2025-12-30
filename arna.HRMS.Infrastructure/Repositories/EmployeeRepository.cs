@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
 
@@ -12,9 +13,9 @@ public class EmployeeRepository
         _baseRepository = baseRepository;
     }
 
-    public Task<IEnumerable<Employee>> GetEmployeesAsync()
+    public async Task<IEnumerable<Employee>> GetEmployeesAsync()
     {
-        return _baseRepository.GetAllAsync();
+        return await _baseRepository.Query().Include(e => e.Department).ToListAsync();
     }
 
     public async Task<Employee?> GetEmployeeByIdAsync(int id)
