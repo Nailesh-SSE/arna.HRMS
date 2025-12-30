@@ -206,7 +206,7 @@
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
-                CheckInTime = In.ToTimeSpan(),
+                ClockInTime = In.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
                 Notes = attendanceViewModel.Notes,
                 WorkingHours = 0
@@ -229,7 +229,7 @@
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
-                CheckOutTime = Out.ToTimeSpan(),
+                ClockOutTime = Out.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
                 Notes = attendanceViewModel.Notes,
                 WorkingHours = AccumulatedHours

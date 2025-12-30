@@ -38,10 +38,10 @@ public class AttendanceService : IAttendanceService
         return _mapper.Map<AttendanceDto>(createdAttendance);
     }
 
-    public async Task<List<AttendanceDto>> GetAttendanceByMonthAsync(int year, int month)
+    public async Task<List<AttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int EmpId)
     {
         var attendance = await _attendanceRepository
-            .GetAttendanceByMonthAsync(year, month);
+            .GetAttendanceByMonthAsync(year, month, EmpId);
 
         return attendance
             .Select(a => _mapper.Map<AttendanceDto>(a))
