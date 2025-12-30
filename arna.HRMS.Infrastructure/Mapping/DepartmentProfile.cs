@@ -9,13 +9,8 @@ public class DepartmentProfile : Profile
 {
     public DepartmentProfile()
     {
-        // INSERT
         CreateMap<CreateDepartmentRequest, Department>();
-
-        // UPDATE
         CreateMap<UpdateDepartmentRequest, Department>();
-
-        // RESPONSE
         CreateMap<Department, DepartmentDto>();
     }
 }

@@ -7,7 +7,6 @@ public interface IClockService
 {
     Task<AttendanceDto?> GetAttendanceByIdAsync(int id);
     Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto AttendanceDto);
-    //Task UpdateAttendanceAsync(int id, UpdateAttendanceRequest dto);
 }
 public class ClockService(HttpClient HttpClient) : IClockService
 {
@@ -24,11 +23,4 @@ public class ClockService(HttpClient HttpClient) : IClockService
 
         return await response.Content.ReadFromJsonAsync<AttendanceDto>();
     }
-    /*public async Task UpdateAttendanceAsync(int id, UpdateAttendanceRequest dto)
-    {
-        var response =
-            await HttpClient.PutAsJsonAsync($"api/attendance/{id}", dto);
-
-        response.EnsureSuccessStatusCode();
-    }*/
 }

@@ -9,20 +9,8 @@ public class UserProfile : Profile
 {
     public UserProfile()
     {
-        // ======================
-        // INSERT
-        // ======================
         CreateMap<CreateUserRequest, User>();
-
-        // ======================
-        // UPDATE
-        // ======================
         CreateMap<UpdateUserRequest, User>();
-            
-
-        // ======================
-        // RESPONSE
-        // ======================
         CreateMap<User, UserDto>();
     }
 }

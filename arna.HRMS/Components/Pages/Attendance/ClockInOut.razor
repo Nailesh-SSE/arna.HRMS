@@ -1,7 +1,8 @@
 ﻿@implements IDisposable
+@using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Attendance
-@using arna.HRMS.Core.DTOs.Requests
+@using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
 @inject IClockService ClockService
 <style>
@@ -60,6 +61,7 @@
         .time-info-pill .value {
             font-variant-numeric: tabular-nums;
         }
+    
 </style>
 
 <div class="d-flex align-items-center gap-2">
@@ -98,6 +100,16 @@
 
 </div>
 
+@if (ShowDynamicForm)
+{
+    <div class="popup-overlay">
+        <div class="popup-card">
+            <AttendanceNoteForm Model="attendanceViewModel" OnSubmit="SubmitClockInOutAsync" OnCancel="CloseForm" />
+        </div>
+    </div>
+}
+
+
 <!-- TOAST -->
 @if (ShowToast)
 {
@@ -117,14 +129,13 @@
 }
 
 @code {
+    private AttendanceViewModel attendanceViewModel = new();
 
     private bool IsClockedIn;
-    private int? AttendanceId;
-
     private TimeOnly In;
     private TimeOnly Out;
-
-    private double AccumulatedHours = 0;
+    private double AccumulatedHours;
+    private bool? PendingClockIn;
 
     private string CurrentTime = "";
     private string? ActionLabel;
@@ -135,7 +146,9 @@
 
     private System.Timers.Timer? _timer;
 
-    // TEMP: replace with logged-in user id later
+    // Dynamic Component
+    private bool ShowDynamicForm;
+
     private int employeeId = 3;
 
     protected override void OnInitialized()
@@ -144,103 +157,94 @@
     }
 
     // =========================
-    // CLOCK IN
+    // CLOCK IN / OUT
     // =========================
-    private async Task ClockInAsync()
+    private Task ClockInAsync()
     {
         if (IsClockedIn)
-            return;
+            return Task.CompletedTask;
 
-        IsClockedIn = true;
+        PendingClockIn = true;
+        OpenNoteForm();
+        return Task.CompletedTask;
+    }
 
-        In = TimeOnly.FromDateTime(DateTime.Now);
-        ActionLabel = "Clock In";
-        ActionTime = DateTime.Now.ToString("HH:mm:ss");
+    private Task ClockOutAsync()
+    {
+        if (!IsClockedIn)
+            return Task.CompletedTask;
 
-        // CREATE attendance ONLY once per day
-        if (AttendanceId == null)
+        PendingClockIn = false;
+        OpenNoteForm();
+        return Task.CompletedTask;
+    }
+
+    private void OpenNoteForm()
+    {
+        attendanceViewModel = new AttendanceViewModel();
+        ShowDynamicForm = true;
+    }
+
+    private void CloseForm()
+    {
+        ShowDynamicForm = false;
+    }
+
+    private async Task SubmitClockInOutAsync()
+    {
+        ShowDynamicForm = false;
+
+        if (PendingClockIn==true)
         {
-            var createDto = new AttendanceDto
+            IsClockedIn = true;
+
+            In = TimeOnly.FromDateTime(DateTime.Now);
+            ActionLabel = "Clock In";
+            ActionTime = DateTime.Now.ToString("HH:mm:ss");
+
+            await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
                 CheckInTime = In.ToTimeSpan(),
-                Notes = "Clocked in",
+                Status = AttendanceStatuses.Present,
+                Notes = attendanceViewModel.Notes,
                 WorkingHours = 0
-            };
-
-            var created = await ClockService.CreateAttendanceAsync(createDto);
-            AttendanceId = created.Id;
+            });
 
             AccumulatedHours = 0;
+            await ShowNotification($"Clocked in at {ActionTime}");
         }
-
-        ShowNotification($"Clocked in at {ActionTime}");
-    }
-
-    // =========================
-    // CLOCK OUT
-    // =========================
-    private async Task ClockOutAsync()
-    {
-        if (!IsClockedIn || AttendanceId == null)
-            return;
-
-        IsClockedIn = false;
-
-        Out = TimeOnly.FromDateTime(DateTime.Now);
-        ActionLabel = "Clock Out";
-        ActionTime = DateTime.Now.ToString("HH:mm:ss");
-
-        var sessionHours =
-            (Out.ToTimeSpan() - In.ToTimeSpan()).TotalHours;
-
-        if (sessionHours < 0)
-            sessionHours = 0;
-
-        // ACCUMULATE WHOLE DAY HOURS
-        AccumulatedHours += sessionHours;
-
-        var Dto = new AttendanceDto
+        else
         {
-            EmployeeId = employeeId,
-            Date = DateTime.Today,
-            CheckOutTime = Out.ToTimeSpan(),
-            WorkingHours = AccumulatedHours,
-            Notes = "Shift Clock out"
-        };
+            IsClockedIn = false;
 
-        await ClockService.CreateAttendanceAsync(Dto);
+            Out = TimeOnly.FromDateTime(DateTime.Now);
+            ActionLabel = "Clock Out";
+            ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
-        ShowNotification(
-            $"Clocked out at {ActionTime} | Total {AccumulatedHours:F2} hrs"
-        );
+            AccumulatedHours += (Out.ToTimeSpan() - In.ToTimeSpan()).TotalHours;
+
+            await ClockService.CreateAttendanceAsync(new AttendanceDto
+            {
+                EmployeeId = employeeId,
+                Date = DateTime.Today,
+                CheckOutTime = Out.ToTimeSpan(),
+                Status = AttendanceStatuses.Present,
+                Notes = attendanceViewModel.Notes,
+                WorkingHours = AccumulatedHours
+            });
+
+            await ShowNotification($"Clocked out | {AccumulatedHours:F2} hrs");
+        }
     }
 
     // =========================
-    // STATUS CALCULATION
-    // =========================
-    private AttendanceStatuses CalculateStatus(double workingHours)
-    {
-        if (workingHours >= 7.5)
-            return AttendanceStatuses.Present;
-
-        if (workingHours < 5.0)
-            return AttendanceStatuses.HalfDay;
-
-        if (workingHours < 7.0)
-            return AttendanceStatuses.Late;
-
-        return AttendanceStatuses.Absent;
-    }
-
-    // =========================
-    // LIVE CLOCK
+    // CLOCK
     // =========================
     private void StartClock()
     {
         UpdateCurrentTime();
-
         _timer = new System.Timers.Timer(1000);
         _timer.Elapsed += (_, _) =>
         {
@@ -256,9 +260,9 @@
     }
 
     // =========================
-    // TOAST NOTIFICATION
+    // TOAST
     // =========================
-    private async void ShowNotification(string message)
+    private async Task ShowNotification(string message)
     {
         ToastMessage = message;
         ShowToast = true;
@@ -274,6 +278,6 @@
     {
         _timer?.Dispose();
     }
-}
 
+}
 
