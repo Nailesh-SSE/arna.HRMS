@@ -27,6 +27,7 @@ public class Program
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+        builder.Services.AddScoped<IClockService, ClockService>();
 
         builder.Services.AddAuthorizationCore();
         builder.Services.AddScoped<ProtectedLocalStorage>();
@@ -35,10 +36,6 @@ public class Program
         builder.Services.AddMemoryCache();
 
         builder.Services.AddBlazorBootstrap();
-        builder.Services.AddHttpClient<IClockService, ClockService>(client =>
-        {
-            client.BaseAddress = new Uri("https://localhost:7134/");  // API base URL
-        });
 
         var app = builder.Build();
 

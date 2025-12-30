@@ -6,13 +6,6 @@
 
 <PageTitle>Home</PageTitle>
 
-<style>
-    .menu-card {
-        border-radius: 30px;
-        overflow: hidden;
-    }
-</style>
-
 @if (IsLoading)
 {
     <div class="text-center">
@@ -21,72 +14,62 @@
 }
 else if (IsAuthenticated)
 {
-
     <h4 class="fw-bold mb-4">My Access</h4>
 
     <div class="container">
-
         <div class="row justify-content-center g-4 text-center">
-
             @foreach (var item in MenuItems)
             {
                 <div class="col-6 col-md-2">
                     <div class="ratio ratio-1x1 mx-auto" style="max-width:150px;">
-                        <div class="card shadow-sm border-0 menu-card d-flex justify-content-center align-items-center"
-                             role="button" @onclick='() => NavigateTo(item.Route)'>
-
+                        <div class="card shadow-sm border-0 menu-card"
+                             role="button"
+                             @onclick="() => NavigateTo(item.Route)">
                             <img src="@item.Icon"
                                  style="width:110%; height:110%; object-fit:contain;" />
-
                         </div>
                     </div>
-
                     <small class="fw-semibold d-block mt-1">@item.Label</small>
                 </div>
             }
-
         </div>
-
     </div>
 }
 else
 {
-    @if (hasCheckedAuth)
-    {
-        <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
-            <div class="text-center">
-                <div class="spinner-border text-primary mb-3" role="status">
-                    <span class="visually-hidden">Redirecting to login...</span>
-                </div>
-                <p class="text-muted">Redirecting to login page...</p>
-            </div>
-        </div>
-    }
-    else
-    {
-        <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Checking authentication...</span>
-            </div>
-        </div>
-    }
+    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
+        <div class="spinner-border text-primary"></div>
+        <p class="ms-3 text-muted">Redirecting to login...</p>
+    </div>
 }
 
 @code {
-    private bool hasCheckedAuth = false;
-    private bool _redirectInitiated = false;
-    protected bool IsLoading { get; private set; } = true;
-    protected string CurrentUserFullName { get; private set; } = string.Empty;
     private bool IsAuthenticated;
+    private bool IsLoading = true;
+    private bool _redirectInitiated;
+    private string CurrentUserFullName = string.Empty;
     private record MenuItem(string Label, string Icon, string Route);
 
     protected override async Task OnInitializedAsync()
     {
+        AuthProvider.AuthenticationStateChanged += OnAuthStateChanged;
+
         var authState = await AuthProvider.GetAuthenticationStateAsync();
+        await UpdateAuthState(authState);
+    }
+
+    private async void OnAuthStateChanged(Task<AuthenticationState> task)
+    {
+        var authState = await task;
+        await UpdateAuthState(authState);
+    }
+
+    private async Task UpdateAuthState(AuthenticationState authState)
+    {
         var user = authState.User;
 
         IsAuthenticated = user.Identity?.IsAuthenticated == true;
-        hasCheckedAuth = true;
+
         if (IsAuthenticated)
         {
             CurrentUserFullName =
@@ -96,20 +79,16 @@ else
         }
 
         IsLoading = false;
-    }
+        await InvokeAsync(StateHasChanged);
 
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (!_redirectInitiated && hasCheckedAuth && !IsAuthenticated)
+        if (!IsAuthenticated && !_redirectInitiated)
         {
             _redirectInitiated = true;
-            var currentRelativeUrL = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-
-            NavigationManager.NavigateTo($"/login?returnUrl={Uri.EscapeDataString("/" + currentRelativeUrL)}", forceLoad: true);
+            NavigationManager.NavigateTo("/login");
         }
     }
 
-    private List<MenuItem> MenuItems = new()
+    private readonly List<MenuItem> MenuItems = new()
     {
         new("Task Box", "icons/Task.png", "/taskbox"),
         new("Employees", "icons/employees.png", "/employee/employeelist"),
@@ -123,5 +102,10 @@ else
     private void NavigateTo(string route)
     {
         NavigationManager.NavigateTo(route);
+    }
+
+    public void Dispose()
+    {
+        AuthProvider.AuthenticationStateChanged -= OnAuthStateChanged;
     }
 }

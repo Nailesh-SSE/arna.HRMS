@@ -1,28 +1,28 @@
 ﻿@inherits LayoutComponentBase
 
-<style>
-    .sidebar {
-        width: 260px;
-        transition: width .3s;
-    }
+<CascadingValue Value="Collapsed">
+    <div class="d-flex min-vh-100 bg-light">
 
-    .sidebar.collapsed {
-        width: 80px;
-    }
+        <NavMenu OnToggle="ToggleSidebar" />
 
-    .sidebar.collapsed .sidebar-text {
-        display: none;
-    }
-</style>
+        <div class="flex-grow-1 d-flex flex-column"
+             style="margin-left:@(Collapsed ? "80px" : "264px"); transition: margin-left .3s;">
 
-<div class="d-flex bg-light min-vh-100">
+            <TopBar />
 
-    <NavMenu />
+            <main class="flex-grow-1 p-4">
+                @Body
+            </main>
+        </div>
 
-    <div class="flex-grow-1" style="margin-left:260px;">
-        <TopBar/>
-        <main class="p-4">
-            @Body
-        </main>
     </div>
-</div>
+</CascadingValue>
+
+@code {
+    private bool Collapsed;
+
+    private void ToggleSidebar()
+    {
+        Collapsed = !Collapsed;
+    }
+}

@@ -19,60 +19,35 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request)
     {
-        try
-        {
-            // Find user by username
-            var user = await _userServices.GetUserByUserNameAndEmail(request.Email);
-
-            if (user == null)
-            {
-                return new AuthResponse
-                {
-                    IsSuccess = false,
-                    Message = "Invalid username or password"
-                };
-            }
-
-            // Verify password (assuming PasswordHash contains hashed password)
-            if (!VerifyPassword(request.Password, user.PasswordHash))
-            {
-                return new AuthResponse
-                {
-                    IsSuccess = false,
-                    Message = "Invalid username or password"
-                };
-            }
-
-            // Generate tokens
-            var accessToken = _jwtService.GenerateAccessToken(user);
-            var refreshToken = _jwtService.GenerateRefreshToken();
-
-            // Save refresh token
-            await _jwtService.SaveRefreshTokenAsync(user.Id, refreshToken);
-
-            return new AuthResponse
-            {
-                Token = accessToken,
-                RefreshToken = refreshToken,
-                Expiration = DateTime.UtcNow.AddDays(8),
-                UserId = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                FullName = user.FullName,
-                Password = user.Password,
-                Role = user.Role,
-                IsSuccess = true,
-                Message = "Login successful"
-            };
-        }
-        catch (Exception)
+        var user = await _userServices.GetUserByUserNameAndEmail(request.Email);
+        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
         {
             return new AuthResponse
             {
                 IsSuccess = false,
-                Message = "An error occurred during login"
+                Message = "Invalid credentials"
             };
         }
+
+        var accessToken = _jwtService.GenerateAccessToken(user);
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        await _jwtService.SaveRefreshTokenAsync(user.Id, refreshToken);
+
+        return new AuthResponse
+        {
+            IsSuccess = true,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            Expiration = DateTime.UtcNow.AddMinutes(2),
+            UserId = user.Id,
+            Username = user.Username,
+            FullName = user.FullName,
+            Role = user.Role,
+            Password = user.Password,
+            Email = user.Username,
+            Message = "Login successful"
+        };
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -114,16 +89,17 @@ public class AuthService : IAuthService
 
             return new AuthResponse
             {
-                Token = accessToken,
+                IsSuccess = true,
+                AccessToken = accessToken,
                 RefreshToken = refreshToken,
-                Expiration = DateTime.UtcNow.AddDays(8),
+                Expiration = DateTime.UtcNow.AddMinutes(2),
                 UserId = user.Id,
                 Username = user.Username,
-                Email = user.Email,
                 FullName = user.FullName,
                 Role = user.Role,
-                IsSuccess = true,
-                Message = "Registration successful"
+                Password = user.Password,
+                Email = user.Username,
+                Message = "Login successful"
             };
         }
         catch (Exception)
@@ -134,6 +110,11 @@ public class AuthService : IAuthService
                 Message = "An error occurred during registration"
             };
         }
+    }
+
+    public async Task LogoutAsync(int userId)
+    {
+        await _jwtService.RevokeRefreshTokenAsync(userId);
     }
 
     private bool VerifyPassword(string password, string passwordHash)
