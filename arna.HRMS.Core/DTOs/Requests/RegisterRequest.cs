@@ -35,4 +35,7 @@ public class RegisterRequest
     [StringLength(20)]
     [Phone(ErrorMessage = "Invalid phone number format.")]
     public string PhoneNumber { get; set; }
+
+    [Required(ErrorMessage = "Employee Id is required.")]
+    public int EmployeeId { get; set; }
 }

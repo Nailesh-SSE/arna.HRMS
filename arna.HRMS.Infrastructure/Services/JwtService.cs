@@ -33,6 +33,7 @@ public class JwtService : IJwtService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim("UserId", user.Id.ToString()),
             new Claim("UserRole", user.Role.ToString()),
+            new Claim("EmployeeId", user.EmployeeId.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
         };
@@ -45,7 +46,7 @@ public class JwtService : IJwtService
             issuer: _configuration["JwtSettings:Issuer"],
             audience: _configuration["JwtSettings:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(2),
+            expires: DateTime.UtcNow.AddMinutes(10),
             signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         );
 
@@ -64,7 +65,7 @@ public class JwtService : IJwtService
             if (user != null)
             {
                 user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(2); 
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(10); 
                 await _context.SaveChangesAsync();
             }
         }
