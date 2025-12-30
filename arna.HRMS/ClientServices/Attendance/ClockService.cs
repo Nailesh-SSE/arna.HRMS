@@ -5,17 +5,10 @@ namespace arna.HRMS.ClientServices.Attendance;
 
 public interface IClockService
 {
-    Task<AttendanceDto?> GetAttendanceByIdAsync(int id);
     Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto AttendanceDto);
 }
 public class ClockService(HttpClient HttpClient) : IClockService
 {
-    public async Task<AttendanceDto?> GetAttendanceByIdAsync(int id)
-    {
-        var response = await HttpClient.GetFromJsonAsync<AttendanceDto>($"api/Attendance/{id}");
-        return response;
-    }
-
     public async Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto attendanceDto)
     {
         var response = await HttpClient.PostAsJsonAsync("api/Attendance", attendanceDto);
