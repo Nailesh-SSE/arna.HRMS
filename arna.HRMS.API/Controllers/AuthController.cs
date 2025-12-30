@@ -25,8 +25,31 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request)
     {
-        var result = await _authService.LoginAsync(request);
-        return result.IsSuccess ? Ok(result) : Unauthorized(result);
+        try
+        {
+            var result = await _authService.LoginAsync(request);
+
+            if (result.IsSuccess)
+            {
+                //TestTokenStore.Token = result.AccessToken;
+                _logger.LogInformation($"User '{request.Email}' logged in successfully");
+                return Ok(result);
+            }
+            else
+            {
+                _logger.LogWarning($"Login failed for user '{request.Email}': {result.Message}");
+                return Unauthorized(result);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error during login for user '{request.Email}'");
+            return StatusCode(500, new AuthResponse
+            {
+                IsSuccess = false,
+                Message = "An internal error occurred during login"
+            });
+        }
     }
 
     [HttpPost("register")]
@@ -38,7 +61,7 @@ public class AuthController : ControllerBase
 
             if (result.IsSuccess)
             {
-                TestTokenStore.Token = result.AccessToken;
+                //TestTokenStore.Token = result.AccessToken;
                 _logger.LogInformation($"New user '{request.Username}' registered successfully");
                 return Ok(result);
             }

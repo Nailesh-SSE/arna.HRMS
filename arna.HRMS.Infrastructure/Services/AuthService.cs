@@ -46,6 +46,7 @@ public class AuthService : IAuthService
             Role = user.Role,
             Password = user.Password,
             Email = user.Username,
+            EmployeeId = user.EmployeeId,
             Message = "Login successful"
         };
     }
@@ -75,7 +76,8 @@ public class AuthService : IAuthService
                 PhoneNumber = request.PhoneNumber,
                 Password = request.Password,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                EmployeeId = request.EmployeeId
             };
 
             await _userServices.CreateUserAsync(user);
@@ -99,6 +101,7 @@ public class AuthService : IAuthService
                 Role = user.Role,
                 Password = user.Password,
                 Email = user.Username,
+                EmployeeId = user.EmployeeId,
                 Message = "Login successful"
             };
         }
