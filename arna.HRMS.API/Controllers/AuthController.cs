@@ -1,8 +1,10 @@
 ﻿using arna.HRMS.Core.DTOs.Requests;
 using arna.HRMS.Core.DTOs.Responses;
 using arna.HRMS.Infrastructure.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using RegisterRequest = arna.HRMS.Core.DTOs.Requests.RegisterRequest;
 
 namespace arna.HRMS.API.Controllers;
@@ -21,33 +23,10 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request)
     {
-        try
-        {
-            var result = await _authService.LoginAsync(request);
-
-            if (result.IsSuccess)
-            {
-                TestTokenStore.Token = result.Token;
-                _logger.LogInformation($"User '{request.Email}' logged in successfully");
-                return Ok(result);
-            }
-            else
-            {
-                _logger.LogWarning($"Login failed for user '{request.Email}': {result.Message}");
-                return BadRequest(result);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"Error during login for user '{request.Email}'");
-            return StatusCode(500, new AuthResponse
-            {
-                IsSuccess = false,
-                Message = "An internal error occurred during login"
-            });
-        }
+        var result = await _authService.LoginAsync(request);
+        return result.IsSuccess ? Ok(result) : Unauthorized(result);
     }
 
     [HttpPost("register")]
@@ -59,7 +38,7 @@ public class AuthController : ControllerBase
 
             if (result.IsSuccess)
             {
-                TestTokenStore.Token = result.Token;
+                TestTokenStore.Token = result.AccessToken;
                 _logger.LogInformation($"New user '{request.Username}' registered successfully");
                 return Ok(result);
             }
@@ -80,19 +59,12 @@ public class AuthController : ControllerBase
         }
     }
 
+    [Authorize]
     [HttpPost("logout")]
-    public ActionResult LogOut()
+    public async Task<IActionResult> Logout()
     {
-        try
-        {
-            TestTokenStore.Token = null;
-            _logger.LogInformation("User logged out successfully");
-            return Ok(new { IsSuccess = true, Message = "Logged out successfully" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during logout");
-            return StatusCode(500, new { IsSuccess = false, Message = "An internal error occurred during logout" });
-        }
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        await _authService.LogoutAsync(userId);
+        return Ok();
     }
 }

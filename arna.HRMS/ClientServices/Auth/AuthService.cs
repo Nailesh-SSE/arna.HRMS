@@ -5,25 +5,26 @@ namespace arna.HRMS.ClientServices.Auth;
 
 public interface IAuthService
 {
-    Task<AuthResponse> LoginAsync(LoginRequest request);
+    Task<bool> LoginAsync(LoginRequest request);
+    Task LogoutAsync();
 }
 
-public class AuthService(HttpClient HttpClient) : IAuthService
+public class AuthService(HttpClient HttpClient, CustomAuthStateProvider CustomAuthStateProvider) : IAuthService
 {
-    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    public async Task<bool> LoginAsync(LoginRequest request)
     {
         var response = await HttpClient.PostAsJsonAsync("api/auth/login", request);
+        if (!response.IsSuccessStatusCode) return false;
 
-        if (!response.IsSuccessStatusCode)
-        {
-            return new AuthResponse
-            {
-                IsSuccess = false,
-                Message = "Invalid email or password"
-            };
-        }
+        var auth = await response.Content.ReadFromJsonAsync<AuthResponse>();
+        await CustomAuthStateProvider.SetTokenAsync(auth!.AccessToken);
 
-        return await response.Content.ReadFromJsonAsync<AuthResponse>()
-               ?? new AuthResponse { IsSuccess = false };
+        return true;
+    }
+
+    public async Task LogoutAsync()
+    {
+        await HttpClient.PostAsync("api/auth/logout", null);
+        await CustomAuthStateProvider.ClearTokenAsync();
     }
 }

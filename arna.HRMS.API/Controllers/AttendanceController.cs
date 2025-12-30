@@ -1,11 +1,10 @@
-﻿using AutoMapper;
-using arna.HRMS.Core.DTOs.Requests;
+﻿using arna.HRMS.Core.DTOs.Requests;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Models.DTOs;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection.Metadata.Ecma335;
 
 namespace arna.HRMS.API.Controllers;
 
