@@ -48,28 +48,10 @@ public class AttendanceController : ControllerBase
             new { id = createdAttendance.Id },
             _mapper.Map<AttendanceDto>(createdAttendance));
     }
-    //[HttpPut("{id}")]
-    ////[Authorize(Roles = "Admin,HR")]
-    //public async Task<IActionResult> UpdateAttendance(int id, UpdateAttendanceRequest dto)
-    //{
-    //    if (id != dto.Id)
-    //        return BadRequest();
-
-    //    // 1️⃣ Load EXISTING ENTITY
-    //    var attendance =
-    //        await _AttendanceService.GetAttendanceEntityByIdAsync(id);
-
-    //    if (attendance == null)
-    //        return NotFound();
-
-    //    // 2️⃣ Map DTO → EXISTING entity
-    //    _mapper.Map(dto, attendance);
-
-    //    // 3️⃣ Save
-    //    await _AttendanceService.UpdateAttendanceAsync(attendance);
-
-    //    return NoContent();
-    //}
-
-
+    [HttpGet("by-month")]
+    public async Task<ActionResult<IEnumerable<AttendanceDto>>> GetAttendanceByMonth(int year,int month)
+    {
+        var attendance = await _AttendanceService.GetAttendanceByMonthAsync(year, month);
+        return Ok(attendance);
+    }
 }

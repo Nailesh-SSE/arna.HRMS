@@ -49,3 +49,33 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+/* POPUP CONTAINER */
+.popup-overlay {
+    position: fixed;
+    top: 90px; /* below top bar */
+    right: 24px;
+    z-index: 3000;
+}
+
+/* POPUP CARD */
+.popup-card {
+    width: 360px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    padding: 16px;
+    animation: slideIn 0.25s ease-out;
+}
+
+/* ANIMATION */
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

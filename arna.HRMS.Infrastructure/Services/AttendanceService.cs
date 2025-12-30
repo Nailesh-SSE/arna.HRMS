@@ -37,14 +37,14 @@ public class AttendanceService : IAttendanceService
         var createdAttendance = await _attendanceRepository.CreateAttendanceDtoAsync(attendance);
         return _mapper.Map<AttendanceDto>(createdAttendance);
     }
-    //public async Task<AttendanceDto> UpdateAttendanceAsync(Attendance attendance)
-    //{
-    //    var updatedAttendance = await _attendanceRepository.UpdateAttendanceAsync(attendance);
-    //    return _mapper.Map<AttendanceDto>(updatedAttendance);
-    //}
-    //public async Task<Attendance?> GetAttendanceEntityByIdAsync(int id)
-    //{
-    //    return await _attendanceRepository.GetAttendanceByIdAsync(id);
-    //}
 
+    public async Task<List<AttendanceDto>> GetAttendanceByMonthAsync(int year, int month)
+    {
+        var attendance = await _attendanceRepository
+            .GetAttendanceByMonthAsync(year, month);
+
+        return attendance
+            .Select(a => _mapper.Map<AttendanceDto>(a))
+            .ToList();
+    }
 }
