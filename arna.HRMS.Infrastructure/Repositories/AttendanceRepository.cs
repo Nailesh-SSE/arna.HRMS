@@ -27,9 +27,9 @@ public class AttendanceRepository
     {
         return _baseRepository.AddAsync(attendance);
     }
-    public async Task<IEnumerable<Attendance>> GetAttendanceByMonthAsync(int year, int month)
+    public async Task<IEnumerable<Attendance>> GetAttendanceByMonthAsync(int year, int month, int EmpId)
     {
         var allAttendance = await _baseRepository.GetAllAsync();
-        return allAttendance.Where(a => a.Date.Year == year && a.Date.Month == month);
+        return allAttendance.Where(a => a.Date.Year == year && a.Date.Month == month && a.EmployeeId == EmpId);
     }
 }
