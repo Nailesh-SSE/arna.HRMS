@@ -1,0 +1,85 @@
+﻿@using arna.HRMS.Models.DTOs
+
+<div class="calendar-container">
+
+    <!-- Week Header -->
+    <div class="calendar-header">
+        @foreach (var d in WeekDays)
+        {
+            <div>@d</div>
+        }
+    </div>
+
+    <!-- Calendar Grid -->
+    <div class="calendar-grid">
+        @foreach (var day in CalendarDays)
+        {
+            if (day is null)
+            {
+                <div class="calendar-cell empty"></div>
+            }
+            else
+            {
+                AttendanceLookup.TryGetValue(
+                    DateOnly.FromDateTime(day.Value),
+                    out var attendance
+                );
+
+                <div class="calendar-cell">
+                    <div class="date">@day.Value.Day</div>
+
+                    @if (attendance != null)
+                    {
+                        <div class="attendance-icon-wrapper">
+                            <AttendanceIcon Status="@attendance.Status" />
+                        </div>
+
+                        <div class="hours">
+                            @attendance.TotalHours.ToString("0.0") hrs
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="calendar-status muted">No Data</span>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public int Year { get; set; }
+
+    [Parameter, EditorRequired]
+    public int Month { get; set; }
+
+    [Parameter, EditorRequired]
+    public Dictionary<DateOnly, MonthlyAttendanceDto> AttendanceLookup { get; set; } = new();
+
+    private List<DateTime?> CalendarDays = new();
+
+    private static readonly string[] WeekDays =
+        { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+
+    protected override void OnParametersSet()
+    {
+        BuildCalendar();
+    }
+
+    private void BuildCalendar()
+    {
+        CalendarDays.Clear();
+
+        var firstDay = new DateTime(Year, Month, 1);
+        int daysInMonth = DateTime.DaysInMonth(Year, Month);
+
+        for (int i = 0; i < (int)firstDay.DayOfWeek; i++)
+            CalendarDays.Add(null);
+
+        for (int d = 1; d <= daysInMonth; d++)
+            CalendarDays.Add(new DateTime(Year, Month, d));
+    }
+}
