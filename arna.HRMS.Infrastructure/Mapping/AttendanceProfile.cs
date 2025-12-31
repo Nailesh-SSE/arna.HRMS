@@ -12,7 +12,9 @@ public class AttendanceProfile : Profile
         CreateMap<CreateAttendanceRequest, Attendance>()
             .ForMember(dest => dest.ClockIn,
                 opt => opt.MapFrom(src =>
-                    src.Date.Date + src.ClockInTime))
+                    src.ClockInTime.HasValue
+                        ? src.Date.Date + src.ClockInTime.Value
+                        : (DateTime?)null))
             .ForMember(dest => dest.ClockOut,
                 opt => opt.MapFrom(src =>
                     src.ClockOutTime.HasValue
