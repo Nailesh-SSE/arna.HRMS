@@ -6,9 +6,12 @@
 @using arna.HRMS.ClientServices.Users
 @using arna.HRMS.Core.Enums
 @using arna.HRMS.Models.DTOs
+@using arna.HRMS.ClientServices.Common
+
 @inject IUsersService UsersService
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
 
 <div class="container py-4">
 
@@ -36,8 +39,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Username</label>
                             <InputText class="form-control"
-                                       autocomplete="new-username"
-                                       @bind-Value="user.Username" />
+                            autocomplete="new-username"
+                            @bind-Value="user.Username" />
                             <ValidationMessage For="@(() => user.Username)" />
                         </div>
 
@@ -45,8 +48,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
                             <InputText class="form-control"
-                                       autocomplete="off"
-                                       @bind-Value="user.Email" />
+                            autocomplete="off"
+                            @bind-Value="user.Email" />
                             <ValidationMessage For="@(() => user.Email)" />
                         </div>
 
@@ -54,8 +57,8 @@
                         <div class="col-md-6">
                             <label class="form-label">First Name</label>
                             <InputText class="form-control"
-                                       autocomplete="off"
-                                       @bind-Value="user.FirstName" />
+                            autocomplete="off"
+                            @bind-Value="user.FirstName" />
                             <ValidationMessage For="@(() => user.FirstName)" />
                         </div>
 
@@ -63,8 +66,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Last Name</label>
                             <InputText class="form-control"
-                                       autocomplete="off"
-                                       @bind-Value="user.LastName" />
+                            autocomplete="off"
+                            @bind-Value="user.LastName" />
                             <ValidationMessage For="@(() => user.LastName)" />
                         </div>
 
@@ -72,8 +75,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Phone Number</label>
                             <InputText class="form-control"
-                                       autocomplete="off"
-                                       @bind-Value="user.PhoneNumber" />
+                            autocomplete="off"
+                            @bind-Value="user.PhoneNumber" />
                             <ValidationMessage For="@(() => user.PhoneNumber)" />
                         </div>
 
@@ -81,7 +84,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Employee</label>
                             <InputSelect class="form-select"
-                                         @bind-Value="user.EmployeeId">
+                            @bind-Value="user.EmployeeId">
                                 <option value="">Select Employee</option>
                                 @foreach (var emp in employees)
                                 {
@@ -95,8 +98,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Role</label>
                             <InputSelect TValue="UserRole?"
-                                         class="form-select"
-                                         @bind-Value="user.Role">
+                            class="form-select"
+                            @bind-Value="user.Role">
                                 <option value="">Select Role</option>
                                 @foreach (var role in Enum.GetValues<UserRole>())
                                 {
@@ -110,8 +113,8 @@
                         <div class="col-md-6">
                             <label class="form-label">Password</label>
                             <InputText class="form-control"
-                                       autocomplete="new-password"
-                                       @bind-Value="user.Password" />
+                            autocomplete="new-password"
+                            @bind-Value="user.Password" />
                             <ValidationMessage For="@(() => user.Password)" />
                         </div>
 
@@ -120,7 +123,7 @@
                         {
                             <div class="col-md-6 mt-4">
                                 <InputCheckbox class="form-check-input"
-                                               @bind-Value="user.IsActive" />
+                                @bind-Value="user.IsActive" />
                                 <label class="form-check-label">Active</label>
                             </div>
                         }
@@ -128,13 +131,13 @@
 
                     <div class="mt-5 d-flex justify-content-end gap-3">
                         <button type="button"
-                                class="btn btn-outline-secondary"
-                                @onclick="GoBack">
+                        class="btn btn-outline-secondary"
+                        @onclick="GoBack">
                             Back
                         </button>
 
                         <button type="submit"
-                                class="btn btn-primary px-4">
+                        class="btn btn-primary px-4">
                             @(IsEditMode ? "Update" : "Save")
                         </button>
                     </div>
@@ -172,6 +175,7 @@
             }
             else
             {
+                NotificationService.Error("User not found.");
                 NavigationManager.NavigateTo("/users");
             }
         }
@@ -195,8 +199,11 @@
 
             if (!result.IsSuccess)
             {
+                NotificationService.Error(result.ErrorMessage ?? "Failed to update user.");
                 return;
             }
+
+            NotificationService.Success("User updated successfully.");
         }
         else
         {
@@ -204,8 +211,11 @@
 
             if (!result.IsSuccess)
             {
+                NotificationService.Error(result.ErrorMessage ?? "Failed to create user.");
                 return;
             }
+
+            NotificationService.Success("User created successfully.");
         }
 
         NavigationManager.NavigateTo("/users");

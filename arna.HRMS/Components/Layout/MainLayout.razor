@@ -1,4 +1,12 @@
-﻿@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase 
+@using arna.HRMS.ClientServices.Common
+@inject NotificationService NotificationService
+
+<Toasts Messages="NotificationService.Messages"
+        Placement="ToastsPlacement.BottomRight"
+        AutoHide="true"
+        Delay="4000" />
+
 
 <CascadingValue Value="Collapsed">
     <div class="d-flex min-vh-100 bg-light">

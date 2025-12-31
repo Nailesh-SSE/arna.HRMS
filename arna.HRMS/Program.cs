@@ -26,7 +26,10 @@ public class Program
             client.BaseAddress = new Uri("https://localhost:7134/");
         });
 
+        // Common Services
         builder.Services.AddScoped<HttpService>();
+        builder.Services.AddScoped<NotificationService>();
+
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
