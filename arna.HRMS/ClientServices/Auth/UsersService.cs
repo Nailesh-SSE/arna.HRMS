@@ -27,14 +27,24 @@ public class UsersService(HttpClient HttpClient) : IUsersService
 
     public async Task<UserDto?> GetUserByIdAsync(int id)
     {
-        var response = await HttpClient.GetFromJsonAsync<UserDto>($"api/users/{id}");
-        return response;
+        var response = await HttpClient.GetAsync($"api/users/{id}");
+        if(response.IsSuccessStatusCode)
+        {
+            var user = await response.Content.ReadFromJsonAsync<UserDto>();
+            return user;
+        }
+        return new UserDto();
     }
 
     public async Task<UserDto?> GetUserByNameAsync(string userName)
     {
-        var response = await HttpClient.GetFromJsonAsync<UserDto>($"api/users/byname/{userName}");
-        return response;
+        var response = await HttpClient.GetAsync($"api/users/byname/{userName}");
+        if(response.IsSuccessStatusCode)
+        {
+            var user = await response.Content.ReadFromJsonAsync<UserDto>();
+            return user;
+        }
+        return new UserDto();
     }
 
     public async Task<UserDto> CreateUserAsync(UserDto userDto)
@@ -46,18 +56,7 @@ public class UsersService(HttpClient HttpClient) : IUsersService
 
     public async Task UpdateUserAsync(int id, UserDto userDto)
     {
-        var updateRequest = new UserDto
-        {
-            Id = userDto.Id,
-            Username = userDto.Username,
-            Email = userDto.Email,
-            Password = userDto.Password,
-            FirstName = userDto.FirstName,
-            LastName = userDto.LastName,
-            Role = userDto.Role,
-            IsActive = userDto.IsActive
-        };
-        var response = await HttpClient.PutAsJsonAsync($"api/users/{id}", updateRequest);
+        var response = await HttpClient.PutAsJsonAsync($"api/users/{id}", userDto);
         response.EnsureSuccessStatusCode();
     }
 

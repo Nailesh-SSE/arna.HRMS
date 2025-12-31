@@ -1,0 +1,176 @@
+﻿@page "/users/create"
+@page "/users/edit/{Id:int}"
+
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Core.Enums
+@inject IUsersService UsersService
+@inject NavigationManager NavigationManager
+
+<div class="container py-4">
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                @(IsEditMode ? "Edit User" : "Create User")
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            @if (isLoading)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                <EditForm Model="user" OnValidSubmit="HandleValidSubmit" autocomplete="off">
+                    <DataAnnotationsValidator />
+
+                    <div class="row g-4">
+
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            <label class="form-label">Username</label>
+                            <InputText class="form-control"
+                                       autocomplete="new-username"
+                                       @bind-Value="user.Username" />
+                            <ValidationMessage For="@(() => user.Username)" />
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <InputText class="form-control"
+                                       autocomplete="email"
+                                       @bind-Value="user.Email" />
+                            <ValidationMessage For="@(() => user.Email)" />
+                        </div>
+
+                        <!-- First Name -->
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <InputText class="form-control"
+                                       autocomplete="off"
+                                       @bind-Value="user.FirstName" />
+                            <ValidationMessage For="@(() => user.FirstName)" />
+                        </div>
+
+                        <!-- Last Name -->
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <InputText class="form-control"
+                                       autocomplete="off"
+                                       @bind-Value="user.LastName" />
+                            <ValidationMessage For="@(() => user.LastName)" />
+                        </div>
+
+                        <!-- Phone -->
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number</label>
+                            <InputText class="form-control"
+                                       autocomplete="off"
+                                       @bind-Value="user.PhoneNumber" />
+                            <ValidationMessage For="@(() => user.PhoneNumber)" />
+                        </div>
+
+                        <!-- Employee -->
+                        <div class="col-md-6">
+                            <label class="form-label">Employee</label>
+                            <InputNumber class="form-control"
+                                         @bind-Value="user.EmployeeId" />
+                            <ValidationMessage For="@(() => user.EmployeeId)" />
+                        </div>
+
+                        <!-- ROLE -->
+                        <div class="col-md-6">
+                            <label class="form-label">Role</label>
+                            <InputSelect TValue="UserRole?"
+                                         class="form-select"
+                                         @bind-Value="user.Role">
+                                <option value="">Select Role</option>
+                                @foreach (var role in Enum.GetValues<UserRole>())
+                                {
+                                    <option value="@role">@role</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => user.Role)" />
+                        </div>
+
+                        <!-- PASSWORD -->
+                        <div class="col-md-6">
+                            <label class="form-label">Password</label>
+                            <InputText class="form-control"
+                                       autocomplete="new-password"
+                                       @bind-Value="user.Password" />
+                            <ValidationMessage For="@(() => user.Password)" />
+                        </div>
+
+                        <!-- Active (EDIT ONLY) -->
+                        @if (IsEditMode)
+                        {
+                            <div class="col-md-6 mt-4">
+                                <InputCheckbox class="form-check-input"
+                                               @bind-Value="user.IsActive" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-5 d-flex justify-content-end gap-3">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                @onclick="GoBack">
+                            Back
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary px-4">
+                            Save
+                        </button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private UserDto user = new();
+    private bool isLoading = true;
+
+    private bool IsEditMode => Id.HasValue;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id.HasValue)
+        {
+            user = await UsersService.GetUserByIdAsync(Id.Value) ?? new UserDto();
+        }
+        else
+        {
+            user = new UserDto
+            {
+                IsActive = true,
+                Role = null
+            };
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (IsEditMode)
+            await UsersService.UpdateUserAsync(Id!.Value, user);
+        else
+            await UsersService.CreateUserAsync(user);
+
+        NavigationManager.NavigateTo("/users");
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/users");
+}
