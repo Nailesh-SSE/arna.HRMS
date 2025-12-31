@@ -47,4 +47,6 @@ public class User : BaseEntity
 
     [Required]
     public int EmployeeId { get; set; }
+
+    public Employee Employee { get; set; }
 }

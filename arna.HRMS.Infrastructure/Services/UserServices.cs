@@ -20,46 +20,41 @@ public class UserServices : IUserServices
     public async Task<List<UserDto>> GetUserAsync()
     {
         var users = await _userRepository.GetUserAsync();
-        return users.Select(e => _mapper.Map<UserDto>(e)).ToList();
+        return _mapper.Map<List<UserDto>>(users);
     }
 
     public async Task<UserDto?> GetUserByIdAsync(int id)
     {
         var user = await _userRepository.GetUserByIdAsync(id);
-        if (user == null) return null;
-        var userDto = _mapper.Map<UserDto>(user);
-        return userDto;
+        return user == null ? null : _mapper.Map<UserDto>(user);
     }
 
-    public async Task<UserDto> CreateUserAsync(User user)
+    public async Task<UserDto> CreateUserAsync(UserDto dto)
     {
-        var createdUser = await _userRepository.CreateUserAsync(user);
-        return _mapper.Map<UserDto>(createdUser);
+        var user = _mapper.Map<User>(dto);
+        var created = await _userRepository.CreateUserAsync(user);
+        return _mapper.Map<UserDto>(created);
     }
 
-    public async Task<UserDto> UpdateUserAsync(User user)
+    public async Task<UserDto> UpdateUserAsync(UserDto dto)
     {
-        var updatedUser = await _userRepository.UpdateUserAsync(user);
-        return _mapper.Map<UserDto>(updatedUser);
+        var user = _mapper.Map<User>(dto);
+        var updated = await _userRepository.UpdateUserAsync(user);
+        return _mapper.Map<UserDto>(updated);
     }
 
     public async Task<bool> DeleteUserAsync(int id)
     {
-        var userDelete = await _userRepository.DeleteUserAsync(id);
-        return userDelete;
+        return await _userRepository.DeleteUserAsync(id);
     }
 
-    public async Task<bool> UserExistsAsync(string userName, string email)
+    public async Task<bool> UserExistsAsync(string username, string email)
     {
-        var users = await _userRepository.GetUserAsync();
-        return users.Any(u => u.Username == userName || u.Email == email);
+        return await _userRepository.UserExistsAsync(username, email);
     }
 
-    public async Task<User?> GetUserByUserNameAndEmail(string userNameOrEmail)
+    public async Task<User?> GetUserByUserNameAndEmail(string usernameOrEmail)
     {
-        var users = await _userRepository.GetUserAsync();
-        var user = users.FirstOrDefault(x => x.Username.ToLower() == userNameOrEmail.ToLower() || x.Email.ToLower() == userNameOrEmail.ToLower()) ?? null; 
-        if (user == null) return null;
-        return user;
+        return await _userRepository.GetByUsernameOrEmailAsync(usernameOrEmail);
     }
 }

@@ -1,5 +1,4 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Models.DTOs;
 
 namespace arna.HRMS.ClientServices.Employee;
 

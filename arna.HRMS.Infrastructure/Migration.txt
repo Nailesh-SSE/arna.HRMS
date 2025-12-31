@@ -1,43 +1,43 @@
 
 Set Default Project
 
-Make sure the default project is EmployeeManagement.Infrastructure before running commands.
+Make sure the default project is arna.HRMS.Infrastructure before running commands.
 
 1. Create Migration
   .NET CLI
 
-  dotnet ef migrations add <MigrationName> --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+  dotnet ef migrations add <MigrationName> --project arna.HRMS.Infrastructure/arna.HRMS.Infrastructure --startup-project arna.HRMS/arna.HRMS.csproj --context ApplicationDbContext
 
   Package Manager Console
 
-  Add-Migration <MigrationName> -s EmployeeManagement.API
+  Add-Migration <MigrationName> -s arna.HRMS.API
   
 
 2. Update Database (apply latest migration)
   .NET CLI
 
-  dotnet ef database update --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+  dotnet ef database update --project arna.HRMS.Infrastructure/arna.HRMS.Infrastructure --startup-project arna.HRMS/arna.HRMS.csproj --context ApplicationDbContext
 
   Package Manager Console (PMC)
 
-  Update-Database -s EmployeeManagement.API
+  Update-Database -s arna.HRMS.API
 
 
 3. Update Database to a Specific Migration
   .NET CLI
 
-  dotnet ef database update <MigrationName> --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+  dotnet ef database update <MigrationName> --project arna.HRMS.Infrastructure/arna.HRMS.Infrastructure --startup-project arna.HRMS/arna.HRMS.csproj --context ApplicationDbContext
 
   Package Manager Console (PMC)
 
-  Update-Database <MigrationName> -s EmployeeManagement.API
+  Update-Database <MigrationName> -s arna.HRMS.API
 
 
 4. Remove Last Migration (Rollback before applying)
    .NET CLI
    
-   dotnet ef migrations remove --project EmployeeManagement.Infrastructure/EmployeeManagement.Infrastructure --startup-project EmployeeManagement/EmployeeManagement.csproj --context ApplicationDbContext
+   dotnet ef migrations remove --project arna.HRMS.Infrastructure/arna.HRMS.Infrastructure --startup-project arna.HRMS/arna.HRMS.csproj --context ApplicationDbContext
 
    Package Manager Console (PMC)
 
-   Remove-Migration -s EmployeeManagement.API
+   Remove-Migration -s arna.HRMS.API
