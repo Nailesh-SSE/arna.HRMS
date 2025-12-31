@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
 
@@ -12,9 +13,9 @@ public class UserRepository
         _baseRepository = baseRepository;
     }
 
-    public Task<IEnumerable<User>> GetUserAsync()
+    public async Task<IEnumerable<User>> GetUserAsync()
     {
-        return _baseRepository.GetAllAsync();
+        return await _baseRepository.Query().Where(x => x.IsActive && !x.IsDeleted).ToListAsync();
     }
 
     public async Task<User?> GetUserByIdAsync(int id)
@@ -33,8 +34,19 @@ public class UserRepository
         return _baseRepository.UpdateAsync(User);
     }
 
-    public Task<bool> DeleteUserAsync(int id)
+    public async Task<bool> DeleteUserAsync(int id)
     {
-        return _baseRepository.DeleteAsync(id);
+        var user = await _baseRepository.GetByIdAsync(id).ConfigureAwait(false);
+
+        if (user == null || user.IsDeleted)
+            return false;
+
+        user.IsActive = false;
+        user.IsDeleted = true;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _baseRepository.UpdateAsync(user);
+        return true;
     }
+
 }

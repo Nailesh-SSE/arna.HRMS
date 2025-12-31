@@ -49,4 +49,10 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class, IBaseEntity
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public IQueryable<T> Query()
+    {
+        return _dbSet.AsQueryable();
+    }
+
 }

@@ -132,8 +132,7 @@
     protected override async Task OnInitializedAsync()
     {
         var data = await EmployeeService.GetEmployeesAsync();
-        var departmentsdata = await DepartmentService.GetDepartmentsAsync();
-
+   
         employees = data.Select(s => new EmployeeViewModel
         {
             Id=s.Id,
@@ -141,14 +140,8 @@
             FirstName = s.FirstName,
             LastName = s.LastName,
             Email = s.Email,
-            DepartmentCode = departmentsdata
-                .Where(d => d.Id == s.DepartmentId)
-                .Select(d => d.Code)
-                .FirstOrDefault(),
-            ManagerFullName = data
-                .Where(e => e.Id == s.ManagerId)
-                .Select(e => e.FirstName + " " + e.LastName)
-                .FirstOrDefault(),
+            DepartmentCode = s.DepartmentCode,
+            ManagerFullName = s.ManagerFullName,
             PhoneNumber = s.PhoneNumber,
             HireDate = s.HireDate,
             Position = s.Position,

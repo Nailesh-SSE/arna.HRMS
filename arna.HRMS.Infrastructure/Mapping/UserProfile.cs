@@ -9,8 +9,10 @@ public class UserProfile : Profile
 {
     public UserProfile()
     {
-        CreateMap<CreateUserRequest, User>();
-        CreateMap<UpdateUserRequest, User>();
+        // Map entity -> DTO
         CreateMap<User, UserDto>();
+
+        // Map DTO -> entity 
+        CreateMap<UserDto, User>();
     }
 }

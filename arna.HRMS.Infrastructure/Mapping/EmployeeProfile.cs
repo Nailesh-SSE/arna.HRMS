@@ -12,6 +12,13 @@ public class EmployeeProfile : Profile
     {
         CreateMap<CreateEmployeeRequest, Employee>();
         CreateMap<UpdateEmployeeRequest, Employee>();
-        CreateMap<Employee, EmployeeDto>();
+        CreateMap<Employee, EmployeeDto>()
+              .ForMember(dest => dest.DepartmentCode,
+                opt => opt.MapFrom(src =>
+                    src.Department.Code ?? ""))
+              .ForMember(dest => dest.ManagerFullName,
+                opt => opt.MapFrom(src =>
+                    src.Manager.FirstName + src.Manager.LastName ?? ""));
+
     }
 }

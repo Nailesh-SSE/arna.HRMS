@@ -2,9 +2,9 @@
 
 public enum UserRole
 {
-    SuperAdmin,
-    Admin,
-    HR,
-    Manager,
-    Employee
+    SuperAdmin = 1,
+    Admin = 2,
+    HR = 3,
+    Manager = 4,
+    Employee = 5
 }

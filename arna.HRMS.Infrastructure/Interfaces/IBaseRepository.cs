@@ -9,4 +9,5 @@ public interface IBaseRepository<T> where T : class, IBaseEntity
     Task<T> AddAsync(T entity);
     Task<T> UpdateAsync(T entity);
     Task<bool> DeleteAsync(int id);
+    IQueryable<T> Query();
 }
