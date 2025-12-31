@@ -4,6 +4,7 @@
 @using arna.HRMS.ClientServices.Attendance
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Components.Pages.Attendance
 
 @inject IAttendanceService AttendanceService
 @inject AuthenticationStateProvider AuthProvider
@@ -38,7 +39,7 @@
     <!-- VIEW TOGGLE -->
     <div class="section-header">
         <h4>Monthly Attendance</h4>
-        <ViewToggle ActiveView="@State.ViewMode"
+        <AttendanceViewToggle ActiveView="@State.ViewMode"
                     OnChange="SetView" />
     </div>
 
