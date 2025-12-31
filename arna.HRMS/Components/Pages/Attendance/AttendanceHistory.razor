@@ -1,5 +1,218 @@
-﻿<h3>AttendanceHistory</h3>
+﻿@page "/attendance"
+
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.ClientServices.Attendance
+
+@inject IAttendanceService AttendanceService
+@inject AuthenticationStateProvider AuthProvider
+
+<div class="attendance-dashboard">
+
+    <!-- HEADER -->
+    <div class="dashboard-header">
+        <div>
+            <h2>Attendance Overview</h2>
+            <p class="text-muted">View and track your monthly attendance</p>
+        </div>
+
+        <div class="month-picker">
+            <label>Month</label>
+            <input type="month"
+                   value="@SelectedMonth"
+                   @onchange="OnMonthChange" />
+        </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="summary-grid">
+        @foreach (var item in SummaryCards)
+        {
+            <div class="summary-tile">
+                <span class="label">@item.Label</span>
+                <span class="count @item.Text">@item.Count</span>
+            </div>
+        }
+    </div>
+
+    <!-- TOTAL WORKING HOURS -->
+    <div class="total-hours-card">
+        <strong>Total Working Hours:</strong>
+        <span>@TotalWorkingHours.ToString("0.00") hrs</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+        <div class="table-title">Monthly Attendance</div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th @onclick="() => SortBy(nameof(AttendanceViewModel.Date))">
+                            Date @SortIcon(nameof(AttendanceViewModel.Date))
+                        </th>
+                        <th>Day</th>
+                        <th>Clock In</th>
+                        <th>Clock Out</th>
+                        <th>Working Hours</th>
+                        <th @onclick="() => SortBy(nameof(AttendanceViewModel.Status))">
+                            Status @SortIcon(nameof(AttendanceViewModel.Status))
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (FilteredAttendance.Any())
+                    {
+                        @foreach (var item in FilteredAttendance)
+                        {
+                            <tr>
+                                <td>@item.Date.ToString("dd MMM yyyy")</td>
+                                <td>@item.Date.ToString("dddd")</td>
+                                <td>@(item.ClockInTime?.ToString(@"hh\:mm") ?? "-")</td>
+                                <td>@(item.ClockOutTime?.ToString(@"hh\:mm") ?? "-")</td>
+                                <td>@item.WorkingHours.ToString("0.00")</td>
+                                <td>
+                                    <span class="status-pill status-@item.Status.ToString().ToLower()">
+                                        @item.Status
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-3">
+                                No attendance data found
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
 
 @code {
 
+    private List<AttendanceViewModel> AttendanceData = new();
+    private List<AttendanceViewModel> FilteredAttendance = new();
+    private List<AttendenceSummaryCard> SummaryCards = new();
+
+    private double TotalWorkingHours;
+    private string SelectedMonth = DateTime.Now.ToString("yyyy-MM");
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMonthData(SelectedMonth);
+    }
+
+    private async Task OnMonthChange(ChangeEventArgs e)
+    {
+        SelectedMonth = e.Value?.ToString() ?? SelectedMonth;
+        await LoadMonthData(SelectedMonth);
+    }
+
+    private async Task LoadMonthData(string month)
+    {
+        if (string.IsNullOrWhiteSpace(month)) return;
+
+        var parts = month.Split('-');
+        int year = int.Parse(parts[0]);
+        int selectedMonth = int.Parse(parts[1]);
+
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var employeeId = user.FindFirst("EmployeeId")?.Value;
+
+        var apiData =
+            await AttendanceService.GetAttendanceByMonthAsync(
+                year,
+                selectedMonth,
+                Convert.ToInt32(employeeId)
+            );
+
+        if (apiData == null || !apiData.Any())
+        {
+            AttendanceData.Clear();
+            FilteredAttendance.Clear();
+            SummaryCards.Clear();
+            TotalWorkingHours = 0;
+            return;
+        }
+
+        AttendanceData = apiData
+            .Where(x => x != null)
+            .GroupBy(x => x.Date.Date)
+            .Select(g =>
+            {
+                var clockIns = g
+                    .Where(x => x.ClockInTime.HasValue && x.ClockInTime.Value != TimeSpan.Zero)
+                    .Select(x => x.ClockInTime.Value)
+                    .ToList();
+
+                var clockOuts = g
+                    .Where(x => x.ClockOutTime.HasValue && x.ClockOutTime.Value != TimeSpan.Zero)
+                    .Select(x => x.ClockOutTime.Value)
+                    .ToList();
+
+                return new AttendanceViewModel
+                {
+                    EmployeeId = g.First().EmployeeId,
+                    Date = g.Key,
+                    ClockInTime = clockIns.Any() ? clockIns.Min() : (TimeSpan?)null,
+                    ClockOutTime = clockOuts.Any() ? clockOuts.Max() : (TimeSpan?)null,
+                    Status = g.First().Status,
+                    Notes = string.Join(" | ",
+                        g.Select(x => x.Notes)
+                         .Where(n => !string.IsNullOrWhiteSpace(n))
+                    ),
+                    WorkingHours = Math.Round(g.Sum(x => x.WorkingHours), 2)
+                };
+            })
+            .ToList();
+
+        FilteredAttendance = AttendanceData;
+
+        TotalWorkingHours = FilteredAttendance.Sum(x => x.WorkingHours);
+
+        ApplySorting();
+
+        SummaryCards = AttendanceSummaryBuilder.Build(FilteredAttendance);
+    }
+
+    private string SortColumn = nameof(AttendanceViewModel.Date);
+    private bool SortAscending = true;
+
+    private void SortBy(string column)
+    {
+        SortAscending = SortColumn == column ? !SortAscending : true;
+        SortColumn = column;
+        ApplySorting();
+    }
+
+    private void ApplySorting()
+    {
+        FilteredAttendance = SortColumn switch
+        {
+            nameof(AttendanceViewModel.Date) =>
+                SortAscending
+                    ? FilteredAttendance.OrderBy(x => x.Date).ToList()
+                    : FilteredAttendance.OrderByDescending(x => x.Date).ToList(),
+
+            nameof(AttendanceViewModel.Status) =>
+                SortAscending
+                    ? FilteredAttendance.OrderBy(x => x.Status).ToList()
+                    : FilteredAttendance.OrderByDescending(x => x.Status).ToList(),
+
+            _ => FilteredAttendance
+        };
+    }
+
+    private string SortIcon(string column)
+        => SortColumn == column ? (SortAscending ? "▲" : "▼") : "";
 }
