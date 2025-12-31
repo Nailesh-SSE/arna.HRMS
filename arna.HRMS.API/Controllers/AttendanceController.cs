@@ -48,7 +48,7 @@ public class AttendanceController : ControllerBase
             _mapper.Map<AttendanceDto>(createdAttendance));
     }
     [HttpGet("by-month")]
-    public async Task<ActionResult<IEnumerable<AttendanceDto>>> GetAttendanceByMonth(int year,int month, int EmpId)
+    public async Task<ActionResult<IEnumerable<MonthlyAttendanceDto>>> GetAttendanceByMonth(int year,int month, int EmpId)
     {
         var attendance = await _AttendanceService.GetAttendanceByMonthAsync(year, month, EmpId);
         return Ok(attendance);

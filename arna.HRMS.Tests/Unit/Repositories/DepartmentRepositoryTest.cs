@@ -7,166 +7,156 @@ using NUnit.Framework;
 namespace arna.HRMS.Tests.Unit.Repositories;
 
 [TestFixture]
-public class EmployeeRepositoryTests
+public class DepartmentRepositoryTests
 {
-    private Mock<IBaseRepository<Employee>> _baseRepositoryMock;
-    private EmployeeRepository _employeeRepository;
+    private Mock<IBaseRepository<Department>> _baseRepositoryMock;
+    private DepartmentRepository _departmentRepository;
 
     [SetUp]
     public void Setup()
     {
-        _baseRepositoryMock = new Mock<IBaseRepository<Employee>>();
-        _employeeRepository = new EmployeeRepository(
+        _baseRepositoryMock = new Mock<IBaseRepository<Department>>();
+        _departmentRepository = new DepartmentRepository(
             _baseRepositoryMock.Object);
     }
 
     // --------------------------------------------------
-    // GetEmployeesAsync
+    // GetDepartmentAsync
     // --------------------------------------------------
     [Test]
-    public async Task GetEmployeesAsync_ReturnsAllEmployees()
+    public async Task GetDepartmentAsync_ReturnsAllDepartments()
     {
         // Arrange
-        var employees = new List<Employee>
+        var departments = new List<Department>
         {
-            new Employee { Id = 1, FirstName = "John", LastName = "Doe" },
-            new Employee { Id = 2, FirstName = "Jane", LastName = "Smith" }
+            new Department { Id = 1, Name = "HR", Code = "HR" },
+            new Department { Id = 2, Name = "IT", Code = "IT" }
         };
 
         _baseRepositoryMock
             .Setup(r => r.GetAllAsync())
-            .ReturnsAsync(employees.AsEnumerable());
+            .ReturnsAsync(departments);
 
         // Act
-        var result = await _employeeRepository.GetEmployeesAsync();
+        var result = await _departmentRepository.GetDepartmentAsync();
 
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Count(), Is.EqualTo(2));
-
-        _baseRepositoryMock.Verify(
-            r => r.GetAllAsync(),
-            Times.Once);
     }
 
     // --------------------------------------------------
-    // GetEmployeeByIdAsync - FOUND
+    // GetDepartmentByIdAsync - FOUND
     // --------------------------------------------------
     [Test]
-    public async Task GetEmployeeByIdAsync_ReturnsEmployee_WhenFound()
+    public async Task GetDepartmentByIdAsync_ReturnsDepartment_WhenFound()
     {
         // Arrange
-        var employee = new Employee
+        var department = new Department
         {
             Id = 1,
-            FirstName = "Alice",
-            LastName = "Brown"
+            Name = "Finance",
+            Code = "FIN"
         };
 
         _baseRepositoryMock
             .Setup(r => r.GetByIdAsync(1))
-            .ReturnsAsync(employee);
+            .ReturnsAsync(department);
 
         // Act
-        var result = await _employeeRepository.GetEmployeeByIdAsync(1);
+        var result = await _departmentRepository.GetDepartmentByIdAsync(1);
 
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result!.Id, Is.EqualTo(1));
-        Assert.That(result.FirstName, Is.EqualTo("Alice"));
-
-        _baseRepositoryMock.Verify(
-            r => r.GetByIdAsync(1),
-            Times.Once);
+        Assert.That(result.Name, Is.EqualTo("Finance"));
     }
 
     // --------------------------------------------------
-    // GetEmployeeByIdAsync - NOT FOUND
+    // GetDepartmentByIdAsync - NOT FOUND
     // --------------------------------------------------
     [Test]
-    public async Task GetEmployeeByIdAsync_ReturnsNull_WhenNotFound()
+    public async Task GetDepartmentByIdAsync_ReturnsNull_WhenNotFound()
     {
         // Arrange
         _baseRepositoryMock
             .Setup(r => r.GetByIdAsync(It.IsAny<int>()))
-            .ReturnsAsync((Employee?)null);
+            .ReturnsAsync((Department?)null);
 
         // Act
-        var result = await _employeeRepository.GetEmployeeByIdAsync(99);
+        var result = await _departmentRepository.GetDepartmentByIdAsync(99);
 
         // Assert
         Assert.That(result, Is.Null);
-
-        _baseRepositoryMock.Verify(
-            r => r.GetByIdAsync(It.IsAny<int>()),
-            Times.Once);
     }
 
     // --------------------------------------------------
-    // CreateEmployeeAsync
+    // CreateDepartmentAsync
     // --------------------------------------------------
     [Test]
-    public async Task CreateEmployeeAsync_CallsAddAsync()
+    public async Task CreateDepartmentAsync_CallsAddAsync()
     {
         // Arrange
-        var employee = new Employee
+        var department = new Department
         {
             Id = 3,
-            FirstName = "Mark",
-            LastName = "Taylor"
+            Name = "Operations",
+            Code = "OPS"
         };
 
         _baseRepositoryMock
-            .Setup(r => r.AddAsync(employee))
-            .ReturnsAsync(employee);
+            .Setup(r => r.AddAsync(department))
+            .ReturnsAsync(department);
 
         // Act
-        var result = await _employeeRepository.CreateEmployeeAsync(employee);
+        var result = await _departmentRepository
+            .CreateDepartmentAsync(department);
 
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Id, Is.EqualTo(3));
 
         _baseRepositoryMock.Verify(
-            r => r.AddAsync(employee),
+            r => r.AddAsync(department),
             Times.Once);
     }
 
     // --------------------------------------------------
-    // UpdateEmployeeAsync
+    // UpdateDepartmentAsync
     // --------------------------------------------------
     [Test]
-    public async Task UpdateEmployeeAsync_CallsUpdateAsync()
+    public async Task UpdateDepartmentAsync_CallsUpdateAsync()
     {
         // Arrange
-        var employee = new Employee
+        var department = new Department
         {
             Id = 4,
-            FirstName = "Emily",
-            LastName = "Clark"
+            Name = "Marketing",
+            Code = "MKT"
         };
 
         _baseRepositoryMock
-            .Setup(r => r.UpdateAsync(employee))
-            .ReturnsAsync(employee);
+            .Setup(r => r.UpdateAsync(department))
+            .ReturnsAsync(department);
 
         // Act
-        var result = await _employeeRepository.UpdateEmployeeAsync(employee);
+        var result = await _departmentRepository
+            .UpdateDepartmentAsync(department);
 
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Id, Is.EqualTo(4));
 
         _baseRepositoryMock.Verify(
-            r => r.UpdateAsync(employee),
+            r => r.UpdateAsync(department),
             Times.Once);
     }
 
     // --------------------------------------------------
-    // DeleteEmployeeAsync
+    // DeleteDepartmentAsync
     // --------------------------------------------------
     [Test]
-    public async Task DeleteEmployeeAsync_ReturnsTrue_WhenDeleted()
+    public async Task DeleteDepartmentAsync_ReturnsTrue_WhenDeleted()
     {
         // Arrange
         _baseRepositoryMock
@@ -174,7 +164,8 @@ public class EmployeeRepositoryTests
             .ReturnsAsync(true);
 
         // Act
-        var result = await _employeeRepository.DeleteEmployeeAsync(1);
+        var result = await _departmentRepository
+            .DeleteDepartmentAsync(1);
 
         // Assert
         Assert.That(result, Is.True);

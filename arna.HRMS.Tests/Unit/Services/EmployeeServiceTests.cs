@@ -7,7 +7,7 @@ using AutoMapper;
 using Moq;
 using NUnit.Framework;
 
-namespace arna.HRMS.Tests.Services;
+namespace arna.HRMS.Tests.Unit.Services;
 
 [TestFixture]
 public class EmployeeServiceTests

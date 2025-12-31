@@ -1,14 +1,14 @@
-﻿using arna.HRMS.Models.DTOs;
+﻿using System.Net.Http.Json;
+using arna.HRMS.Models.DTOs;
 
 namespace arna.HRMS.ClientServices.Attendance;
-
-public interface IAttendance
+public interface IAttendanceService
 {
     Task<AttendanceDto?> GetAttendanceByIdAsync(int id);
-    Task<AttendanceDto?> GetAttendanceByMonthAsync(int year, int month, int empId);
+    Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int empId);
 }
 
-public class AttendanceService : IAttendance
+public class AttendanceService : IAttendanceService
 {
     private readonly HttpClient _httpClient;
 
@@ -23,10 +23,10 @@ public class AttendanceService : IAttendance
             .GetFromJsonAsync<AttendanceDto>($"api/Attendance/{id}");
     }
 
-    public async Task<AttendanceDto?> GetAttendanceByMonthAsync(int year, int month, int empId)
+    public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int empId)
     {
-        return await _httpClient
-            .GetFromJsonAsync<AttendanceDto>(
-                $"api/Attendance/by-month?year={year}&month={month}&empId={empId}");
+        return await _httpClient.GetFromJsonAsync<List<MonthlyAttendanceDto>>(
+            $"api/Attendance/by-month?year={year}&month={month}&empId={empId}"
+        ) ?? new List<MonthlyAttendanceDto>();
     }
 }

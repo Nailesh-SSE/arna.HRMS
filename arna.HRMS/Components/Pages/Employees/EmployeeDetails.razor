@@ -1,10 +1,11 @@
 ﻿@page "/profile"
 
+@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.ClientServices
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
-
+@inject AuthenticationStateProvider AuthProvider
 @using arna.HRMS.Models.DTOs
 
 <style>
@@ -266,13 +267,16 @@
 </div>
 
 @code {
-    private int employeeId = 3;
+
     private EmployeeDto? employee;
     private string experienceString = "";
 
     protected override async Task OnInitializedAsync()
     {
-        employee = await EmployeeService.GetEmployeeByIdAsync(employeeId);
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var employeeId = user.FindFirst("EmployeeId")?.Value;
+        employee = await EmployeeService.GetEmployeeByIdAsync(Convert.ToInt32(employeeId));
 
 
         if (employee != null)
