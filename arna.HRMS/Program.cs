@@ -1,6 +1,8 @@
 using arna.HRMS.ClientServices.Attendance;
-using arna.HRMS.ClientServices.Employee;
 using arna.HRMS.ClientServices.Auth;
+using arna.HRMS.ClientServices.Common;
+using arna.HRMS.ClientServices.Employee;
+using arna.HRMS.ClientServices.Users;
 using arna.HRMS.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
@@ -24,6 +26,7 @@ public class Program
             client.BaseAddress = new Uri("https://localhost:7134/");
         });
 
+        builder.Services.AddScoped<HttpService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();

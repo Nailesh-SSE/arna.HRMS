@@ -1,69 +1,67 @@
 ﻿using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Models.DTOs;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace arna.HRMS.API.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/users")]
 [Authorize]
 public class UsersController : ControllerBase
 {
-    private readonly IUserServices _userServices; 
-    private readonly IMapper _mapper;
+    private readonly IUserServices _userServices;
 
-    public UsersController(IUserServices userServices, IMapper mapper)
+    public UsersController(IUserServices userServices)
     {
         _userServices = userServices;
-        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<ActionResult<UserDto>> GetUsers()
+    public async Task<IActionResult> GetUsers()
     {
         var users = await _userServices.GetUserAsync();
-        if (users == null || !users.Any()) return Ok(new List<UserDto>());
         return Ok(users);
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<UserDto>> GetUserById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetUserById(int id)
     {
         var user = await _userServices.GetUserByIdAsync(id);
-        if (user == null) return NotFound();
-        return Ok(user);
+        return user == null
+            ? NotFound("User not found")
+            : Ok(user);
     }
 
     [HttpPost]
-    public async Task<ActionResult<UserDto>> CreateUser([FromBody] UserDto userDto)
+    public async Task<IActionResult> CreateUser([FromBody] UserDto dto)
     {
-        var user = _mapper.Map<Core.Entities.User>(userDto);
-        var createdUser = await _userServices.CreateUserAsync(user);
-        return CreatedAtAction(nameof(GetUserById), new { id = createdUser.Id }, createdUser);
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (await _userServices.UserExistsAsync(dto.Username, dto.Email))
+            return Conflict("Username or Email already exists");
+
+        var createdUser = await _userServices.CreateUserAsync(dto);
+        return Ok(createdUser);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto userDto)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto dto)
     {
-        if (id != userDto.Id)
-        {
-            return BadRequest();
-        }
-        var user = _mapper.Map<Core.Entities.User>(userDto);
-        await _userServices.UpdateUserAsync(user);
-        return NoContent();
+        if (id != dto.Id)
+            return BadRequest("Invalid User ID");
+
+        var updated = await _userServices.UpdateUserAsync(dto);
+        return Ok(updated);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
         var deleted = await _userServices.DeleteUserAsync(id);
-        if (!deleted)
-        {
-            return NotFound();
-        }
-        return NoContent();
+        return deleted
+            ? Ok()
+            : NotFound("User not found");
     }
 }

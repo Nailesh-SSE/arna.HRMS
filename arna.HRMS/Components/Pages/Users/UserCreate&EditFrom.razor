@@ -2,9 +2,12 @@
 @page "/users/edit/{Id:int}"
 
 @using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.Models.DTOs
+@using arna.HRMS.ClientServices.Employee
+@using arna.HRMS.ClientServices.Users
 @using arna.HRMS.Core.Enums
+@using arna.HRMS.Models.DTOs
 @inject IUsersService UsersService
+@inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 
 <div class="container py-4">
@@ -42,7 +45,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
                             <InputText class="form-control"
-                                       autocomplete="email"
+                                       autocomplete="off"
                                        @bind-Value="user.Email" />
                             <ValidationMessage For="@(() => user.Email)" />
                         </div>
@@ -77,8 +80,14 @@
                         <!-- Employee -->
                         <div class="col-md-6">
                             <label class="form-label">Employee</label>
-                            <InputNumber class="form-control"
-                                         @bind-Value="user.EmployeeId" />
+                            <InputSelect class="form-select"
+                                         @bind-Value="user.EmployeeId">
+                                <option value="">Select Employee</option>
+                                @foreach (var emp in employees)
+                                {
+                                    <option value="@emp.Id">@emp.FullName</option>
+                                }
+                            </InputSelect>
                             <ValidationMessage For="@(() => user.EmployeeId)" />
                         </div>
 
@@ -126,7 +135,7 @@
 
                         <button type="submit"
                                 class="btn btn-primary px-4">
-                            Save
+                            @(IsEditMode ? "Update" : "Save")
                         </button>
                     </div>
                 </EditForm>
@@ -138,17 +147,33 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-
     private UserDto user = new();
     private bool isLoading = true;
-
     private bool IsEditMode => Id.HasValue;
+    private List<EmployeeDto> employees = new();
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Id.HasValue)
+        isLoading = true;
+
+        var employeeResult = await EmployeeService.GetEmployeesAsync();
+        if (employeeResult.Any())
         {
-            user = await UsersService.GetUserByIdAsync(Id.Value) ?? new UserDto();
+            employees = employeeResult.ToList();
+        }
+
+        if (IsEditMode)
+        {
+            var result = await UsersService.GetUserByIdAsync(Id!.Value);
+
+            if (result.IsSuccess && result.Data != null)
+            {
+                user = result.Data;
+            }
+            else
+            {
+                NavigationManager.NavigateTo("/users");
+            }
         }
         else
         {
@@ -165,9 +190,23 @@
     private async Task HandleValidSubmit()
     {
         if (IsEditMode)
-            await UsersService.UpdateUserAsync(Id!.Value, user);
+        {
+            var result = await UsersService.UpdateUserAsync(Id!.Value, user);
+
+            if (!result.IsSuccess)
+            {
+                return;
+            }
+        }
         else
-            await UsersService.CreateUserAsync(user);
+        {
+            var result = await UsersService.CreateUserAsync(user);
+
+            if (!result.IsSuccess)
+            {
+                return;
+            }
+        }
 
         NavigationManager.NavigateTo("/users");
     }
