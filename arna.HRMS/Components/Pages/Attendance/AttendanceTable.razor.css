@@ -1,0 +1,45 @@
+﻿.table-card {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+}
+
+.table-wrapper {
+    max-height: 420px;
+    overflow: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+thead {
+    position: sticky;
+    top: 0;
+    background: #f9fafb;
+}
+
+.future-row {
+    opacity: 0.5;
+}
+
+.status-muted {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+
+/* STATUS PILL */
+.status-pill {
+    padding: 6px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+}

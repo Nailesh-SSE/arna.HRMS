@@ -1,3 +1,14 @@
+
+:root {
+    --primary: #2563eb;
+    --primary-soft: #e0e7ff;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e5e7eb;
+    --text-dark: #0f172a;
+    --text-muted: #64748b;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }

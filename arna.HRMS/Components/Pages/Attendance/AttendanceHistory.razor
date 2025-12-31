@@ -1,13 +1,13 @@
 ﻿@page "/attendance"
 
 @using Microsoft.AspNetCore.Components.Authorization
-@using System.Security.Claims
+@using arna.HRMS.ClientServices.Attendance
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
-@using arna.HRMS.ClientServices.Attendance
 
 @inject IAttendanceService AttendanceService
 @inject AuthenticationStateProvider AuthProvider
+@inject AttendanceState State
 
 <div class="attendance-dashboard">
 
@@ -21,161 +21,76 @@
         <div class="month-picker">
             <label>Month</label>
             <input type="month"
-                   value="@SelectedMonth"
+                   value="@State.SelectedMonth"
                    @onchange="OnMonthChange" />
         </div>
     </div>
 
     <!-- SUMMARY -->
-    <div class="summary-grid">
-        @foreach (var item in SummaryCards)
-        {
-            <div class="summary-tile">
-                <span class="label">@item.Label</span>
-                <span class="count @item.Text">@item.Count</span>
-            </div>
-        }
+    <AttendanceSummary SummaryCards="State.SummaryCards" />
+
+    <!-- TOTAL HOURS -->
+    <div class="total-hours-card">
+        <strong>Total Working Hours:</strong>
+        <span>@State.TotalWorkingHours.ToString("0.00") hrs</span>
     </div>
 
-    <!-- TOTAL WORKING HOURS -->
-    <div class="total-hours-card mt-3 mb-3">
-        <strong>Total Working Hours:</strong>
-        <span>@TotalWorkingHours.ToString("0.00") hrs</span>
+    <!-- VIEW TOGGLE -->
+    <div class="section-header">
+        <h4>Monthly Attendance</h4>
+        <ViewToggle ActiveView="@State.ViewMode"
+                    OnChange="SetView" />
     </div>
 
     <!-- TABLE -->
-    <div class="table-card">
-        <div class="table-title">Monthly Attendance</div>
+    @if (State.ViewMode == AttendanceState.TABLE)
+    {
+        <AttendanceTable AttendanceList="State.AttendanceList" />
+    }
 
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th @onclick="() => SortBy(nameof(AttendanceViewModel.Date))">
-                            Date @SortIcon(nameof(AttendanceViewModel.Date))
-                        </th>
-                        <th>Day</th>
-                        <th>Clock In</th>
-                        <th>Clock Out</th>
-                        <th>Working Hours</th>
-                        <th @onclick="() => SortBy(nameof(AttendanceViewModel.Status))">
-                            Status @SortIcon(nameof(AttendanceViewModel.Status))
-                        </th>
-                        <th></th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @if (FilteredAttendance.Any())
-                    {
-                        @foreach (var item in FilteredAttendance)
-                        {
-                            <tr>
-                                <td>@item.Date.ToString("dd MMM yyyy")</td>
-                                <td>@item.Day</td>
-                                <td>@(item.ClockIn?.ToString(@"hh\:mm") ?? "-")</td>
-                                <td>@(item.ClockOut?.ToString(@"hh\:mm") ?? "-")</td>
-                                <td>@(item.TotalHours.ToString("0.00") ?? "-")</td>
-                                <td>
-                                    <span class="status-pill status-@item.Status.ToLower()">
-                                        @item.Status
-                                    </span>
-                                </td>
-                                <td class="text-primary">Detail</td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="6" class="text-center text-muted py-3">
-                                No attendance data found
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-
-            </table>
-        </div>
-    </div>
+    <!-- CALENDAR -->
+    @if (State.ViewMode == AttendanceState.CALENDAR)
+    {
+        <AttendanceCalendar Year="@State.Year"
+                            Month="@State.Month"
+                            AttendanceLookup="State.AttendanceLookup" />
+    }
 
 </div>
 
 @code {
 
-    private List<MonthlyAttendanceDto> AttendanceData = new();
-    private List<MonthlyAttendanceDto> FilteredAttendance = new();
-    private List<AttendenceSummaryCard> SummaryCards = new();
-
-    private double TotalWorkingHours;
-    private string SelectedMonth = DateTime.Now.ToString("yyyy-MM");
-
     protected override async Task OnInitializedAsync()
     {
-        await LoadMonthData(SelectedMonth);
+        State.ParseMonth();
+        await LoadData();
     }
 
     private async Task OnMonthChange(ChangeEventArgs e)
     {
-        SelectedMonth = e.Value?.ToString() ?? SelectedMonth;
-        await LoadMonthData(SelectedMonth);
+        State.SelectedMonth = e.Value?.ToString() ?? State.SelectedMonth;
+        State.ParseMonth();
+        await LoadData();
     }
 
-    private async Task LoadMonthData(string month)
+    private async Task LoadData()
     {
-        if (string.IsNullOrWhiteSpace(month)) return;
+        var auth = await AuthProvider.GetAuthenticationStateAsync();
+        int empId = int.Parse(auth.User.FindFirst("EmployeeId")!.Value);
 
-        var parts = month.Split('-');
-        int year = int.Parse(parts[0]);
-        int selectedMonth = int.Parse(parts[1]);
+        State.AttendanceList = await AttendanceService
+            .GetAttendanceByMonthAsync(State.Year, State.Month, empId);
 
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-        var employeeId = user.FindFirst("EmployeeId")?.Value;
+        State.AttendanceLookup =
+            State.AttendanceList.ToDictionary(x => x.Date);
 
-        AttendanceData = await AttendanceService.GetAttendanceByMonthAsync(year, selectedMonth, Convert.ToInt32(employeeId));
+        State.TotalWorkingHours =
+            State.AttendanceList.Sum(x => x.TotalHours);
 
-        FilteredAttendance = AttendanceData;
-
-        TotalWorkingHours = FilteredAttendance.Sum(x => x.TotalHours);
-
-        ApplySorting();
-
-        SummaryCards = AttendanceSummaryBuilder.Build(FilteredAttendance);
-
-        ApplySorting();
-
-        SummaryCards = AttendanceSummaryBuilder.Build(FilteredAttendance);
+        State.SummaryCards =
+            AttendanceSummaryBuilder.Build(State.AttendanceList);
     }
 
-    private string SortColumn = nameof(MonthlyAttendanceDto.Date);
-    private bool SortAscending = true;
-
-    private void SortBy(string column)
-    {
-        SortAscending = SortColumn == column ? !SortAscending : true;
-        SortColumn = column;
-        ApplySorting();
-    }
-
-    private void ApplySorting()
-    {
-        FilteredAttendance = SortColumn switch
-        {
-            nameof(MonthlyAttendanceDto.Date) =>
-                SortAscending
-                    ? FilteredAttendance.OrderBy(x => x.Date).ToList()
-                    : FilteredAttendance.OrderByDescending(x => x.Date).ToList(),
-
-            nameof(MonthlyAttendanceDto.Status) =>
-                SortAscending
-                    ? FilteredAttendance.OrderBy(x => x.Status).ToList()
-                    : FilteredAttendance.OrderByDescending(x => x.Status).ToList(),
-
-            _ => FilteredAttendance
-        };
-    }
-
-    private string SortIcon(string column)
-        => SortColumn == column ? (SortAscending ? "▲" : "▼") : "";
+    private void SetView(string mode)
+        => State.ViewMode = mode;
 }

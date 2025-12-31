@@ -1,0 +1,28 @@
+﻿.attendance-icon-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+.attendance-svg .person,
+.attendance-svg .tick,
+.attendance-svg .tick-circle {
+    stroke: #9ca3af;
+    fill: none;
+}
+
+.attendance-svg.present .person,
+.attendance-svg.present .tick,
+.attendance-svg.present .tick-circle {
+    stroke: #16a34a;
+}
+
+.attendance-svg.absent .person,
+.attendance-svg.absent .tick,
+.attendance-svg.absent .tick-circle {
+    stroke: #dc2626;
+}
+
+.attendance-svg.no-data .tick,
+.attendance-svg.no-data .tick-circle {
+    display: none;
+}
