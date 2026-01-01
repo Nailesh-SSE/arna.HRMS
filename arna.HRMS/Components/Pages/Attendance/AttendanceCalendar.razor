@@ -64,14 +64,28 @@
     private static readonly string[] WeekDays =
         { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
+
+    private int _prevYear;
+    private int _prevMonth;
     protected override void OnParametersSet()
     {
-        BuildCalendar();
+        if (Year < 1 || Month < 1 || Month > 12)
+            return;
+
+        if (_prevYear != Year || _prevMonth != Month)
+        {
+            _prevYear = Year;
+            _prevMonth = Month;
+            BuildCalendar();
+        }
     }
 
     private void BuildCalendar()
     {
         CalendarDays.Clear();
+
+        if (Year < 1 || Month < 1 || Month > 12)
+            return;
 
         var firstDay = new DateTime(Year, Month, 1);
         int daysInMonth = DateTime.DaysInMonth(Year, Month);
@@ -82,4 +96,5 @@
         for (int d = 1; d <= daysInMonth; d++)
             CalendarDays.Add(new DateTime(Year, Month, d));
     }
+
 }
