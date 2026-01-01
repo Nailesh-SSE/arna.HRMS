@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Components.Pages.Users;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Models.DTOs;
@@ -20,7 +21,8 @@ public class EmployeeService : IEmployeeService
     public async Task<List<EmployeeDto>> GetEmployeesAsync()
     {
         var employees = await _employeeRepository.GetEmployeesAsync();
-        return employees.Select(e => _mapper.Map<EmployeeDto>(e)).ToList();
+        var employeeList = employees.Where(x => x.IsActive && !x.IsDeleted).ToList();
+        return _mapper.Map<List<EmployeeDto>>(employeeList);
     }
 
     public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)

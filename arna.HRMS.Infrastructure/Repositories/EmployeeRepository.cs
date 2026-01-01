@@ -14,7 +14,7 @@ public class EmployeeRepository
     }
     public async Task<IEnumerable<Employee>> GetEmployeesAsync()
     {
-        return await _baseRepository.Query().Where(x => x.IsActive && !x.IsDeleted).Include(e => e.Department).ToListAsync();
+        return await _baseRepository.Query().Include(e => e.Department).ToListAsync();
     }
 
     public async Task<Employee?> GetEmployeeByIdAsync(int id)
