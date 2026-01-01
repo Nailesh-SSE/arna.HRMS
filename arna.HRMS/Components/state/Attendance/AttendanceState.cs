@@ -24,8 +24,25 @@ public class AttendanceState
     /* ================= HELPERS ================= */
     public void ParseMonth()
     {
-        var p = SelectedMonth.Split('-');
-        Year = int.Parse(p[0]);
-        Month = int.Parse(p[1]);
+        if (string.IsNullOrWhiteSpace(SelectedMonth))
+            return;
+
+        var parts = SelectedMonth.Split('-');
+        if (parts.Length != 2)
+            return;
+
+        if (!int.TryParse(parts[0], out var year))
+            return;
+
+        if (!int.TryParse(parts[1], out var month))
+            return;
+
+        // 🔥 HARD CLAMP
+        if (month < 1 || month > 12)
+            return;
+
+        Year = year;
+        Month = month;
     }
+
 }

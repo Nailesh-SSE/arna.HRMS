@@ -18,7 +18,7 @@ public static class AttendanceSummaryBuilder
             Create(attendance, "Leave",    "text-warning"),
             Create(attendance, "Late",     "text-info"),
             Create(attendance, "Absent",   "text-danger"),
-            Create(attendance, "WFH",      "text-secondary")
+            Create(attendance, "Half-Day",      "text-secondary")
         };
     }
 

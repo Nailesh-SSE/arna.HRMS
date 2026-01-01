@@ -12,65 +12,73 @@
 
 <div class="attendance-dashboard">
 
-    <!-- HEADER -->
     <div class="dashboard-header">
         <div>
             <h2>Attendance Overview</h2>
             <p class="text-muted">View and track your monthly attendance</p>
         </div>
+    </div>
 
-        <div class="month-picker">
-            <label>Month</label>
-            <input type="month"
-                   value="@State.SelectedMonth"
-                   @onchange="OnMonthChange" />
+    <AttendanceSummary SummaryCards="State.SummaryCards" />
+
+    <div class="hours-kpi">
+        <div class="hours-info">
+            <span class="hours-label">Total Working Hours</span>
+        </div>
+
+        <div class="hours-value">
+            @State.TotalWorkingHours.ToString("0.00")
+            <span class="unit">hrs</span>
         </div>
     </div>
 
-    <!-- SUMMARY -->
-    <AttendanceSummary SummaryCards="State.SummaryCards" />
+    <div class="select-month-view-toggle">
 
-    <!-- TOTAL HOURS -->
-    <div class="total-hours-card">
-        <strong>Total Working Hours:</strong>
-        <span>@State.TotalWorkingHours.ToString("0.00") hrs</span>
-    </div>
+        <SelectMonthAndYear Year="@State.Year"
+                            Month="@State.Month"
+                            OnChange="OnMonthSelected" />
 
-    <!-- VIEW TOGGLE -->
-    <div class="section-header">
-        <h4>Monthly Attendance</h4>
         <AttendanceViewToggle ActiveView="@State.ViewMode"
-                    OnChange="SetView" />
+                              OnChange="SetView" />
     </div>
 
-    <!-- TABLE -->
     @if (State.ViewMode == AttendanceState.TABLE)
     {
         <AttendanceTable AttendanceList="State.AttendanceList" />
     }
 
-    <!-- CALENDAR -->
     @if (State.ViewMode == AttendanceState.CALENDAR)
     {
         <AttendanceCalendar Year="@State.Year"
                             Month="@State.Month"
                             AttendanceLookup="State.AttendanceLookup" />
     }
-
 </div>
 
 @code {
 
     protected override async Task OnInitializedAsync()
     {
-        State.ParseMonth();
+        if (string.IsNullOrWhiteSpace(State.SelectedMonth))
+        {
+            var now = DateTime.Today;
+            State.Year = now.Year;
+            State.Month = now.Month;
+            State.SelectedMonth = $"{now.Year}-{now.Month:D2}";
+        }
+        else
+        {
+            State.ParseMonth();
+        }
+
         await LoadData();
     }
 
-    private async Task OnMonthChange(ChangeEventArgs e)
+    private async Task OnMonthSelected((int year, int month) value)
     {
-        State.SelectedMonth = e.Value?.ToString() ?? State.SelectedMonth;
-        State.ParseMonth();
+        State.Year = value.year;
+        State.Month = value.month;
+        State.SelectedMonth = $"{value.year}-{value.month:D2}";
         await LoadData();
     }
 
@@ -83,7 +91,10 @@
             .GetAttendanceByMonthAsync(State.Year, State.Month, empId);
 
         State.AttendanceLookup =
-            State.AttendanceList.ToDictionary(x => x.Date);
+        State.AttendanceList
+             .Where(x => x.Date.Year == State.Year &&
+                         x.Date.Month == State.Month)
+             .ToDictionary(x => x.Date);
 
         State.TotalWorkingHours =
             State.AttendanceList.Sum(x => x.TotalHours);

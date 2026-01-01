@@ -32,4 +32,37 @@ thead {
     border-radius: 999px;
     font-size: 13px;
     font-weight: 700;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+
+    .status-pill:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    }
+/* STATUS COLORS */
+.status-present {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-absent {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-late {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-halfday {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.status-onleave {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+
