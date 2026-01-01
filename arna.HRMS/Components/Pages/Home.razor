@@ -76,7 +76,7 @@ else
         if (IsAuthenticated)
         {
             CurrentUserFullName =
-                user.FindFirst(ClaimTypes.Name)?.Value
+                user.FindFirst("FullName")?.Value
                 ?? user.Identity?.Name
                 ?? "User";
         }

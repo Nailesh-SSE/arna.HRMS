@@ -4,67 +4,80 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 
-namespace arna.HRMS.ClientServices.Auth
+namespace arna.HRMS.ClientServices.Auth;
+
+public class CustomAuthStateProvider : AuthenticationStateProvider
 {
-    public class CustomAuthStateProvider : AuthenticationStateProvider
+    private const string TokenKey = "auth_token";
+    private const string AuthType = "jwt";
+
+    private readonly ProtectedLocalStorage _localStorage;
+    private readonly HttpClient _httpClient;
+
+    private static AuthenticationState Anonymous =>
+        new(new ClaimsPrincipal(new ClaimsIdentity()));
+
+    public CustomAuthStateProvider(ProtectedLocalStorage localStorage, HttpClient httpClient)
     {
-        private readonly ProtectedLocalStorage _protectedLocalStorage;
-        private readonly HttpClient _httpClient; 
-        private const string TokenKey = "auth_token"; 
+        _localStorage = localStorage;
+        _httpClient = httpClient;
+    }
 
-        public CustomAuthStateProvider(
-            ProtectedLocalStorage protectedLocalStorage,
-            HttpClient httpClient)
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
+    {
+        string? token = null;
+
+        try
         {
-            _protectedLocalStorage = protectedLocalStorage;
-            _httpClient = httpClient;
+            var result = await _localStorage.GetAsync<string>(TokenKey);
+            token = result.Success ? result.Value : null;
+        }
+        catch (InvalidOperationException)
+        {
+            return Anonymous;
         }
 
-        public async Task SetTokenAsync(string token)
+        if (string.IsNullOrWhiteSpace(token))
+            return Anonymous;
+
+        JwtSecurityToken jwt;
+        try
         {
-            await _protectedLocalStorage.SetAsync(TokenKey, token);
-            ApplyToken(token);
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        }
+        catch
+        {
+            return Anonymous;
         }
 
-        public async Task ClearTokenAsync()
-        {
-            await _protectedLocalStorage.DeleteAsync(TokenKey);
-            _httpClient.DefaultRequestHeaders.Authorization = null;
-            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-        }
+        if (jwt.ValidTo <= DateTime.UtcNow)
+            return Anonymous;
 
-        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            var storedToken = await _protectedLocalStorage.GetAsync<string>("auth_token");
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
 
-            if (!storedToken.Success || string.IsNullOrWhiteSpace(storedToken.Value))
-            {
-                return new AuthenticationState(
-                    new ClaimsPrincipal(new ClaimsIdentity())
-                );
-            }
+        return new AuthenticationState(
+            new ClaimsPrincipal(
+                new ClaimsIdentity(jwt.Claims, AuthType)));
+    }
 
-            var handler = new JwtSecurityTokenHandler();
-            var jwt = handler.ReadJwtToken(storedToken.Value);
+    public async Task LoginAsync(string token)
+    {
+        await _localStorage.SetAsync(TokenKey, token);
 
-            if (jwt.ValidTo < DateTime.UtcNow)
-            {
-                await ClearTokenAsync();
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
 
-                return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
-            }
+        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+    }
 
-            ApplyToken(storedToken.Value);
+    public async Task LogoutAsync()
+    {
+        await _localStorage.DeleteAsync(TokenKey);
 
-            var identity = new ClaimsIdentity(jwt.Claims, "jwt");
-            return new AuthenticationState(new ClaimsPrincipal(identity));
-        }
+        _httpClient.DefaultRequestHeaders.Authorization = null;
 
-        private void ApplyToken(string token)
-        {
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
-        }
+        NotifyAuthenticationStateChanged(
+            Task.FromResult(Anonymous));
     }
 }

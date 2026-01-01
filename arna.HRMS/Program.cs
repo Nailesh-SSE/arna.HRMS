@@ -15,7 +15,6 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
@@ -26,7 +25,6 @@ public class Program
             client.BaseAddress = new Uri("https://localhost:7134/");
         });
 
-        // Common Services
         builder.Services.AddScoped<HttpService>();
         builder.Services.AddScoped<NotificationService>();
 
@@ -39,25 +37,24 @@ public class Program
         builder.Services.AddScoped<AttendanceState>();
 
         builder.Services.AddAuthorizationCore();
-        builder.Services.AddScoped<ProtectedLocalStorage>();
-        builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
-        builder.Services.AddScoped<CustomAuthStateProvider>();
-        builder.Services.AddMemoryCache();
 
+        builder.Services.AddScoped<ProtectedLocalStorage>();
+        builder.Services.AddScoped<ITokenProvider, TokenProvider>();
+        builder.Services.AddScoped<CustomAuthStateProvider>();
+        builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
+
+        builder.Services.AddMemoryCache();
         builder.Services.AddBlazorBootstrap();
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
             app.UseHsts();
         }
 
         app.UseHttpsRedirection();
-
         app.UseStaticFiles();
         app.UseAntiforgery();
 

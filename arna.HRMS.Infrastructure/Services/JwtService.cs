@@ -26,28 +26,36 @@ public class JwtService : IJwtService
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Name, user.Email),
-            new Claim(JwtRegisteredClaimNames.Name, user.FullName),
-            new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim("UserId", user.Id.ToString()),
-            new Claim("UserRole", user.Role.ToString()),
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim("FullName", user.FullName),
+            new Claim(ClaimTypes.Role, user.Role.ToString()),
             new Claim("EmployeeId", user.EmployeeId.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
+        var jwtSettings = _configuration.GetSection("JwtSettings");
+
+        var secretKey = jwtSettings["SecretKey"]!;
+        var issuer = jwtSettings["Issuer"]!;
+        var audience = jwtSettings["Audience"]!;
+
+        var accessTokenMinutes =
+            int.Parse(jwtSettings["AccessTokenExpirationInMinutes"]!);
+
         var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!)
-        );
+            Encoding.UTF8.GetBytes(secretKey));
+
+        var expires = DateTime.UtcNow.AddMinutes(accessTokenMinutes);
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["JwtSettings:Issuer"],
-            audience: _configuration["JwtSettings:Audience"],
+            issuer: issuer,
+            audience: audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(10),
-            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            expires: expires,
+            signingCredentials: new SigningCredentials(
+                key, SecurityAlgorithms.HmacSha256)
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
@@ -56,40 +64,30 @@ public class JwtService : IJwtService
     public string GenerateRefreshToken()
         => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
-
     public async Task SaveRefreshTokenAsync(int userId, string refreshToken)
     {
-        try
-        {
-            var user = await _context.Users.FindAsync(userId);
-            if (user != null)
-            {
-                user.RefreshToken = refreshToken;
-                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(10); 
-                await _context.SaveChangesAsync();
-            }
-        }
-        catch (Exception)
-        {
-            // Handle exception
-        }
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            return;
+
+        var refreshMinutes = int.Parse(
+            _configuration["JwtSettings:RefreshTokenExpirationInMinutes"]!);
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = DateTime.UtcNow.AddMinutes(refreshMinutes);
+
+        await _context.SaveChangesAsync();
     }
 
     public async Task RevokeRefreshTokenAsync(int userId)
     {
-        try
-        {
-            var user = await _context.Users.FindAsync(userId);
-            if (user != null)
-            {
-                user.RefreshToken = null;
-                user.RefreshTokenExpiryTime = null;
-                await _context.SaveChangesAsync();
-            }
-        }
-        catch (Exception)
-        {
-            // Handle exception
-        }
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null)
+            return;
+
+        user.RefreshToken = null;
+        user.RefreshTokenExpiryTime = null;
+
+        await _context.SaveChangesAsync();
     }
 }
