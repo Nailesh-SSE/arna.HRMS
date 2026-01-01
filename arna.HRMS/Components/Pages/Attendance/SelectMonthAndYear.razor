@@ -1,0 +1,82 @@
+﻿<div class="myp-wrapper">
+    <div class="myp-display" @onclick="Toggle">
+        <span class="myp-text">@DisplayText</span>
+        <span class="myp-arrow @(IsOpen ? "open" : "")"></span>
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="myp-panel">
+
+            <div class="myp-header">
+                <button type="button" class="nav-btn" @onclick="PrevYear">‹</button>
+                <span class="year-text">@CurrentYear</span>
+                <button type="button" class="nav-btn" @onclick="NextYear">›</button>
+            </div>
+
+            <div class="myp-divider"></div>
+
+            <div class="myp-grid">
+                @for (int i = 1; i <= 12; i++)
+                {
+                    var monthIndex = i;
+                    <button type="button"
+                            class="myp-month @(monthIndex == SelectedMonth ? "active" : "")"
+                            @onclick="() => OnMonthClick(monthIndex)">
+                        @MonthNames[monthIndex - 1]
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+
+@code {
+    [Parameter] public int Year { get; set; }
+    [Parameter] public int Month { get; set; }
+    [Parameter] public EventCallback<(int year, int month)> OnChange { get; set; }
+
+    private bool IsOpen;
+    private int CurrentYear;
+    private int SelectedMonth;
+
+    private readonly string[] MonthNames =
+    {
+        "January","February","March","April","May","June",
+        "July","August","September","October","November","December"
+    };
+
+    protected override void OnParametersSet()
+    {
+        var newYear = Year > 0 ? Year : DateTime.Now.Year;
+        var newMonth = Month is >= 1 and <= 12 ? Month : DateTime.Now.Month;
+
+        CurrentYear = newYear;
+        SelectedMonth = newMonth;
+    }
+
+    private string DisplayText =>
+     SelectedMonth is >= 1 and <= 12 && CurrentYear > 0
+         ? $"{MonthNames[SelectedMonth - 1]} {CurrentYear}"
+         : "Select Month";
+
+    private void Toggle() => IsOpen = !IsOpen;
+    private void PrevYear() => CurrentYear--;
+    private void NextYear() => CurrentYear++;
+
+    private async Task OnMonthClick(int month)
+    {
+        if (month < 1 || month > 12)
+            return;
+
+        SelectedMonth = month;
+
+        // Notify parent first
+        await OnChange.InvokeAsync((CurrentYear, month));
+
+        // Then close the dropdown
+        IsOpen = false;
+    }
+
+}
