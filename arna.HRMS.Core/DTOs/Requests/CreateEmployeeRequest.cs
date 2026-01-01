@@ -4,10 +4,7 @@ namespace arna.HRMS.Core.DTOs.Requests;
 
 public class CreateEmployeeRequest
 {
-    [Required(ErrorMessage = "Employee Number is required.")]
-    [StringLength(10)]
-    public string EmployeeNumber { get; set; }
-
+    
     [Required(ErrorMessage = "First name is required.")]
     [StringLength(50)]
     public string FirstName { get; set; }

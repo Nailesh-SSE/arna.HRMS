@@ -9,4 +9,5 @@ public interface IEmployeeService
     Task<EmployeeDto> CreateEmployeeAsync(Employee employee);
     Task<bool> DeleteEmployeeAsync(int id);
     Task<EmployeeDto> UpdateEmployeeAsync(Employee employee);
+    Task<bool> EmailAndPhoneNumberExistAsync(string email, string phoneNumber);
 }

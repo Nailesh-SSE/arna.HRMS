@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Components.Pages.Users;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Models.DTOs;
@@ -20,7 +21,8 @@ public class EmployeeService : IEmployeeService
     public async Task<List<EmployeeDto>> GetEmployeesAsync()
     {
         var employees = await _employeeRepository.GetEmployeesAsync();
-        return employees.Select(e => _mapper.Map<EmployeeDto>(e)).ToList();
+        var employeeList = employees.Where(x => x.IsActive && !x.IsDeleted).ToList();
+        return _mapper.Map<List<EmployeeDto>>(employeeList);
     }
 
     public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)
@@ -35,18 +37,33 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> CreateEmployeeAsync(Employee employee)
     {
+        var data = await _employeeRepository.GetEmployeesAsync();
+        var lastEmployeeNumber = data.Where(e => e.EmployeeNumber != null).OrderByDescending(e=>e.EmployeeNumber).Select(e=>e.EmployeeNumber).FirstOrDefault();
+        int nextNumber = 1;
+
+        if (lastEmployeeNumber != null)
+        {
+            string numberPart = lastEmployeeNumber.Replace("Emp", "");
+            int currentNumber = int.Parse(numberPart);
+            nextNumber = currentNumber + 1;
+        }
+        employee.EmployeeNumber = "Emp" + nextNumber.ToString("D3");
         var createdEmployee = await _employeeRepository.CreateEmployeeAsync(employee);
         return _mapper.Map<EmployeeDto>(createdEmployee);
+       
     }
     public async Task<bool> DeleteEmployeeAsync(int id) 
     {
-        var employeeDelete = await _employeeRepository.DeleteEmployeeAsync(id);
-        return employeeDelete;
+        return await _employeeRepository.DeleteEmployeeAsync(id);
     }
 
     public async Task<EmployeeDto> UpdateEmployeeAsync(Employee employee)
     {
         var updatedEmployee = await _employeeRepository.UpdateEmployeeAsync(employee);
         return _mapper.Map<EmployeeDto>(updatedEmployee);
+    }
+    public async Task<bool> EmailAndPhoneNumberExistAsync(string email, string phoneNumber)
+    {
+        return await _employeeRepository.EmployeeExistsAsync(email, phoneNumber);
     }
 }

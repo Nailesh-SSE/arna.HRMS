@@ -1,10 +1,13 @@
 ﻿@implements IDisposable
+@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Attendance
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
 @inject IClockService ClockService
+@inject AuthenticationStateProvider AuthProvider
+
 <style>
     /* LIVE CLOCK PILL */
     .clock-pill {
@@ -61,7 +64,6 @@
         .time-info-pill .value {
             font-variant-numeric: tabular-nums;
         }
-    
 </style>
 
 <div class="d-flex align-items-center gap-2">
@@ -146,19 +148,14 @@
 
     private System.Timers.Timer? _timer;
 
-    // Dynamic Component
     private bool ShowDynamicForm;
 
-    private int employeeId = 3;
 
     protected override void OnInitialized()
     {
         StartClock();
     }
 
-    // =========================
-    // CLOCK IN / OUT
-    // =========================
     private Task ClockInAsync()
     {
         if (IsClockedIn)
@@ -193,8 +190,12 @@
     private async Task SubmitClockInOutAsync()
     {
         ShowDynamicForm = false;
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var employeeId = user.FindFirst("EmployeeId")?.Value;
 
-        if (PendingClockIn==true)
+
+        if (PendingClockIn == true)
         {
             IsClockedIn = true;
 
@@ -204,7 +205,7 @@
 
             await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
-                EmployeeId = employeeId,
+                EmployeeId = Convert.ToInt32(employeeId),
                 Date = DateTime.Today,
                 ClockInTime = In.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
@@ -227,7 +228,7 @@
 
             await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
-                EmployeeId = employeeId,
+                EmployeeId = Convert.ToInt32(employeeId),
                 Date = DateTime.Today,
                 ClockOutTime = Out.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
@@ -239,9 +240,6 @@
         }
     }
 
-    // =========================
-    // CLOCK
-    // =========================
     private void StartClock()
     {
         UpdateCurrentTime();
@@ -259,9 +257,6 @@
         CurrentTime = DateTime.Now.ToString("HH:mm:ss");
     }
 
-    // =========================
-    // TOAST
-    // =========================
     private async Task ShowNotification(string message)
     {
         ToastMessage = message;

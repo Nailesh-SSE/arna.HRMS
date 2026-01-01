@@ -1,13 +1,18 @@
 ﻿@page "/createemployee"
 @page "/employees/edit/{Id:int}"
 
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Employee
+@using arna.HRMS.Core.DTOs.Requests
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.ClientServices
+
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+
 
 <div class="container py-4">
 
@@ -26,32 +31,26 @@
                 <div class="row g-4">
 
                     <div class="col-md-4">
-                        <label class="form-label">Employee Number</label>
-                        <InputText class="form-control" @bind-Value="employee.EmployeeNumber" />
-                        <ValidationMessage For="@(() => employee.EmployeeNumber)" />
-                    </div>
-
-                    <div class="col-md-4">
                         <label class="form-label">First Name</label>
-                        <InputText class="form-control" @bind-Value="employee.FirstName" />
+                        <InputText class="form-control" @bind-Value="employee.FirstName" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.FirstName)" />
                     </div>
 
                     <div class="col-md-4">
                         <label class="form-label">Last Name</label>
-                        <InputText class="form-control" @bind-Value="employee.LastName" />
+                        <InputText class="form-control" @bind-Value="employee.LastName" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.LastName)" />
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Email</label>
-                        <InputText class="form-control" @bind-Value="employee.Email" />
+                        <InputText class="form-control" @bind-Value="employee.Email" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.Email)" />
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Phone Number</label>
-                        <InputText class="form-control" @bind-Value="employee.PhoneNumber" />
+                        <InputText class="form-control" @bind-Value="employee.PhoneNumber" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.PhoneNumber)" />
                     </div>
 
@@ -65,13 +64,13 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Position</label>
-                        <InputText class="form-control" @bind-Value="employee.Position" />
+                        <InputText class="form-control" @bind-Value="employee.Position" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.Position)" />
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Salary</label>
-                        <InputNumber class="form-control" @bind-Value="employee.Salary" />
+                        <InputNumber class="form-control" @bind-Value="employee.Salary" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.Salary)" />
                     </div>
 
@@ -107,13 +106,13 @@
 
                     <div class="col-md-6">
                         <label class="form-label">Date of Birth</label>
-                        <InputDate class="form-control" @bind-Value="employee.DateOfBirth" />
+                        <InputDate class="form-control" @bind-Value="employee.DateOfBirth" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.DateOfBirth)" />
                     </div>
 
                     <div class="col-md-6">
                         <label class="form-label">Hire Date</label>
-                        <InputDate class="form-control" @bind-Value="employee.HireDate" />
+                        <InputDate class="form-control" @bind-Value="employee.HireDate" autocomplete="off" />
                         <ValidationMessage For="@(() => employee.HireDate)" />
                     </div>
 
@@ -157,28 +156,32 @@
     {
         editcontext = new EditContext(employee);
 
-        var data = await DepartmentService.GetDepartmentsAsync();
+        // Load departments
+        var deptData = await DepartmentService.GetDepartmentsAsync();
+        departments = deptData.Select(d => new DepartmentViewModel
+        {
+            Id = d.Id,
+            DepartmentName = d.Name
+        }).ToList();
+
+        // Load managers
         var employeeData = await EmployeeService.GetEmployeesAsync();
-
-        departments = data.Select(s => new DepartmentViewModel
+        managers = employeeData.Select(e => new EmployeeViewModel
         {
-            Id = s.Id,
-            DepartmentName = s.Name
+            Id = e.Id,
+            FirstName = e.FirstName,
+            LastName = e.LastName
         }).ToList();
 
-        managers = employeeData.Select(s => new EmployeeViewModel
-        {
-            Id = s.Id,
-            FirstName = s.FirstName,
-            LastName = s.LastName
-        }).ToList();
-
+        // Edit mode: load employee
         if (IsEditMode)
         {
-            var existing = await EmployeeService.GetEmployeeByIdAsync(Id.Value);
+            var response = await EmployeeService.GetEmployeeByIdAsync(Id!.Value);
 
-            if (existing != null)
+            if (response.IsSuccess && response.Data != null)
             {
+                var existing = response.Data;
+
                 employee.EmployeeNumber = existing.EmployeeNumber;
                 employee.FirstName = existing.FirstName;
                 employee.LastName = existing.LastName;
@@ -196,29 +199,59 @@
 
     private async Task HandleValidSubmit()
     {
-        var dto = new EmployeeDto
-        {
-            Id = Id ?? 0,
-            EmployeeNumber = employee.EmployeeNumber,
-            FirstName = employee.FirstName,
-            LastName = employee.LastName,
-            Email = employee.Email,
-            PhoneNumber = employee.PhoneNumber,
-            Position = employee.Position,
-            Salary = employee.Salary,
-            DateOfBirth = employee.DateOfBirth,
-            HireDate = employee.HireDate,
-            DepartmentId = employee.DepartmentId,
-            ManagerId = employee.ManagerId
-        };
-
         if (IsEditMode)
         {
-            await EmployeeService.UpdateEmployeeAsync(Id.Value, dto);
+            var updateDto = new UpdateEmployeeRequest
+            {
+                Id = Id.Value,
+                EmployeeNumber = employee.EmployeeNumber,
+                FirstName = employee.FirstName,
+                LastName = employee.LastName,
+                Email = employee.Email,
+                PhoneNumber = employee.PhoneNumber,
+                Position = employee.Position,
+                Salary = employee.Salary,
+                DateOfBirth = employee.DateOfBirth,
+                HireDate = employee.HireDate,
+                DepartmentId = employee.DepartmentId,
+                ManagerId = employee.ManagerId
+            };
+
+            var result = await EmployeeService.UpdateEmployeeAsync(Id.Value, updateDto);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error("Failed to update employee.");
+                return;
+            }
+
+            NotificationService.Success("Employee updated successfully.");
         }
         else
         {
-            await EmployeeService.CreateEmployeeAsync(dto);
+            var createDto = new EmployeeDto
+            {
+                FirstName = employee.FirstName,
+                LastName = employee.LastName,
+                Email = employee.Email,
+                PhoneNumber = employee.PhoneNumber,
+                Position = employee.Position,
+                Salary = employee.Salary,
+                DateOfBirth = employee.DateOfBirth,
+                HireDate = employee.HireDate,
+                DepartmentId = employee.DepartmentId,
+                ManagerId = employee.ManagerId
+            };
+
+            var result = await EmployeeService.CreateEmployeeAsync(createDto);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error("Failed to create employee.");
+                return;
+            }
+
+            NotificationService.Success("Employee created successfully.");
         }
 
         NavigationManager.NavigateTo("/employee/employeelist");

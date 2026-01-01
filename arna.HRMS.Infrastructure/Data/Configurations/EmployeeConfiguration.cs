@@ -25,6 +25,9 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.Email)
             .IsRequired()
             .HasMaxLength(100);
+        builder.Property(e => e.PhoneNumber)
+            .IsRequired()
+            .HasMaxLength(10);
 
         builder.Property(e => e.Salary)
             .HasPrecision(18, 2); // <--- Added precision to avoid EF warning
@@ -56,5 +59,6 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.HasIndex(e => e.EmployeeNumber).IsUnique();
         builder.HasIndex(e => e.Email).IsUnique();
+        builder.HasIndex(e => e.PhoneNumber).IsUnique();
     }
 }
