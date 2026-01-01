@@ -27,9 +27,7 @@ public class AttendanceService : IAttendanceService
     public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(
      int year, int month, int empId)
     {
-        var apiData = await _httpClient.GetFromJsonAsync<List<MonthlyAttendanceDto>>(
-            $"api/Attendance/by-month?year={year}&month={month}&empId={empId}"
-        ) ?? new List<MonthlyAttendanceDto>();
+        var apiData = await _httpClient.GetFromJsonAsync<List<MonthlyAttendanceDto>>($"api/attendance/by-month?year={year}&month={month}&empId={empId}") ?? new List<MonthlyAttendanceDto>();
 
         // 👇 THIS IS WHERE IT HAPPENS
         return MonthlyAttendanceBuilder.Build(year, month, empId, apiData);

@@ -41,7 +41,7 @@
         if (user.Identity?.IsAuthenticated == true)
         {
             FullName =
-                user.FindFirst("Name")?.Value
+                user.FindFirst("FullName")?.Value
                 ?? user.Identity?.Name
                 ?? string.Empty;
         }

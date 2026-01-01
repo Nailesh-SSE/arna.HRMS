@@ -1,14 +1,21 @@
-﻿using arna.HRMS.Models.Common;
+﻿using arna.HRMS.ClientServices.Auth;
+using arna.HRMS.Models.Common;
+using Microsoft.AspNetCore.Components;
+using System.Net;
 
 namespace arna.HRMS.ClientServices.Common;
 
 public class HttpService
 {
     private readonly HttpClient _http;
+    private readonly NavigationManager _navigationManager;
+    private readonly CustomAuthStateProvider _customAuthStateProvider;
 
-    public HttpService(HttpClient http)
+    public HttpService(HttpClient http, NavigationManager navigationManager, CustomAuthStateProvider customAuthStateProvider)
     {
         _http = http;
+        _navigationManager = navigationManager;
+        _customAuthStateProvider = customAuthStateProvider;
     }
 
     public Task<ApiResult<T>> GetAsync<T>(string url)
@@ -23,7 +30,7 @@ public class HttpService
     public Task<ApiResult<T>> DeleteAsync<T>(string url)
         => SendAsync<T>(() => _http.DeleteAsync(url));
 
-    private static async Task<ApiResult<T>> SendAsync<T>(
+    private async Task<ApiResult<T>> SendAsync<T>(
         Func<Task<HttpResponseMessage>> request)
     {
         try
@@ -31,11 +38,21 @@ public class HttpService
             var response = await request();
             var statusCode = (int)response.StatusCode;
 
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                await HandleUnauthorizedAsync();
+                return ApiResult<T>.Fail(
+                    "Session expired. Please login again.",
+                    statusCode);
+            }
+
             if (response.IsSuccessStatusCode)
             {
                 if (typeof(T) == typeof(bool))
                 {
-                    return ApiResult<T>.Success((T)(object)true, statusCode);
+                    return ApiResult<T>.Success(
+                        (T)(object)true,
+                        statusCode);
                 }
 
                 var data = await response.Content.ReadFromJsonAsync<T>();
@@ -49,6 +66,12 @@ public class HttpService
         {
             return ApiResult<T>.Fail(ex.Message, 500);
         }
+    }
+
+    private async Task HandleUnauthorizedAsync()
+    {
+        await _customAuthStateProvider.LogoutAsync();
+        _navigationManager.NavigateTo("/login", forceLoad: true);
     }
 
     private static async Task<string> ReadErrorAsync(HttpResponseMessage response)

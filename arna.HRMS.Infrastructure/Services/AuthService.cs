@@ -79,7 +79,8 @@ public class AuthService : IAuthService
             Role = user.Role,
             Email = user.Email,
             EmployeeId = user.EmployeeId,
-            Message = message
+            Message = message,
+            Password = user.Password
         };
     }
 
