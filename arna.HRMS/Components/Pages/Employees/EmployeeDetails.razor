@@ -276,8 +276,8 @@
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var user = authState.User;
         var employeeId = user.FindFirst("EmployeeId")?.Value;
-        employee = await EmployeeService.GetEmployeeByIdAsync(Convert.ToInt32(employeeId));
-
+        var result = await EmployeeService.GetEmployeeByIdAsync(Convert.ToInt32(employeeId));
+        employee = result.Data;
 
         if (employee != null)
         {

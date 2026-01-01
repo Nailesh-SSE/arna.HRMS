@@ -1,61 +1,49 @@
-﻿using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.ClientServices.Common;
+using arna.HRMS.Core.DTOs.Requests;
+using arna.HRMS.Models.Common;
+using arna.HRMS.Models.DTOs;
 
 namespace arna.HRMS.ClientServices.Employee;
 
 public interface IEmployeeService
 {
     Task<List<EmployeeDto>> GetEmployeesAsync();
-    Task<EmployeeDto?> GetEmployeeByIdAsync(int id);
-    Task<EmployeeDto> CreateEmployeeAsync(EmployeeDto employeeDto);
-    Task<bool> DeleteEmployeeAsync(int id);
-    Task UpdateEmployeeAsync(int id, EmployeeDto employeeDto);
+    Task<ApiResult<EmployeeDto?>> GetEmployeeByIdAsync(int id);
+    Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto employeeDto);
+    Task<ApiResult<bool>> DeleteEmployeeAsync(int id);
+    Task<ApiResult<bool>> UpdateEmployeeAsync(int id, UpdateEmployeeRequest employeeDto);
 }
-public class EmployeeService(HttpClient HttpClient) : IEmployeeService
+public class EmployeeService : IEmployeeService
 {
- 
-    public async Task<List<EmployeeDto>> GetEmployeesAsync()
+    private readonly HttpService HttpClient;
+    public EmployeeService(HttpService HttpClient)
     {
-        var response = await HttpClient.GetFromJsonAsync<List<EmployeeDto>>("api/employees");
-        return response ?? new List<EmployeeDto>();
+        this.HttpClient = HttpClient;
     }
 
-    public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)
+    public async Task<List<EmployeeDto>> GetEmployeesAsync()
     {
-        var response = await HttpClient.GetFromJsonAsync<EmployeeDto>($"api/employees/{id}");
+        var result = await HttpClient.GetAsync<List<EmployeeDto>>("api/employees");
+        return result.Data ?? new List<EmployeeDto>();
+    }
+
+    public async Task<ApiResult<EmployeeDto?>> GetEmployeeByIdAsync(int id)
+    {
+        var response = await HttpClient.GetAsync<EmployeeDto>($"api/employees/{id}");
         return response;
     }
 
-    public async Task<EmployeeDto> CreateEmployeeAsync(EmployeeDto employeeDto)
+    public async Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto employeeDto)
     {
-        var response = await HttpClient.PostAsJsonAsync("api/employees", employeeDto);
-        response.EnsureSuccessStatusCode();
-
-        return await response.Content.ReadFromJsonAsync<EmployeeDto>();
+        return await HttpClient.PostAsync<EmployeeDto>("api/employees", employeeDto);
     }
-    public async Task<bool> DeleteEmployeeAsync(int id)
+    public async Task<ApiResult<bool>> DeleteEmployeeAsync(int id)
     {
-        var respnce = await HttpClient.DeleteAsync($"api/employees/{id}");
-        return respnce != null;
+        var respnce = await HttpClient.DeleteAsync<bool>($"api/employees/{id}");
+        return respnce;
     }
-    public async Task UpdateEmployeeAsync(int id, EmployeeDto employeeDto)
+    public async Task<ApiResult<bool>> UpdateEmployeeAsync(int id,UpdateEmployeeRequest employeeDto)
     {
-        var updateRequest = new EmployeeDto
-        {
-            Id= employeeDto.Id,
-            EmployeeNumber = employeeDto.EmployeeNumber,
-            FirstName = employeeDto.FirstName,
-            LastName = employeeDto.LastName,
-            Email = employeeDto.Email,
-            PhoneNumber = employeeDto.PhoneNumber,
-            Position = employeeDto.Position,
-            Salary = employeeDto.Salary,
-            DateOfBirth = employeeDto.DateOfBirth,
-            HireDate = employeeDto.HireDate,
-            DepartmentId = employeeDto.DepartmentId,
-            ManagerId = employeeDto.ManagerId
-        };
-        var response = await HttpClient.PutAsJsonAsync($"api/employees/{id}", updateRequest);
-
-        response.EnsureSuccessStatusCode();
+        return await HttpClient.PutAsync<bool>($"api/employees/{id}", employeeDto);
     }
 }

@@ -9,8 +9,6 @@ public class EmployeeViewModel
     public EmployeeDto Employee { get; set; }
 
     public int Id { get; set; }
-    [Required(ErrorMessage = "Employee Number is required")]
-    [Display(Name = "Employee ID")]
     public string EmployeeNumber { get; set; }
 
     [Required(ErrorMessage = "First name is required.")]

@@ -35,18 +35,33 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> CreateEmployeeAsync(Employee employee)
     {
+        var data = await _employeeRepository.GetEmployeesAsync();
+        var lastEmployeeNumber = data.Where(e => e.EmployeeNumber != null).OrderByDescending(e=>e.EmployeeNumber).Select(e=>e.EmployeeNumber).FirstOrDefault();
+        int nextNumber = 1;
+
+        if (lastEmployeeNumber != null)
+        {
+            string numberPart = lastEmployeeNumber.Replace("Emp", "");
+            int currentNumber = int.Parse(numberPart);
+            nextNumber = currentNumber + 1;
+        }
+        employee.EmployeeNumber = "Emp" + nextNumber.ToString("D3");
         var createdEmployee = await _employeeRepository.CreateEmployeeAsync(employee);
         return _mapper.Map<EmployeeDto>(createdEmployee);
+       
     }
     public async Task<bool> DeleteEmployeeAsync(int id) 
     {
-        var employeeDelete = await _employeeRepository.DeleteEmployeeAsync(id);
-        return employeeDelete;
+        return await _employeeRepository.DeleteEmployeeAsync(id);
     }
 
     public async Task<EmployeeDto> UpdateEmployeeAsync(Employee employee)
     {
         var updatedEmployee = await _employeeRepository.UpdateEmployeeAsync(employee);
         return _mapper.Map<EmployeeDto>(updatedEmployee);
+    }
+    public async Task<bool> EmailAndPhoneNumberExistAsync(string email, string phoneNumber)
+    {
+        return await _employeeRepository.EmployeeExistsAsync(email, phoneNumber);
     }
 }

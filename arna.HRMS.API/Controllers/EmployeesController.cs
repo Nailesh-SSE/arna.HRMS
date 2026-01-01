@@ -40,6 +40,12 @@ public class EmployeesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<EmployeeDto>> CreateEmployee(CreateEmployeeRequest employeeDto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (await _employeeService.EmailAndPhoneNumberExistAsync(employeeDto.Email, employeeDto.PhoneNumber))
+            return Conflict("Email or Phone Number already exists");
+
         var employee = _mapper.Map<Employee>(employeeDto);
         var createdEmployee = await _employeeService.CreateEmployeeAsync(employee);
 
@@ -60,14 +66,18 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateEmployee(int id, UpdateEmployeeRequest employeeDto)
+    public async Task<IActionResult> UpdateEmployee(int id,[FromBody] UpdateEmployeeRequest employeeDto)
     {
-        if (id != employeeDto.Id) return BadRequest();
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (id != employeeDto.Id)
+            return BadRequest("ID mismatch");
 
         var employee = _mapper.Map<Employee>(employeeDto);
-
         await _employeeService.UpdateEmployeeAsync(employee);
 
         return NoContent();
     }
+
 }
