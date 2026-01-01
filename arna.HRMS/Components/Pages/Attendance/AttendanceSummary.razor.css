@@ -1,0 +1,24 @@
+﻿.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-tile {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    text-align: center;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+    .summary-tile .label {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .summary-tile .count {
+        font-size: 24px;
+        font-weight: 700;
+    }

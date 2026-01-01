@@ -1,5 +1,6 @@
-﻿using System.Net.Http.Json;
+﻿using arna.HRMS.Helpers.Attendance;
 using arna.HRMS.Models.DTOs;
+using System.Net.Http.Json;
 
 namespace arna.HRMS.ClientServices.Attendance;
 public interface IAttendanceService
@@ -23,10 +24,14 @@ public class AttendanceService : IAttendanceService
             .GetFromJsonAsync<AttendanceDto>($"api/Attendance/{id}");
     }
 
-    public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int empId)
+    public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(
+     int year, int month, int empId)
     {
-        return await _httpClient.GetFromJsonAsync<List<MonthlyAttendanceDto>>(
+        var apiData = await _httpClient.GetFromJsonAsync<List<MonthlyAttendanceDto>>(
             $"api/Attendance/by-month?year={year}&month={month}&empId={empId}"
         ) ?? new List<MonthlyAttendanceDto>();
+
+        // 👇 THIS IS WHERE IT HAPPENS
+        return MonthlyAttendanceBuilder.Build(year, month, empId, apiData);
     }
 }
