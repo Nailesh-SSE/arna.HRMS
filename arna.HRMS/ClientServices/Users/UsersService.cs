@@ -23,33 +23,33 @@ public class UsersService : IUsersService
         _http = http;
     }
 
-    public Task<ApiResult<List<UserDto>>> GetUsersAsync()
+    public async Task<ApiResult<List<UserDto>>> GetUsersAsync()
     {
-        return _http.GetAsync<List<UserDto>>("api/users");
+        return await _http.GetAsync<List<UserDto>>("api/users");
     }
 
-    public Task<ApiResult<UserDto>> GetUserByIdAsync(int id)
+    public async Task<ApiResult<UserDto>> GetUserByIdAsync(int id)
     {
-        return _http.GetAsync<UserDto>($"api/users/{id}");
+        return await _http.GetAsync<UserDto>($"api/users/{id}");
     }
 
-    public Task<ApiResult<UserDto>> GetUserByNameAsync(string userName)
+    public async Task<ApiResult<UserDto>> GetUserByNameAsync(string userName)
     {
-        return _http.GetAsync<UserDto>($"api/users/byname/{userName}");
+        return await _http.GetAsync<UserDto>($"api/users/byname/{userName}");
     }
 
-    public Task<ApiResult<UserDto>> CreateUserAsync(UserDto userDto)
+    public async Task<ApiResult<UserDto>> CreateUserAsync(UserDto userDto)
     {
-        return _http.PostAsync<UserDto>("api/users", userDto);
+        return await _http.PostAsync<UserDto>("api/users", userDto);
     }
 
-    public Task<ApiResult<bool>> UpdateUserAsync(int id, UserDto userDto)
+    public async Task<ApiResult<bool>> UpdateUserAsync(int id, UserDto userDto)
     {
-        return _http.PutAsync<bool>($"api/users/{id}", userDto);
+        return await _http.PutAsync<bool>($"api/users/{id}", userDto);
     }
 
-    public Task<ApiResult<bool>> DeleteUserAsync(int id)
+    public async Task<ApiResult<bool>> DeleteUserAsync(int id)
     {
-        return _http.DeleteAsync<bool>($"api/users/{id}");
+        return await _http.DeleteAsync<bool>($"api/users/{id}");
     }
 }

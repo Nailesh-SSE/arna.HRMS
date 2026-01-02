@@ -141,7 +141,7 @@
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error("Failed to delete user.");
+            NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
             return;
         }
 

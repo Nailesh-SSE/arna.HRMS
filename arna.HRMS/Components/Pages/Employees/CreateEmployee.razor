@@ -165,13 +165,14 @@
         }).ToList();
 
         // Load managers
-        var employeeData = await EmployeeService.GetEmployeesAsync();
-        managers = employeeData.Select(e => new EmployeeViewModel
+        var employeeResult = await EmployeeService.GetEmployeesAsync();
+
+        managers = employeeResult.Data?.Select(e => new EmployeeViewModel
         {
             Id = e.Id,
             FirstName = e.FirstName,
             LastName = e.LastName
-        }).ToList();
+        }) .ToList() ?? new List<EmployeeViewModel>();
 
         // Edit mode: load employee
         if (IsEditMode)

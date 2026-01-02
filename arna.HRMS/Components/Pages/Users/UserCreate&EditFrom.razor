@@ -160,9 +160,9 @@
         isLoading = true;
 
         var employeeResult = await EmployeeService.GetEmployeesAsync();
-        if (employeeResult.Any())
+        if (employeeResult.Data.Any())
         {
-            employees = employeeResult.ToList();
+            employees = employeeResult.Data.ToList();
         }
 
         if (IsEditMode)
@@ -199,7 +199,7 @@
 
             if (!result.IsSuccess)
             {
-                NotificationService.Error(result.ErrorMessage ?? "Failed to update user.");
+                NotificationService.Error($"Update failed ({result.StatusCode}): {result.Message ?? "Unable to update user."}");
                 return;
             }
 
@@ -211,7 +211,7 @@
 
             if (!result.IsSuccess)
             {
-                NotificationService.Error(result.ErrorMessage ?? "Failed to create user.");
+                NotificationService.Error($"Create failed ({result.StatusCode}): {result.Message ?? "Unable to create user."}");
                 return;
             }
 
