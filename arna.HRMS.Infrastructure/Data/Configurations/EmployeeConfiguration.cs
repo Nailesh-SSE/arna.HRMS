@@ -59,6 +59,5 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.HasIndex(e => e.EmployeeNumber).IsUnique();
         builder.HasIndex(e => e.Email).IsUnique();
-        builder.HasIndex(e => e.PhoneNumber).IsUnique();
     }
 }
