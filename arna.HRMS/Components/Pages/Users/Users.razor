@@ -16,7 +16,7 @@
         <h3 class="fw-bold text-primary">Users Directory</h3>
 
         <button class="btn btn-success" @onclick='() => NavigationManager.NavigateTo("/users/create")'>
-            Add User
+            <i class="bi bi-plus-lg"></i> Add User
         </button>
 
     </div>
@@ -139,11 +139,14 @@
 
         var result = await UsersService.DeleteUserAsync(id);
 
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            NotificationService.Success("User deleted successfully.");
-            await LoadUsers();
+            NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
+            return;
         }
+
+        NotificationService.Success("User deleted successfully.");
+        await LoadUsers();
     }
 }
 

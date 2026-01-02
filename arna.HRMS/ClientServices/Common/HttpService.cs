@@ -9,13 +9,13 @@ public class HttpService
 {
     private readonly HttpClient _http;
     private readonly NavigationManager _navigationManager;
-    private readonly CustomAuthStateProvider _customAuthStateProvider;
+    private readonly CustomAuthStateProvider _authProvider;
 
-    public HttpService(HttpClient http, NavigationManager navigationManager, CustomAuthStateProvider customAuthStateProvider)
+    public HttpService(HttpClient http, NavigationManager navigationManager, CustomAuthStateProvider authProvider)
     {
         _http = http;
         _navigationManager = navigationManager;
-        _customAuthStateProvider = customAuthStateProvider;
+        _authProvider = authProvider;
     }
 
     public Task<ApiResult<T>> GetAsync<T>(string url)
@@ -35,32 +35,63 @@ public class HttpService
     {
         try
         {
-            var response = await request();
+            using var response = await request();
             var statusCode = (int)response.StatusCode;
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 await HandleUnauthorizedAsync();
-                return ApiResult<T>.Fail(
-                    "Session expired. Please login again.",
-                    statusCode);
+                return ApiResult<T>.Fail("Session expired. Please login again.", statusCode);
+            }
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                return ApiResult<T>.Fail("You do not have permission to perform this action.", statusCode);
+            }
+
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                return ApiResult<T>.Success(default!, statusCode);
             }
 
             if (response.IsSuccessStatusCode)
             {
                 if (typeof(T) == typeof(bool))
                 {
-                    return ApiResult<T>.Success(
-                        (T)(object)true,
-                        statusCode);
+                    return ApiResult<T>.Success((T)(object)true, statusCode);
                 }
 
-                var data = await response.Content.ReadFromJsonAsync<T>();
+                var data = await SafeReadAsync<T>(response);
                 return ApiResult<T>.Success(data!, statusCode);
             }
 
-            var errorMessage = await ReadErrorAsync(response);
-            return ApiResult<T>.Fail(errorMessage, statusCode);
+            var error = await ReadErrorAsync(response);
+
+            return response.StatusCode switch
+            {
+                HttpStatusCode.BadRequest =>
+                    ApiResult<T>.Fail(error ?? "Invalid request.", statusCode),
+
+                HttpStatusCode.NotFound =>
+                    ApiResult<T>.Fail("Resource not found.", statusCode),
+
+                HttpStatusCode.Conflict =>
+                    ApiResult<T>.Fail(error ?? "Conflict occurred.", statusCode),
+
+                HttpStatusCode.InternalServerError =>
+                    ApiResult<T>.Fail("Server error occurred.", statusCode),
+
+                _ =>
+                    ApiResult<T>.Fail(error ?? "Request failed.", statusCode)
+            };
+        }
+        catch (HttpRequestException ex)
+        {
+            return ApiResult<T>.Fail($"Network error: {ex.Message}", 503);
+        }
+        catch (TaskCanceledException)
+        {
+            return ApiResult<T>.Fail("Request timed out.", 408);
         }
         catch (Exception ex)
         {
@@ -70,18 +101,30 @@ public class HttpService
 
     private async Task HandleUnauthorizedAsync()
     {
-        await _customAuthStateProvider.LogoutAsync();
+        await _authProvider.LogoutAsync();
         _navigationManager.NavigateTo("/login", forceLoad: true);
     }
 
-    private static async Task<string> ReadErrorAsync(HttpResponseMessage response)
+    private static async Task<T?> SafeReadAsync<T>(HttpResponseMessage response)
+    {
+        try
+        {
+            return await response.Content.ReadFromJsonAsync<T>();
+        }
+        catch
+        {
+            return default;
+        }
+    }
+
+    private static async Task<string?> ReadErrorAsync(HttpResponseMessage response)
     {
         if (response.Content == null)
-            return "Unexpected error occurred";
+            return null;
 
         var content = await response.Content.ReadAsStringAsync();
         return string.IsNullOrWhiteSpace(content)
-            ? response.ReasonPhrase ?? "Request failed"
+            ? response.ReasonPhrase
             : content;
     }
 }

@@ -7,43 +7,44 @@ namespace arna.HRMS.ClientServices.Employee;
 
 public interface IEmployeeService
 {
-    Task<List<EmployeeDto>> GetEmployeesAsync();
-    Task<ApiResult<EmployeeDto?>> GetEmployeeByIdAsync(int id);
+    Task<ApiResult<List<EmployeeDto>>> GetEmployeesAsync();
+    Task<ApiResult<EmployeeDto>> GetEmployeeByIdAsync(int id);
     Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto employeeDto);
-    Task<ApiResult<bool>> DeleteEmployeeAsync(int id);
     Task<ApiResult<bool>> UpdateEmployeeAsync(int id, UpdateEmployeeRequest employeeDto);
+    Task<ApiResult<bool>> DeleteEmployeeAsync(int id);
 }
+
 public class EmployeeService : IEmployeeService
 {
-    private readonly HttpService HttpClient;
-    public EmployeeService(HttpService HttpClient)
+    private readonly HttpService _http;
+
+    public EmployeeService(HttpService http)
     {
-        this.HttpClient = HttpClient;
+        _http = http;
     }
 
-    public async Task<List<EmployeeDto>> GetEmployeesAsync()
+    public async Task<ApiResult<List<EmployeeDto>>> GetEmployeesAsync()
     {
-        var result = await HttpClient.GetAsync<List<EmployeeDto>>("api/employees");
-        return result.Data ?? new List<EmployeeDto>();
+        return await _http.GetAsync<List<EmployeeDto>>("api/employees");
     }
 
-    public async Task<ApiResult<EmployeeDto?>> GetEmployeeByIdAsync(int id)
+    public async Task<ApiResult<EmployeeDto>> GetEmployeeByIdAsync(int id)
     {
-        var response = await HttpClient.GetAsync<EmployeeDto>($"api/employees/{id}");
-        return response;
+        return await _http.GetAsync<EmployeeDto>($"api/employees/{id}");
     }
 
     public async Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto employeeDto)
     {
-        return await HttpClient.PostAsync<EmployeeDto>("api/employees", employeeDto);
+        return await _http.PostAsync<EmployeeDto>("api/employees", employeeDto);
     }
+
+    public async Task<ApiResult<bool>> UpdateEmployeeAsync(int id, UpdateEmployeeRequest employeeDto)
+    {
+        return await _http.PutAsync<bool>($"api/employees/{id}", employeeDto);
+    }
+
     public async Task<ApiResult<bool>> DeleteEmployeeAsync(int id)
     {
-        var respnce = await HttpClient.DeleteAsync<bool>($"api/employees/{id}");
-        return respnce;
-    }
-    public async Task<ApiResult<bool>> UpdateEmployeeAsync(int id,UpdateEmployeeRequest employeeDto)
-    {
-        return await HttpClient.PutAsync<bool>($"api/employees/{id}", employeeDto);
+        return await _http.DeleteAsync<bool>($"api/employees/{id}");
     }
 }

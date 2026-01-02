@@ -1,12 +1,14 @@
 ﻿@page "/employee/employeelist"
 @rendermode InteractiveServer
 @inject IJSRuntime JsRuntime
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.ClientServices
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
 
 <div class="container mt-4">
 
@@ -131,41 +133,67 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var data = await EmployeeService.GetEmployeesAsync();
-   
-        employees = data.Select(s => new EmployeeViewModel
-        {
-            Id=s.Id,
-            EmployeeNumber = s.EmployeeNumber,
-            FirstName = s.FirstName,
-            LastName = s.LastName,
-            Email = s.Email,
-            DepartmentCode = s.DepartmentCode,
-            ManagerFullName = s.ManagerFullName,
-            PhoneNumber = s.PhoneNumber,
-            HireDate = s.HireDate,
-            Position = s.Position,
-            DateOfBirth = s.DateOfBirth,
-            IsActive = s.IsActive,
-
-        }).ToList();
-        StateHasChanged();
+        await LoadEmployeesAsync();
     }
+    
+    private async Task LoadEmployeesAsync()
+    {
+        var result = await EmployeeService.GetEmployeesAsync();
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error($"Error {result.StatusCode}: {result.Message ?? "Failed to load employees."}");
+            employees = new List<EmployeeViewModel>();
+            return;
+        }
+
+        employees = result.Data?
+            .Select(e => new EmployeeViewModel
+            {
+                Id = e.Id,
+                EmployeeNumber = e.EmployeeNumber,
+                FirstName = e.FirstName,
+                LastName = e.LastName,
+                Email = e.Email,
+                DepartmentCode = e.DepartmentCode,
+                ManagerFullName = e.ManagerFullName,
+                PhoneNumber = e.PhoneNumber,
+                HireDate = e.HireDate,
+                Position = e.Position,
+                DateOfBirth = e.DateOfBirth,
+                IsActive = e.IsActive
+            })
+            .ToList()
+            ?? new List<EmployeeViewModel>();
+    }
+
     private void NavigateTo(string route)
     {
         NavigationManager.NavigateTo(route);
     }
-    private async Task DeleteInfo(int Id)
+
+    private async Task DeleteInfo(int id)
     {
-        if (await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this employee?"))
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete this employee?"
+        );
+
+        if (!confirmed)
+            return;
+
+        var result = await EmployeeService.DeleteEmployeeAsync(id);
+
+        if (!result.IsSuccess)
         {
-            await EmployeeService.DeleteEmployeeAsync(Id);
-            NavigationManager.NavigateTo("/employee/employeelist", forceLoad: true);
+            NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message}");
+            return;
         }
-        // await EmployeeService.DeleteEmployeeAsync(Id);
-        StateHasChanged();
-        await OnInitializedAsync();
+
+        NotificationService.Success("Employee deleted successfully.");
+        await LoadEmployeesAsync();
     }
+
     private void EditEmployee(int id)
     {
         NavigationManager.NavigateTo($"/employees/edit/{id}");

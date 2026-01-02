@@ -275,22 +275,34 @@
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-        var employeeId = user.FindFirst("EmployeeId")?.Value;
-        var result = await EmployeeService.GetEmployeeByIdAsync(Convert.ToInt32(employeeId));
-        employee = result.Data;
 
-        if (employee != null)
+        var employeeIdClaim = user.FindFirst("EmployeeId")?.Value;
+        if (!int.TryParse(employeeIdClaim, out var employeeId))
+            return;
+
+        var employeeResult = await EmployeeService.GetEmployeeByIdAsync(employeeId);
+
+        if (!employeeResult.IsSuccess || employeeResult.Data == null)
+            return;
+
+        employee = employeeResult.Data;
+
+        var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId);
+        if (deptResult != null)
         {
-            var dept = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId);
-            var data = await EmployeeService.GetEmployeesAsync();
-            if (dept != null)
+            employee.DepartmentName = deptResult.Name;
+            employee.DepartmentCode = deptResult.Code;
+        }
+
+        if (employee.ManagerId.HasValue)
+        {
+            var employeesResult = await EmployeeService.GetEmployeesAsync();
+
+            var manager = employeesResult.Data?.FirstOrDefault(e => e.Id == employee.ManagerId.Value);
+
+            if (manager != null)
             {
-                employee.DepartmentName = dept.Name;
-                employee.DepartmentCode = dept.Code;
-            }
-            if (employee.ManagerId != null)
-            {
-                employee.ManagerFullName = data.Where(w => w.Id == employee.ManagerId).Select(s => s.FirstName + " " + s.LastName).FirstOrDefault().ToString();
+                employee.ManagerFullName = $"{manager.FirstName} {manager.LastName}";
             }
         }
 
