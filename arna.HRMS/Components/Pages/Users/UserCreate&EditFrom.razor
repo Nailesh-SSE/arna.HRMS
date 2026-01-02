@@ -160,9 +160,9 @@
         isLoading = true;
 
         var employeeResult = await EmployeeService.GetEmployeesAsync();
-        if (employeeResult.Data.Any())
+        if (employeeResult.Data!.Any())
         {
-            employees = employeeResult.Data.ToList();
+            employees = employeeResult.Data!.ToList();
         }
 
         if (IsEditMode)
@@ -175,7 +175,7 @@
             }
             else
             {
-                NotificationService.Error("User not found.");
+                NotificationService.Error($"User not found ({result.StatusCode}): {result.Message ?? "User not found."}");
                 NavigationManager.NavigateTo("/users");
             }
         }

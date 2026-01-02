@@ -102,7 +102,6 @@
 
 @code {
     private List<UserDto>? users;
-    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -111,20 +110,21 @@
 
     private async Task LoadUsers()
     {
-        isLoading = true;
-
         var result = await UsersService.GetUsersAsync();
 
         if (result.IsSuccess && result.Data != null)
         {
             users = result.Data;
         }
+        else if (!result.IsSuccess)
+        {
+            NotificationService.Error($"Failed to load users ({result.StatusCode}): {result.Message}");
+            users = new List<UserDto>();
+        }
         else
         {
             users = new List<UserDto>();
         }
-
-        isLoading = false;
     }
 
     private async Task DeleteUser(int id)

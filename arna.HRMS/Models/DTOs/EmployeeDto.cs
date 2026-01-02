@@ -1,13 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using arna.HRMS.Models.Common;
+using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Models.DTOs;
 
-public class EmployeeDto
+public class EmployeeDto : CommonDto
 {
-    public int Id { get; set; }
 
     [Display(Name = "Employee ID")]
-    public string EmployeeNumber { get; set; }
+    public string? EmployeeNumber { get; set; }
 
     [Required(ErrorMessage = "First name is required.")]
     [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters.")]
@@ -36,23 +36,17 @@ public class EmployeeDto
     // Department Information (Flattened for simplicity)
     public int DepartmentId { get; set; }
     [Display(Name = "Department")]
-    public string DepartmentName { get; set; }
-    public string DepartmentCode { get; set; }
+    public string? DepartmentName { get; set; }
+    public string? DepartmentCode { get; set; }
 
     // Manager Information (Flattened for simplicity)
     public int? ManagerId { get; set; }
     [Display(Name = "Manager")]
-    public string ManagerFullName { get; set; }
+    public string? ManagerFullName { get; set; }
 
     [StringLength(100)]
     public string Position { get; set; }
 
     [DataType(DataType.Currency)]
     public decimal Salary { get; set; }
-
-    [Display(Name = "Status")]
-    public bool IsActive { get; set; }
-
-    // Optional: Auditing fields if needed in the response
-    public DateTime CreatedAt { get; set; }
 }

@@ -1,10 +1,10 @@
-﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Enums;
+using arna.HRMS.Models.Common;
 using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Models.DTOs;
 
-public class UserDto : BaseEntity
+public class UserDto : CommonDto
 {
     [Required(ErrorMessage = "Username is required")]
     [MinLength(3, ErrorMessage = "Username must be at least 3 characters")]

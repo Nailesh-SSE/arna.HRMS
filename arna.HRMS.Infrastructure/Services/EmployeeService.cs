@@ -1,5 +1,4 @@
-﻿using arna.HRMS.Components.Pages.Users;
-using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Models.DTOs;
@@ -21,49 +20,56 @@ public class EmployeeService : IEmployeeService
     public async Task<List<EmployeeDto>> GetEmployeesAsync()
     {
         var employees = await _employeeRepository.GetEmployeesAsync();
-        var employeeList = employees.Where(x => x.IsActive && !x.IsDeleted).ToList();
-        return _mapper.Map<List<EmployeeDto>>(employeeList);
+        return _mapper.Map<List<EmployeeDto>>(employees);
     }
 
-    public async Task<EmployeeDto?> GetEmployeeByIdAsync(int id)
+    public async Task<EmployeeDto> GetEmployeeByIdAsync(int id)
     {
         var employee = await _employeeRepository.GetEmployeeByIdAsync(id);
-        if (employee == null) return null;
-        //var employeedto = new EmployeeDto();
-        var employeedto = _mapper.Map<EmployeeDto>(employee);
-
-        return employeedto;
+        return employee == null ? new EmployeeDto() : _mapper.Map<EmployeeDto>(employee);
     }
 
-    public async Task<EmployeeDto> CreateEmployeeAsync(Employee employee)
+    public async Task<EmployeeDto> CreateEmployeeAsync(EmployeeDto dto)
     {
-        var data = await _employeeRepository.GetEmployeesAsync();
-        var lastEmployeeNumber = data.Where(e => e.EmployeeNumber != null).OrderByDescending(e=>e.EmployeeNumber).Select(e=>e.EmployeeNumber).FirstOrDefault();
-        int nextNumber = 1;
+        var employee = _mapper.Map<Employee>(dto);
 
-        if (lastEmployeeNumber != null)
-        {
-            string numberPart = lastEmployeeNumber.Replace("Emp", "");
-            int currentNumber = int.Parse(numberPart);
-            nextNumber = currentNumber + 1;
-        }
-        employee.EmployeeNumber = "Emp" + nextNumber.ToString("D3");
-        var createdEmployee = await _employeeRepository.CreateEmployeeAsync(employee);
-        return _mapper.Map<EmployeeDto>(createdEmployee);
-       
+        var lastEmployeeNumber = await _employeeRepository.GetLastEmployeeNumberAsync();
+        employee.EmployeeNumber = GenerateEmployeeNumber(lastEmployeeNumber);
+
+        var created = await _employeeRepository.CreateEmployeeAsync(employee);
+        return _mapper.Map<EmployeeDto>(created);
     }
-    public async Task<bool> DeleteEmployeeAsync(int id) 
+
+    public async Task<EmployeeDto> UpdateEmployeeAsync(EmployeeDto dto)
+    {
+        var employee = _mapper.Map<Employee>(dto);
+        var updated = await _employeeRepository.UpdateEmployeeAsync(employee);
+        return _mapper.Map<EmployeeDto>(updated);
+    }
+
+    public async Task<bool> DeleteEmployeeAsync(int id)
     {
         return await _employeeRepository.DeleteEmployeeAsync(id);
     }
 
-    public async Task<EmployeeDto> UpdateEmployeeAsync(Employee employee)
-    {
-        var updatedEmployee = await _employeeRepository.UpdateEmployeeAsync(employee);
-        return _mapper.Map<EmployeeDto>(updatedEmployee);
-    }
-    public async Task<bool> EmailAndPhoneNumberExistAsync(string email, string phoneNumber)
+    public async Task<bool> EmployeeExistsAsync(string email, string phoneNumber)
     {
         return await _employeeRepository.EmployeeExistsAsync(email, phoneNumber);
+    }
+
+    private static string GenerateEmployeeNumber(string? lastEmployeeNumber)
+    {
+        int next = 1;
+
+        if (!string.IsNullOrWhiteSpace(lastEmployeeNumber))
+        {
+            var numberPart = lastEmployeeNumber
+                .Replace("EMP", "", StringComparison.OrdinalIgnoreCase);
+
+            if (int.TryParse(numberPart, out int current))
+                next = current + 1;
+        }
+
+        return $"Emp{next:D3}";
     }
 }

@@ -3,6 +3,7 @@
 @inject IJSRuntime JsRuntime
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Employee
+@using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.ClientServices
 @inject IDepartmentService DepartmentService
@@ -15,7 +16,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold text-primary">Employee Directory</h3>
 
-        <button class="btn btn-success" @onclick='() => NavigateTo("/createemployee")'>
+        <button class="btn btn-success" @onclick='() => NavigateTo("/employees/create")'>
             <i class="bi bi-plus-lg"></i> Add Employee
         </button>
     </div>
@@ -60,8 +61,6 @@
 
                             <td>
                                 <strong>@employee.FirstName @employee.LastName</strong>
-                                <br />
-                                <small class="text-muted">@employee.Position</small>
                             </td>
 
                             <td>
@@ -129,7 +128,7 @@
 
 
 @code {
-    private List<EmployeeViewModel>? employees;
+    private List<EmployeeDto>? employees;
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,31 +139,19 @@
     {
         var result = await EmployeeService.GetEmployeesAsync();
 
-        if (!result.IsSuccess)
+        if (result.IsSuccess && result.Data != null)
         {
-            NotificationService.Error($"Error {result.StatusCode}: {result.Message ?? "Failed to load employees."}");
-            employees = new List<EmployeeViewModel>();
-            return;
+            employees = result.Data;
         }
-
-        employees = result.Data?
-            .Select(e => new EmployeeViewModel
-            {
-                Id = e.Id,
-                EmployeeNumber = e.EmployeeNumber,
-                FirstName = e.FirstName,
-                LastName = e.LastName,
-                Email = e.Email,
-                DepartmentCode = e.DepartmentCode,
-                ManagerFullName = e.ManagerFullName,
-                PhoneNumber = e.PhoneNumber,
-                HireDate = e.HireDate,
-                Position = e.Position,
-                DateOfBirth = e.DateOfBirth,
-                IsActive = e.IsActive
-            })
-            .ToList()
-            ?? new List<EmployeeViewModel>();
+        else if (!result.IsSuccess)
+        {
+            NotificationService.Error($"Failed to load employees ({result.StatusCode}): {result.Message}");
+            employees = new List<EmployeeDto>();
+        }
+        else
+        {
+            employees = new List<EmployeeDto>();
+        }
     }
 
     private void NavigateTo(string route)

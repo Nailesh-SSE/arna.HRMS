@@ -1,10 +1,10 @@
-﻿using arna.HRMS.Models.Enums;
+﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Enums;
 
 namespace arna.HRMS.Models.DTOs
 {
-    public class AttendanceDto
+    public class AttendanceDto : CommonDto
     {
-        public int Id { get; set; }
         public int EmployeeId { get; set; }
         public DateTime Date { get; set; }
         public TimeSpan? ClockInTime { get; set; }
