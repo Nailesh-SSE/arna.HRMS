@@ -127,6 +127,16 @@
             }
         </NavLink>
 
+        <NavLink href="/department"
+                 class="nav-link text-white d-flex align-items-center gap-3"
+                 activeClass="active">
+            <i class="bi bi-building fs-5"></i>
+            @if (!Collapsed)
+            {
+                <span>Department</span>
+            }
+        </NavLink>
+
         <NavLink href="/users"
                  class="nav-link text-white d-flex align-items-center gap-3"
                  activeClass="active">

@@ -1,10 +1,11 @@
 ﻿@page "/employee/employeelist"
 @rendermode InteractiveServer
 @inject IJSRuntime JsRuntime
+@using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
+@using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Models.ViewModels
-@using arna.HRMS.ClientServices
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager

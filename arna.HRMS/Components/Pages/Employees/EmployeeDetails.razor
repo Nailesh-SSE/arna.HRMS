@@ -1,8 +1,9 @@
 ﻿@page "/profile"
 
 @using Microsoft.AspNetCore.Components.Authorization
-@using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.ClientServices
+@using arna.HRMS.ClientServices.Department
+@using arna.HRMS.ClientServices.Employee
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject AuthenticationStateProvider AuthProvider
@@ -290,8 +291,8 @@
         var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId);
         if (deptResult != null)
         {
-            employee.DepartmentName = deptResult.Name;
-            employee.DepartmentCode = deptResult.Code;
+            employee.DepartmentName = deptResult.Data.Name;
+            employee.DepartmentCode = deptResult.Data.Code;
         }
 
         if (employee.ManagerId.HasValue)

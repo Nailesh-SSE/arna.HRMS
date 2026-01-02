@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
 
@@ -12,14 +13,17 @@ public class DepartmentRepository
         _baseRepository = baseRepository;
     }
 
-    public Task<IEnumerable<Department>> GetDepartmentAsync()
+    public async Task<IEnumerable<Department>> GetDepartmentAsync()
     {
-        return _baseRepository.GetAllAsync();
+        return await _baseRepository.Query()
+            .Include(d => d.ParentDepartment)
+            .Where(d => d.IsActive && !d.IsDeleted)
+            .ToListAsync();
     }
 
     public async Task<Department?> GetDepartmentByIdAsync(int id)
     {
-        var department = await _baseRepository.GetByIdAsync(id).ConfigureAwait(false);
+        var department = await _baseRepository.GetByIdAsync(id);
         return department;
     }
 
@@ -33,8 +37,18 @@ public class DepartmentRepository
         return _baseRepository.UpdateAsync(department);
     }
 
-    public Task<bool> DeleteDepartmentAsync(int id)
+    public async Task<bool> DeleteDepartmentAsync(int id)
     {
-        return _baseRepository.DeleteAsync(id);
+        var department = await _baseRepository.GetByIdAsync(id);
+
+        if (department == null)
+            return false;
+
+        department.IsActive = false;
+        department.IsDeleted = true;
+        department.UpdatedAt = DateTime.UtcNow;
+
+        await _baseRepository.UpdateAsync(department);
+        return true;
     }
 }

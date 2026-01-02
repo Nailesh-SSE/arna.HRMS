@@ -12,6 +12,7 @@ public class DepartmentDto
     [Required(ErrorMessage = "Invalid Detartment Description")]
     public string Description { get; set; }
     public int? ParentDepartmentId { get; set; }
+    public string? parentDepartMentName { get; set; }
     [Display(Name = "Status")]
     public bool IsActive { get; set; }
 

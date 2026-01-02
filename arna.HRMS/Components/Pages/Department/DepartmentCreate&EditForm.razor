@@ -1,0 +1,175 @@
+﻿@page "/department/create"
+@page "/department/edit/{Id:int?}"
+
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.ClientServices.Department
+@using arna.HRMS.Models.DTOs
+
+@inject IDepartmentService DepartmentService
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+
+<div class="container py-4">
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                @(IsEditMode ? "Edit Department" : "Create Department")
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            @if (isLoading)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                <EditForm Model="department" OnValidSubmit="HandleValidSubmit" autocomplete="off">
+                    <DataAnnotationsValidator />
+
+                    <div class="row g-4">
+
+                        <div class="col-md-6">
+                            <label class="form-label">Department Name</label>
+                            <InputText class="form-control"
+                                       @bind-Value="department.Name" />
+                            <ValidationMessage For="@(() => department.Name)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Code</label>
+                            <InputText class="form-control"
+                                       autocomplete="off"
+                                       @bind-Value="department.Code" />
+                            <ValidationMessage For="@(() => department.Code)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Description</label>
+                            <InputText class="form-control"
+                                       autocomplete="off"
+                                       @bind-Value="department.Description" />
+                            <ValidationMessage For="@(() => department.Description)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Parent Department Name</label>
+                            <InputSelect class="form-select"
+                                         @bind-Value="department.ParentDepartmentId">
+                                <option value="">Select Department</option>
+                                @foreach (var Dep in departmentlist)
+                                {
+                                    <option value="@Dep.Id">@Dep.parentDepartMentName</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => department.ParentDepartmentId)" />
+                        </div>
+
+                       
+
+                        <!-- Active (EDIT ONLY) -->
+                        @if (IsEditMode)
+                        {
+                            <div class="col-md-6 mt-4">
+                                <InputCheckbox class="form-check-input"
+                                               @bind-Value="department.IsActive" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-5 d-flex justify-content-end gap-3">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                @onclick="GoBack">
+                            Back
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary px-4">
+                            @(IsEditMode ? "Update" : "Save")
+                        </button>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private DepartmentDto department= new();
+    private bool isLoading = true;
+    private bool IsEditMode => Id.HasValue;
+    private List<DepartmentDto> departmentlist= new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+
+        var DepartmentResult = await DepartmentService.GetDepartmentsAsync();
+        if (DepartmentResult.Data.Any())
+        {
+            departmentlist = DepartmentResult.Data.ToList();
+        }
+
+        if (IsEditMode)
+        {
+            var result = await DepartmentService.GetDepartmentByIdAsync(Id!.Value);
+
+            if (result.IsSuccess && result.Data != null)
+            {
+                department = result.Data;
+            }
+            else
+            {
+                NotificationService.Error("Department not found.");
+                NavigationManager.NavigateTo("/department");
+            }
+        }
+        else
+        {
+            department = new DepartmentDto
+            {
+                IsActive = true,
+            };
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (IsEditMode)
+        {
+            var result = await DepartmentService.UpdateDepartmentAsync(Id!.Value, department);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error($"Update failed ({result.StatusCode}): {result.Message ?? "Unable to update Department."}");
+                return;
+            }
+
+            NotificationService.Success("Department updated successfully.");
+        }
+        else
+        {
+            var result = await DepartmentService.CreateDepartmentAsync(department);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error($"Create failed ({result.StatusCode}): {result.Message ?? "Unable to create Department."}");
+                return;
+            }
+
+            NotificationService.Success("Department created successfully.");
+        }
+
+        NavigationManager.NavigateTo("/department");
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/department");
+}

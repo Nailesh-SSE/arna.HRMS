@@ -1,12 +1,13 @@
 ﻿@page "/createemployee"
 @page "/employees/edit/{Id:int}"
 
+@using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
+@using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Core.DTOs.Requests
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
-@using arna.HRMS.ClientServices
 
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
@@ -158,7 +159,7 @@
 
         // Load departments
         var deptData = await DepartmentService.GetDepartmentsAsync();
-        departments = deptData.Select(d => new DepartmentViewModel
+        departments = deptData.Data.Select(d => new DepartmentViewModel
         {
             Id = d.Id,
             DepartmentName = d.Name

@@ -1,6 +1,7 @@
 using arna.HRMS.ClientServices.Attendance;
 using arna.HRMS.ClientServices.Auth;
 using arna.HRMS.ClientServices.Common;
+using arna.HRMS.ClientServices.Department;
 using arna.HRMS.ClientServices.Employee;
 using arna.HRMS.ClientServices.Users;
 using arna.HRMS.Components;
