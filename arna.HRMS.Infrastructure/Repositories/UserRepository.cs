@@ -76,5 +76,22 @@ public class UserRepository
                 u.Username.ToLower() == usernameOrEmail ||
                 u.Email.ToLower() == usernameOrEmail);
     }
-
+    public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)
+    {
+        var user = await _baseRepository.GetByIdAsync(id);
+        if (user == null)
+            return false;
+        user.Password = newPassword;
+        user.UpdatedAt = DateTime.UtcNow;
+        user.PasswordHash = HashPassword(newPassword);
+        await _baseRepository.UpdateAsync(user);
+        return true;
+    }
+    private string HashPassword(string password)
+    {
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(password);
+        var hash = sha.ComputeHash(bytes);
+        return Convert.ToBase64String(hash);
+    }
 }

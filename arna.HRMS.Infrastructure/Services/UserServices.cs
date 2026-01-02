@@ -57,4 +57,8 @@ public class UserServices : IUserServices
     {
         return await _userRepository.GetByUsernameOrEmailAsync(usernameOrEmail);
     }
+    public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)
+    {
+        return await _userRepository.ChangeUserPasswordAsync(id, newPassword);
+    }
 }
