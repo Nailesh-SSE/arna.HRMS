@@ -29,8 +29,18 @@
 @code {
     private bool Collapsed;
 
+    protected override void OnInitialized()
+    {
+        NotificationService.OnChange += StateHasChanged;
+    }
+
     private void ToggleSidebar()
     {
         Collapsed = !Collapsed;
+    }
+
+    public void Dispose()
+    {
+        NotificationService.OnChange -= StateHasChanged;
     }
 }

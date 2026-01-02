@@ -3,7 +3,9 @@
 namespace arna.HRMS.ClientServices.Common;
 
 public class NotificationService
-{ 
+{
+    public event Action? OnChange;
+
     public List<ToastMessage> Messages { get; } = new();
 
     public void Success(string message)
@@ -28,5 +30,10 @@ public class NotificationService
             CustomIconName = icon,
             AutoHide = true
         });
+
+        NotifyStateChanged(); 
     }
+
+    private void NotifyStateChanged()
+        => OnChange?.Invoke();
 }
