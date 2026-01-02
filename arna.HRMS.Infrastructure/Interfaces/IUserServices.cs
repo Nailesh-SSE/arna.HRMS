@@ -11,5 +11,6 @@ public interface IUserServices
     Task<UserDto> UpdateUserAsync(UserDto dto);
     Task<bool> DeleteUserAsync(int id);
     Task<bool> UserExistsAsync(string username, string email);
-    Task<User?> GetUserByUserNameAndEmail(string userNameOrEmail); 
+    Task<User?> GetUserByUserNameAndEmail(string userNameOrEmail);
+    Task<bool> ChangeUserPasswordAsync(int id, string newPassword);
 }

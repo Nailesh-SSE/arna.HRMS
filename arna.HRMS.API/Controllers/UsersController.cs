@@ -64,4 +64,15 @@ public class UsersController : ControllerBase
             ? Ok()
             : NotFound("User not found");
     }
+
+    [HttpPut("{id:int}/changepassword")]
+    public async Task<IActionResult> ChangeUserPassword(int id, [FromBody] string newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword))
+            return BadRequest("Password is required");
+        var changed = await _userServices.ChangeUserPasswordAsync(id, newPassword);
+        return changed  
+            ? Ok()
+            : NotFound("User not found");
+    }
 }

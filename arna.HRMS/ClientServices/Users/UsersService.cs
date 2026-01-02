@@ -2,7 +2,7 @@
 using arna.HRMS.Models.Common;
 using arna.HRMS.Models.DTOs;
 
-namespace arna.HRMS.ClientServices.Users; 
+namespace arna.HRMS.ClientServices.Users;
 
 public interface IUsersService
 {
@@ -12,6 +12,7 @@ public interface IUsersService
     Task<ApiResult<UserDto>> CreateUserAsync(UserDto userDto);
     Task<ApiResult<bool>> UpdateUserAsync(int id, UserDto userDto);
     Task<ApiResult<bool>> DeleteUserAsync(int id);
+    Task<ApiResult<bool>> ChangeUserPasswordAsync(int id, string newPassword);
 }
 
 public class UsersService : IUsersService
@@ -51,5 +52,10 @@ public class UsersService : IUsersService
     public async Task<ApiResult<bool>> DeleteUserAsync(int id)
     {
         return await _http.DeleteAsync<bool>($"api/users/{id}");
+    }
+
+    public Task<ApiResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
+    {
+        return _http.PutAsync<bool>($"api/users/{id}/changepassword", newPassword);
     }
 }

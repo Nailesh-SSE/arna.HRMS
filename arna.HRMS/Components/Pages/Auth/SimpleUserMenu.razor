@@ -23,7 +23,14 @@
                 </li>
 
                 <li><hr class="dropdown-divider" /></li>
-
+                <li>
+                    <button class="dropdown-item"
+                            @onclick="@(() => Navigation.NavigateTo("/change-password"))">
+                        <Icon Name="IconName.Lock" />
+                        Change-Password
+                    </button>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
                 <li>
                     <button class="dropdown-item text-danger"
                             @onclick="HandleLogout">
@@ -48,6 +55,6 @@
     private async Task HandleLogout()
     {
         await AuthService.LogoutAsync();
-        Navigation.NavigateTo("/login"); 
+        Navigation.NavigateTo("/login");
     }
 }
