@@ -16,6 +16,7 @@ public class EmployeeServiceTests
     private EmployeeRepository _employeeRepository;
     private IMapper _mapper;
     private EmployeeService _employeeService;
+    private Mock<IUserServices> _userServicesMock;
 
     [SetUp]
     public void Setup()
@@ -26,6 +27,8 @@ public class EmployeeServiceTests
         // 2️⃣ Real EmployeeRepository, inject the mocked base repository
         _employeeRepository = new EmployeeRepository(_baseRepositoryMock.Object);
 
+        _userServicesMock = new Mock<IUserServices>();
+
         // 3️⃣ Configure AutoMapper as in the real app
         var mapperConfig = new MapperConfiguration(cfg =>
         {
@@ -35,7 +38,7 @@ public class EmployeeServiceTests
         _mapper = mapperConfig.CreateMapper();
 
         // 4️⃣ Create the service
-        _employeeService = new EmployeeService(_employeeRepository, _mapper);
+        _employeeService = new EmployeeService(_employeeRepository, _mapper, _userServicesMock.Object);
     }
 
     [Test]

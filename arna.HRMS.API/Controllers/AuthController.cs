@@ -1,5 +1,4 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.DTOs.Responses;
+﻿using arna.HRMS.Core.DTOs.Responses;
 using arna.HRMS.Infrastructure.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;

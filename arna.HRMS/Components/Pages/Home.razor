@@ -58,6 +58,14 @@ else
         AuthProvider.AuthenticationStateChanged += OnAuthStateChanged;
 
         var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
         await UpdateAuthState(authState);
     }
 

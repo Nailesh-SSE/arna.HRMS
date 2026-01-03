@@ -1,15 +1,16 @@
 ﻿@page "/login"
 @layout LoginLayout
 @using Microsoft.AspNetCore.Authorization
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Layout
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity.Data
 @using arna.HRMS.ClientServices.Auth
 @using Microsoft.AspNetCore.Components.Authorization
-@inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NotificationService NotificationService 
 
 <style>
     .login-background{
@@ -128,12 +129,11 @@
                 return;
             }
 
-            Logger.LogInformation("User {User} logged in", loginModel.Username);
+            NotificationService.Success("User Login Successfully!");
             NavigationManager.NavigateTo("/", true);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Login failed");
             errorMessage = "Something went wrong. Please try again.";
         }
         finally

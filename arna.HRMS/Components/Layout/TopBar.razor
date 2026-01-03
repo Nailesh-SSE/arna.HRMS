@@ -2,6 +2,7 @@
 @using System.Security.Claims
 @using arna.HRMS.Components.Pages.Auth
 
+@inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 
 <header class="bg-white border-bottom px-4 py-3
@@ -36,6 +37,13 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
         var user = authState.User;
 
         if (user.Identity?.IsAuthenticated == true)

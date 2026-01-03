@@ -7,6 +7,7 @@
 @using arna.HRMS.Models.Enums
 @inject IClockService ClockService
 @inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
 
 <style>
     /* LIVE CLOCK PILL */
@@ -191,6 +192,14 @@
     {
         ShowDynamicForm = false;
         var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
         var user = authState.User;
         var employeeId = user.FindFirst("EmployeeId")?.Value;
 

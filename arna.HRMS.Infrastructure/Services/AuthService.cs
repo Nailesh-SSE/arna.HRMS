@@ -70,7 +70,7 @@ public class AuthService : IAuthService
             IsSuccess = true,
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            Expiration = DateTime.UtcNow.AddMinutes(10),
+            Expiration = DateTime.UtcNow.AddMinutes(30),
             UserId = user.Id,
             Username = user.Username,
             FullName = user.FullName,

@@ -8,6 +8,7 @@
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
 
 <style>
     .employee-container {
@@ -203,7 +204,7 @@
 
                     <div class="detail-box">
                         <label>Created At</label>
-    At                  <div>@employee.CreatedAt.ToShortDateString()</div>
+    At                  <div>@employee.CreatedBy.ToShortDateString()</div>
                     </div>
 
                     <div class="detail-box">
@@ -244,6 +245,14 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
         var user = authState.User;
 
         var employeeIdClaim = user.FindFirst("EmployeeId")?.Value;

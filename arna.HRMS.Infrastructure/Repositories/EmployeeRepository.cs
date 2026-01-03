@@ -48,7 +48,7 @@ public class EmployeeRepository
 
         employee.IsActive = false;
         employee.IsDeleted = true;
-        employee.UpdatedAt = DateTime.Now;
+        employee.UpdatedBy = DateTime.Now;
 
         await _baseRepository.UpdateAsync(employee);
         return true;

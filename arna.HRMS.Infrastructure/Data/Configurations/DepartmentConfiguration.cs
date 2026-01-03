@@ -24,7 +24,7 @@ public class DepartmentConfiguration : IEntityTypeConfiguration<Department>
             .HasForeignKey(d => d.ParentDepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Property(d => d.CreatedAt)
+        builder.Property(d => d.CreatedBy)
             .HasDefaultValueSql("GETUTCDATE()");
     }
 }

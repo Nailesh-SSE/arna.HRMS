@@ -9,6 +9,7 @@
 @inject IAttendanceService AttendanceService
 @inject AuthenticationStateProvider AuthProvider
 @inject AttendanceState State
+@inject NavigationManager Navigation
 
 <div class="attendance-dashboard">
 
@@ -85,6 +86,14 @@
     private async Task LoadData()
     {
         var auth = await AuthProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = auth.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
         int empId = int.Parse(auth.User.FindFirst("EmployeeId")!.Value);
 
         State.AttendanceList = await AttendanceService
