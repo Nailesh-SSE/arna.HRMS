@@ -31,9 +31,8 @@ public class UserServices : IUserServices
 
     public async Task<UserDto> CreateUserAsync(UserDto dto)
     {
-        var user = _mapper.Map<User>(dto);
-        var created = await _userRepository.CreateUserAsync(user);
-        return _mapper.Map<UserDto>(created);
+        var entity = await CreateUserEntityAsync(dto);
+        return _mapper.Map<UserDto>(entity);
     }
 
     public async Task<UserDto> UpdateUserAsync(UserDto dto)
@@ -57,8 +56,19 @@ public class UserServices : IUserServices
     {
         return await _userRepository.GetByUsernameOrEmailAsync(usernameOrEmail);
     }
+
     public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)
     {
         return await _userRepository.ChangeUserPasswordAsync(id, newPassword);
+    }
+
+    // Auth Services
+    public async Task<User> CreateUserEntityAsync(UserDto dto)
+    {
+        var user = _mapper.Map<User>(dto);
+
+        var created = await _userRepository.CreateUserAsync(user);
+
+        return created;
     }
 }

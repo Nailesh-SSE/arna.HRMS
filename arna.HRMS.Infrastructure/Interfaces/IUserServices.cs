@@ -13,4 +13,7 @@ public interface IUserServices
     Task<bool> UserExistsAsync(string username, string email);
     Task<User?> GetUserByUserNameAndEmail(string userNameOrEmail);
     Task<bool> ChangeUserPasswordAsync(int id, string newPassword);
+
+    // Auth Services
+    Task<User> CreateUserEntityAsync(UserDto dto);
 }
