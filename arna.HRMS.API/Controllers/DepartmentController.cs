@@ -1,11 +1,7 @@
-﻿using AutoMapper;
-using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
+﻿using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection.Metadata.Ecma335;
 
 namespace arna.HRMS.API.Controllers;
 
@@ -15,62 +11,52 @@ namespace arna.HRMS.API.Controllers;
 public class DepartmentController : ControllerBase
 {
     private readonly IDepartmentService _departmentService;
-    private readonly IMapper _mapper;
 
-    public DepartmentController(IDepartmentService __departmentService, IMapper mapper)
+    public DepartmentController(IDepartmentService __departmentService)
     {
        _departmentService = __departmentService;
-        _mapper = mapper;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetDepartment()
+    public async Task<ActionResult<DepartmentDto>> GetDepartment()
     {
         var department = await _departmentService.GetDepartmentAsync(); 
-        return Ok(_mapper.Map<IEnumerable<DepartmentDto>>(department));
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<DepartmentDto>> GetDepartment(int id)
-    {
-        var department = await _departmentService.GetDepartmentByIdAsync(id);
-        if (department == null) return NotFound();
         return Ok(department);
     }
 
-    [HttpPost]
-    //[Authorize(Roles = "Admin,HR")]
-    public async Task<ActionResult<DepartmentDto>> CreateDepartment(CreateDepartmentRequest departmentDto)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetDepartment(int id)
     {
-        var department = _mapper.Map<Department>(departmentDto);
-        var createdDepartment = await _departmentService.CreateDepartmentAsync(department);
-
-        return CreatedAtAction(
-            nameof(GetDepartment),
-            new { id = createdDepartment.Id },
-            _mapper.Map<DepartmentDto>(createdDepartment));
+        var department = await _departmentService.GetDepartmentByIdAsync(id);
+        return department == null ? NotFound("Department not found") : Ok(department);
     }
-    [HttpDelete]
+
+    [HttpPost]
+    public async Task<IActionResult> CreateDepartment([FromBody] DepartmentDto departmentDto)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+        var createdDepartment = await _departmentService.CreateDepartmentAsync(departmentDto);
+
+        return Ok(createdDepartment);
+    }
+
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteDepartment(int id)
     {
         var deleted = await _departmentService.DeleteDepartmentAsync(id);
-
-        if (!deleted)
-            return NotFound();
-
-        return NoContent();
+        return deleted
+            ? Ok()
+            : NotFound("Department not found"); ;
     }
 
-    [HttpPut("{id}")]
-    //[Authorize(Roles = "Admin,HR")]
-    public async Task<IActionResult> UpdateDepartment(int id, UpdateDepartmentRequest departmentDto)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateDepartment(int id, [FromBody] DepartmentDto departmentDto)
     {
-        if (id != departmentDto.Id) return BadRequest();
+        if (id != departmentDto.Id)
+            return BadRequest("Invalid User ID");
+        var updated=await _departmentService.UpdateDepartmentAsync(departmentDto);
 
-        var department = _mapper.Map<Department>(departmentDto);
-
-        await _departmentService.UpdateDepartmentAsync(department);
-
-        return NoContent();
+        return Ok(updated);
     }
 }

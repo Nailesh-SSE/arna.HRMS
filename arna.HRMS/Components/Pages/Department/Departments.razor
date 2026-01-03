@@ -1,0 +1,146 @@
+﻿@page "/department"
+
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Department
+@using arna.HRMS.Models.DTOs
+@using arna.HRMS.ClientServices.Common
+
+@inject IDepartmentService DepartmentService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject NotificationService NotificationService
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-primary">Department Directory</h3>
+
+        <button class="btn btn-success" @onclick='() => NavigationManager.NavigateTo("/department/create")'>
+            <i class="bi bi-plus-lg"></i> Add Department
+        </button>
+
+    </div>
+
+    <div class="mb-3">
+        <input type="text" placeholder="Search Department..." class="form-control w-50 shadow-sm" />
+    </div>
+
+
+    @if (departments == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <div class="table-responsive shadow-sm">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Name</th>
+                        <th>Code</th>
+                        <th>Description</th>
+                        <th>Parent DepartMent</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var depart in departments)
+                    {
+                        <tr>
+                            <td> @depart.Name </td>
+                            <td> @depart.Code </td>
+                            <td> @depart.Description</td>
+                            <td> @depart.ParentDepartMentName</td>
+                            <td>
+                                @if (depart.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Inactive</span>
+                                }
+                            </td>
+
+                            <td class="text-center">
+                                <div class="btn-group">
+                                    <button class="btn btn-outline-primary btn-sm"
+                                            @onclick="@(() => NavigationManager.NavigateTo($"/department/edit/{depart.Id}"))">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+                                    <br />
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteDepartment(depart.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    }
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f7f9fc !important;
+    }
+</style>
+
+@code {
+    private List<DepartmentDto>? departments;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+
+        var result = await DepartmentService.GetDepartmentsAsync();
+
+        if (result.IsSuccess && result.Data != null)
+        {
+            departments = result.Data;
+        }
+        else
+        {
+            departments = new List<DepartmentDto>();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task DeleteDepartment(int id)
+    {
+        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete this Department?"
+        );
+
+        if (!isConfirmed)
+            return;
+
+        var result = await DepartmentService.DeleteDepartmentAsync(id);
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete Department."}");
+            return;
+        }
+
+        NotificationService.Success("Department deleted successfully.");
+        await LoadUsers();
+    }
+}
+

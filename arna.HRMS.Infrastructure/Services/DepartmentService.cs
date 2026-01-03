@@ -20,32 +20,29 @@ public class DepartmentService : IDepartmentService
     public async Task<List<DepartmentDto>> GetDepartmentAsync()
     {
         var Department = await _departmentRepository.GetDepartmentAsync();
-        return Department.Select(e => _mapper.Map<DepartmentDto>(e)).ToList();
+        return _mapper.Map<List<DepartmentDto>>(Department);
     }
 
     public async Task<DepartmentDto?> GetDepartmentByIdAsync(int id)
     {
         var depart = await _departmentRepository.GetDepartmentByIdAsync(id);
-        if (depart == null) return null;
-        //var employeedto = new EmployeeDto();
-        var departmentdto = _mapper.Map<DepartmentDto>(depart);
-
-        return departmentdto;
+       return depart == null ? null : _mapper.Map<DepartmentDto>(depart);
     }
-
-    public async Task<DepartmentDto> CreateDepartmentAsync(Department department)
+    
+    public async Task<DepartmentDto> CreateDepartmentAsync(DepartmentDto departmentdto)
     {
+        var department = _mapper.Map<Department>(departmentdto);
         var createdDepartment= await _departmentRepository.CreateDepartmentAsync(department);
         return _mapper.Map<DepartmentDto>(createdDepartment);
     }
     public async Task<bool> DeleteDepartmentAsync(int id) 
     {
-        var departmentDelete = await _departmentRepository.DeleteDepartmentAsync(id);
-        return departmentDelete;
+        return await _departmentRepository.DeleteDepartmentAsync(id);
     }
 
-    public async Task<DepartmentDto> UpdateDepartmentAsync(Department department)
+    public async Task<DepartmentDto> UpdateDepartmentAsync(DepartmentDto departmentDto)
     {
+        var department = _mapper.Map<Department>(departmentDto);
         var updatedDepartment = await _departmentRepository.UpdateDepartmentAsync(department);
         return _mapper.Map<DepartmentDto>(updatedDepartment);
     }

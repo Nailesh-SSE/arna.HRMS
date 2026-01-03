@@ -15,4 +15,6 @@ public class DepartmentDto : CommonDto
     public string Description { get; set; }
 
     public int? ParentDepartmentId { get; set; }
+
+    public string? ParentDepartMentName { get; set; }
 }

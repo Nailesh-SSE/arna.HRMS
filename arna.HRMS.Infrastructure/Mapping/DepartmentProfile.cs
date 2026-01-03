@@ -9,8 +9,10 @@ public class DepartmentProfile : Profile
 {
     public DepartmentProfile()
     {
-        CreateMap<CreateDepartmentRequest, Department>();
-        CreateMap<UpdateDepartmentRequest, Department>();
-        CreateMap<Department, DepartmentDto>();
+        CreateMap<DepartmentDto, Department>();
+        CreateMap<DepartmentDto, Department>();
+        CreateMap<Department, DepartmentDto>()
+            .ForMember(dest=>dest.ParentDepartMentName,
+                opt=>opt.MapFrom(src=> src.ParentDepartment != null ? $"{src.ParentDepartment.Name}":""));
     }
 }
