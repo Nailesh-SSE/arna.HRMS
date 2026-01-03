@@ -266,7 +266,7 @@
 
         employee = employeeResult.Data;
 
-        var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId);
+        var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId!.Value);
         if (deptResult != null)
         {
             employee.DepartmentName = deptResult.Data?.Name;

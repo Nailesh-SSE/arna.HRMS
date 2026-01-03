@@ -34,7 +34,7 @@ public class EmployeeDto : CommonDto
     public DateTime HireDate { get; set; }
 
     // Department Information (Flattened for simplicity)
-    public int DepartmentId { get; set; }
+    public int? DepartmentId { get; set; }
     [Display(Name = "Department")]
     public string? DepartmentName { get; set; }
     public string? DepartmentCode { get; set; }
