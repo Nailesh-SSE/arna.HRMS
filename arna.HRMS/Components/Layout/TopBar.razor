@@ -2,7 +2,6 @@
 @using System.Security.Claims
 @using arna.HRMS.Components.Pages.Auth
 
-@inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
 
 <header class="bg-white border-bottom px-4 py-3
@@ -10,7 +9,7 @@
 
     <h5 class="mb-0">
         @Greeting@if (!string.IsNullOrEmpty(FullName))
-        {
+                {
             <span>, @FullName</span>
         }
     </h5>
@@ -37,22 +36,12 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
-
-        if (!isAuthenticated)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
         var user = authState.User;
 
-        if (user.Identity?.IsAuthenticated == true)
-        {
-            FullName =
-                user.FindFirst("FullName")?.Value
-                ?? user.Identity?.Name
-                ?? string.Empty;
-        }
+        FullName =
+            user.FindFirst("FullName")?.Value
+            ?? user.Identity?.Name
+            ?? string.Empty;
 
         SetGreeting();
     }

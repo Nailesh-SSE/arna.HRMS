@@ -246,14 +246,6 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
-
-        if (!isAuthenticated)
-        {
-            NavigationManager.NavigateTo("/login");
-            return;
-        }
-
         var user = authState.User;
 
         var employeeIdClaim = user.FindFirst("EmployeeId")?.Value;
@@ -267,10 +259,10 @@
         employee = employeeResult.Data;
 
         var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId!.Value);
-        if (deptResult != null)
+        if (deptResult?.Data != null)
         {
-            employee.DepartmentName = deptResult.Data?.Name;
-            employee.DepartmentCode = deptResult.Data?.Code;
+            employee.DepartmentName = deptResult.Data.Name;
+            employee.DepartmentCode = deptResult.Data.Code;
         }
 
         if (employee.ManagerId.HasValue)

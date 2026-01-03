@@ -1,13 +1,12 @@
 ﻿@implements IDisposable
 @using Microsoft.AspNetCore.Components.Authorization
-@using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Attendance
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
+
 @inject IClockService ClockService
 @inject AuthenticationStateProvider AuthProvider
-@inject NavigationManager Navigation
 
 <style>
     /* LIVE CLOCK PILL */
@@ -31,18 +30,11 @@
         border-radius: 50%;
     }
 
-    .clock-pill i {
-        font-size: 14px;
-        color: #22c55e;
-        background: none;
-    }
-
     .time-text {
         letter-spacing: 0.5px;
         font-variant-numeric: tabular-nums;
     }
 
-    /* TIME INFO CAPSULE (STATIC STRING TIME) */
     .time-info-pill {
         background-color: #f1f5f9;
         color: #0f172a;
@@ -61,71 +53,56 @@
             font-size: 12px;
             color: #475569;
         }
-
-        .time-info-pill .value {
-            font-variant-numeric: tabular-nums;
-        }
 </style>
 
 <div class="d-flex align-items-center gap-2">
 
-    <!-- LIVE CLOCK (WORKING TIMER) -->
+    <!-- LIVE CLOCK -->
     <span class="clock-pill">
         <span class="status-dot"></span>
         <i class="bi bi-clock"></i>
         <span class="time-text">@CurrentTime</span>
     </span>
 
-    <!-- CLOCK IN / CLOCK OUT BUTTON -->
+    <!-- CLOCK IN / OUT -->
     @if (IsClockedIn)
     {
-        <button class="btn btn-danger btn-sm d-flex align-items-center gap-1 rounded-end"
+        <button class="btn btn-danger btn-sm"
                 @onclick="ClockOutAsync">
             <i class="bi bi-clock"></i>
         </button>
     }
     else
     {
-        <button class="btn btn-success btn-sm d-flex align-items-center gap-1 rounded-end"
+        <button class="btn btn-success btn-sm"
                 @onclick="ClockInAsync">
             <i class="bi bi-clock"></i>
         </button>
     }
 
-    <!-- STATIC TIME CAPSULE (STRING TIME ONLY) -->
+    <!-- LAST ACTION -->
     @if (!string.IsNullOrEmpty(ActionLabel))
     {
         <span class="time-info-pill">
             <span class="label">@ActionLabel</span>
-            <span class="value">@ActionTime</span>
+            <span>@ActionTime</span>
         </span>
     }
-
 </div>
 
 @if (ShowDynamicForm)
 {
-    <div class="popup-overlay">
-        <div class="popup-card">
-            <AttendanceNoteForm Model="attendanceViewModel" OnSubmit="SubmitClockInOutAsync" OnCancel="CloseForm" />
-        </div>
-    </div>
+    <AttendanceNoteForm Model="attendanceViewModel"
+                        OnSubmit="SubmitClockInOutAsync"
+                        OnCancel="CloseForm" />
 }
 
-
-<!-- TOAST -->
 @if (ShowToast)
 {
-    <div class="toast-container position-fixed bottom-0 end-0 p-4" style="z-index:2000">
-        <div class="toast show shadow-lg border-0 rounded-3">
-            <div class="toast-body d-flex align-items-start gap-3">
-                <div class="text-success fs-5">
-                    <i class="bi bi-check-circle-fill"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <div class="fw-semibold">Attendance</div>
-                    <div class="text-muted small">@ToastMessage</div>
-                </div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-4">
+        <div class="toast show shadow border-0">
+            <div class="toast-body">
+                @ToastMessage
             </div>
         </div>
     </div>
@@ -135,22 +112,21 @@
     private AttendanceViewModel attendanceViewModel = new();
 
     private bool IsClockedIn;
+    private bool? PendingClockIn;
+
     private TimeOnly In;
     private TimeOnly Out;
     private double AccumulatedHours;
-    private bool? PendingClockIn;
 
     private string CurrentTime = "";
     private string? ActionLabel;
     private string? ActionTime;
 
+    private bool ShowDynamicForm;
     private bool ShowToast;
     private string ToastMessage = "";
 
     private System.Timers.Timer? _timer;
-
-    private bool ShowDynamicForm;
-
 
     protected override void OnInitialized()
     {
@@ -159,9 +135,6 @@
 
     private Task ClockInAsync()
     {
-        if (IsClockedIn)
-            return Task.CompletedTask;
-
         PendingClockIn = true;
         OpenNoteForm();
         return Task.CompletedTask;
@@ -169,9 +142,6 @@
 
     private Task ClockOutAsync()
     {
-        if (!IsClockedIn)
-            return Task.CompletedTask;
-
         PendingClockIn = false;
         OpenNoteForm();
         return Task.CompletedTask;
@@ -191,30 +161,25 @@
     private async Task SubmitClockInOutAsync()
     {
         ShowDynamicForm = false;
+
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
-
-        if (!isAuthenticated)
-        {
-            Navigation.NavigateTo("/login");
-            return;
-        }
-
         var user = authState.User;
-        var employeeId = user.FindFirst("EmployeeId")?.Value;
 
+        var employeeIdClaim = user.FindFirst("EmployeeId")?.Value;
+        if (!int.TryParse(employeeIdClaim, out var employeeId))
+            return;
 
         if (PendingClockIn == true)
         {
             IsClockedIn = true;
-
             In = TimeOnly.FromDateTime(DateTime.Now);
+
             ActionLabel = "Clock In";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
             await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
-                EmployeeId = Convert.ToInt32(employeeId),
+                EmployeeId = employeeId,
                 Date = DateTime.Today,
                 ClockInTime = In.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
@@ -228,8 +193,8 @@
         else
         {
             IsClockedIn = false;
-
             Out = TimeOnly.FromDateTime(DateTime.Now);
+
             ActionLabel = "Clock Out";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
@@ -237,7 +202,7 @@
 
             await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
-                EmployeeId = Convert.ToInt32(employeeId),
+                EmployeeId = employeeId,
                 Date = DateTime.Today,
                 ClockOutTime = Out.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
@@ -282,6 +247,4 @@
     {
         _timer?.Dispose();
     }
-
 }
-

@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase 
+﻿@inherits AuthenticatedLayoutBase
 @using arna.HRMS.ClientServices.Common
 @inject NotificationService NotificationService
 
@@ -6,7 +6,6 @@
         Placement="ToastsPlacement.BottomRight"
         AutoHide="true"
         Delay="4000" />
-
 
 <CascadingValue Value="Collapsed">
     <div class="d-flex min-vh-100 bg-light">
@@ -31,6 +30,7 @@
 
     protected override void OnInitialized()
     {
+        base.OnInitialized();
         NotificationService.OnChange += StateHasChanged;
     }
 
@@ -39,8 +39,9 @@
         Collapsed = !Collapsed;
     }
 
-    public void Dispose()
+    public new void Dispose()
     {
+        base.Dispose();
         NotificationService.OnChange -= StateHasChanged;
     }
 }

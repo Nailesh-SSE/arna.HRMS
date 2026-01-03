@@ -1,16 +1,17 @@
 ﻿@page "/login"
 @layout LoginLayout
-@using Microsoft.AspNetCore.Authorization
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.Layout
-@using System.ComponentModel.DataAnnotations
+
 @using Microsoft.AspNetCore.Identity.Data
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Auth
+@using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Authorization
+@using arna.HRMS.Components.Layout
+
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
 @inject AuthenticationStateProvider AuthStateProvider
-@inject NotificationService NotificationService 
+@inject NotificationService NotificationService
 
 <style>
     .login-background{
@@ -34,10 +35,7 @@
         <div class="card-body p-4">
 
             <div class="text-center mb-4">
-                <img src="Images/ArnaLogo.png"
-                     class="img-fluid mb-3"
-                     style="max-height:70px;"
-                     alt="Arna Technosoft" />
+                <img src="Images/ArnaLogo.png" class="img-fluid mb-3" style="max-height:70px;" />
                 <h5 class="fw-semibold">Sign in to your account</h5>
             </div>
 
@@ -77,9 +75,7 @@
                 </div>
 
                 <div class="d-grid">
-                    <button type="submit"
-                            class="btn btn-primary btn-lg"
-                            disabled="@isLoading">
+                    <button type="submit" class="btn btn-primary btn-lg" disabled="@isLoading">
                         @if (isLoading)
                         {
                             <span class="spinner-border spinner-border-sm me-2"></span>
@@ -106,7 +102,7 @@
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         if (state.User.Identity?.IsAuthenticated == true)
         {
-            NavigationManager.NavigateTo("/");
+            NavigationManager.NavigateTo("/", true);
         }
     }
 
@@ -132,10 +128,6 @@
             NotificationService.Success("User Login Successfully!");
             NavigationManager.NavigateTo("/", true);
         }
-        catch (Exception ex)
-        {
-            errorMessage = "Something went wrong. Please try again.";
-        }
         finally
         {
             isLoading = false;
@@ -149,10 +141,7 @@
 
     public class LoginModel
     {
-        [Required]
-        public string Username { get; set; } = string.Empty;
-
-        [Required]
-        public string Password { get; set; } = string.Empty;
+        [Required] public string Username { get; set; } = string.Empty;
+        [Required] public string Password { get; set; } = string.Empty;
     }
 }
