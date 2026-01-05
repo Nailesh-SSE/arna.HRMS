@@ -4,10 +4,10 @@
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
+@using arna.HRMS.Models.DTOs
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject AuthenticationStateProvider AuthProvider
-@using arna.HRMS.Models.DTOs
 
 <style>
     .employee-container {
@@ -73,27 +73,6 @@
         padding: 30px;
     }
 
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-    }
-
-    .btn-primary {
-        background: #007bff;
-        color: white;
-        padding: 6px 14px;
-        border-radius: 4px;
-        border: none;
-    }
-
-    .btn-outline {
-        border: 1px solid #007bff;
-        padding: 6px 14px;
-        border-radius: 4px;
-        color: #007bff;
-        background: white;
-    }
-
     .details-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -138,7 +117,7 @@
             <div class="details-sidebar">
 
                 <div class="profile-picture">
-                    @employee.FirstName[0]@employee.LastName[0]
+                    @GetInitials()
                 </div>
 
                 <h3 class="employee-name">@employee.FirstName @employee.LastName</h3>
@@ -164,15 +143,6 @@
 
             <!-- MAIN CONTENT -->
             <div class="main-content">
-
-                @* <div class="header-section">
-                    <h2>Overview</h2>
-
-                    <div>
-                        <button class="btn-outline me-2">View Personal Details</button>
-                        <button class="btn-primary">Download</button>
-                    </div>
-                </div> *@
 
                 <div class="details-grid">
 
@@ -233,7 +203,7 @@
 
                     <div class="detail-box">
                         <label>Created At</label>
-                        <div>@employee.CreatedAt.ToShortDateString()</div>
+    At                  <div>@employee.CreatedAt.ToShortDateString()</div>
                     </div>
 
                     <div class="detail-box">
@@ -268,7 +238,6 @@
 </div>
 
 @code {
-
     private EmployeeDto? employee;
     private string experienceString = "";
 
@@ -282,7 +251,6 @@
             return;
 
         var employeeResult = await EmployeeService.GetEmployeeByIdAsync(employeeId);
-
         if (!employeeResult.IsSuccess || employeeResult.Data == null)
             return;
 
@@ -298,13 +266,11 @@
         if (employee.ManagerId.HasValue)
         {
             var employeesResult = await EmployeeService.GetEmployeesAsync();
-
-            var manager = employeesResult.Data?.FirstOrDefault(e => e.Id == employee.ManagerId.Value);
+            var manager = employeesResult.Data?
+                .FirstOrDefault(e => e.Id == employee.ManagerId.Value);
 
             if (manager != null)
-            {
                 employee.ManagerFullName = $"{manager.FirstName} {manager.LastName}";
-            }
         }
 
         CalculateExperience();
@@ -312,20 +278,20 @@
 
     private void CalculateExperience()
     {
-        if (employee == null) return;
+        if (employee?.HireDate == null)
+        {
+            experienceString = "N/A";
+            return;
+        }
 
         var doj = employee.HireDate;
         var today = DateTime.Today;
 
         var years = today.Year - doj.Year;
         var months = today.Month - doj.Month;
-        var days = today.Day - doj.Day;
 
-        if (days < 0)
-        {
+        if (today.Day < doj.Day)
             months--;
-            days += DateTime.DaysInMonth(today.Year, today.Month == 1 ? 12 : today.Month - 1);
-        }
 
         if (months < 0)
         {
@@ -333,6 +299,13 @@
             months += 12;
         }
 
-        experienceString = $"{years} Y {months} M {days} D";
+        experienceString = $"{Math.Max(years, 0)} Y {Math.Max(months, 0)} M";
+    }
+
+    private string GetInitials()
+    {
+        var f = employee?.FirstName?.FirstOrDefault();
+        var l = employee?.LastName?.FirstOrDefault();
+        return $"{f}{l}".ToUpper();
     }
 }

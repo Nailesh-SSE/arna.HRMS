@@ -1,9 +1,8 @@
-﻿using BlazorBootstrap;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using arna.HRMS.Models.Common;
 
 namespace arna.HRMS.Models.DTOs;
 
-public class MonthlyAttendanceDto
+public class MonthlyAttendanceDto : CommonDto
 {
     public int EmployeeId { get; set; }
     public DateOnly Date { get; set; }

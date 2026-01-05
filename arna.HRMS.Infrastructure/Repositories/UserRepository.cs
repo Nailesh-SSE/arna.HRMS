@@ -45,7 +45,7 @@ public class UserRepository
 
         user.IsActive = false;
         user.IsDeleted = true;
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
 
         await _baseRepository.UpdateAsync(user);
         return true;
@@ -60,8 +60,8 @@ public class UserRepository
         email = email?.Trim().ToLower() ?? string.Empty;
 
         return await _baseRepository.Query().AnyAsync(u =>
-            u.Username.ToLower() == username ||
-            u.Email.ToLower() == email);
+            u.Username.Trim().ToLower() == username ||
+            u.Email.Trim().ToLower() == email);
     }
 
     public async Task<User?> GetByUsernameOrEmailAsync(string usernameOrEmail)
@@ -72,9 +72,10 @@ public class UserRepository
         usernameOrEmail = usernameOrEmail.Trim().ToLower() ?? string.Empty;
 
         return await _baseRepository.Query()
+            .Include(x => x.Employee)
             .FirstOrDefaultAsync(u =>
-                u.Username.ToLower() == usernameOrEmail ||
-                u.Email.ToLower() == usernameOrEmail);
+                u.Username.Trim().ToLower() == usernameOrEmail ||
+                u.Email.Trim().ToLower() == usernameOrEmail);
     }
     public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)
     {

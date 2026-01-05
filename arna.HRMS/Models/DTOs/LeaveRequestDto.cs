@@ -1,10 +1,10 @@
-﻿using arna.HRMS.Models.Enums;
+﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Enums;
 
 namespace arna.HRMS.Models.DTOs;
 
-public class LeaveRequestDto
+public class LeaveRequestDto : CommonDto
 {
-    public int Id { get; set; }
     public int EmployeeId { get; set; }
     public LeaveStatus LeaveType { get; set; }
     public DateTime StartDate { get; set; }

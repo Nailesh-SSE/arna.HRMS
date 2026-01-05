@@ -1,13 +1,12 @@
-﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Models.DTOs;
 namespace arna.HRMS.Infrastructure.Interfaces;
 
 public interface IEmployeeService
 {
     Task<List<EmployeeDto>> GetEmployeesAsync();
-    Task<EmployeeDto?> GetEmployeeByIdAsync(int id);
-    Task<EmployeeDto> CreateEmployeeAsync(Employee employee);
+    Task<EmployeeDto> GetEmployeeByIdAsync(int id);
+    Task<EmployeeDto> CreateEmployeeAsync(EmployeeDto dto);
+    Task<EmployeeDto> UpdateEmployeeAsync(EmployeeDto dto);
     Task<bool> DeleteEmployeeAsync(int id);
-    Task<EmployeeDto> UpdateEmployeeAsync(Employee employee);
-    Task<bool> EmailAndPhoneNumberExistAsync(string email, string phoneNumber);
+    Task<bool> EmployeeExistsAsync(string email, string phoneNumber);
 }

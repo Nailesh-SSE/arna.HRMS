@@ -12,16 +12,22 @@ public class EmployeeRepository
     {
         _baseRepository = baseRepository;
     }
-    public async Task<IEnumerable<Employee>> GetEmployeesAsync()
+
+    public async Task<List<Employee>> GetEmployeesAsync()
     {
-        return await _baseRepository.Query().Include(e => e.Department).ToListAsync();
+        return await _baseRepository.Query()
+            .Include(e => e.Department)
+            .Include(e => e.Manager)
+            .Where(e => e.IsActive && !e.IsDeleted)
+            .ToListAsync();
     }
 
     public async Task<Employee?> GetEmployeeByIdAsync(int id)
     {
-        var employee = await _baseRepository.GetByIdAsync(id).ConfigureAwait(false);
-        //return new Employee();
-        return employee;
+        return await _baseRepository.Query()
+            .Include(e => e.Department)
+            .Include(e => e.Manager)
+            .FirstOrDefaultAsync(e => e.Id == id && e.IsActive && !e.IsDeleted);
     }
 
     public Task<Employee> CreateEmployeeAsync(Employee employee)
@@ -36,14 +42,13 @@ public class EmployeeRepository
 
     public async Task<bool> DeleteEmployeeAsync(int id)
     {
-        var employee =  await _baseRepository.GetByIdAsync(id);
-
+        var employee = await _baseRepository.GetByIdAsync(id);
         if (employee == null)
             return false;
 
         employee.IsActive = false;
         employee.IsDeleted = true;
-        employee.UpdatedAt = DateTime.UtcNow;
+        employee.UpdatedAt = DateTime.Now;
 
         await _baseRepository.UpdateAsync(employee);
         return true;
@@ -53,10 +58,21 @@ public class EmployeeRepository
     {
         if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(phoneNumber))
             return false;
+
         email = email?.Trim().ToLower() ?? string.Empty;
         phoneNumber = phoneNumber?.Trim() ?? string.Empty;
+
         return await _baseRepository.Query().AnyAsync(e =>
             e.Email.ToLower() == email ||
             e.PhoneNumber == phoneNumber);
+    }
+
+    public async Task<string?> GetLastEmployeeNumberAsync()
+    {
+        return await _baseRepository.Query()
+            .Where(e => e.EmployeeNumber != null)
+            .OrderByDescending(e => e.EmployeeNumber)
+            .Select(e => e.EmployeeNumber)
+            .FirstOrDefaultAsync();
     }
 }

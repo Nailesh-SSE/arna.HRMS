@@ -83,11 +83,12 @@ public class EmployeeServiceTests
     public async Task CreateEmployeeAsync_ReturnsCreatedEmployeeDto()
     {
         var employee = new Employee { Id = 1, FirstName = "John", LastName = "Doe" };
+        var employeeDto = new EmployeeDto { Id = 1, FirstName = "Updated", LastName = "User" };
 
         // ✅ Mock the underlying AddAsync, NOT EmployeeRepository.CreateEmployeeAsync
         _baseRepositoryMock.Setup(r => r.AddAsync(employee)).ReturnsAsync(employee);
 
-        var result = await _employeeService.CreateEmployeeAsync(employee);
+        var result = await _employeeService.CreateEmployeeAsync(employeeDto);
 
         Assert.That(result.FullName, Is.EqualTo("John Doe"));
     }
@@ -96,11 +97,12 @@ public class EmployeeServiceTests
     public async Task UpdateEmployeeAsync_ReturnsUpdatedEmployeeDto()
     {
         var employee = new Employee { Id = 1, FirstName = "Updated", LastName = "User" };
+        var employeeDto = new EmployeeDto { Id = 1, FirstName = "Updated", LastName = "User" };
 
         // ✅ Mock the underlying UpdateAsync
         _baseRepositoryMock.Setup(r => r.UpdateAsync(employee)).ReturnsAsync(employee);
 
-        var result = await _employeeService.UpdateEmployeeAsync(employee);
+        var result = await _employeeService.UpdateEmployeeAsync(employeeDto);
 
         Assert.That(result.FullName, Is.EqualTo("Updated User"));
     }

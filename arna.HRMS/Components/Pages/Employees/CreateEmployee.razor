@@ -1,11 +1,11 @@
-﻿@page "/createemployee"
+﻿@page "/employees/create"
 @page "/employees/edit/{Id:int}"
 
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
-@using arna.HRMS.Core.DTOs.Requests
+@using arna.HRMS.ClientServices
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
 
@@ -14,148 +14,143 @@
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 
-
 <div class="container py-4">
 
     <div class="card shadow-sm border-0 rounded-3">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">@((IsEditMode ? "Edit Employee" : "Create New Employee"))</h5>
+            <h5 class="mb-0">
+                @(IsEditMode ? "Edit Employee" : "Create Employee")
+            </h5>
         </div>
 
         <div class="card-body p-4">
-            <EditForm EditContext="@editcontext" OnValidSubmit="HandleValidSubmit">
-                <DataAnnotationsValidator />
 
-                <!-- Personal Information -->
-                <h6 class="border-bottom pb-2 mb-3 text-secondary">Personal Information</h6>
+            @if (isLoading)
+            {
+                <p><em>Loading...</em></p>
+            }
+            else
+            {
+                <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
 
-                <div class="row g-4">
+                    <!-- PERSONAL INFORMATION -->
+                    <h6 class="border-bottom pb-2 mb-3 text-secondary">Personal Information</h6>
 
-                    <div class="col-md-4">
-                        <label class="form-label">First Name</label>
-                        <InputText class="form-control" @bind-Value="employee.FirstName" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.FirstName)" />
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <label class="form-label">First Name</label>
+                            <InputText class="form-control" @bind-Value="employee.FirstName" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.FirstName)" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Last Name</label>
+                            <InputText class="form-control" @bind-Value="employee.LastName" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.LastName)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <InputText class="form-control" @bind-Value="employee.Email" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.Email)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Phone Number</label>
+                            <InputText class="form-control" @bind-Value="employee.PhoneNumber" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.PhoneNumber)" />
+                        </div>
                     </div>
 
-                    <div class="col-md-4">
-                        <label class="form-label">Last Name</label>
-                        <InputText class="form-control" @bind-Value="employee.LastName" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.LastName)" />
+                    <!-- JOB DETAILS -->
+                    <h6 class="border-bottom pb-2 mt-4 mb-3 text-secondary">Job Details</h6>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Position</label>
+                            <InputText class="form-control" @bind-Value="employee.Position" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.Position)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Salary</label>
+                            <InputNumber class="form-control" @bind-Value="employee.Salary" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.Salary)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Department</label>
+                            <InputSelect class="form-select" @bind-Value="employee.DepartmentId">
+                                <option value="">-- Select Department --</option>
+                                @foreach (var dept in departments)
+                                {
+                                    <option value="@dept.Id">@dept.DepartmentName</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Manager</label>
+                            <InputSelect class="form-select" @bind-Value="employee.ManagerId">
+                                <option value="">-- No Manager --</option>
+                                @foreach (var mgr in managers)
+                                {
+                                    <option value="@mgr.Id">@mgr.FirstName @mgr.LastName</option>
+                                }
+                            </InputSelect>
+                        </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Email</label>
-                        <InputText class="form-control" @bind-Value="employee.Email" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.Email)" />
+                    <!-- OTHER DETAILS -->
+                    <h6 class="border-bottom pb-2 mt-4 mb-3 text-secondary">Other Details</h6>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Date of Birth</label>
+                            <InputDate class="form-control" @bind-Value="employee.DateOfBirth" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.DateOfBirth)" />
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Hire Date</label>
+                            <InputDate class="form-control" @bind-Value="employee.HireDate" autocomplete="off" />
+                            <ValidationMessage For="@(() => employee.HireDate)" />
+                        </div>
                     </div>
 
-                    <div class="col-md-6">
-                        <label class="form-label">Phone Number</label>
-                        <InputText class="form-control" @bind-Value="employee.PhoneNumber" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.PhoneNumber)" />
+                    <div class="mt-5 d-flex justify-content-end gap-3">
+                        <button type="button" class="btn btn-outline-secondary" @onclick="GoBack">
+                            Back
+                        </button>
+
+                        <button type="submit" class="btn btn-primary px-4">
+                            @(IsEditMode ? "Update" : "Save")
+                        </button>
                     </div>
 
-                </div>
-
-
-                <!-- Job Details -->
-                <h6 class="border-bottom pb-2 mt-4 mb-3 text-secondary">Job Details</h6>
-
-                <div class="row g-4">
-
-                    <div class="col-md-6">
-                        <label class="form-label">Position</label>
-                        <InputText class="form-control" @bind-Value="employee.Position" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.Position)" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Salary</label>
-                        <InputNumber class="form-control" @bind-Value="employee.Salary" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.Salary)" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Department</label>
-                        <InputSelect class="form-select" @bind-Value="employee.DepartmentId">
-                            <option value="">-- Select Department --</option>
-                            @foreach (var dept in departments)
-                            {
-                                <option value="@dept.Id">@dept.DepartmentName</option>
-                            }
-                        </InputSelect>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Manager</label>
-                        <InputSelect class="form-select" @bind-Value="employee.ManagerId">
-                            <option value="">-- No Manager --</option>
-                            @foreach (var m in managers)
-                            {
-                                <option value="@m.Id">@m.FirstName @m.LastName</option>
-                            }
-                        </InputSelect>
-                    </div>
-
-                </div>
-
-
-                <!-- Additional Info -->
-                <h6 class="border-bottom pb-2 mt-4 mb-3 text-secondary">Other Details</h6>
-
-                <div class="row g-4">
-
-                    <div class="col-md-6">
-                        <label class="form-label">Date of Birth</label>
-                        <InputDate class="form-control" @bind-Value="employee.DateOfBirth" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.DateOfBirth)" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Hire Date</label>
-                        <InputDate class="form-control" @bind-Value="employee.HireDate" autocomplete="off" />
-                        <ValidationMessage For="@(() => employee.HireDate)" />
-                    </div>
-
-                    @* <div class="col-md-6">
-                        <label class="form-label">Password</label>
-                        <InputText type="password" class="form-control" @bind-Value="employee.Password" />
-                        <ValidationMessage For="@(() => employee.Password)" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Primary Role</label>
-                        <InputNumber class="form-control" @bind-Value="employee.PrimaryRole" />
-                    </div> *@
-
-                </div>
-
-                <div class="mt-5 d-flex justify-content-end gap-3">
-                    <button class="btn btn-outline-secondary" @onclick="GoBack">
-                        Cancel
-                    </button>
-                    <button class="btn btn-primary px-4" type="submit">
-                        @(IsEditMode ? "Update Employee" : "Save Employee")
-                    </button>
-                </div>
-
-            </EditForm>
+                </EditForm>
+            }
         </div>
     </div>
 
 </div>
+
 @code {
     [Parameter] public int? Id { get; set; }
 
-    private EditContext editcontext;
-    private EmployeeViewModel employee = new();
-    private List<DepartmentViewModel> departments = new();
-    private List<EmployeeViewModel> managers = new();
+    private EmployeeDto employee = new();
+    private EditContext editContext;
+
+    private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
 
-    protected override async Task OnInitializedAsync()
+    private List<DepartmentViewModel> departments = new();
+    private List<EmployeeDto> managers = new();
+
+    protected override async Task OnParametersSetAsync()
     {
-        editcontext = new EditContext(employee);
+        isLoading = true;
 
         // Load departments
         var deptData = await DepartmentService.GetDepartmentsAsync();
@@ -166,64 +161,38 @@
         }).ToList();
 
         // Load managers
-        var employeeResult = await EmployeeService.GetEmployeesAsync();
+        var empResult = await EmployeeService.GetEmployeesAsync();
+        managers = empResult.Data?.ToList() ?? new();
 
-        managers = employeeResult.Data?.Select(e => new EmployeeViewModel
-        {
-            Id = e.Id,
-            FirstName = e.FirstName,
-            LastName = e.LastName
-        }) .ToList() ?? new List<EmployeeViewModel>();
-
-        // Edit mode: load employee
         if (IsEditMode)
         {
-            var response = await EmployeeService.GetEmployeeByIdAsync(Id!.Value);
+            var result = await EmployeeService.GetEmployeeByIdAsync(Id!.Value);
 
-            if (response.IsSuccess && response.Data != null)
+            if (result.IsSuccess && result.Data != null)
             {
-                var existing = response.Data;
-
-                employee.EmployeeNumber = existing.EmployeeNumber;
-                employee.FirstName = existing.FirstName;
-                employee.LastName = existing.LastName;
-                employee.Email = existing.Email;
-                employee.PhoneNumber = existing.PhoneNumber;
-                employee.Position = existing.Position;
-                employee.Salary = existing.Salary;
-                employee.DateOfBirth = existing.DateOfBirth;
-                employee.HireDate = existing.HireDate;
-                employee.DepartmentId = existing.DepartmentId;
-                employee.ManagerId = existing.ManagerId;
+                employee = result.Data;
+            }
+            else
+            {
+                NotificationService.Error($"Employee not found ({result.StatusCode}): {result.Message ?? "Employee not found."}");
+                NavigationManager.NavigateTo("/employee/employeelist");
+                return;
             }
         }
+
+        editContext = new EditContext(employee);
+        isLoading = false;
     }
 
     private async Task HandleValidSubmit()
     {
         if (IsEditMode)
         {
-            var updateDto = new UpdateEmployeeRequest
-            {
-                Id = Id.Value,
-                EmployeeNumber = employee.EmployeeNumber,
-                FirstName = employee.FirstName,
-                LastName = employee.LastName,
-                Email = employee.Email,
-                PhoneNumber = employee.PhoneNumber,
-                Position = employee.Position,
-                Salary = employee.Salary,
-                DateOfBirth = employee.DateOfBirth,
-                HireDate = employee.HireDate,
-                DepartmentId = employee.DepartmentId,
-                ManagerId = employee.ManagerId
-            };
-
-            var result = await EmployeeService.UpdateEmployeeAsync(Id.Value, updateDto);
+            var result = await EmployeeService.UpdateEmployeeAsync(Id!.Value, employee);
 
             if (!result.IsSuccess)
             {
-                NotificationService.Error("Failed to update employee.");
+                NotificationService.Error($"Update failed ({result.StatusCode}): {result.Message ?? "Unable to update employee."}");
                 return;
             }
 
@@ -231,25 +200,11 @@
         }
         else
         {
-            var createDto = new EmployeeDto
-            {
-                FirstName = employee.FirstName,
-                LastName = employee.LastName,
-                Email = employee.Email,
-                PhoneNumber = employee.PhoneNumber,
-                Position = employee.Position,
-                Salary = employee.Salary,
-                DateOfBirth = employee.DateOfBirth,
-                HireDate = employee.HireDate,
-                DepartmentId = employee.DepartmentId,
-                ManagerId = employee.ManagerId
-            };
-
-            var result = await EmployeeService.CreateEmployeeAsync(createDto);
+            var result = await EmployeeService.CreateEmployeeAsync(employee);
 
             if (!result.IsSuccess)
             {
-                NotificationService.Error("Failed to create employee.");
+                NotificationService.Error($"Create failed ({result.StatusCode}): {result.Message ?? "Unable to create employee."}");
                 return;
             }
 

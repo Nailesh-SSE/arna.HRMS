@@ -10,7 +10,7 @@ public interface IEmployeeService
     Task<ApiResult<List<EmployeeDto>>> GetEmployeesAsync();
     Task<ApiResult<EmployeeDto>> GetEmployeeByIdAsync(int id);
     Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto employeeDto);
-    Task<ApiResult<bool>> UpdateEmployeeAsync(int id, UpdateEmployeeRequest employeeDto);
+    Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeDto employeeDto);
     Task<ApiResult<bool>> DeleteEmployeeAsync(int id);
 }
 
@@ -38,7 +38,7 @@ public class EmployeeService : IEmployeeService
         return await _http.PostAsync<EmployeeDto>("api/employees", employeeDto);
     }
 
-    public async Task<ApiResult<bool>> UpdateEmployeeAsync(int id, UpdateEmployeeRequest employeeDto)
+    public async Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeDto employeeDto)
     {
         return await _http.PutAsync<bool>($"api/employees/{id}", employeeDto);
     }
