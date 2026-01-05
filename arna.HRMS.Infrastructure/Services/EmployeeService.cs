@@ -45,7 +45,7 @@ public class EmployeeService : IEmployeeService
         {
             var userDto = new UserDto
             {
-                Username = createdEmployee.FirstName + " " + createdEmployee.LastName,
+                Username = createdEmployee.FirstName,
                 Email = createdEmployee.Email,
                 FirstName = createdEmployee.FirstName,
                 LastName = createdEmployee.LastName,
