@@ -131,17 +131,20 @@
             }
         </NavLink>
 
-        <NavLink href="/department"
-             class="nav-link text-white d-flex align-items-center gap-3"
-             activeClass="active">
-            <i class="bi bi-building fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Department</span>
-            }
-        </NavLink>
+        @if (isAdmin)
+        {
+            <NavLink href="/department"
+                     class="nav-link text-white d-flex align-items-center gap-3"
+                     activeClass="active">
+                <i class="bi bi-building fs-5"></i>
+                @if (!Collapsed)
+                {
+                    <span>Department</span>
+                }
+            </NavLink>
+        }
 
-        @if (isSuperAdmin)
+        @if (isAdmin)
         {
             <NavLink href="/users"
                      class="nav-link text-white d-flex align-items-center gap-3"
@@ -178,7 +181,7 @@
 
     [Parameter] public EventCallback OnToggle { get; set; }
 
-    private bool isSuperAdmin;
+    private bool isAdmin;
 
     protected override async Task OnInitializedAsync()
     {
@@ -191,7 +194,8 @@
             return;
         }
 
-        isSuperAdmin = state.User.IsInRole(UserRole.SuperAdmin.ToString());
+        isAdmin =
+            state.User.IsInRole(UserRole.SuperAdmin.ToString()) ||
+            state.User.IsInRole(UserRole.Admin.ToString());
     }
-
 }

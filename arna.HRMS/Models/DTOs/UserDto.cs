@@ -29,9 +29,6 @@ public class UserDto : CommonDto
     [MaxLength(50)]
     public string LastName { get; set; } = string.Empty;
 
-    [Display(Name = "Full Name")]
-    public string FullName { get; set; } = string.Empty;
-
     [Required(ErrorMessage = "Role is required")]
     public UserRole? Role { get; set; }
 
@@ -39,9 +36,10 @@ public class UserDto : CommonDto
     [Phone(ErrorMessage = "Invalid phone number")]
     public string? PhoneNumber { get; set; }
 
-    [Required(ErrorMessage = "Employee is required")]
-    public int? EmployeeId { get; set; }
 
+    [Display(Name = "Full Name")]
+    public string FullName { get; set; } = string.Empty;
+    public int? EmployeeId { get; set; }
     public string? EmployeeName { get; set; }
     public string? PasswordHash { get; set; }
 }

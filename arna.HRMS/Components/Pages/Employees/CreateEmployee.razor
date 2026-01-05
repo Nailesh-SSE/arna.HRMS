@@ -1,12 +1,13 @@
 ﻿@page "/employees/create"
 @page "/employees/edit/{Id:int}"
-
+@attribute [Authorize(Roles = $"{nameof(UserRole.SuperAdmin)},{nameof(UserRole.Admin)}")]
+@using Microsoft.AspNetCore.Authorization
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
-@using arna.HRMS.ClientServices
 @using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
 
 @inject IEmployeeService EmployeeService

@@ -40,7 +40,6 @@ public class Program
         builder.Services.AddAuthorizationCore();
 
         builder.Services.AddScoped<ProtectedLocalStorage>();
-        builder.Services.AddScoped<ITokenProvider, TokenProvider>();
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
 

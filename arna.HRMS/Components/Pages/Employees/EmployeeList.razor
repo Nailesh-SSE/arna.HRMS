@@ -1,27 +1,31 @@
 ﻿@page "/employee/employeelist"
 @rendermode InteractiveServer
 @inject IJSRuntime JsRuntime
+@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold text-primary">Employee Directory</h3>
-
-        <button class="btn btn-success" @onclick='() => NavigateTo("/employees/create")'>
-            <i class="bi bi-plus-lg"></i> Add Employee
-        </button>
+        @if (IsAdmin)
+        {
+            <button class="btn btn-success" @onclick='() => NavigateTo("/employees/create")'>
+                <i class="bi bi-plus-lg"></i> Add Employee
+            </button>
+        }
     </div>
-
 
     <div class="mb-3">
         <input type="text" placeholder="Search employees..." class="form-control w-50 shadow-sm" />
@@ -50,7 +54,10 @@
                         <th>Phone</th>
                         <th>Hire Date</th>
                         <th>Status</th>
-                        <th class="text-center">Actions</th>
+                        @if (IsAdmin)
+                        {
+                            <th class="text-center">Actions</th>
+                        }
                     </tr>
                 </thead>
 
@@ -92,20 +99,23 @@
                                 }
                             </td>
 
-                            <td class="text-center">
+                            @if (IsAdmin)
+                            {
+                                <td class="text-center">
 
-                                <div class="btn-group">
-                                    <button class="btn btn-outline-primary btn-sm" @onclick="() => EditEmployee(employee.Id)">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    <br />
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteInfo(employee.Id)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <div class="btn-group">
+                                        <button class="btn btn-outline-primary btn-sm" @onclick="() => EditEmployee(employee.Id)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <br />
+                                        <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteInfo(employee.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
 
-                                </div>
+                                    </div>
 
-                            </td>
+                                </td>
+                            }
                         </tr>
                     }
                 </tbody>
@@ -130,9 +140,20 @@
 
 @code {
     private List<EmployeeDto>? employees;
+    private bool IsAdmin;
 
     protected override async Task OnInitializedAsync()
     {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login");
+            return;
+        }
+
+        IsAdmin = state.User.IsInRole(UserRole.SuperAdmin.ToString()) || state.User.IsInRole(UserRole.Admin.ToString());
         await LoadEmployeesAsync();
     }
     
