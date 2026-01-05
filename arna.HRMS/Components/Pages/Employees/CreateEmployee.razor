@@ -85,7 +85,7 @@
                                 <option value="">-- Select Department --</option>
                                 @foreach (var dept in departments)
                                 {
-                                    <option value="@dept.Id">@dept.DepartmentName</option>
+                                    <option value="@dept.Id">@dept.Name</option>
                                 }
                             </InputSelect>
                         </div>
@@ -93,7 +93,7 @@
                         <div class="col-md-6">
                             <label class="form-label">Manager</label>
                             <InputSelect class="form-select" @bind-Value="employee.ManagerId">
-                                <option value="">-- No Manager --</option>
+                                <option value="">-- Select Manager --</option>
                                 @foreach (var mgr in managers)
                                 {
                                     <option value="@mgr.Id">@mgr.FirstName @mgr.LastName</option>
@@ -145,7 +145,7 @@
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
 
-    private List<DepartmentViewModel> departments = new();
+    private List<DepartmentDto> departments = new();
     private List<EmployeeDto> managers = new();
 
     protected override async Task OnParametersSetAsync()
@@ -153,16 +153,18 @@
         isLoading = true;
 
         // Load departments
-        var deptData = await DepartmentService.GetDepartmentsAsync();
-        departments = deptData.Data.Select(d => new DepartmentViewModel
+        var deptResult = await DepartmentService.GetDepartmentsAsync();
+        if (deptResult.IsSuccess && deptResult.Data != null)
         {
-            Id = d.Id,
-            DepartmentName = d.Name
-        }).ToList();
+            departments = deptResult.Data.ToList();
+        }
 
         // Load managers
         var empResult = await EmployeeService.GetEmployeesAsync();
-        managers = empResult.Data?.ToList() ?? new();
+        if (empResult.IsSuccess && empResult.Data != null)
+        {
+            managers = empResult.Data.ToList();
+        }
 
         if (IsEditMode)
         {

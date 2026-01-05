@@ -25,17 +25,16 @@ public class AuthService : IAuthService
     {
         var user = await _userServices.GetUserByUserNameAndEmail(request.Email);
 
-        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
+        if (user == null || user.Password != request.Password)
         {
             return new AuthResponse
             {
                 IsSuccess = false,
-                Message = "Invalid credentials"
+                Message = "Invalid username or password"
             };
         }
 
-        var userDto = _mapper.Map<UserDto>(user);
-        return await GenerateAuthResponseAsync(userDto, "Login successful");
+        return await GenerateAuthResponseAsync(user, "Login successful");
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -50,8 +49,8 @@ public class AuthService : IAuthService
         }
 
         var model = _mapper.Map<UserDto>(request);
-        var userDto =  await _userServices.CreateUserAsync(model); 
-        return await GenerateAuthResponseAsync(userDto, "Registration successful");
+        var user =  await _userServices.CreateUserEntityAsync(model); 
+        return await GenerateAuthResponseAsync(user, "Registration successful");
     }
 
     public async Task LogoutAsync(int userId)
@@ -59,9 +58,8 @@ public class AuthService : IAuthService
         await _jwtService.RevokeRefreshTokenAsync(userId);
     }
 
-    private async Task<AuthResponse> GenerateAuthResponseAsync(UserDto userDto, string message)
+    private async Task<AuthResponse> GenerateAuthResponseAsync(User user, string message)
     {
-        var user = _mapper.Map<User>(userDto);
         var accessToken = _jwtService.GenerateAccessToken(user);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
@@ -72,7 +70,7 @@ public class AuthService : IAuthService
             IsSuccess = true,
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            Expiration = DateTime.UtcNow.AddMinutes(10),
+            Expiration = DateTime.UtcNow.AddMinutes(30),
             UserId = user.Id,
             Username = user.Username,
             FullName = user.FullName,
@@ -82,15 +80,5 @@ public class AuthService : IAuthService
             Message = message,
             Password = user.Password
         };
-    }
-
-    private static bool VerifyPassword(string password, string hash)
-        => HashPassword(password) == hash;
-
-    private static string HashPassword(string password)
-    {
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(password);
-        return Convert.ToBase64String(sha.ComputeHash(bytes));
     }
 }

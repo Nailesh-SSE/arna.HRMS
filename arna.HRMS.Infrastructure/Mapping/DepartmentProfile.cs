@@ -12,7 +12,7 @@ public class DepartmentProfile : Profile
         CreateMap<DepartmentDto, Department>();
         CreateMap<DepartmentDto, Department>();
         CreateMap<Department, DepartmentDto>()
-            .ForMember(dest=>dest.parentDepartMentName,
+            .ForMember(dest=>dest.ParentDepartMentName,
                 opt=>opt.MapFrom(src=> src.ParentDepartment != null ? $"{src.ParentDepartment.Name}":""));
     }
 }

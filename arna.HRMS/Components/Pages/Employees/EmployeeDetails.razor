@@ -5,9 +5,11 @@
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Models.DTOs
+
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
 
 <style>
     .employee-container {
@@ -203,7 +205,7 @@
 
                     <div class="detail-box">
                         <label>Created At</label>
-    At                  <div>@employee.CreatedAt.ToShortDateString()</div>
+    At                  <div>@employee.CreatedBy.ToShortDateString()</div>
                     </div>
 
                     <div class="detail-box">
@@ -256,8 +258,8 @@
 
         employee = employeeResult.Data;
 
-        var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId);
-        if (deptResult != null)
+        var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId!.Value);
+        if (deptResult?.Data != null)
         {
             employee.DepartmentName = deptResult.Data.Name;
             employee.DepartmentCode = deptResult.Data.Code;

@@ -1,7 +1,4 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
-using arna.HRMS.Infrastructure.Services;
+﻿using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

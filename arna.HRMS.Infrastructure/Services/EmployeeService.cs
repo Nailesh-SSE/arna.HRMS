@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Models.DTOs;
@@ -9,12 +10,14 @@ namespace arna.HRMS.Infrastructure.Services;
 public class EmployeeService : IEmployeeService
 {
     private readonly EmployeeRepository _employeeRepository;
+    private readonly IUserServices _userServices;
     private readonly IMapper _mapper;
 
-    public EmployeeService(EmployeeRepository employeeRepository, IMapper mapper)
+    public EmployeeService(EmployeeRepository employeeRepository,  IMapper mapper, IUserServices userServices)
     {
         _employeeRepository = employeeRepository;
         _mapper = mapper;
+        _userServices = userServices;
     }
 
     public async Task<List<EmployeeDto>> GetEmployeesAsync()
@@ -36,8 +39,27 @@ public class EmployeeService : IEmployeeService
         var lastEmployeeNumber = await _employeeRepository.GetLastEmployeeNumberAsync();
         employee.EmployeeNumber = GenerateEmployeeNumber(lastEmployeeNumber);
 
-        var created = await _employeeRepository.CreateEmployeeAsync(employee);
-        return _mapper.Map<EmployeeDto>(created);
+        var createdEmployee = await _employeeRepository.CreateEmployeeAsync(employee);
+
+        if (createdEmployee != null)
+        {
+            var userDto = new UserDto
+            {
+                Username = createdEmployee.FirstName + " " + createdEmployee.LastName,
+                Email = createdEmployee.Email,
+                FirstName = createdEmployee.FirstName,
+                LastName = createdEmployee.LastName,
+                EmployeeName = createdEmployee.FirstName + " " + createdEmployee.LastName,
+                Role = UserRole.Employee,
+                PhoneNumber = createdEmployee.PhoneNumber,
+                EmployeeId = createdEmployee.Id,
+                Password = $"{createdEmployee.FirstName}@123"
+            };
+
+            await _userServices.CreateUserAsync(userDto);
+        }
+
+        return _mapper.Map<EmployeeDto>(createdEmployee);
     }
 
     public async Task<EmployeeDto> UpdateEmployeeAsync(EmployeeDto dto)

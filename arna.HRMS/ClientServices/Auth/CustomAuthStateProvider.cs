@@ -51,7 +51,10 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         }
 
         if (jwt.ValidTo <= DateTime.UtcNow)
+        {
+            await LogoutAsync();
             return Anonymous;
+        }
 
         _httpClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);

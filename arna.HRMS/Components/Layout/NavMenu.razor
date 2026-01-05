@@ -1,7 +1,11 @@
 ﻿@inject NavigationManager Nav
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Employee
+@using Microsoft.AspNetCore.Components.Authorization
+@using arna.HRMS.Models.Enums
 @inject IEmployeeService EmployeeService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
 
 <style>
     .custom-sidebar{
@@ -128,8 +132,8 @@
         </NavLink>
 
         <NavLink href="/department"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
+             class="nav-link text-white d-flex align-items-center gap-3"
+             activeClass="active">
             <i class="bi bi-building fs-5"></i>
             @if (!Collapsed)
             {
@@ -137,15 +141,18 @@
             }
         </NavLink>
 
-        <NavLink href="/users"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-person fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Users</span>
-            }
-        </NavLink>
+        @if (isSuperAdmin)
+        {
+            <NavLink href="/users"
+                     class="nav-link text-white d-flex align-items-center gap-3"
+                     activeClass="active">
+                <i class="bi bi-person fs-5"></i>
+                @if (!Collapsed)
+                {
+                    <span>Users</span>
+                }
+            </NavLink>
+        }
 
         <NavLink href="/profile"
                  class="nav-link text-white d-flex align-items-center gap-3"
@@ -170,4 +177,21 @@
     [CascadingParameter] public bool Collapsed { get; set; }
 
     [Parameter] public EventCallback OnToggle { get; set; }
+
+    private bool isSuperAdmin;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        var isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        isSuperAdmin = state.User.IsInRole(UserRole.SuperAdmin.ToString());
+    }
+
 }

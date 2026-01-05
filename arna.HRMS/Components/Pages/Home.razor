@@ -1,8 +1,8 @@
 ﻿@page "/"
-@inject NavigationManager NavigationManager
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
 
 <style>
     .menu-card {
@@ -17,7 +17,7 @@
         <Spinner Type="SpinnerType.Border" />
     </div>
 }
-else if (IsAuthenticated)
+else
 {
     <h4 class="fw-bold mb-4">My Access</h4>
 
@@ -28,8 +28,10 @@ else if (IsAuthenticated)
                 <div class="col-6 col-md-2">
                     <div class="ratio ratio-1x1 mx-auto" style="max-width:150px;">
                         <div class="card shadow-sm border-0 menu-card d-flex justify-content-center align-items-center"
-                             role="button" @onclick='() => NavigateTo(item.Route)'>
-                            <img src="@item.Icon" style="width:110%; height:110%; object-fit:contain;" />
+                             role="button"
+                             @onclick='() => NavigateTo(item.Route)'>
+                            <img src="@item.Icon"
+                                 style="width:110%; height:110%; object-fit:contain;" />
                         </div>
                     </div>
                     <small class="fw-semibold d-block mt-1">@item.Label</small>
@@ -38,57 +40,23 @@ else if (IsAuthenticated)
         </div>
     </div>
 }
-else
-{
-    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
-        <div class="spinner-border text-primary"></div>
-        <p class="ms-3 text-muted">Redirecting to login...</p>
-    </div>
-}
 
 @code {
-    private bool IsAuthenticated;
     private bool IsLoading = true;
-    private bool _redirectInitiated;
     private string CurrentUserFullName = string.Empty;
     private record MenuItem(string Label, string Icon, string Route);
 
     protected override async Task OnInitializedAsync()
     {
-        AuthProvider.AuthenticationStateChanged += OnAuthStateChanged;
-
         var authState = await AuthProvider.GetAuthenticationStateAsync();
-        await UpdateAuthState(authState);
-    }
-
-    private async void OnAuthStateChanged(Task<AuthenticationState> task)
-    {
-        var authState = await task;
-        await UpdateAuthState(authState);
-    }
-
-    private async Task UpdateAuthState(AuthenticationState authState)
-    {
         var user = authState.User;
 
-        IsAuthenticated = user.Identity?.IsAuthenticated == true;
-
-        if (IsAuthenticated)
-        {
-            CurrentUserFullName =
-                user.FindFirst("FullName")?.Value
-                ?? user.Identity?.Name
-                ?? "User";
-        }
+        CurrentUserFullName =
+            user.FindFirst("FullName")?.Value
+            ?? user.Identity?.Name
+            ?? "User";
 
         IsLoading = false;
-        await InvokeAsync(StateHasChanged);
-
-        if (!IsAuthenticated && !_redirectInitiated)
-        {
-            _redirectInitiated = true;
-            NavigationManager.NavigateTo("/login");
-        }
     }
 
     private readonly List<MenuItem> MenuItems = new()
@@ -105,10 +73,5 @@ else
     private void NavigateTo(string route)
     {
         NavigationManager.NavigateTo(route);
-    }
-
-    public void Dispose()
-    {
-        AuthProvider.AuthenticationStateChanged -= OnAuthStateChanged;
     }
 }

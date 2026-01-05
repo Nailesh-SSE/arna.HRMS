@@ -47,11 +47,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(d => d.RefreshTokenExpiryTime);
 
         builder.Property(d => d.EmployeeId)
-            .IsRequired();
+            .IsRequired(false);
 
         builder.HasOne(d => d.Employee)
             .WithMany()
             .HasForeignKey(d => d.EmployeeId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.SetNull); 
+
     }
 }

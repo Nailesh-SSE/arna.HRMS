@@ -9,7 +9,7 @@
 
     <h5 class="mb-0">
         @Greeting@if (!string.IsNullOrEmpty(FullName))
-        {
+                {
             <span>, @FullName</span>
         }
     </h5>
@@ -38,13 +38,10 @@
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        if (user.Identity?.IsAuthenticated == true)
-        {
-            FullName =
-                user.FindFirst("FullName")?.Value
-                ?? user.Identity?.Name
-                ?? string.Empty;
-        }
+        FullName =
+            user.FindFirst("FullName")?.Value
+            ?? user.Identity?.Name
+            ?? string.Empty;
 
         SetGreeting();
     }

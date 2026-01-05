@@ -45,8 +45,7 @@ public class User : BaseEntity
     [NotMapped]
     public string FullName => $"{FirstName} {LastName}";
 
-    [Required]
-    public int EmployeeId { get; set; }
+    public int? EmployeeId { get; set; }  
 
-    public Employee Employee { get; set; }
+    public Employee? Employee { get; set; } 
 }

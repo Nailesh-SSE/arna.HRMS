@@ -61,7 +61,7 @@
                                 <option value="">Select Department</option>
                                 @foreach (var Dep in departmentlist)
                                 {
-                                    <option value="@Dep.Id">@Dep.parentDepartMentName</option>
+                                    <option value="@Dep.Id">@Dep.ParentDepartMentName</option>
                                 }
                             </InputSelect>
                             <ValidationMessage For="@(() => department.ParentDepartmentId)" />

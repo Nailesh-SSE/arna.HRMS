@@ -46,7 +46,8 @@ namespace arna.HRMS.Infrastructure.Data
                     Role = UserRole.SuperAdmin,
                     RefreshToken = null,
                     RefreshTokenExpiryTime = null,
-                    Password = "superadmin@123"
+                    Password = "superadmin@123",
+                    EmployeeId = null
                 }
             );
 
