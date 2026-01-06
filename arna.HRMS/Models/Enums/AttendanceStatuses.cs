@@ -6,5 +6,6 @@ public enum AttendanceStatuses
     Absent = 2,
     Late = 3,
     HalfDay = 4,
-    OnLeave = 5
+    OnLeave = 5,
+    Holiday = 6
 }

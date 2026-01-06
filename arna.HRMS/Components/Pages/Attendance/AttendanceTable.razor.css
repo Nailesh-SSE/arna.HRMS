@@ -55,6 +55,12 @@ thead {
     color: #92400e;
 }
 
+.status-holiday {
+    background: #e0f2fe;
+    color: #1e3a8a; 
+}
+
+
 .status-halfday {
     background: #e0e7ff;
     color: #3730a3;

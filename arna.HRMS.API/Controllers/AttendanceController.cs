@@ -2,7 +2,6 @@
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Models.DTOs;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,38 +13,33 @@ namespace arna.HRMS.API.Controllers;
 public class AttendanceController : ControllerBase
 {
     private readonly IAttendanceService _AttendanceService;
-    private readonly IMapper _mapper;
-    public AttendanceController(IAttendanceService AttendanceService, IMapper mapper)
+    public AttendanceController(IAttendanceService AttendanceService)
     {
         _AttendanceService = AttendanceService;
-        _mapper = mapper;
     }
+ 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AttendanceDto>>> GetAttendance()
+    public async Task<IActionResult> GetAttendance()
     {
         var attendance = await _AttendanceService.GetAttendanceAsync();
-        return Ok(_mapper.Map<IEnumerable<AttendanceDto>>(attendance));
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<AttendanceDto>> GetAttendance(int id)
-    {
-        var attendance = await _AttendanceService.GetAttendenceByIdAsync(id);
-        if (attendance == null) return NotFound();
         return Ok(attendance);
     }
 
-    [HttpPost]
-    //[Authorize(Roles = "Admin,HR")]
-    public async Task<ActionResult<AttendanceDto>> CreateAttendance(CreateAttendanceRequest attendanceDto)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetAttendanceById(int id)
     {
-        var attendance = _mapper.Map<Attendance>(attendanceDto);
-        var createdAttendance = await _AttendanceService.CreateAttendanceAsync(attendance);
+        var attendance = await _AttendanceService.GetAttendenceByIdAsync(id);
+        return attendance == null? NotFound("Attendance not found") : Ok(attendance);
+    }
 
-        return CreatedAtAction(
-            nameof(GetAttendance),
-            new { id = createdAttendance.Id },
-            _mapper.Map<AttendanceDto>(createdAttendance));
+    [HttpPost]
+    public async Task<ActionResult<AttendanceDto>> CreateAttendance([FromBody] AttendanceDto attendanceDto)
+    {
+        if(!ModelState.IsValid)
+            return BadRequest(ModelState);
+        var createdAttendance = await _AttendanceService.CreateAttendanceAsync(attendanceDto);
+
+        return Ok(createdAttendance);
     }
     [HttpGet("by-month")]
     public async Task<ActionResult<IEnumerable<MonthlyAttendanceDto>>> GetAttendanceByMonth(int year,int month, int EmpId)

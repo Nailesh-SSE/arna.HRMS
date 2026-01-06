@@ -20,9 +20,9 @@
                     <tr class="@(string.IsNullOrEmpty(item.Status) ? "future-row" : "")">
                         <td>@item.Date.ToString("dd MMM yyyy")</td>
                         <td>@item.Day</td>
-                        <td>@(item.ClockIn?.ToString(@"hh\:mm") ?? "-")</td>
-                        <td>@(item.ClockOut?.ToString(@"hh\:mm") ?? "-")</td>
-                        <td>@(item.TotalHours > 0 ? item.TotalHours.ToString("0.00") : "-")</td>
+                        <td>@(item.ClockIn?.ToString(@"hh\:mm\:ss") ?? "-")</td>
+                        <td>@(item.ClockOut?.ToString(@"hh\:mm\:ss") ?? "-")</td>
+                        <td>@(item.TotalHours > TimeSpan.FromHours(0) ? item.TotalHours.ToString(@"hh\:mm\:ss") : "-")</td>
                         <td>
                             @if (string.IsNullOrEmpty(item.Status))
                             {

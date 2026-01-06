@@ -34,7 +34,7 @@ public static class MonthlyAttendanceBuilder
                     Day = date.DayOfWeek.ToString(),
                     ClockIn = null,
                     ClockOut = null,
-                    TotalHours = 0,
+                    TotalHours = TimeSpan.FromHours(0),
                     Status = string.Empty
                 });
             }

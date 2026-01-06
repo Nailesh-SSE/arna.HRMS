@@ -9,6 +9,6 @@ public class MonthlyAttendanceDto : CommonDto
     public string Day { get; set; }
     public TimeSpan? ClockIn { get; set; }
     public TimeSpan? ClockOut { get; set; }
-    public double TotalHours { get; set; }
+    public TimeSpan TotalHours { get; set; }
     public string Status { get; set; }
 }

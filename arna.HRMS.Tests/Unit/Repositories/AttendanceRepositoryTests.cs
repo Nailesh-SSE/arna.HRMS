@@ -99,7 +99,7 @@ public class AttendanceRepositoryTests
 
         // Act
         var result = await _attendanceRepository
-            .CreateAttendanceDtoAsync(attendance);
+            .CreateAttendanceAsync(attendance);
 
         // Assert
         Assert.That(result, Is.Not.Null);

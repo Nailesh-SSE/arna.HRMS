@@ -9,7 +9,7 @@ public class AttendanceProfile : Profile
 {
     public AttendanceProfile()
     {
-        CreateMap<CreateAttendanceRequest, Attendance>()
+        CreateMap<AttendanceDto, Attendance>()
             .ForMember(dest => dest.ClockIn,
                 opt => opt.MapFrom(src =>
                     src.ClockInTime.HasValue
@@ -21,8 +21,7 @@ public class AttendanceProfile : Profile
                         ? src.Date.Date + src.ClockOutTime.Value
                         : (DateTime?)null))
             .ForMember(dest => dest.TotalHours,
-                opt => opt.MapFrom(src =>
-                    TimeSpan.FromHours(src.WorkingHours)));
+                opt => opt.MapFrom(src =>src.WorkingHours));
 
         CreateMap<Attendance, AttendanceDto>()
             .ForMember(dest => dest.ClockInTime,
