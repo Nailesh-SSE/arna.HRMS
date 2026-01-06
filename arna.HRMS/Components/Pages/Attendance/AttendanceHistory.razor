@@ -28,7 +28,7 @@
         </div>
 
         <div class="hours-value">
-            @State.TotalWorkingHours.ToString("0.00")
+            @State.TotalWorkingHours.ToString(@"hh\:mm")
             <span class="unit">hrs</span>
         </div>
     </div>
@@ -108,7 +108,11 @@
              .ToDictionary(x => x.Date);
 
         State.TotalWorkingHours =
-            State.AttendanceList.Sum(x => x.TotalHours);
+        State.AttendanceList.Aggregate(
+            TimeSpan.Zero,
+            (total, item) => total + item.TotalHours
+        );
+
 
         State.SummaryCards =
             AttendanceSummaryBuilder.Build(State.AttendanceList);

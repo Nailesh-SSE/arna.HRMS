@@ -19,7 +19,7 @@ public class AttendanceState
     public Dictionary<DateOnly, MonthlyAttendanceDto> AttendanceLookup { get; set; } = new();
     public List<AttendenceSummaryCard> SummaryCards { get; set; } = new();
 
-    public double TotalWorkingHours { get; set; }
+    public TimeSpan TotalWorkingHours { get; set; }
 
     /* ================= HELPERS ================= */
     public void ParseMonth()

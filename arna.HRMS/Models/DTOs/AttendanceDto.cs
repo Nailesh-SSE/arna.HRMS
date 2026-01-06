@@ -11,6 +11,6 @@ namespace arna.HRMS.Models.DTOs
         public TimeSpan? ClockOutTime { get; set; }
         public AttendanceStatuses Status { get; set; }
         public string Notes { get; set; }
-        public double WorkingHours { get; set; }
+        public TimeSpan? WorkingHours { get; set; }
     }
 }

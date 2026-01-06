@@ -127,7 +127,7 @@
 
     private TimeOnly In;
     private TimeOnly Out;
-    private double AccumulatedHours;
+    private TimeOnly AccumulatedHours;
 
     private string CurrentTime = "";
     private string? ActionLabel;
@@ -195,10 +195,10 @@
                 ClockInTime = In.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
                 Notes = attendanceViewModel.Notes,
-                WorkingHours = 0
+                WorkingHours = null
             });
 
-            AccumulatedHours = 0;
+            AccumulatedHours = new TimeOnly(0, 0);
             await ShowNotification($"Clocked in at {ActionTime}");
         }
         else
@@ -209,7 +209,8 @@
             ActionLabel = "Clock Out";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
-            AccumulatedHours += (Out.ToTimeSpan() - In.ToTimeSpan()).TotalHours;
+            var workedSpan = Out.ToTimeSpan() - In.ToTimeSpan();
+            AccumulatedHours = AccumulatedHours.Add(workedSpan);
 
             await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
@@ -218,7 +219,7 @@
                 ClockOutTime = Out.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
                 Notes = attendanceViewModel.Notes,
-                WorkingHours = AccumulatedHours
+                WorkingHours = AccumulatedHours.ToTimeSpan()
             });
 
             await ShowNotification($"Clocked out | {AccumulatedHours:F2} hrs");
