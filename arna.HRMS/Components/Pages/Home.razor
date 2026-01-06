@@ -1,6 +1,7 @@
 ﻿@page "/"
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
+@using arna.HRMS.Components.Common
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager NavigationManager
 
@@ -11,17 +12,14 @@
     }
 </style>
 
-@if (IsLoading)
-{
-    <div class="text-center">
-        <Spinner Type="SpinnerType.Border" />
-    </div>
-}
-else
-{
-    <h4 class="fw-bold mb-4">My Access</h4>
 
+
+<FullPageLoader Visible="isLoading" />
+
+@if (!isLoading)
+{
     <div class="container">
+    <h4 class="fw-bold mb-4">My Access</h4>
         <div class="row justify-content-center g-4 text-center">
             @foreach (var item in MenuItems)
             {
@@ -42,7 +40,7 @@ else
 }
 
 @code {
-    private bool IsLoading = true;
+    private bool isLoading = true;
     private string CurrentUserFullName = string.Empty;
     private record MenuItem(string Label, string Icon, string Route);
 
@@ -56,7 +54,7 @@ else
             ?? user.Identity?.Name
             ?? "User";
 
-        IsLoading = false;
+        isLoading = false;
     }
 
     private readonly List<MenuItem> MenuItems = new()

@@ -4,11 +4,13 @@
 @using arna.HRMS.ClientServices.Users
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Common
-
+@using arna.HRMS.Components.Common
 @inject IUsersService UsersService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
+
+<FullPageLoader Visible = "isLoading"/>
 
 <div class="container mt-4">
 
@@ -26,11 +28,7 @@
     </div>
 
 
-    @if (users == null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else
+    @if (users != null)
     {
         <div class="table-responsive shadow-sm">
 
@@ -102,6 +100,7 @@
 
 @code {
     private List<UserDto>? users;
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,6 +109,8 @@
 
     private async Task LoadUsers()
     {
+        isLoading = true;
+
         var result = await UsersService.GetUsersAsync();
 
         if (result.IsSuccess && result.Data != null)
@@ -125,6 +126,7 @@
         {
             users = new List<UserDto>();
         }
+        isLoading = false;
     }
 
     private async Task DeleteUser(int id)
