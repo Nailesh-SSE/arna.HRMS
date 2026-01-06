@@ -5,169 +5,185 @@
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
-@using arna.HRMS.ClientServices
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Components.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
 
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 
-
-
 <FullPageLoader Visible="isLoading" />
 
 <div class="container py-4">
 
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">
-                @(IsEditMode ? "Edit Employee" : "Create Employee")
-            </h5>
-        </div>
+    <AppCard Header="@(IsEditMode ? "Edit Employee" : "Create Employee")">
 
-        <div class="card-body p-4">
+        @if (!isLoading)
+        {
+            <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
+                <DataAnnotationsValidator />
 
-            @if (!isLoading)
-            {
-                <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
-                    <DataAnnotationsValidator />
+                <div class="card employee-form-card">
+                    <div class="card-body p-4">
 
-                    <div class="card employee-form-card">
-                        <div class="card-body p-4">
-
-                            <!-- HEADER -->
-                            <div class="mb-4">
-                                <h4 class="fw-semibold mb-1">
-                                    @(IsEditMode ? "Edit Employee" : "Add New Employee")
-                                </h4>
-                                <p class="text-muted mt-3">
-                                    Fill in the employee details below
-                                </p>
-                            </div>
-
-                            <!-- PERSONAL INFORMATION -->
-                            <div class="form-section">
-                                <div class="section-title">
-                                    <span>Personal Information</span>
-                                </div>
-
-                                <div class="row g-3 mt-3 mb-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">First Name</label>
-                                        <InputText class="form-control" @bind-Value="employee.FirstName" />
-                                        <ValidationMessage For="@(() => employee.FirstName)" />
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Last Name</label>
-                                        <InputText class="form-control" @bind-Value="employee.LastName" />
-                                        <ValidationMessage For="@(() => employee.LastName)" />
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Email</label>
-                                        <InputText class="form-control" @bind-Value="employee.Email" />
-                                        <ValidationMessage For="@(() => employee.Email)" />
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Phone Number</label>
-                                        <InputText class="form-control" @bind-Value="employee.PhoneNumber" />
-                                        <ValidationMessage For="@(() => employee.PhoneNumber)" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- JOB DETAILS -->
-                            <div class="form-section mt-5">
-                                <div class="section-title">
-                                    <span>Job Details</span>
-                                </div>
-
-                                <div class="row g-3 mt-3 mb-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Position</label>
-                                        <InputText class="form-control" @bind-Value="employee.Position" />
-                                        <ValidationMessage For="@(() => employee.Position)" />
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Salary</label>
-                                        <InputNumber class="form-control" @bind-Value="employee.Salary" />
-                                        <ValidationMessage For="@(() => employee.Salary)" />
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Department</label>
-                                        <InputSelect class="form-select" @bind-Value="employee.DepartmentId">
-                                            <option value="">Select Department</option>
-                                            @foreach (var dept in departments)
-                                            {
-                                                <option value="@dept.Id">@dept.Name</option>
-                                            }
-                                        </InputSelect>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Manager</label>
-                                        <InputSelect class="form-select" @bind-Value="employee.ManagerId">
-                                            <option value="">Select Manager</option>
-                                            @foreach (var mgr in managers)
-                                            {
-                                                <option value="@mgr.Id">
-                                                    @mgr.FirstName @mgr.LastName
-                                                </option>
-                                            }
-                                        </InputSelect>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- OTHER DETAILS -->
-                            <div class="form-section mt-5">
-                                <div class="section-title">
-                                    <span>Other Details</span>
-                                </div>
-
-                                <div class="row g-3 mt-3 mb-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label">Date of Birth</label>
-                                        <InputDate class="form-control" @bind-Value="employee.DateOfBirth" />
-                                        <ValidationMessage For="@(() => employee.DateOfBirth)" />
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label">Hire Date</label>
-                                        <InputDate class="form-control" @bind-Value="employee.HireDate" />
-                                        <ValidationMessage For="@(() => employee.HireDate)" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- ACTION BUTTONS -->
-                            <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
-                                <button type="button"
-                                        class="btn btn-outline-secondary px-4"
-                                        @onclick="GoBack">
-                                    Back
-                                </button>
-
-                                <button type="submit"
-                                        class="btn btn-primary px-5">
-                                    @(IsEditMode ? "Update Employee" : "Save Employee")
-                                </button>
-                            </div>
-
+                        <!-- HEADER -->
+                        <div class="mb-4">
+                            <h4 class="fw-semibold mb-1">
+                                @(IsEditMode ? "Edit Employee" : "Add New Employee")
+                            </h4>
+                            <p class="text-muted mt-3">
+                                Fill in the employee details below
+                            </p>
                         </div>
-                    </div>
-                </EditForm>
-            }
-        </div>
-    </div>
 
+                        <!-- PERSONAL INFORMATION -->
+                        <AppFormSection Title="Personal Information">
+                            <div class="row g-3 mt-3 mb-3">
+
+                                <div class="col-md-6">
+                                    <AppInput Label="First Name"
+                                              Value="@employee.FirstName"
+                                              ValueChanged="v => employee.FirstName = v">
+                                        <ValidationMessage For="@(() => employee.FirstName)" />
+                                    </AppInput>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <AppInput Label="Last Name"
+                                              Value="@employee.LastName"
+                                              ValueChanged="v => employee.LastName = v">
+                                        <ValidationMessage For="@(() => employee.LastName)" />
+                                    </AppInput>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <AppInput Label="Email"
+                                              Value="@employee.Email"
+                                              ValueChanged="v => employee.Email = v">
+                                        <ValidationMessage For="@(() => employee.Email)" />
+                                    </AppInput>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <AppInput Label="Phone Number"
+                                              Value="@employee.PhoneNumber"
+                                              ValueChanged="v => employee.PhoneNumber = v">
+                                        <ValidationMessage For="@(() => employee.PhoneNumber)" />
+                                    </AppInput>
+                                </div>
+
+                            </div>
+                        </AppFormSection>
+
+                        <!-- JOB DETAILS -->
+                        <AppFormSection Title="Job Details" SectionClass="mt-5">
+                            <div class="row g-3 mt-3 mb-3">
+
+                                <div class="col-md-6">
+                                    <AppInput Label="Position"
+                                              Value="@employee.Position"
+                                              ValueChanged="v => employee.Position = v">
+                                        <ValidationMessage For="@(() => employee.Position)" />
+                                    </AppInput>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <AppInput Label="Salary"
+                                              Type="number"
+                                              Value="@employee.Salary.ToString("0.##")"
+                                              ValueChanged="v =>
+                                              {
+                                                  if (decimal.TryParse(v, out var s))
+                                                      employee.Salary = s;
+                                              }">
+                                        <ValidationMessage For="@(() => employee.Salary)" />
+                                    </AppInput>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <AppSelect Label="Department"
+                                               Options="@DepartmentsOptions"
+                                               Value="@employee.DepartmentId?.ToString()"
+                                               ValueChanged="v =>
+                                               {
+                                                   employee.DepartmentId =
+                                                       int.TryParse(v, out var d) ? d : null;
+                                               }" />
+                                            <ValidationMessage For="@(() => employee.DepartmentId)" />
+                                </div>
+
+                                <div class="col-md-6">
+                                    <AppSelect Label="Manager"
+                                               Options="@ManagersOptions"
+                                               Value="@employee.ManagerId?.ToString()"
+                                               ValueChanged="v =>
+                                               {
+                                                   employee.ManagerId =
+                                                       int.TryParse(v, out var m) ? m : null;
+                                               }" />
+                                </div>
+
+                            </div>
+                        </AppFormSection>
+
+                        <!-- OTHER DETAILS -->
+                        <AppFormSection Title="Other Details" SectionClass="mt-5">
+                            <div class="row g-3 mt-3 mb-3">
+
+                                <div class="col-md-6">
+                                    <AppInput Label="Date of Birth"
+                                              Type="date"
+                                              Value="@(employee.DateOfBirth == DateTime.MinValue
+                                                  ? string.Empty
+                                                  : employee.DateOfBirth.ToString("yyyy-MM-dd"))"
+                                              ValueChanged="v =>
+                                              {
+                                                  if (DateTime.TryParse(v, out var d))
+                                                      employee.DateOfBirth = d;
+                                              }">
+                                        <ValidationMessage For="@(() => employee.DateOfBirth)" />
+                                    </AppInput>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <AppInput Label="Hire Date"
+                                              Type="date"
+                                              Value="@(employee.HireDate == DateTime.MinValue
+                                                  ? string.Empty
+                                                  : employee.HireDate.ToString("yyyy-MM-dd"))"
+                                              ValueChanged="v =>
+                                              {
+                                                  if (DateTime.TryParse(v, out var d))
+                                                      employee.HireDate = d;
+                                              }">
+                                        <ValidationMessage For="@(() => employee.HireDate)" />
+                                    </AppInput>
+                                </div>
+
+                            </div>
+                        </AppFormSection>
+
+                        <!-- ACTION BUTTONS -->
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+                            <AppButton Text="Back"
+                                       CssClass="btn btn-outline-secondary px-4"
+                                       OnClick="GoBack" />
+
+                            <AppButton Text="@(IsEditMode ? "Update Employee" : "Save Employee")"
+                                       Type="submit"
+                                       CssClass="btn btn-primary px-5" />
+                        </div>
+
+                    </div>
+                </div>
+            </EditForm>
+        }
+
+    </AppCard>
 </div>
 
 @code {
@@ -182,6 +198,9 @@
     private List<DepartmentDto> departments = new();
     private List<EmployeeDto> managers = new();
 
+    private List<SelectOption> DepartmentsOptions = new();
+    private List<SelectOption> ManagersOptions = new();
+
     protected override async Task OnParametersSetAsync()
     {
         isLoading = true;
@@ -190,14 +209,22 @@
         var deptResult = await DepartmentService.GetDepartmentsAsync();
         if (deptResult.IsSuccess && deptResult.Data != null)
         {
-            departments = deptResult.Data.ToList();
+            DepartmentsOptions = deptResult.Data.Select(d => new SelectOption
+            {
+                Value = d.Id.ToString(),
+                Text = d.Name
+            }).ToList();
         }
 
         // Load managers
         var empResult = await EmployeeService.GetEmployeesAsync();
         if (empResult.IsSuccess && empResult.Data != null)
         {
-            managers = empResult.Data.ToList();
+            ManagersOptions = empResult.Data.Select(d => new SelectOption
+            {
+                Value = d.Id.ToString(),
+                Text = d.FullName
+            }).ToList();
         }
 
         if (IsEditMode)

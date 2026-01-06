@@ -1,0 +1,21 @@
+﻿<button type="@Type"
+        class="@($"{DefaultClass} {ButtonClass}")"
+        disabled="@Disabled"
+        @onclick="OnClick"
+        @attributes="AdditionalAttributes">
+    @Text
+</button>
+
+@code {
+    [Parameter] public string Text { get; set; } = "Button";
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public bool Disabled { get; set; }
+
+    [Parameter] public string DefaultClass { get; set; } = "btn btn-primary";
+    [Parameter] public string ButtonClass { get; set; } = "";
+
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}
