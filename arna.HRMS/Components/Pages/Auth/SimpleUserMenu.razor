@@ -1,9 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.Auth
 
-@inject AuthenticationStateProvider AuthStateProvider
-@inject NavigationManager Navigation
 @inject IAuthService AuthService
+@inherits AuthenticatedLayoutBase
 
 <AuthorizeView>
     <Authorized>
@@ -11,14 +11,14 @@
             <button class="btn btn-outline-secondary dropdown-toggle"
                     data-bs-toggle="dropdown">
                 <Icon Name="IconName.PersonCircle" />
-                @context.User.Identity?.Name
+                @GetUserName()
             </button>
 
             <ul class="dropdown-menu dropdown-menu-end">
                 <li class="px-3 py-2">
                     <small class="text-muted">Welcome back</small><br />
                     <strong>
-                        @context.User.FindFirst("FullName")?.Value
+                        @GetUserFullName()
                     </strong>
                 </li>
 

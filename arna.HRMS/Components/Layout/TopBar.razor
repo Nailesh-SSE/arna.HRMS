@@ -1,17 +1,17 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
-@using System.Security.Claims
+﻿@using System.Security.Claims
+@using arna.HRMS.Components.Auth
 @using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Components.Pages.Auth
 
-@inject AuthenticationStateProvider AuthStateProvider
+@inherits AuthenticatedLayoutBase
 
 <header class="bg-white border-bottom px-4 py-3
                d-flex justify-content-between align-items-center sticky-top">
 
     <h5 class="mb-0">
-        @Greeting@if (!string.IsNullOrEmpty(FullName))
+        @Greeting@if (!string.IsNullOrEmpty(GetUserFullName()))
                 {
-            <span>, @FullName</span>
+            <span>, @GetUserFullName() </span>
         }
     </h5>
 
@@ -32,18 +32,9 @@
 
 @code {
     private string Greeting = string.Empty;
-    private string FullName = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        FullName =
-            user.FindFirst("FullName")?.Value
-            ?? user.Identity?.Name
-            ?? string.Empty;
-
         SetGreeting();
     }
 

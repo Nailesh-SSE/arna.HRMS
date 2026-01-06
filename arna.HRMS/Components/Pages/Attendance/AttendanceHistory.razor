@@ -1,15 +1,14 @@
 ﻿@page "/attendance"
 
-@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.ClientServices.Attendance
+@using arna.HRMS.Components.Auth
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Components.Pages.Attendance
 
 @inject IAttendanceService AttendanceService
-@inject AuthenticationStateProvider AuthProvider
 @inject AttendanceState State
-@inject NavigationManager Navigation
+@inherits AuthenticatedLayoutBase
 
 <div class="attendance-dashboard">
 
@@ -60,6 +59,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
+
+        if (!IsAuthentication())
+            return;
+
         if (string.IsNullOrWhiteSpace(State.SelectedMonth))
         {
             var now = DateTime.Today;
@@ -73,6 +77,7 @@
         }
 
         await LoadData();
+        StateHasChanged();
     }
 
     private async Task OnMonthSelected((int year, int month) value)
@@ -85,18 +90,11 @@
 
     private async Task LoadData()
     {
-        var auth = await AuthProvider.GetAuthenticationStateAsync();
-        var isAuthenticated = auth.User.Identity?.IsAuthenticated ?? false;
-
-        if (!isAuthenticated)
+        var empId = GetEmployeeId();
+        if(empId == 0)
         {
-            Navigation.NavigateTo("/login");
             return;
-        }
-
-        var employeeIdClaim = auth.User.FindFirst("EmployeeId")?.Value;
-        if (!int.TryParse(employeeIdClaim, out var empId))
-            return;
+        };
 
         State.AttendanceList = await AttendanceService
             .GetAttendanceByMonthAsync(State.Year, State.Month, empId);

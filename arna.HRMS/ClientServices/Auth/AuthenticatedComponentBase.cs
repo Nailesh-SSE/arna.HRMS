@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using arna.HRMS.Models.Enums;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
-using System.Security.Claims;
-using arna.HRMS.Models.Enums;
 using Microsoft.JSInterop;
+using System.Security.Claims;
 
 namespace arna.HRMS.Components.Auth;
 
@@ -13,36 +13,28 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
 
     protected ClaimsPrincipal User { get; private set; } = new(new ClaimsIdentity());
 
-    protected int GetUserId() 
-        => int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id)? id: 0;
+    private int UserId;
+    private int EmployeeId;
+    private string UserName = string.Empty;
+    private string UserFullName = string.Empty;
+    private string Role = string.Empty;
+    private bool IsAuthenticated;
 
-    protected int GetEmployeeId()
-        => int.TryParse(User.FindFirst("EmployeeId")?.Value,out var id)? id: 0;
+    protected int GetUserId() => UserId;
+    protected int GetEmployeeId() => EmployeeId;
+    protected string GetUserName() => UserName;
+    protected string GetUserFullName() => UserFullName;
+    protected string GetUserRole() => Role;
+    protected bool IsAuthentication() => IsAuthenticated;
 
-    protected string GetUserRole()
-        => User.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
-
-    protected ClaimsPrincipal GetUser() => User;
-
-    protected bool IsAuthenticated => User.Identity?.IsAuthenticated ?? false;
-
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        AuthProvider.AuthenticationStateChanged += OnAuthChanged;
+        AuthProvider.AuthenticationStateChanged += OnAuthStateChanged;
+        await LoadUserAsync();
     }
 
-    protected override async Task OnParametersSetAsync()
-    {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        SetUser(authState.User);
-
-        await RedirectIfUnauthenticatedAsync();
-    }
-
-    private void OnAuthChanged(Task<AuthenticationState> task)
-    {
-        _ = HandleAuthChangedAsync(task);
-    }
+    private void OnAuthStateChanged(Task<AuthenticationState> task)
+        => _ = HandleAuthChangedAsync(task);
 
     private async Task HandleAuthChangedAsync(Task<AuthenticationState> task)
     {
@@ -53,14 +45,35 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
+    protected async Task LoadUserAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        SetUser(authState.User);
+        await RedirectIfUnauthenticatedAsync();
+    }
+
+    private void SetUser(ClaimsPrincipal user)
+    {
+        User = user;
+
+        int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out UserId);
+        int.TryParse(user.FindFirst("EmployeeId")?.Value, out EmployeeId);
+
+        UserName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+        UserFullName = user.FindFirst("FullName")?.Value ?? string.Empty;
+        Role = user.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        IsAuthenticated = user.Identity?.IsAuthenticated ?? false;
+    }
+
     private async Task RedirectIfUnauthenticatedAsync()
     {
-        if (IsAuthenticated || IsOnLoginPage())
+        if (IsAuthentication() || IsOnLoginPage())
             return;
 
         try
         {
-            await InvokeAsync(() => Navigation.NavigateTo("/login", replace: true));
+            await InvokeAsync(() =>
+                Navigation.NavigateTo("/login", replace: true));
         }
         catch (ObjectDisposedException) { }
         catch (JSDisconnectedException) { }
@@ -72,17 +85,12 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         return relative.StartsWith("login", StringComparison.OrdinalIgnoreCase);
     }
 
-    private void SetUser(ClaimsPrincipal user)
-    {
-        User = user;
-    }
+    protected bool IsSuperAdmin() => GetUserRole() == UserRole.SuperAdmin.ToString();
 
-    protected bool IsSuperAdmin() => User.IsInRole(UserRole.SuperAdmin.ToString());
-
-    protected bool IsAdmin() => User.IsInRole(UserRole.Admin.ToString());
+    protected bool IsAdmin() => GetUserRole() == UserRole.Admin.ToString();
 
     public void Dispose()
     {
-        AuthProvider.AuthenticationStateChanged -= OnAuthChanged;
+        AuthProvider.AuthenticationStateChanged -= OnAuthStateChanged;
     }
 }

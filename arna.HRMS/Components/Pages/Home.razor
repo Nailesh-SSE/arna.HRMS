@@ -1,7 +1,6 @@
 ﻿@page "/"
 @using System.Security.Claims
-@using Microsoft.AspNetCore.Components.Authorization
-@inject AuthenticationStateProvider AuthProvider
+
 @inject NavigationManager NavigationManager
 
 <style>
@@ -43,19 +42,10 @@ else
 
 @code {
     private bool IsLoading = true;
-    private string CurrentUserFullName = string.Empty;
     private record MenuItem(string Label, string Icon, string Route);
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
-
-        CurrentUserFullName =
-            user.FindFirst("FullName")?.Value
-            ?? user.Identity?.Name
-            ?? "User";
-
         IsLoading = false;
     }
 

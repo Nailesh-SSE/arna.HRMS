@@ -1,15 +1,15 @@
 ﻿@page "/profile"
 
-@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
+@using arna.HRMS.Components.Auth
 @using arna.HRMS.Models.DTOs
 
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
-@inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager NavigationManager
+@inherits AuthenticatedLayoutBase
 
 <style>
     .employee-container {
@@ -205,7 +205,7 @@
 
                     <div class="detail-box">
                         <label>Created At</label>
-    At                  <div>@employee.CreatedBy.ToShortDateString()</div>
+                        <div>@employee.CreatedBy.ToShortDateString()</div>
                     </div>
 
                     <div class="detail-box">
@@ -245,11 +245,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        await base.OnInitializedAsync();
 
-        var employeeIdClaim = user.FindFirst("EmployeeId")?.Value;
-        if (!int.TryParse(employeeIdClaim, out var employeeId))
+        var employeeId = GetEmployeeId();
+        if (employeeId == 0)
             return;
 
         var employeeResult = await EmployeeService.GetEmployeeByIdAsync(employeeId);
@@ -276,6 +275,8 @@
         }
 
         CalculateExperience();
+
+        StateHasChanged();
     }
 
     private void CalculateExperience()
