@@ -159,12 +159,20 @@
         {
             departments = deptResult.Data.ToList();
         }
+        else
+        {
+            departments = new();
+        }
 
         // Load managers
         var empResult = await EmployeeService.GetEmployeesAsync();
         if (empResult.IsSuccess && empResult.Data != null)
         {
             managers = empResult.Data.ToList();
+        }
+        else
+        {
+            managers = new();
         }
 
         if (IsEditMode)

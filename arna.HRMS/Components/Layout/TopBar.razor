@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
+@using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Components.Pages.Auth
 
 @inject AuthenticationStateProvider AuthStateProvider
@@ -16,7 +17,7 @@
 
     <div class="d-flex align-items-center gap-3">
 
-        <arna.HRMS.Components.Pages.Attendance.ClockInOut />
+        <ClockInOut />
 
         <div class="position-relative">
             <i class="bi bi-bell fs-5"></i>

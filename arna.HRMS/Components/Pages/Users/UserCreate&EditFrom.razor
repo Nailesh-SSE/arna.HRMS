@@ -160,9 +160,13 @@
         isLoading = true;
 
         var employeeResult = await EmployeeService.GetEmployeesAsync();
-        if (employeeResult.Data!.Any())
+        if (employeeResult.IsSuccess && employeeResult.Data != null)
         {
-            employees = employeeResult.Data!.ToList();
+            employees = employeeResult.Data.ToList();
+        }
+        else
+        {
+            employees = new(); 
         }
 
         if (IsEditMode)

@@ -1,25 +1,29 @@
 ﻿@page "/employee/employeelist"
-@rendermode InteractiveServer
-@inject IJSRuntime JsRuntime
+
 @using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
+@using arna.HRMS.Components.Auth
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
+
+@rendermode InteractiveServer
+@inject IJSRuntime JsRuntime
 @inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 @inject AuthenticationStateProvider AuthStateProvider
+@inherits AuthenticatedLayoutBase
 
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold text-primary">Employee Directory</h3>
-        @if (IsAdmin)
+        @if (IsAdmin() || IsSuperAdmin())
         {
             <button class="btn btn-success" @onclick='() => NavigateTo("/employees/create")'>
                 <i class="bi bi-plus-lg"></i> Add Employee
@@ -54,7 +58,7 @@
                         <th>Phone</th>
                         <th>Hire Date</th>
                         <th>Status</th>
-                        @if (IsAdmin)
+                        @if (IsAdmin() || IsSuperAdmin())
                         {
                             <th class="text-center">Actions</th>
                         }
@@ -99,7 +103,7 @@
                                 }
                             </td>
 
-                            @if (IsAdmin)
+                            @if (IsAdmin() || IsSuperAdmin())
                             {
                                 <td class="text-center">
 
@@ -140,20 +144,9 @@
 
 @code {
     private List<EmployeeDto>? employees;
-    private bool IsAdmin;
 
     protected override async Task OnInitializedAsync()
     {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        var isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
-
-        if (!isAuthenticated)
-        {
-            NavigationManager.NavigateTo("/login");
-            return;
-        }
-
-        IsAdmin = state.User.IsInRole(UserRole.SuperAdmin.ToString()) || state.User.IsInRole(UserRole.Admin.ToString());
         await LoadEmployeesAsync();
     }
     

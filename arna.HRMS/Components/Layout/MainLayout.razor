@@ -1,5 +1,6 @@
-﻿@inherits AuthenticatedLayoutBase
-@using arna.HRMS.ClientServices.Common
+﻿@using arna.HRMS.ClientServices.Common
+
+@inherits LayoutComponentBase
 @inject NotificationService NotificationService
 
 <Toasts Messages="NotificationService.Messages"
@@ -30,7 +31,6 @@
 
     protected override void OnInitialized()
     {
-        base.OnInitialized();
         NotificationService.OnChange += StateHasChanged;
     }
 
@@ -39,9 +39,8 @@
         Collapsed = !Collapsed;
     }
 
-    public new void Dispose()
+    public void Dispose()
     {
-        base.Dispose();
         NotificationService.OnChange -= StateHasChanged;
     }
 }

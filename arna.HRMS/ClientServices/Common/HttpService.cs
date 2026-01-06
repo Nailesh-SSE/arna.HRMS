@@ -40,6 +40,7 @@ public class HttpService
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
+                await HandleUnauthorizedAsync();
                 return ApiResult<T>.Fail("Session expired. Please login again.", statusCode);
             }
 
@@ -96,6 +97,11 @@ public class HttpService
         {
             return ApiResult<T>.Fail(ex.Message, 500);
         }
+    }
+
+    private async Task HandleUnauthorizedAsync()
+    {
+        await _authProvider.LogoutAsync();
     }
 
     private static async Task<T?> SafeReadAsync<T>(HttpResponseMessage response)
