@@ -9,11 +9,16 @@
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Components.Common
 
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
+
+
+
+<FullPageLoader Visible="isLoading" />
 
 <div class="container py-4">
 
@@ -26,110 +31,139 @@
 
         <div class="card-body p-4">
 
-            @if (isLoading)
-            {
-                <p><em>Loading...</em></p>
-            }
-            else
+            @if (!isLoading)
             {
                 <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
                     <DataAnnotationsValidator />
 
-                    <!-- PERSONAL INFORMATION -->
-                    <h6 class="border-bottom pb-2 mb-3 text-secondary">Personal Information</h6>
+                    <div class="card employee-form-card">
+                        <div class="card-body p-4">
 
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <label class="form-label">First Name</label>
-                            <InputText class="form-control" @bind-Value="employee.FirstName" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.FirstName)" />
-                        </div>
+                            <!-- HEADER -->
+                            <div class="mb-4">
+                                <h4 class="fw-semibold mb-1">
+                                    @(IsEditMode ? "Edit Employee" : "Add New Employee")
+                                </h4>
+                                <p class="text-muted mt-3">
+                                    Fill in the employee details below
+                                </p>
+                            </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label">Last Name</label>
-                            <InputText class="form-control" @bind-Value="employee.LastName" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.LastName)" />
-                        </div>
+                            <!-- PERSONAL INFORMATION -->
+                            <div class="form-section">
+                                <div class="section-title">
+                                    <span>Personal Information</span>
+                                </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label">Email</label>
-                            <InputText class="form-control" @bind-Value="employee.Email" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.Email)" />
-                        </div>
+                                <div class="row g-3 mt-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">First Name</label>
+                                        <InputText class="form-control" @bind-Value="employee.FirstName" />
+                                        <ValidationMessage For="@(() => employee.FirstName)" />
+                                    </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label">Phone Number</label>
-                            <InputText class="form-control" @bind-Value="employee.PhoneNumber" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.PhoneNumber)" />
+                                    <div class="col-md-6">
+                                        <label class="form-label">Last Name</label>
+                                        <InputText class="form-control" @bind-Value="employee.LastName" />
+                                        <ValidationMessage For="@(() => employee.LastName)" />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Email</label>
+                                        <InputText class="form-control" @bind-Value="employee.Email" />
+                                        <ValidationMessage For="@(() => employee.Email)" />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Phone Number</label>
+                                        <InputText class="form-control" @bind-Value="employee.PhoneNumber" />
+                                        <ValidationMessage For="@(() => employee.PhoneNumber)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- JOB DETAILS -->
+                            <div class="form-section mt-5">
+                                <div class="section-title">
+                                    <span>Job Details</span>
+                                </div>
+
+                                <div class="row g-3 mt-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Position</label>
+                                        <InputText class="form-control" @bind-Value="employee.Position" />
+                                        <ValidationMessage For="@(() => employee.Position)" />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Salary</label>
+                                        <InputNumber class="form-control" @bind-Value="employee.Salary" />
+                                        <ValidationMessage For="@(() => employee.Salary)" />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Department</label>
+                                        <InputSelect class="form-select" @bind-Value="employee.DepartmentId">
+                                            <option value="">Select Department</option>
+                                            @foreach (var dept in departments)
+                                            {
+                                                <option value="@dept.Id">@dept.Name</option>
+                                            }
+                                        </InputSelect>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Manager</label>
+                                        <InputSelect class="form-select" @bind-Value="employee.ManagerId">
+                                            <option value="">Select Manager</option>
+                                            @foreach (var mgr in managers)
+                                            {
+                                                <option value="@mgr.Id">
+                                                    @mgr.FirstName @mgr.LastName
+                                                </option>
+                                            }
+                                        </InputSelect>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- OTHER DETAILS -->
+                            <div class="form-section mt-5">
+                                <div class="section-title">
+                                    <span>Other Details</span>
+                                </div>
+
+                                <div class="row g-3 mt-3 mb-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Date of Birth</label>
+                                        <InputDate class="form-control" @bind-Value="employee.DateOfBirth" />
+                                        <ValidationMessage For="@(() => employee.DateOfBirth)" />
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Hire Date</label>
+                                        <InputDate class="form-control" @bind-Value="employee.HireDate" />
+                                        <ValidationMessage For="@(() => employee.HireDate)" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ACTION BUTTONS -->
+                            <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
+                                <button type="button"
+                                        class="btn btn-outline-secondary px-4"
+                                        @onclick="GoBack">
+                                    Back
+                                </button>
+
+                                <button type="submit"
+                                        class="btn btn-primary px-5">
+                                    @(IsEditMode ? "Update Employee" : "Save Employee")
+                                </button>
+                            </div>
+
                         </div>
                     </div>
-
-                    <!-- JOB DETAILS -->
-                    <h6 class="border-bottom pb-2 mt-4 mb-3 text-secondary">Job Details</h6>
-
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Position</label>
-                            <InputText class="form-control" @bind-Value="employee.Position" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.Position)" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Salary</label>
-                            <InputNumber class="form-control" @bind-Value="employee.Salary" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.Salary)" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Department</label>
-                            <InputSelect class="form-select" @bind-Value="employee.DepartmentId">
-                                <option value="">-- Select Department --</option>
-                                @foreach (var dept in departments)
-                                {
-                                    <option value="@dept.Id">@dept.Name</option>
-                                }
-                            </InputSelect>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Manager</label>
-                            <InputSelect class="form-select" @bind-Value="employee.ManagerId">
-                                <option value="">-- Select Manager --</option>
-                                @foreach (var mgr in managers)
-                                {
-                                    <option value="@mgr.Id">@mgr.FirstName @mgr.LastName</option>
-                                }
-                            </InputSelect>
-                        </div>
-                    </div>
-
-                    <!-- OTHER DETAILS -->
-                    <h6 class="border-bottom pb-2 mt-4 mb-3 text-secondary">Other Details</h6>
-
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <label class="form-label">Date of Birth</label>
-                            <InputDate class="form-control" @bind-Value="employee.DateOfBirth" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.DateOfBirth)" />
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">Hire Date</label>
-                            <InputDate class="form-control" @bind-Value="employee.HireDate" autocomplete="off" />
-                            <ValidationMessage For="@(() => employee.HireDate)" />
-                        </div>
-                    </div>
-
-                    <div class="mt-5 d-flex justify-content-end gap-3">
-                        <button type="button" class="btn btn-outline-secondary" @onclick="GoBack">
-                            Back
-                        </button>
-
-                        <button type="submit" class="btn btn-primary px-4">
-                            @(IsEditMode ? "Update" : "Save")
-                        </button>
-                    </div>
-
                 </EditForm>
             }
         </div>

@@ -5,9 +5,16 @@ namespace arna.HRMS.Models.DTOs;
 
 public class EmployeeDto : CommonDto
 {
+    /* ==============================
+            EmployeeID
+        ============================== */
 
     [Display(Name = "Employee ID")]
     public string? EmployeeNumber { get; set; }
+
+    /* ==============================
+            Employee Personal Details
+        ============================== */
 
     [Required(ErrorMessage = "First name is required.")]
     [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters.")]
@@ -24,29 +31,59 @@ public class EmployeeDto : CommonDto
     [EmailAddress(ErrorMessage = "Invalid email format.")]
     public string Email { get; set; }
 
-    [Phone]
+    [Required(ErrorMessage = "Phone number is required.")]
+    [Phone(ErrorMessage = "Invalid phone number.")]
     public string PhoneNumber { get; set; }
 
+    /* ==============================
+         Date of Birth and Hire Date
+         ============================== */
+
+    [Required(ErrorMessage = "Date of Birth is required.")]
+    [DataType(DataType.Date)]
     [Display(Name = "Date of Birth")]
     public DateTime DateOfBirth { get; set; }
 
+    [Required(ErrorMessage = "Hire Date is required.")]
+    [DataType(DataType.Date)]
     [Display(Name = "Hire Date")]
     public DateTime HireDate { get; set; }
+    /* ==============================
+      //Department//
+      ============================== */
 
-    // Department Information (Flattened for simplicity)
+    [Required(ErrorMessage = "Department is required.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select a department.")]
     public int? DepartmentId { get; set; }
+
     [Display(Name = "Department")]
     public string? DepartmentName { get; set; }
+
     public string? DepartmentCode { get; set; }
 
-    // Manager Information (Flattened for simplicity)
+    /* ==============================
+       MANAGER (OPTIONAL)
+       ============================== */
+
     public int? ManagerId { get; set; }
+
     [Display(Name = "Manager")]
     public string? ManagerFullName { get; set; }
 
-    [StringLength(100)]
+    /* ==============================
+       POSITION
+       ============================== */
+
+    [Required(ErrorMessage = "Position is required.")]
+    [StringLength(100, ErrorMessage = "Position cannot exceed 100 characters.")]
     public string Position { get; set; }
 
+    /* ==============================
+        SALARY
+       ============================== */
+
+    [Required(ErrorMessage = "Salary is required.")]
+    [Range(1, double.MaxValue, ErrorMessage = "Salary must be greater than 0.")]
     [DataType(DataType.Currency)]
     public decimal Salary { get; set; }
 }
