@@ -1,13 +1,11 @@
 ﻿@page "/employees/create"
 @page "/employees/edit/{Id:int}"
-
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.DTOs
-@using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Components.Common
 @using arna.HRMS.Components.lib.components.ui.Forms
@@ -216,10 +214,6 @@
                 Text = d.Name
             }).ToList();
         }
-        else
-        {
-            departments = new();
-        }
 
         // Load managers
         var empResult = await EmployeeService.GetEmployeesAsync();
@@ -230,10 +224,6 @@
                 Value = d.Id.ToString(),
                 Text = d.FullName
             }).ToList();
-        }
-        else
-        {
-            managers = new();
         }
 
         if (IsEditMode)
