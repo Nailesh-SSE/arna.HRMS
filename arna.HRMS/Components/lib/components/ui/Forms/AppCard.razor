@@ -1,0 +1,26 @@
+﻿<div class="@($"{DefaultCardClass} {CardClass}")">
+    @if (!string.IsNullOrWhiteSpace(Header))
+    {
+        <div class="@($"{DefaultHeaderClass} {HeaderClass}")">
+            @Header
+        </div>
+    }
+
+    <div class="@($"{DefaultBodyClass} {BodyClass}")">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Header { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public string DefaultCardClass { get; set; } = "card shadow-sm border-0 rounded-3";
+    [Parameter] public string CardClass { get; set; } = "";
+
+    [Parameter] public string DefaultHeaderClass { get; set; } = "card-header bg-primary text-white";
+    [Parameter] public string HeaderClass { get; set; } = "";
+
+    [Parameter] public string DefaultBodyClass { get; set; } = "card-body p-4";
+    [Parameter] public string BodyClass { get; set; } = "";
+}

@@ -1,0 +1,27 @@
+﻿@using arna.HRMS.Components.lib.components.ui
+@using arna.HRMS.Components.lib.components.ui.Model
+
+<div>
+    <label class="form-label">@Label</label>
+
+    <select class="form-select"
+            value="@Value"
+            @onchange="OnChange">
+        <option value="">Select</option>
+
+        @foreach (var item in Options)
+        {
+            <option value="@item.Value">@item.Text</option>
+        }
+    </select>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public List<SelectOption> Options { get; set; } = new();
+
+    private async Task OnChange(ChangeEventArgs e)
+        => await ValueChanged.InvokeAsync(e.Value?.ToString());
+}
