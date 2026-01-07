@@ -6,42 +6,34 @@ namespace arna.HRMS.ClientServices.Department;
 
 public interface IDepartmentService
 {
-    Task<ApiResult<List<DepartmentDto>>>  GetDepartmentsAsync();
+    Task<ApiResult<List<DepartmentDto>>> GetDepartmentsAsync();
     Task<ApiResult<DepartmentDto>> GetDepartmentByIdAsync(int id);
-    Task<ApiResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto DepartmentDto);
+    Task<ApiResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto dto);
+    Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentDto dto);
     Task<ApiResult<bool>> DeleteDepartmentAsync(int id);
-    Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentDto departmentDto);
 }
+
 public class DepartmentService : IDepartmentService
 {
-    private readonly HttpService _http;
+    private readonly ApiClients _api;
 
-    public DepartmentService(HttpService http)
+    public DepartmentService(ApiClients api)
     {
-        _http = http;
-    }
-
-    public async Task<ApiResult<List<DepartmentDto>>> GetDepartmentsAsync()
-    {
-        return await _http.GetAsync<List<DepartmentDto>>("api/department");
+        _api = api;
     }
 
-    public async Task<ApiResult<DepartmentDto>> GetDepartmentByIdAsync(int id)
-    {
-        return await _http.GetAsync<DepartmentDto>($"api/department/{id}");
-    }
+    public Task<ApiResult<List<DepartmentDto>>> GetDepartmentsAsync()
+        => _api.Departments.GetAllAsync();
 
-    public async Task<ApiResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto DepartmentDto)
-    {
-        return await _http.PostAsync<DepartmentDto>("api/department", DepartmentDto);
-    }
-    public async Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentDto departmentDto)
-    {
-        return await _http.PutAsync<bool>($"api/department/{id}", departmentDto);
-    }
+    public Task<ApiResult<DepartmentDto>> GetDepartmentByIdAsync(int id)
+        => _api.Departments.GetByIdAsync(id);
 
-    public async Task<ApiResult<bool>> DeleteDepartmentAsync(int id)
-    {
-        return await _http.DeleteAsync<bool>($"api/department/{id}");
-    }
+    public Task<ApiResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto dto)
+        => _api.Departments.CreateAsync(dto);
+
+    public Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentDto dto)
+        => _api.Departments.UpdateAsync(id, dto);
+
+    public Task<ApiResult<bool>> DeleteDepartmentAsync(int id)
+        => _api.Departments.DeleteAsync(id);
 }

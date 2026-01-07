@@ -28,6 +28,7 @@ public class Program
 
         builder.Services.AddScoped<HttpService>();
         builder.Services.AddScoped<NotificationService>();
+        builder.Services.AddScoped<ApiClients>();
 
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
