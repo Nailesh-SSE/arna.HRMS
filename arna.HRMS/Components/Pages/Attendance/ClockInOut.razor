@@ -142,10 +142,43 @@
 
     private System.Timers.Timer? _timer;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         StartClock();
+
+        var employeeId = GetEmployeeId();
+        if (employeeId == 0)
+            return;
+
+        var lastEntry =
+            await ClockService.GetLastTodayAsync(employeeId);
+
+        if (lastEntry == null)
+        {
+            // No entry today → allow Clock In
+            IsClockedIn = false;
+            return;
+        }
+
+        // 🔹 LAST ENTRY IS CLOCK-IN
+        if (lastEntry.ClockInTime != null && lastEntry.ClockOutTime == null)
+        {
+            IsClockedIn = true;
+
+            In = TimeOnly.FromTimeSpan(lastEntry.ClockInTime.Value);
+            ActionLabel = "Clock In";
+            ActionTime = In.ToString("HH:mm:ss");
+        }
+        else
+        {
+            // 🔹 LAST ENTRY IS CLOCK-OUT
+            IsClockedIn = false;
+        }
     }
+
+
+
 
     private Task ClockInAsync()
     {

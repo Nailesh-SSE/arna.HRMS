@@ -9,4 +9,5 @@ public interface IAttendanceService
     Task<AttendanceDto?> GetAttendenceByIdAsync(int id);
     Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto attendanceDto);
     Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int EmpId);
+    Task<AttendanceDto?> GetTodayLastEntryAsync(int employeeId);
 }

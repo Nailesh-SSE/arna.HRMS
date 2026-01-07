@@ -58,4 +58,14 @@ public class AttendanceRepository
         }
     }
 
+    public async Task<Attendance?> GetLastAttendanceTodayAsync(int employeeId)
+    {
+        return await _baseRepository.Query()
+            .Where(a =>
+                a.EmployeeId == employeeId &&
+                a.Date.Date == DateTime.Today)
+            .OrderByDescending(a => a.Id) // or Id
+            .FirstOrDefaultAsync();
+    }
+
 }

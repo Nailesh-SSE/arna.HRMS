@@ -41,10 +41,19 @@ public class AttendanceController : ControllerBase
 
         return Ok(createdAttendance);
     }
-    [HttpGet("by-month")]
+    [HttpGet("monthly")]
     public async Task<ActionResult<IEnumerable<MonthlyAttendanceDto>>> GetAttendanceByMonth(int year,int month, int EmpId)
     {
         var attendance = await _AttendanceService.GetAttendanceByMonthAsync(year, month, EmpId);
         return Ok(attendance);
     }
+
+    [HttpGet("lastClockEntry/{id:int}")]
+    public async Task<ActionResult<AttendanceDto?>> GetLastToday(int id)
+    {
+        var attendance = await _AttendanceService.GetTodayLastEntryAsync(id);
+        return Ok(attendance);
+    }
+
+
 }
