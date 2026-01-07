@@ -1,0 +1,16 @@
+﻿<div class="form-section @SectionClass">
+    <div class="section-title">
+        <span>@Title</span>
+    </div>
+
+    <div class="@BodyClass">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string SectionClass { get; set; } = "";
+    [Parameter] public string BodyClass { get; set; } = "mt-3 mb-3";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

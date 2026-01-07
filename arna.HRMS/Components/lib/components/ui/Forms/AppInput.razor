@@ -1,0 +1,21 @@
+﻿<div class="mb-3">
+    <label class="form-label">@Label</label>
+
+    <input type="@Type"
+           class="form-control"
+           value="@Value"
+           @oninput="OnInput" />
+
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private async Task OnInput(ChangeEventArgs e)
+        => await ValueChanged.InvokeAsync(e.Value?.ToString());
+}

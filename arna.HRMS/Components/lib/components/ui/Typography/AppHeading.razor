@@ -1,0 +1,32 @@
+﻿@switch (Level)
+{
+    case 1:
+        <h1 class="@CssClass">@Text</h1>
+        ; break;
+    case 2:
+
+        <h2 class="@CssClass">@Text</h2>
+        ; break;
+    case 3:
+
+        <h3 class="@CssClass">@Text</h3>
+        ; break;
+    case 4:
+
+        <h4 class="@CssClass">@Text</h4>
+        ; break;
+    case 5:
+
+        <h5 class="@CssClass">@Text</h5>
+        ; break;
+    default:
+
+        <h6 class="@CssClass">@Text</h6>
+        ; break;
+}
+
+@code {
+    [Parameter] public int Level { get; set; } = 4;
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public string CssClass { get; set; } = "fw-semibold";
+}

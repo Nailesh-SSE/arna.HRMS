@@ -90,3 +90,20 @@ h1:focus {
         opacity: 1;
     }
 }
+/* FULL PAGE OVERLAY */
+.loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* block scrolling */
+body.loading {
+    overflow: hidden;
+}
+
