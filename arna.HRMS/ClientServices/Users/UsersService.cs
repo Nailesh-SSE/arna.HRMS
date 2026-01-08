@@ -8,7 +8,6 @@ public interface IUsersService
 {
     Task<ApiResult<List<UserDto>>> GetUsersAsync();
     Task<ApiResult<UserDto>> GetUserByIdAsync(int id);
-    Task<ApiResult<UserDto>> GetUserByNameAsync(string userName);
     Task<ApiResult<UserDto>> CreateUserAsync(UserDto userDto);
     Task<ApiResult<bool>> UpdateUserAsync(int id, UserDto userDto);
     Task<ApiResult<bool>> DeleteUserAsync(int id);
@@ -17,45 +16,28 @@ public interface IUsersService
 
 public class UsersService : IUsersService
 {
-    private readonly HttpService _http;
+    private readonly ApiClients.UserApi _userApi;
 
-    public UsersService(HttpService http)
+    public UsersService(ApiClients api)
     {
-        _http = http;
+        _userApi = api.Users;
     }
 
     public async Task<ApiResult<List<UserDto>>> GetUsersAsync()
-    {
-        return await _http.GetAsync<List<UserDto>>("api/users");
-    }
+        => await _userApi.GetAll();
 
     public async Task<ApiResult<UserDto>> GetUserByIdAsync(int id)
-    {
-        return await _http.GetAsync<UserDto>($"api/users/{id}");
-    }
-
-    public async Task<ApiResult<UserDto>> GetUserByNameAsync(string userName)
-    {
-        return await _http.GetAsync<UserDto>($"api/users/byname/{userName}");
-    }
+        => await _userApi.GetById(id);
 
     public async Task<ApiResult<UserDto>> CreateUserAsync(UserDto userDto)
-    {
-        return await _http.PostAsync<UserDto>("api/users", userDto);
-    }
+        => await _userApi.Create(userDto);
 
     public async Task<ApiResult<bool>> UpdateUserAsync(int id, UserDto userDto)
-    {
-        return await _http.PutAsync<bool>($"api/users/{id}", userDto);
-    }
+        => await _userApi.Update(id, userDto);
 
     public async Task<ApiResult<bool>> DeleteUserAsync(int id)
-    {
-        return await _http.DeleteAsync<bool>($"api/users/{id}");
-    }
+        => await _userApi.Delete(id);
 
-    public Task<ApiResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
-    {
-        return _http.PutAsync<bool>($"api/users/{id}/changepassword", newPassword);
-    }
+    public async Task<ApiResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
+        => await _userApi.ChangePassword(id, newPassword);
 }

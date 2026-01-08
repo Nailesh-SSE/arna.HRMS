@@ -15,25 +15,25 @@ public interface IDepartmentService
 
 public class DepartmentService : IDepartmentService
 {
-    private readonly ApiClients _api;
+    private readonly ApiClients.DepartmentApi _departments;
 
     public DepartmentService(ApiClients api)
     {
-        _api = api;
+        _departments = api.Departments;
     }
 
     public Task<ApiResult<List<DepartmentDto>>> GetDepartmentsAsync()
-        => _api.Departments.GetAllAsync();
+        => _departments.GetAll();
 
     public Task<ApiResult<DepartmentDto>> GetDepartmentByIdAsync(int id)
-        => _api.Departments.GetByIdAsync(id);
+        => _departments.GetById(id);
 
     public Task<ApiResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto dto)
-        => _api.Departments.CreateAsync(dto);
+        => _departments.Create(dto);
 
     public Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentDto dto)
-        => _api.Departments.UpdateAsync(id, dto);
+        => _departments.Update(id, dto);
 
     public Task<ApiResult<bool>> DeleteDepartmentAsync(int id)
-        => _api.Departments.DeleteAsync(id);
+        => _departments.Delete(id);
 }

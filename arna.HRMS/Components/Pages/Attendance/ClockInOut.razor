@@ -188,7 +188,7 @@
             ActionLabel = "Clock In";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
-            await ClockService.CreateAttendanceAsync(new AttendanceDto
+            var clockInResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
@@ -197,6 +197,12 @@
                 Notes = attendanceViewModel.Notes,
                 WorkingHours = null
             });
+
+            if (!clockInResult.IsSuccess)
+            {
+                await ShowNotification(clockInResult.Message ?? "Clock-In failed");
+                return;
+            }
 
             AccumulatedHours = new TimeOnly(0, 0);
             await ShowNotification($"Clocked in at {ActionTime}");
@@ -212,7 +218,7 @@
             var workedSpan = Out.ToTimeSpan() - In.ToTimeSpan();
             AccumulatedHours = AccumulatedHours.Add(workedSpan);
 
-            await ClockService.CreateAttendanceAsync(new AttendanceDto
+            var clockOutResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
@@ -221,6 +227,12 @@
                 Notes = attendanceViewModel.Notes,
                 WorkingHours = AccumulatedHours.ToTimeSpan()
             });
+
+            if (!clockOutResult.IsSuccess)
+            {
+                await ShowNotification(clockOutResult.Message ?? "Clock-out failed");
+                return;
+            }
 
             await ShowNotification($"Clocked out | {AccumulatedHours:F2} hrs");
         }

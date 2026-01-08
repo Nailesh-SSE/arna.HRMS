@@ -1,5 +1,4 @@
 ﻿using arna.HRMS.ClientServices.Common;
-using arna.HRMS.Core.DTOs.Responses;
 using Microsoft.AspNetCore.Identity.Data;
 
 namespace arna.HRMS.ClientServices.Auth;
@@ -12,21 +11,18 @@ public interface IAuthService
 
 public class AuthService : IAuthService
 {
-    private readonly HttpService _httpService;
+    private readonly ApiClients.AuthApi _authApi;
     private readonly CustomAuthStateProvider _authStateProvider;
 
-    public AuthService(
-        HttpService httpService,
-        CustomAuthStateProvider authStateProvider)
+    public AuthService(ApiClients api, CustomAuthStateProvider authStateProvider)
     {
-        _httpService = httpService;
+        _authApi = api.Auth;
         _authStateProvider = authStateProvider;
     }
 
     public async Task<bool> LoginAsync(LoginRequest request)
     {
-        var result = await _httpService.PostAsync<AuthResponse>(
-            "api/auth/login", request);
+        var result = await _authApi.Login(request);
 
         if (!result.IsSuccess || result.Data is null)
             return false;
@@ -43,7 +39,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            await _httpService.PostAsync<bool>("api/auth/logout", new { });
+            await _authApi.Logout();
         }
         catch
         {

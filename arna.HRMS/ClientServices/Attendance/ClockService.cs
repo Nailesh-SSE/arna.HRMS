@@ -1,25 +1,24 @@
 ﻿using arna.HRMS.ClientServices.Common;
-using arna.HRMS.Core.DTOs.Requests;
+using arna.HRMS.Models.Common;
 using arna.HRMS.Models.DTOs;
 
 namespace arna.HRMS.ClientServices.Attendance;
 
 public interface IClockService
 {
-    Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto AttendanceDto);
+    Task<ApiResult<AttendanceDto>> CreateAttendanceAsync(
+        AttendanceDto attendanceDto);
 }
+
 public class ClockService : IClockService
 {
-    private readonly HttpService _http;
+    private readonly ApiClients.AttendanceApi _attendance;
 
-    public ClockService(HttpService http)
+    public ClockService(ApiClients api)
     {
-        _http = http;
+        _attendance = api.Attendance;
     }
- 
-    public async Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto attendanceDto)
-    {
-        var result = await _http.PostAsync<AttendanceDto>("api/Attendance", attendanceDto);
-        return result.Data;
-    }
+
+    public Task<ApiResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto)
+        => _attendance.Create(attendanceDto);
 }
