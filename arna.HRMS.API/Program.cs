@@ -108,10 +108,12 @@ public class Program
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
         builder.Services.AddScoped<IUserServices, UserServices>();
+        builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
         builder.Services.AddScoped<DepartmentRepository>();
         builder.Services.AddScoped<EmployeeRepository>();
         builder.Services.AddScoped<AttendanceRepository>();
         builder.Services.AddScoped<UserRepository>();
+        builder.Services.AddScoped<AttendanceRequestRepository>();
 
         // Register Authentication & JWT Services
         builder.Services.AddScoped<IAuthService, AuthService>();

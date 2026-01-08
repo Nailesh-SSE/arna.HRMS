@@ -144,10 +144,35 @@
 
     private System.Timers.Timer? _timer;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         StartClock();
+
+        var employeeId = GetEmployeeId();
+        if (employeeId == 0)
+            return;
+
+        var lastEntry = await ClockService.GetClockStatus(employeeId);
+
+        if (!lastEntry.IsSuccess || lastEntry.Data == null)
+        {
+            IsClockedIn = false;
+            return;
+        }
+
+        if (lastEntry.Data.ClockInTime != null && lastEntry.Data.ClockOutTime == null)
+        {
+            IsClockedIn = true;
+
+            In = TimeOnly.FromTimeSpan(lastEntry.Data.ClockInTime.Value);
+            ActionLabel = "Clock In";   // ✅ FIXED
+            ActionTime = In.ToString("HH:mm:ss");
+        }
     }
+
+
+
 
     private Task ClockInAsync()
     {
@@ -190,7 +215,7 @@
             ActionLabel = "Clock In";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
-            await ClockService.CreateAttendanceAsync(new AttendanceDto
+            var clockInResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
@@ -199,6 +224,12 @@
                 Notes = attendanceViewModel.Notes,
                 WorkingHours = null
             });
+
+            if (!clockInResult.IsSuccess)
+            {
+                await ShowNotification(clockInResult.Message ?? "Clock-In failed");
+                return;
+            }
 
             AccumulatedHours = new TimeOnly(0, 0);
             await ShowNotification($"Clocked in at {ActionTime}");
@@ -214,7 +245,7 @@
             var workedSpan = Out.ToTimeSpan() - In.ToTimeSpan();
             AccumulatedHours = AccumulatedHours.Add(workedSpan);
 
-            await ClockService.CreateAttendanceAsync(new AttendanceDto
+            var clockOutResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
@@ -223,6 +254,12 @@
                 Notes = attendanceViewModel.Notes,
                 WorkingHours = AccumulatedHours.ToTimeSpan()
             });
+
+            if (!clockOutResult.IsSuccess)
+            {
+                await ShowNotification(clockOutResult.Message ?? "Clock-out failed");
+                return;
+            }
 
             await ShowNotification($"Clocked out | {AccumulatedHours:F2} hrs");
         }

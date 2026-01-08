@@ -1,6 +1,5 @@
 ﻿using arna.HRMS.ClientServices.Auth;
 using arna.HRMS.Models.Common;
-using Microsoft.AspNetCore.Components;
 using System.Net;
 
 namespace arna.HRMS.ClientServices.Common;
@@ -8,13 +7,11 @@ namespace arna.HRMS.ClientServices.Common;
 public class HttpService
 {
     private readonly HttpClient _http;
-    private readonly NavigationManager _navigationManager;
     private readonly CustomAuthStateProvider _authProvider;
 
-    public HttpService(HttpClient http, NavigationManager navigationManager, CustomAuthStateProvider authProvider)
+    public HttpService(HttpClient http, CustomAuthStateProvider authProvider)
     {
         _http = http;
-        _navigationManager = navigationManager;
         _authProvider = authProvider;
     }
 
