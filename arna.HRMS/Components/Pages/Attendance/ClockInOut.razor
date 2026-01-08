@@ -155,26 +155,17 @@
 
         if (!lastEntry.IsSuccess || lastEntry.Data == null)
         {
-            // No entry today → allow Clock In
             IsClockedIn = false;
-            ActionLabel = "Clock In";
             return;
         }
 
-        // 🔹 LAST ENTRY IS CLOCK-IN (user is currently clocked in)
         if (lastEntry.Data.ClockInTime != null && lastEntry.Data.ClockOutTime == null)
         {
             IsClockedIn = true;
 
             In = TimeOnly.FromTimeSpan(lastEntry.Data.ClockInTime.Value);
-            ActionLabel = "Clock Out";   // ✅ FIXED
+            ActionLabel = "Clock In";   // ✅ FIXED
             ActionTime = In.ToString("HH:mm:ss");
-        }
-        else
-        {
-            // 🔹 LAST ENTRY IS CLOCK-OUT → allow Clock In
-            IsClockedIn = false;
-            ActionLabel = "Clock In";
         }
     }
 

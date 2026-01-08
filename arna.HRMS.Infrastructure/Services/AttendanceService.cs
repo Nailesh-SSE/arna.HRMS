@@ -44,36 +44,6 @@ public class AttendanceService : IAttendanceService
 
         return _mapper.Map<AttendanceDto>(createdAttendance);
     }
-    /*public async Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto attendanceDto)
-    {
-        var attendanceEntity = _mapper.Map<Attendance>(attendanceDto);
-
-        // 🔹 Check if there is already an open clock-in today
-        var openClockIn =
-            await _attendanceRepository.GetOpenClockInAsync(attendanceEntity.EmployeeId);
-
-        // 🔴 RULE 1: Prevent double Clock-In
-        if (attendanceEntity.ClockIn != null && openClockIn != null)
-            throw new InvalidOperationException("Already clocked in. Please clock out first.");
-
-        // 🔴 RULE 2: Clock-Out must close existing Clock-In
-        if (attendanceEntity.ClockOut != null && openClockIn == null)
-            throw new InvalidOperationException("No active clock-in found.");
-
-        // 🔹 Fill absent / holiday between dates
-        var employee = await _employeeService.GetEmployeeByIdAsync(attendanceEntity.EmployeeId);
-        await CreateAbsentAndHolidayAsync(
-            attendanceEntity.EmployeeId,
-            attendanceEntity.Date,
-            employee.HireDate
-        );
-
-        // 🔹 Save attendance
-        var createdAttendance =
-            await _attendanceRepository.CreateAttendanceAsync(attendanceEntity);
-
-        return _mapper.Map<AttendanceDto>(createdAttendance);
-    }*/
 
     public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int empId)
     {
@@ -160,7 +130,6 @@ public class AttendanceService : IAttendanceService
         var systemStartDate = new DateTime(2026, 1, 5);
         DateTime effectiveStartDate;
 
-        // 🔹 Decide where to start
         if (!lastDate.HasValue)
         {
             effectiveStartDate =
@@ -173,13 +142,11 @@ public class AttendanceService : IAttendanceService
             effectiveStartDate = lastDate.Value.Date;
         }
 
-        // 🔹 Nothing to fill
         if (effectiveStartDate >= newAttendanceDate.Date)
         {
             return;
         }
 
-        // 🔹 Create missing dates (Absent / Holiday)
         var missingDates = Enumerable
             .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
             .Select(i => effectiveStartDate.AddDays(i));

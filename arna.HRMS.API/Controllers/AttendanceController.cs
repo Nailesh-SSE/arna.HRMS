@@ -1,6 +1,4 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
+﻿using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,6 +39,7 @@ public class AttendanceController : ControllerBase
 
         return Ok(createdAttendance);
     }
+
     [HttpGet("monthly")]
     public async Task<ActionResult<IEnumerable<MonthlyAttendanceDto>>> GetAttendanceByMonth(int year,int month, int EmpId)
     {

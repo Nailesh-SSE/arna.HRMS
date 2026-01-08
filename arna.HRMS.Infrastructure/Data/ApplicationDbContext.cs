@@ -19,6 +19,7 @@ namespace arna.HRMS.Infrastructure.Data
         public DbSet<Timesheet> Timesheets { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<AttendanceRequest> AttendanceRequest { get; set; } 
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -31,6 +32,7 @@ namespace arna.HRMS.Infrastructure.Data
             builder.ApplyConfiguration(new LeaveRequestConfiguration());
             builder.ApplyConfiguration(new TimesheetConfiguration());
             builder.ApplyConfiguration(new UserConfiguration());
+            builder.ApplyConfiguration(new AttendanceRequestConfiguration());
 
             // ===== Users =====
             builder.Entity<User>().HasData(

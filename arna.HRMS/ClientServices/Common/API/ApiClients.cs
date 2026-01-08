@@ -12,6 +12,7 @@ public class ApiClients
     public DepartmentApi Departments { get; }
     public AttendanceApi Attendance { get; }
     public UserApi Users { get; }
+    public AttendanceRequestApi AttendanceRequest { get; }
 
     public ApiClients(HttpService http)
     {
@@ -20,6 +21,7 @@ public class ApiClients
         Departments = new DepartmentApi(http);
         Attendance = new AttendanceApi(http);
         Users = new UserApi(http);
+        AttendanceRequest = new AttendanceRequestApi(http);
     }
 
     // =========================
@@ -191,5 +193,33 @@ public class ApiClients
 
         public Task<ApiResult<bool>> ChangePassword(int id, string newPassword)
             => _http.PutAsync<bool>($"{baseUrl}/{id}/changepassword", newPassword);
+    }
+
+    // =========================
+    // ATTENDANCEREQUEST API (CUSTOM)
+    // =========================
+    public sealed class AttendanceRequestApi
+    {
+        private const string baseUrl = "api/attendanceRequest";
+        private readonly CrudExecutor<AttendanceRequestDto> _crud;
+        private readonly HttpService _http;
+
+        public AttendanceRequestApi(HttpService http)
+        {
+            _http = http;
+            _crud = new CrudExecutor<AttendanceRequestDto>(http, baseUrl);
+        }
+        public Task<ApiResult<List<AttendanceRequestDto>>> GetAll()
+            => _crud.GetAll();
+
+        public Task<ApiResult<AttendanceRequestDto>> GetById(int id)
+            => _crud.GetById(id);
+
+        public Task<ApiResult<AttendanceRequestDto>> Create(AttendanceRequestDto dto)
+            => _crud.Create(dto);
+
+        public Task<ApiResult<AttendanceRequestDto>> ApproveRequest(int id)
+            => _http.GetAsync<AttendanceRequestDto>($"{baseUrl}/approveRequest/{id}");
+
     }
 }
