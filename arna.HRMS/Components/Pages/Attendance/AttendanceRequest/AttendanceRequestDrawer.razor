@@ -1,0 +1,54 @@
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
+
+@if (isVisible)
+{
+    <!-- Drawer -->
+    <div class="drawer d-flex flex-column @(isClosing ? "drawer-closing" : "drawer-open")">
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between border-bottom px-4 py-3">
+            <h5 class="mb-0 fw-semibold">@Title</h5>
+
+            <AppButton Text="X"
+                       ButtonClass="btn btn-danger"
+                       OnClick="CloseDrawer" />
+        </div>
+
+        <!-- Body -->
+        <div class="drawer-body flex-grow-1 overflow-auto p-4">
+            @ChildContent
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+
+    [Parameter] public string Title { get; set; } = "Drawer";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool isVisible;
+    private bool isClosing;
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen)
+        {
+            isVisible = true;
+            isClosing = false;
+        }
+    }
+
+    private async Task CloseDrawer()
+    {
+        isClosing = true;
+
+        // Wait for CSS animation to finish
+        await Task.Delay(250);
+
+        isVisible = false;
+        isClosing = false;
+
+        await IsOpenChanged.InvokeAsync(false);
+    }
+}

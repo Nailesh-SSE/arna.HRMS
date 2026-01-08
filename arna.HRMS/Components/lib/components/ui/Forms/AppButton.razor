@@ -1,5 +1,5 @@
 ﻿<button type="@Type"
-        class="@($"{DefaultClass} {ButtonClass}")"
+        class="@ResolvedClass"
         disabled="@Disabled"
         @onclick="OnClick"
         @attributes="AdditionalAttributes">
@@ -18,4 +18,9 @@
 
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string ResolvedClass =>
+        string.IsNullOrWhiteSpace(ButtonClass)
+            ? DefaultClass
+            : ButtonClass;
 }

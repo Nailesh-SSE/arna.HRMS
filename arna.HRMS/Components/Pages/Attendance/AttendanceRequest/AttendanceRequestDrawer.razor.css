@@ -1,0 +1,59 @@
+﻿/* ======================
+   Drawer Panel
+====================== */
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 420px;
+    max-width: 100%;
+    background-color: #ffffff;
+    box-shadow: -12px 0 30px rgba(0, 0, 0, 0.18);
+    z-index: 1050;
+}
+
+/* ======================
+   Opening Animation
+====================== */
+.drawer-open {
+    animation: slideInRight 0.25s ease-out forwards;
+}
+
+/* ======================
+   Closing Animation
+====================== */
+.drawer-closing {
+    animation: slideOutRight 0.25s ease-in forwards;
+}
+
+/* ======================
+   Keyframes
+====================== */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(100%);
+    }
+}
+
+/* ======================
+   Mobile
+====================== */
+@media (max-width: 576px) {
+    .drawer {
+        width: 100%;
+    }
+}

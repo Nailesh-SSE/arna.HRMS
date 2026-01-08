@@ -1,8 +1,10 @@
 ﻿@using arna.HRMS.Components.Auth
+@using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Attendance
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Components.Pages.ClockedInAndOut
 
 @implements IDisposable
 @inject IClockService ClockService
@@ -106,7 +108,7 @@
 {
     <div class="popup-overlay">
         <div class="popup-card">
-            <AttendanceNoteForm Model="attendanceViewModel" OnSubmit="SubmitClockInOutAsync" OnCancel="CloseForm" />
+            <ClockInMessage Model="attendanceViewModel" OnSubmit="SubmitClockInOutAsync" OnCancel="CloseForm" />
         </div>
     </div>
 }
