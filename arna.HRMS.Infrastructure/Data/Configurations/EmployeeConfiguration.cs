@@ -28,15 +28,14 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.PhoneNumber)
             .IsRequired()
             .HasMaxLength(10);
-
+        
         builder.Property(e => e.Salary)
-            .HasPrecision(18, 2); // <--- Added precision to avoid EF warning
+            .HasPrecision(18, 2); 
 
         builder.HasOne(e => e.Department)
             .WithMany(d => d.Employees)
             .HasForeignKey(e => e.DepartmentId)
-            .OnDelete(DeleteBehavior.Restrict); // <-- Prevent cascade delete conflicts
-
+            .OnDelete(DeleteBehavior.Restrict); 
 
         builder.HasOne(e => e.Manager)
             .WithMany(m => m.Subordinates)
@@ -57,8 +56,12 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasForeignKey(t => t.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(e => e.AttendanceRequest)
+            .WithOne(t => t.Employee)
+            .HasForeignKey(t => t.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasIndex(e => e.EmployeeNumber).IsUnique();
         builder.HasIndex(e => e.Email).IsUnique();
-        builder.HasIndex(e => e.PhoneNumber).IsUnique();
     }
 }

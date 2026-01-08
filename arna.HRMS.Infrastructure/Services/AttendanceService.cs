@@ -45,7 +45,6 @@ public class AttendanceService : IAttendanceService
         return _mapper.Map<AttendanceDto>(createdAttendance);
     }
 
-
     public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int empId)
     {
         var attendances = await _attendanceRepository
@@ -131,7 +130,6 @@ public class AttendanceService : IAttendanceService
         var systemStartDate = new DateTime(2026, 1, 5);
         DateTime effectiveStartDate;
 
-        // 🔹 Decide where to start
         if (!lastDate.HasValue)
         {
             effectiveStartDate =
@@ -144,13 +142,11 @@ public class AttendanceService : IAttendanceService
             effectiveStartDate = lastDate.Value.Date;
         }
 
-        // 🔹 Nothing to fill
         if (effectiveStartDate >= newAttendanceDate.Date)
         {
             return;
         }
 
-        // 🔹 Create missing dates (Absent / Holiday)
         var missingDates = Enumerable
             .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
             .Select(i => effectiveStartDate.AddDays(i));
@@ -178,7 +174,16 @@ public class AttendanceService : IAttendanceService
 
             await _attendanceRepository.CreateAttendanceAsync(attendance);
         }
-
-
     }
+
+    public async Task<AttendanceDto?> GetTodayLastEntryAsync(int employeeId)
+    {
+        var last = await _attendanceRepository
+            .GetLastAttendanceTodayAsync(employeeId);
+
+        return last == null ? null : _mapper.Map<AttendanceDto>(last);
+    }
+
+
+
 }

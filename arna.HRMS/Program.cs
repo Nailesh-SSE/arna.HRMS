@@ -1,4 +1,5 @@
 using arna.HRMS.ClientServices.Attendance;
+using arna.HRMS.ClientServices.AttendanceRequest;
 using arna.HRMS.ClientServices.Auth;
 using arna.HRMS.ClientServices.Common;
 using arna.HRMS.ClientServices.Department;
@@ -36,6 +37,7 @@ public class Program
         builder.Services.AddScoped<IClockService, ClockService>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+        builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();  
         builder.Services.AddScoped<AttendanceState>();
 
         builder.Services.AddAuthorizationCore();

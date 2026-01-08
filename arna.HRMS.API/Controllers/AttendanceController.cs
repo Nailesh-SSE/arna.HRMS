@@ -1,6 +1,4 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
+﻿using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -41,10 +39,20 @@ public class AttendanceController : ControllerBase
 
         return Ok(createdAttendance);
     }
-    [HttpGet("by-month")]
+
+    [HttpGet("monthly")]
     public async Task<ActionResult<IEnumerable<MonthlyAttendanceDto>>> GetAttendanceByMonth(int year,int month, int EmpId)
     {
         var attendance = await _AttendanceService.GetAttendanceByMonthAsync(year, month, EmpId);
         return Ok(attendance);
     }
+
+    [HttpGet("clockStatus/{id:int}")]
+    public async Task<ActionResult<AttendanceDto?>> GetLastToday(int id)
+    {
+        var attendance = await _AttendanceService.GetTodayLastEntryAsync(id);
+        return Ok(attendance);
+    }
+
+
 }
