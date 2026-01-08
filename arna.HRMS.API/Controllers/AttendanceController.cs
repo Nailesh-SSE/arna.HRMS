@@ -48,7 +48,7 @@ public class AttendanceController : ControllerBase
         return Ok(attendance);
     }
 
-    [HttpGet("lastClockEntry/{id:int}")]
+    [HttpGet("clockStatus/{id:int}")]
     public async Task<ActionResult<AttendanceDto?>> GetLastToday(int id)
     {
         var attendance = await _AttendanceService.GetTodayLastEntryAsync(id);

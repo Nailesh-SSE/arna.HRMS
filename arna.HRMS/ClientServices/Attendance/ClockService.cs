@@ -1,5 +1,4 @@
 ﻿using arna.HRMS.ClientServices.Common;
-using arna.HRMS.Core.DTOs.Requests;
 using arna.HRMS.Models.Common;
 using arna.HRMS.Models.DTOs;
 
@@ -8,24 +7,21 @@ namespace arna.HRMS.ClientServices.Attendance;
 public interface IClockService
 {
     Task<ApiResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto AttendanceDto);
-    Task<AttendanceDto?> GetLastTodayAsync(int employeeId);
+    Task<ApiResult<AttendanceDto>> GetClockStatus(int employeeId);
 }
+
 public class ClockService : IClockService
 {
-    private readonly HttpService _http;
+    private readonly ApiClients.AttendanceApi _attendance;
 
-    public ClockService(HttpService http)
+    public ClockService(ApiClients api)
     {
-        _http = http;
+        _attendance = api.Attendance;
     }
  
     public Task<ApiResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto dto)
-        => _http.PostAsync<AttendanceDto>("api/Attendance", dto);
-    public async Task<AttendanceDto?> GetLastTodayAsync(int employeeId)
-    {
-        var result =await _http.GetAsync<AttendanceDto>($"api/attendance/lastClockEntry/{employeeId}");
-        return result.Data;
-    }
+        => _attendance.Create(dto);
 
-
+    public async Task<ApiResult<AttendanceDto>> GetClockStatus(int employeeId)
+        => await _attendance.GetClockStatus(employeeId); 
 }

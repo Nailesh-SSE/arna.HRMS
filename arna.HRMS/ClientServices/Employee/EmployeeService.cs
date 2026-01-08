@@ -15,25 +15,25 @@ public interface IEmployeeService
 
 public class EmployeeService : IEmployeeService
 {
-    private readonly ApiClients _api;
+    private readonly ApiClients.EmployeeApi _employees;
 
     public EmployeeService(ApiClients api)
     {
-        _api = api;
+        _employees = api.Employees;
     }
 
     public Task<ApiResult<List<EmployeeDto>>> GetEmployeesAsync()
-        => _api.Employees.GetAllAsync();
+        => _employees.GetAll();
 
     public Task<ApiResult<EmployeeDto>> GetEmployeeByIdAsync(int id)
-        => _api.Employees.GetByIdAsync(id);
+        => _employees.GetById(id);
 
     public Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto)
-        => _api.Employees.CreateAsync(dto);
+        => _employees.Create(dto);
 
     public Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeDto dto)
-        => _api.Employees.UpdateAsync(id, dto);
+        => _employees.Update(id, dto);
 
     public Task<ApiResult<bool>> DeleteEmployeeAsync(int id)
-        => _api.Employees.DeleteAsync(id);
+        => _employees.Delete(id);
 }
