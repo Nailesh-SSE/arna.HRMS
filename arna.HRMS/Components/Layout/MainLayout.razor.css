@@ -1,101 +1,67 @@
-.page {
+/* ===============================
+   SIDEBAR
+   =============================== */
+.custom-sidebar {
+    z-index: 1040;
+}
+
+/* ===============================
+   MAIN WRAPPER
+   =============================== */
+.main-wrapper {
     position: relative;
+}
+
+/* ===============================
+   TOAST HOST (BOOTSTRAP SAFE)
+   =============================== */
+.toast-host {
+    z-index: 1080; /* higher than cards, lower than modals */
     display: flex;
-    flex-direction: column;
-}
-
-main {
-    flex: 1;
-}
-
-.sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
-}
-
-.top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
     justify-content: flex-end;
-    height: 3.5rem;
-    display: flex;
-    align-items: center;
+    padding: 0 24px;
+    pointer-events: none;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
+    /* Enable interaction only on toast */
+    .toast-host .toast {
+        pointer-events: auto;
     }
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
-    }
-
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-.user-menu-container {
-    display: flex;
-    align-items: center;
+/* ===============================
+   TOAST UI
+   =============================== */
+.toast {
+    min-width: 320px;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.18);
+    animation: toast-slide .35s ease;
 }
 
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
+/* Toast animation */
+@keyframes toast-slide {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
     }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
+    to {
+        transform: translateY(0);
+        opacity: 1;
     }
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
+/* ===============================
+   MOBILE FIX
+   =============================== */
+@media (max-width: 768px) {
+    .toast-host {
+        padding: 0 12px;
+        justify-content: center;
     }
 
-    .sidebar {
-        width: 250px;
-        height: 100%;
-        position: sticky;
-        top: 0;
-    }
-
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
-
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
+    .toast {
+        width: 100%;
+        max-width: 360px;
     }
 }
-
-#blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
-}
-
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }

@@ -4,6 +4,7 @@
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Components.Auth
+@using arna.HRMS.Components.Common
 @using arna.HRMS.Models.DTOs
 
 @inject IDepartmentService DepartmentService
@@ -11,103 +12,6 @@
 @inject NavigationManager NavigationManager
 @inherits AuthenticatedLayoutBase
 
-<style>
-    .employee-container {
-        padding: 20px;
-    }
-
-    .employee-card {
-        display: flex;
-        border-radius: 10px;
-        background: white;
-        overflow: hidden;
-        border: 1px solid #e1e1e1;
-    }
-
-    .details-sidebar {
-        width: 260px;
-        background: #f8f9fa;
-        padding: 25px;
-        text-align: center;
-    }
-
-    .profile-picture {
-        width: 95px;
-        height: 95px;
-        font-size: 32px;
-        background: #343a40;
-        color: white;
-        border-radius: 50%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: auto;
-    }
-
-    .employee-name {
-        margin-top: 12px;
-        font-weight: 700;
-    }
-
-    .detail-sidebar-title {
-        margin-top: 20px;
-        color: gray;
-        font-size: 12px;
-    }
-
-    .detail-sidebar-menu {
-        list-style: none;
-        padding-left: 0;
-        margin-top: 10px;
-    }
-
-        .detail-sidebar-menu li {
-            padding: 6px 0;
-            cursor: pointer;
-        }
-
-            .detail-sidebar-menu li.active {
-                font-weight: bold;
-            }
-
-    .main-content {
-        flex-grow: 1;
-        padding: 30px;
-    }
-
-    .details-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 22px;
-        margin-top: 30px;
-    }
-
-    .detail-box label {
-        font-size: 11px;
-        text-transform: uppercase;
-        color: gray;
-        letter-spacing: 0.5px;
-    }
-
-    .detail-box div {
-        font-size: 15px;
-        font-weight: 500;
-    }
-
-    .status-active {
-        color: white;
-        background: #28a745;
-        padding: 3px 10px;
-        border-radius: 5px;
-    }
-
-    .status-inactive {
-        color: white;
-        background: #dc3545;
-        padding: 3px 10px;
-        border-radius: 5px;
-    }
-</style>
 
 <div class="employee-container">
 
@@ -234,7 +138,7 @@
     }
     else
     {
-        <div>No Listed Employee</div>
+        <FullPageLoader />
     }
 
 </div>
