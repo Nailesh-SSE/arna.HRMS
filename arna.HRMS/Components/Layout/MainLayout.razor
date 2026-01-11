@@ -2,36 +2,32 @@
 @inherits LayoutComponentBase
 @inject NotificationService NotificationService
 
-<CascadingValue Value="Collapsed">
-    <div class="d-flex min-vh-100 bg-light">
+<div class="d-flex min-vh-100">
 
-        <!-- Sidebar -->
-        <NavMenu OnToggle="ToggleSidebar" />
-
-        <!-- Main Content -->
-        <div class="flex-grow-1 d-flex flex-column main-wrapper"
-             style="margin-left:@(Collapsed ? "80px" : "264px")">
-
-            <TopBar />
-
-            <!-- 🔥 Toast container INSIDE dashboard -->
-            <div class="toast-host">
-                <Toasts Messages="NotificationService.Messages"
-                        Placement="ToastsPlacement.TopCenter"
-                        AutoHide="true"
-                        Delay="4000" />
-            </div>
-
-            <main class="flex-grow-1 p-4">
-                @Body
-            </main>
-        </div>
-
+    <div style="width:@(IsSidebarOpen ? "260px" : "0"); transition: width 0.3s ease; overflow:hidden;">
+        <NavMenu />
     </div>
-</CascadingValue>
+
+    <div class="flex-grow-1 d-flex flex-column">
+        <TopBar OnToggleSidebar="ToggleSidebar" />
+        <main class="container-fluid p-4">
+            @Body
+        </main>
+    </div>
+
+</div>
+
+
+<!-- Toasts -->
+<div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:1055;">
+    <Toasts Messages="NotificationService.Messages"
+            Placement="ToastsPlacement.TopCenter"
+            AutoHide="true"
+            Delay="4000" />
+</div>
 
 @code {
-    private bool Collapsed;
+    private bool IsSidebarOpen = true;
 
     protected override void OnInitialized()
     {
@@ -40,7 +36,7 @@
 
     private void ToggleSidebar()
     {
-        Collapsed = !Collapsed;
+        IsSidebarOpen = !IsSidebarOpen;
     }
 
     public void Dispose()

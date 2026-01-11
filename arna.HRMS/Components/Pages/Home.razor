@@ -38,7 +38,7 @@
     private bool isLoading = true;
     private record MenuItem(string Label, string Icon, string Route);
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         isLoading = false;
     }

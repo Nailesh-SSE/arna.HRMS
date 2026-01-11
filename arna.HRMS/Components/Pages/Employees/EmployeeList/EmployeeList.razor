@@ -1,8 +1,8 @@
-﻿@page "/employee/employeelist"
+﻿@page "/employee"
 
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Employee
-@using arna.HRMS.Components.Auth
+@using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Common
 @using arna.HRMS.Components.Common.Tables
 @using arna.HRMS.Components.lib.components.ui.Forms
@@ -14,29 +14,29 @@
 
 @inherits AuthenticatedLayoutBase
 
-<FullPageLoader Visible="isLoading" />
+    <FullPageLoader Visible="isLoading" />
 
-<div class="container mt-4">
+    <div class="container mt-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-primary">Employee Directory</h3>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold text-primary">Employee Directory</h3>
 
         @if (IsAdmin() || IsSuperAdmin())
-        {
-            <button class="btn btn-success"
-                    @onclick="@(() => NavigateTo("/employees/create"))">
-                <i class="bi bi-plus-lg"></i> Add Employee
-            </button>
-        }
-    </div>
+            {
+                <button class="btn btn-success"
+                        @onclick="@(() => NavigateTo("/employees/create"))">
+                    <i class="bi bi-plus-lg"></i> Add Employee
+                </button>
+            }
+        </div>
 
-    <AppTable Items="employees"
+        <AppTable Items="employees"
               Headers="EmployeeTableHeaders.GetHeaders(IsAdmin() || IsSuperAdmin())"
-              Row="EmployeeRow"
-              HeaderClass="app-grid-header-dark">
-    </AppTable>
+                  Row="EmployeeRow"
+                  HeaderClass="app-grid-header-dark">
+        </AppTable>
 
-</div>
+    </div>
 
 @code {
 
@@ -44,8 +44,8 @@
     private bool isLoading = true;
 
     private RenderFragment<EmployeeDto> EmployeeRow => employee => @<EmployeeListRow Employee="employee"
-                     ShowActions="@(IsAdmin() || IsSuperAdmin())"
-                     OnEdit="EditEmployee" />;
+                 ShowActions="@(IsAdmin() || IsSuperAdmin())"
+                 OnEdit="EditEmployee" />;
 
     protected override async Task OnInitializedAsync()
     {

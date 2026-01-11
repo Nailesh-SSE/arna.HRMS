@@ -1,16 +1,13 @@
 ﻿@page "/attendance"
 
 @using arna.HRMS.ClientServices.Attendance
-@using arna.HRMS.Components.Auth
+@using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Common
+@using arna.HRMS.Components.Pages.Attendance.AttendanceRequest
 @using arna.HRMS.Components.Pages.Attendance.MonthYearAndToggle
 @using arna.HRMS.Components.Pages.Attendance.Summary
 @using arna.HRMS.Components.Pages.Attendance.TableAndCalendar
 @using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Models.DTOs
-@using arna.HRMS.Models.ViewModels
-@using arna.HRMS.Components.Pages.Attendance
-@using arna.HRMS.Components.Pages.Attendance.AttendanceRequest
 
 @inject IAttendanceService AttendanceService
 @inject AttendanceState State

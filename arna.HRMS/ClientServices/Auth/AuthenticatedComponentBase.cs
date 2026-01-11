@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Security.Claims;
 
-namespace arna.HRMS.Components.Auth;
+namespace arna.HRMS.ClientServices.Auth;
 
 public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
 {
