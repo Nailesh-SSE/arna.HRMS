@@ -1,0 +1,114 @@
+﻿/* ================================
+   BLOCK SCROLLING WHEN LOADING
+   ================================ */
+body.loading {
+    overflow: hidden;
+}
+
+/* ================================
+   GRID WRAPPER
+   ================================ */
+.app-grid-wrapper {
+    max-height: 520px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* ================================
+   TABLE BASE
+   ================================ */
+.app-grid-table {
+    font-size: 13.5px; /* professional size */
+    color: #111827;
+    background: #ffffff;
+    min-width: 1100px; /* horizontal scroll */
+}
+
+/* ================================
+   HEADER (LIGHT, STICKY)
+   ================================ */
+.app-grid-header th {
+    background-color: #f5f7fa;
+    color: #374151;
+    font-weight: 600;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+/* ================================
+   BODY CELLS
+   ================================ */
+.app-grid-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+}
+
+/* Prevent wrapping ONLY where needed */
+.nowrap {
+    white-space: nowrap;
+}
+
+/* ================================
+   ROW HOVER
+   ================================ */
+.app-grid-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* ================================
+   ICONS
+   ================================ */
+.app-grid-table i {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* ================================
+   LINKS
+   ================================ */
+.app-grid-table a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+    .app-grid-table a:hover {
+        text-decoration: underline;
+    }
+
+/* ================================
+   STATUS BADGE
+   ================================ */
+.badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+/* ================================
+   ACTION BUTTONS
+   ================================ */
+.table-actions {
+    display: inline-flex;
+    gap: 6px;
+}
+
+/* ================================
+   SCROLLBAR (SUBTLE)
+   ================================ */
+.app-grid-wrapper::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+}
+
+.app-grid-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}

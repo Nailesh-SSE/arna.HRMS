@@ -1,0 +1,49 @@
+﻿@using arna.HRMS.Components.Common.Tables
+@typeparam TItem
+
+<div class="table-responsive app-grid-wrapper @WrapperClass">
+    <table class="table table-hover align-middle app-grid-table">
+
+        <thead class="@HeaderClass">
+            <tr>
+                @foreach (var h in Headers.Where(h => !h.Hidden))
+                {
+                    <th class="@h.CssClass @(h.NoWrap ? "text-nowrap" : "")">
+                        @h.Title
+                    </th>
+                }
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (Items == null || !Items.Any())
+            {
+                <tr>
+                    <td colspan="@VisibleColumnCount"
+                        class="text-center text-muted py-4">
+                        No records found
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Items)
+                {
+                    @Row(item)@* ✅ THIS IS NOW CORRECT *@
+                }
+            }
+        </tbody>
+
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IEnumerable<TItem>? Items { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<TableHeader> Headers { get; set; } = [];
+    [Parameter, EditorRequired] public RenderFragment<TItem> Row { get; set; } = default!;
+
+    [Parameter] public string HeaderClass { get; set; } = "app-grid-header";
+    [Parameter] public string WrapperClass { get; set; } = "";
+
+    private int VisibleColumnCount => Headers.Count(h => !h.Hidden);
+}

@@ -1,0 +1,47 @@
+﻿<div class="mb-3">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="form-label">@Label</label>
+    }
+
+    <div class="position-relative">
+        <input type="date"
+               class="form-control"
+               SelectPlaceholder ="@PlaceholderText"
+               value="@FormattedValue"
+               @onchange="OnChange" />
+
+        @if (!Value.HasValue)
+        {
+            <span class="date-placeholder">
+                @PlaceholderText
+            </span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public DateTime? Value { get; set; }
+
+    [Parameter] public EventCallback<DateTime?> ValueChanged { get; set; }
+
+    [Parameter] public string DefaultPlaceholder { get; set; } = "Pick a Date";
+
+    [Parameter] public string? Placeholder { get; set; }
+
+    private string PlaceholderText =>
+        string.IsNullOrWhiteSpace(Placeholder) ? DefaultPlaceholder : Placeholder;
+
+    private string? FormattedValue =>
+        Value.HasValue ? Value.Value.ToString("yyyy-MM-dd") : null;
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+            await ValueChanged.InvokeAsync(date);
+        else
+            await ValueChanged.InvokeAsync(null);
+    }
+}

@@ -89,6 +89,39 @@
     display: block;
 }
 
+.custom-sidebar {
+    transition: width .3s;
+    z-index: 1040;
+}
+
+.collapse-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    position: absolute;
+    right: -13px;
+    top: 55px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .collapse-btn svg {
+        width: 12px;
+        height: 12px;
+        stroke: #111827;
+        stroke-width: 2;
+        fill: none;
+        transition: transform .2s ease;
+    }
+
+.custom-sidebar.collapsed .collapse-btn svg {
+    transform: rotate(180deg);
+}
 @media (min-width: 641px) {
     .navbar-toggler {
         display: none;

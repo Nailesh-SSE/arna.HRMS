@@ -12,10 +12,15 @@
                        ButtonClass="btn btn-danger"
                        OnClick="CloseDrawer" />
         </div>
-
         <!-- Body -->
-        <div class="drawer-body flex-grow-1 overflow-auto p-4">
-            @ChildContent
+        <div class="drawer-body flex-grow-1 overflow-auto p-3">
+            <div>
+                <AppSelect Label="Reason*" Placeholder="Select Reason" />
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-5 mb-5">
+                <AppDatePicker Label="From Date*" />
+                <AppDatePicker Label="To Date*" />
+            </div>
         </div>
     </div>
 }
