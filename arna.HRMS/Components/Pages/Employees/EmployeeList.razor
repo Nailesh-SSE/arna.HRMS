@@ -6,6 +6,7 @@
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.Components.Auth
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
@@ -25,9 +26,10 @@
         <h3 class="fw-bold text-primary">Employee Directory</h3>
         @if (IsAdmin() || IsSuperAdmin())
         {
-            <button class="btn btn-success" @onclick='() => NavigateTo("/employees/create")'>
+            <AppButton ButtonClass="btn btn-success"
+                       OnClick='() => NavigateTo("/employees/create")'>
                 <i class="bi bi-plus-lg"></i> Add Employee
-            </button>
+            </AppButton>
         }
     </div>
 
@@ -108,13 +110,15 @@
                                 <td class="text-center">
 
                                     <div class="btn-group">
-                                        <button class="btn btn-outline-primary btn-sm" @onclick="() => EditEmployee(employee.Id)">
+                                        <AppButton ButtonClass="btn btn-outline-primary btn-sm"
+                                                   OnClick='() => EditEmployee(employee.Id)'>
                                             <i class="bi bi-pencil-square"></i>
-                                        </button>
+                                        </AppButton>
                                         <br />
-                                        <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteInfo(employee.Id)">
+                                        <AppButton ButtonClass="btn btn-outline-danger btn-sm"
+                                                   OnClick='() => DeleteInfo(employee.Id)'>
                                             <i class="bi bi-trash"></i>
-                                        </button>
+                                        </AppButton>
 
                                     </div>
 

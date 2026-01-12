@@ -2,6 +2,7 @@
 
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Users
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Common
@@ -17,9 +18,10 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold text-primary">Users Directory</h3>
 
-        <button class="btn btn-success" @onclick='() => NavigationManager.NavigateTo("/users/create")'>
+        <AppButton ButtonClass="btn btn-success" 
+                   OnClick='() => NavigationManager.NavigateTo("/users/create")'>
             <i class="bi bi-plus-lg"></i> Add User
-        </button>
+        </AppButton>
 
     </div>
 
@@ -72,14 +74,15 @@
 
                             <td class="text-center">
                                 <div class="btn-group">
-                                    <button class="btn btn-outline-primary btn-sm"
-                                    @onclick="@(() => NavigationManager.NavigateTo($"/users/edit/{user.Id}"))">
+                                    <AppButton ButtonClass="btn btn-outline-primary btn-sm"
+                                               OnClick="@(() => NavigationManager.NavigateTo($"/users/edit/{user.Id}"))">
                                         <i class="bi bi-pencil-square"></i>
-                                    </button>
+                                    </AppButton>
                                     <br />
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteUser(user.Id)">
+                                    <AppButton ButtonClass="btn btn-outline-danger btn-sm" 
+                                               OnClick="() => DeleteUser(user.Id)">
                                         <i class="bi bi-trash"></i>
-                                    </button>
+                                    </AppButton>
                                 </div>
 
                             </td>

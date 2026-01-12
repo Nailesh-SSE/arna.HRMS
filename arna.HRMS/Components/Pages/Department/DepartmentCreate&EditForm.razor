@@ -3,6 +3,9 @@
 
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
+@using arna.HRMS.Components.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.DTOs
 
 @inject IDepartmentService DepartmentService
@@ -10,7 +13,7 @@
 @inject NotificationService NotificationService
 
 <div class="container py-4">
-
+    <FullPageLoader/>
     <div class="card shadow-sm border-0 rounded-3">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0">
@@ -20,11 +23,7 @@
 
         <div class="card-body p-4">
 
-            @if (isLoading)
-            {
-                <p><em>Loading...</em></p>
-            }
-            else
+            @if (!isLoading)
             {
                 <EditForm Model="department" OnValidSubmit="HandleValidSubmit" autocomplete="off">
                     <DataAnnotationsValidator />
@@ -32,65 +31,59 @@
                     <div class="row g-4">
 
                         <div class="col-md-6">
-                            <label class="form-label">Department Name</label>
-                            <InputText class="form-control"
-                                       @bind-Value="department.Name" />
+                            <AppInput Label="Department Name"
+                                      Value="@department.Name"
+                                      ValueChanged="v => department.Name = v"
+                            />
                             <ValidationMessage For="@(() => department.Name)" />
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Code</label>
-                            <InputText class="form-control"
-                                       autocomplete="off"
-                                       @bind-Value="department.Code" />
+                            <AppInput Label="Code"
+                                      Value="@department.Code"
+                                      ValueChanged="v => department.Code = v" />
                             <ValidationMessage For="@(() => department.Code)" />
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Description</label>
-                            <InputText class="form-control"
-                                       autocomplete="off"
-                                       @bind-Value="department.Description" />
+                            <AppInput Label="Description"
+                                      Value="@department.Description"
+                                      ValueChanged="v => department.Description = v" />
                             <ValidationMessage For="@(() => department.Description)" />
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label">Parent Department Name</label>
-                            <InputSelect class="form-select"
-                                         @bind-Value="department.ParentDepartmentId">
-                                <option value="">Select Department</option>
-                                @foreach (var Dep in departmentlist)
-                                {
-                                    <option value="@Dep.Id">@Dep.ParentDepartMentName</option>
-                                }
-                            </InputSelect>
+                            <AppSelect Label="Parent Department Name"
+                                       Options="@departmentlist"
+                                       Value="@department.ParentDepartmentId?.ToString()"
+                                       ValueChanged="v =>
+                                            {
+                                                department.ParentDepartmentId=
+                                                int.TryParse(v, out var d) ? d : null;
+                                             }" 
+                            />
                             <ValidationMessage For="@(() => department.ParentDepartmentId)" />
                         </div>
-
-                       
 
                         <!-- Active (EDIT ONLY) -->
                         @if (IsEditMode)
                         {
                             <div class="col-md-6 mt-4">
-                                <InputCheckbox class="form-check-input"
-                                               @bind-Value="department.IsActive" />
-                                <label class="form-check-label">Active</label>
+                                <AppCheckBox Label="Action"
+                                             Value="@department.IsActive" 
+                                             ValueChanged="@(v => department.IsActive = v)"/>
                             </div>
                         }
                     </div>
 
                     <div class="mt-5 d-flex justify-content-end gap-3">
-                        <button type="button"
-                                class="btn btn-outline-secondary"
-                                @onclick="GoBack">
-                            Back
-                        </button>
+                        <AppButton Text="Back"
+                                   CssClass="btn btn-outline-secondary px-4"
+                                   OnClick="GoBack" />
 
-                        <button type="submit"
-                                class="btn btn-primary px-4">
-                            @(IsEditMode ? "Update" : "Save")
-                        </button>
+                        <AppButton Text="@(IsEditMode ? "Update" : "Save")"
+                                   Type="submit"
+                                   CssClass="btn btn-primary px-5" />
                     </div>
                 </EditForm>
             }
@@ -104,7 +97,7 @@
     private DepartmentDto department= new();
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
-    private List<DepartmentDto> departmentlist= new();
+    private List<SelectOption> departmentlist = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,7 +106,11 @@
         var DepartmentResult = await DepartmentService.GetDepartmentsAsync();
         if (DepartmentResult.Data.Any())
         {
-            departmentlist = DepartmentResult.Data.ToList();
+            departmentlist = DepartmentResult.Data.Select(d => new SelectOption
+            {
+                Value = d.Id.ToString(),
+                Text = d.Name
+            }).ToList(); ;
         }
 
         if (IsEditMode)

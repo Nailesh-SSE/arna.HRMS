@@ -2,6 +2,8 @@
 
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Department
+@using arna.HRMS.Components.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Common
 
@@ -11,13 +13,15 @@
 @inject NotificationService NotificationService
 
 <div class="container mt-4">
-
+    <FullPageLoader Visible="isLoading"/>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="fw-bold text-primary">Department Directory</h3>
 
-        <button class="btn btn-success" @onclick='() => NavigationManager.NavigateTo("/department/create")'>
+        <AppButton ButtonClass="btn btn-success"
+                   OnClick='() => NavigationManager.NavigateTo("/department/create")'>
             <i class="bi bi-plus-lg"></i> Add Department
-        </button>
+        </AppButton>
+
 
     </div>
 
@@ -26,11 +30,7 @@
     </div>
 
 
-    @if (departments == null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else
+    @if (departments != null)
     {
         <div class="table-responsive shadow-sm">
 
@@ -68,14 +68,16 @@
 
                             <td class="text-center">
                                 <div class="btn-group">
-                                    <button class="btn btn-outline-primary btn-sm"
-                                            @onclick="@(() => NavigationManager.NavigateTo($"/department/edit/{depart.Id}"))">
+                                    <AppButton ButtonClass="btn btn-outline-primary btn-sm"
+                                               OnClick='() => NavigationManager.NavigateTo($"/department/edit/{depart.Id}")'>
                                         <i class="bi bi-pencil-square"></i>
-                                    </button>
+                                    </AppButton>
+
                                     <br />
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteDepartment(depart.Id)">
+                                    <AppButton ButtonClass="btn btn-outline-danger btn-sm" 
+                                               onClick="() => DeleteDepartment(depart.Id)">
                                         <i class="bi bi-trash"></i>
-                                    </button>
+                                    </AppButton>
                                 </div>
 
                             </td>
