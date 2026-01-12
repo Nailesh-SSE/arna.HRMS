@@ -2,6 +2,9 @@
 
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Users
+@using arna.HRMS.Components.Common.Table
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Common
@@ -10,96 +13,33 @@
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
 
-<FullPageLoader Visible = "isLoading"/>
+<FullPageLoader Visible="isLoading" />
 
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-primary">Users Directory</h3>
+        <h3 class="fw-bold text-primary">Users</h3>
 
-        <button class="btn btn-success" @onclick='() => NavigationManager.NavigateTo("/users/create")'>
-            <i class="bi bi-plus-lg"></i> Add User
-        </button>
-
+        <AppButton cssclass="btn btn-success" Text="Add User" OnClick="@(() => NavigationManager.NavigateTo("/users/create"))">
+            <i class="bi bi-plus-lg"></i>
+        </AppButton>
     </div>
 
     <div class="mb-3">
-        <input type="text" placeholder="Search Users..." class="form-control w-50 shadow-sm" />
+        <input type="text" placeholder="Search Users..."
+               class="form-control w-50 shadow-sm" />
     </div>
 
+    <CommonTable TItem="UserDto"
+                 Items="users"
+                 Columns="TableSchemas.Users"
+                 OnEdit="EditUser"
+                 OnDelete="DeleteUser" />
 
-    @if (users != null)
-    {
-        <div class="table-responsive shadow-sm">
-
-            <table class="table table-hover align-middle">
-
-                <thead class="table-dark">
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>FullName</th>
-                        <th>Phone</th>
-                        <th>Role</th>
-                        <th>PassWord</th>
-                        <th>Employee</th>
-                        <th>Status</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach (var user in users)
-                    {
-                        <tr>
-                            <td> @user.Username </td>
-                            <td> @user.Email </td>
-                            <td> @user.FullName </td>
-                            <td> @user.PhoneNumber </td>
-                            <td> @user.Role </td>
-                            <td> @user.Password </td>
-                            <td> @user.EmployeeName </td>
-                            <td>
-                                @if (user.IsActive)
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-danger">Inactive</span>
-                                }
-                            </td>
-
-                            <td class="text-center">
-                                <div class="btn-group">
-                                    <button class="btn btn-outline-primary btn-sm"
-                                    @onclick="@(() => NavigationManager.NavigateTo($"/users/edit/{user.Id}"))">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    <br />
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteUser(user.Id)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-
-            </table>
-        </div>
-    }
 </div>
 
-<style>
-    .table-hover tbody tr:hover {
-    background-color: #f7f9fc !important;
-    }
-</style>
-
 @code {
-    private List<UserDto>? users;
+    private List<UserDto> users = new();
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -129,7 +69,12 @@
         isLoading = false;
     }
 
-    private async Task DeleteUser(int id)
+    private void EditUser(UserDto user)
+    {
+        NavigationManager.NavigateTo($"/users/edit/{user.Id}");
+    }
+
+    private async Task DeleteUser(UserDto user)
     {
         bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm",
@@ -139,7 +84,7 @@
         if (!isConfirmed)
             return;
 
-        var result = await UsersService.DeleteUserAsync(id);
+        var result = await UsersService.DeleteUserAsync(user.Id);
 
         if (!result.IsSuccess)
         {

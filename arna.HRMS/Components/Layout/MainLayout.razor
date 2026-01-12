@@ -2,28 +2,25 @@
 @inherits LayoutComponentBase
 @inject NotificationService NotificationService
 
-<div class="d-flex min-vh-100">
-
-    <div style="width:@(IsSidebarOpen ? "260px" : "0"); transition: width 0.3s ease; overflow:hidden;">
+<div class="d-flex vh-100 overflow-hidden">
+    <div class="flex-shrink-0 sidebar"
+         style="width:@(IsSidebarOpen ? "260px" : "0");">
         <NavMenu />
     </div>
 
-    <div class="flex-grow-1 d-flex flex-column">
-        <TopBar OnToggleSidebar="ToggleSidebar" />
-        <main class="container-fluid p-4">
+    <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+        <div class="flex-shrink-0 border-bottom bg-white">
+            <TopBar OnToggleSidebar="ToggleSidebar" />
+        </div>
+        <main class="flex-grow-1 overflow-auto bg-light p-4 main-scroll">
             @Body
         </main>
     </div>
-
 </div>
 
-
-<!-- Toasts -->
-<div class="position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index:1055;">
+<div class="position-fixed top-0 start-50 mt-3 toasting-container">
     <Toasts Messages="NotificationService.Messages"
-            Placement="ToastsPlacement.TopCenter"
-            AutoHide="true"
-            Delay="4000" />
+            Placement="ToastsPlacement.TopRight" Delay="4000" />
 </div>
 
 @code {

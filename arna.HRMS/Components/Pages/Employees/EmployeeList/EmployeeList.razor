@@ -4,48 +4,47 @@
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Common
+@using arna.HRMS.Components.Common.Table
 @using arna.HRMS.Components.Common.Tables
 @using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.DTOs
 
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
+@inject IJSRuntime JsRuntime
 
 @inherits AuthenticatedLayoutBase
 
-    <FullPageLoader Visible="isLoading" />
+<FullPageLoader Visible="isLoading" />
 
-    <div class="container mt-4">
+<div class="container mt-4">
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 class="fw-bold text-primary">Employee Directory</h3>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-primary">Employees</h3>
 
         @if (IsAdmin() || IsSuperAdmin())
-            {
-                <button class="btn btn-success"
-                        @onclick="@(() => NavigateTo("/employees/create"))">
-                    <i class="bi bi-plus-lg"></i> Add Employee
-                </button>
-            }
-        </div>
-
-        <AppTable Items="employees"
-              Headers="EmployeeTableHeaders.GetHeaders(IsAdmin() || IsSuperAdmin())"
-                  Row="EmployeeRow"
-                  HeaderClass="app-grid-header-dark">
-        </AppTable>
-
+        {
+            <AppButton cssclass="btn btn-success" Text = "Add Employee" OnClick="@(() => NavigateTo("/employee/create"))">
+                <i class="bi bi-plus-lg"></i> 
+            </AppButton>
+        }
     </div>
+
+    <CommonTable TItem="EmployeeDto"
+                 Items="employees"
+                 Columns="TableSchemas.Employees"
+                 OnEdit="EditEmployee"
+                 OnDelete="DeleteEmployee"
+                 ShowActions="IsAdmin() || IsSuperAdmin()" />
+
+</div>
 
 @code {
 
     private List<EmployeeDto> employees = new();
     private bool isLoading = true;
-
-    private RenderFragment<EmployeeDto> EmployeeRow => employee => @<EmployeeListRow Employee="employee"
-                 ShowActions="@(IsAdmin() || IsSuperAdmin())"
-                 OnEdit="EditEmployee" />;
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,8 +85,30 @@
         NavigationManager.NavigateTo(route);
     }
 
-    private void EditEmployee(int id)
+    private void EditEmployee(EmployeeDto employeeDto)
     {
-        NavigationManager.NavigateTo($"/employees/edit/{id}");
+        NavigationManager.NavigateTo($"/employee/edit/{employeeDto.Id}");
+    }
+
+    private async Task DeleteEmployee(EmployeeDto employeeDto)
+    {
+        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete this employee?"
+        );
+
+        if (!isConfirmed)
+            return;
+
+        var result = await EmployeeService.DeleteEmployeeAsync(employeeDto.Id);
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete employee."}");
+            return;
+        }
+
+        NotificationService.Success("Employee deleted successfully.");
+        await LoadEmployeesAsync();
     }
 }
