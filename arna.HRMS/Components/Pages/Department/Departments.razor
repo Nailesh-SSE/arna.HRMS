@@ -23,48 +23,48 @@
         </AppButton>
 
 
-    </div>
+        </div>
 
-    <div class="mb-3">
-        <input type="text" placeholder="Search Department..." class="form-control w-50 shadow-sm" />
-    </div>
+        <div class="mb-3">
+            <input type="text" placeholder="Search Department..." class="form-control w-50 shadow-sm" />
+        </div>
 
 
     @if (departments != null)
     {
         <div class="table-responsive shadow-sm">
 
-            <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle">
 
-                <thead class="table-dark">
-                    <tr>
-                        <th>Name</th>
-                        <th>Code</th>
-                        <th>Description</th>
-                        <th>Parent DepartMent</th>
-                        <th>Status</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach (var depart in departments)
-                    {
+                    <thead class="table-dark">
                         <tr>
-                            <td> @depart.Name </td>
-                            <td> @depart.Code </td>
-                            <td> @depart.Description</td>
-                            <td> @depart.ParentDepartMentName</td>
-                            <td>
-                                @if (depart.IsActive)
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-danger">Inactive</span>
-                                }
-                            </td>
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Description</th>
+                            <th>Parent DepartMent</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var depart in departments)
+                        {
+                            <tr>
+                                <td> @depart.Name </td>
+                                <td> @depart.Code </td>
+                                <td> @depart.Description</td>
+                                <td> @depart.ParentDepartMentName</td>
+                                <td>
+                                    @if (depart.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Inactive</span>
+                                    }
+                                </td>
 
                             <td class="text-center">
                                 <div class="btn-group">
@@ -80,21 +80,21 @@
                                     </AppButton>
                                 </div>
 
-                            </td>
-                        </tr>
-                    }
-                </tbody>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
 
-            </table>
-        </div>
-    }
-</div>
+                </table>
+            </div>
+        }
+    </div>
 
-<style>
-    .table-hover tbody tr:hover {
-        background-color: #f7f9fc !important;
-    }
-</style>
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: #f7f9fc !important;
+        }
+    </style>
 
 @code {
     private List<DepartmentDto>? departments;
@@ -102,10 +102,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
+        await LoadDepartments();
     }
 
-    private async Task LoadUsers()
+    private async Task LoadDepartments()
     {
         isLoading = true;
 
@@ -142,7 +142,7 @@
         }
 
         NotificationService.Success("Department deleted successfully.");
-        await LoadUsers();
+        await LoadDepartments();
     }
 }
 

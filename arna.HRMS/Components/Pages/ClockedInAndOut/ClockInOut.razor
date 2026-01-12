@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.Auth
+﻿@using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.DTOs
@@ -116,9 +116,6 @@
         }
     }
 
-
-
-
     private Task ClockInAsync()
     {
         PendingClockIn = true;
@@ -161,14 +158,14 @@
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
             var clockInResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
-            {
-                EmployeeId = employeeId,
-                Date = DateTime.Today,
-                ClockInTime = In.ToTimeSpan(),
-                Status = AttendanceStatuses.Present,
-                Notes = attendanceViewModel.Notes,
-                WorkingHours = null
-            });
+                {
+                    EmployeeId = employeeId,
+                    Date = DateTime.Today,
+                    ClockInTime = In.ToTimeSpan(),
+                    Status = AttendanceStatuses.Present,
+                    Notes = attendanceViewModel.Notes,
+                    WorkingHours = null
+                });
 
             if (!clockInResult.IsSuccess)
             {
@@ -191,14 +188,14 @@
             AccumulatedHours = AccumulatedHours.Add(workedSpan);
 
             var clockOutResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
-            {
-                EmployeeId = employeeId,
-                Date = DateTime.Today,
-                ClockOutTime = Out.ToTimeSpan(),
-                Status = AttendanceStatuses.Present,
-                Notes = attendanceViewModel.Notes,
-                WorkingHours = AccumulatedHours.ToTimeSpan()
-            });
+                {
+                    EmployeeId = employeeId,
+                    Date = DateTime.Today,
+                    ClockOutTime = Out.ToTimeSpan(),
+                    Status = AttendanceStatuses.Present,
+                    Notes = attendanceViewModel.Notes,
+                    WorkingHours = AccumulatedHours.ToTimeSpan()
+                });
 
             if (!clockOutResult.IsSuccess)
             {
