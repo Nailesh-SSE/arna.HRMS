@@ -4,7 +4,7 @@
     <input type="@Type"
            class="form-control"
            value="@Value"
-           @oninput="OnInput" />
+           @onchange="OnChange" />
 
     @ChildContent
 </div>
@@ -16,6 +16,6 @@
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private async Task OnInput(ChangeEventArgs e)
+    private async Task OnChange(ChangeEventArgs e)
         => await ValueChanged.InvokeAsync(e.Value?.ToString());
 }
