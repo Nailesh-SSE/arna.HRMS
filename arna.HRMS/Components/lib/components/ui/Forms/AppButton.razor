@@ -3,7 +3,14 @@
         disabled="@Disabled"
         @onclick="OnClick"
         @attributes="AdditionalAttributes">
-    @Text
+    @if (ChildContent is not null)
+    {
+        @ChildContent
+    }
+    else
+    {
+        @Text
+    }
 </button>
 
 @code {
@@ -15,6 +22,7 @@
     [Parameter] public string ButtonClass { get; set; } = "";
 
     [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }

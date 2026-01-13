@@ -1,212 +1,168 @@
 ﻿@page "/profile"
 
-@using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Common
 @using arna.HRMS.Models.DTOs
 
-@inject IDepartmentService DepartmentService
 @inject IEmployeeService EmployeeService
-@inject NavigationManager NavigationManager
+@inject IDepartmentService DepartmentService
 @inherits AuthenticatedLayoutBase
 
 
-<div class="employee-container">
+@if (employee != null)
+{
+    <div class="profile-page">
 
-    @if (employee != null)
-    {
-        <div class="employee-card shadow">
-
-            <!-- SIDEBAR -->
-            <div class="details-sidebar">
-
-                <div class="profile-picture">
-                    @GetInitials()
-                </div>
-
-                <h3 class="employee-name">@employee.FirstName @employee.LastName</h3>
-
-                <p class="text-muted">@employee.Position</p>
-                <p class="text-muted">@employee.DepartmentName</p>
-
-                <p class="fw-bold">ID: @employee.EmployeeNumber</p>
-
-                <a href="mailto:@employee.Email">@employee.Email</a>
-
-                <hr />
-
-                <h6 class="detail-sidebar-title">PROFILE</h6>
-                <ul class="detail-sidebar-menu">
-                    <li class="active">Overview</li>
-                    <li>Personal</li>
-                    <li>Employment</li>
-                    <li>Documents</li>
-                </ul>
-
+        <!-- LEFT PROFILE -->
+        <div class="card-box">
+            <div class="avatar">
+                @GetInitials()
+                <span class="camera">
+                    <i class="bi bi-camera"></i>
+                </span>
             </div>
 
-            <!-- MAIN CONTENT -->
-            <div class="main-content">
+            <div class="left-info">
+                <h4>@employee.FirstName @employee.LastName</h4>
+                <div class="text-muted">@employee.Position</div>
+                <span class="role-badge">@GetUserRole()</span>
+            </div>
 
-                <div class="details-grid">
+            <ul class="meta">
+                <li><i class="bi bi-envelope"></i> @employee.Email</li>
+                <li><i class="bi bi-telephone"></i> @employee.PhoneNumber</li>
+                <li><i class="bi bi-building"></i> @employee.DepartmentName</li>
+                <li><i class="bi bi-calendar"></i> Joined @employee.HireDate.ToString("MMMM yyyy")</li>
+            </ul>
+        </div>
 
-                    <div class="detail-box">
-                        <label>Employee ID</label>
-                        <div>@employee.EmployeeNumber</div>
-                    </div>
+        <!-- RIGHT PROFILE (FIXED SIZE) -->
+        <div class="card-box profile-right-fixed">
 
-                    <div class="detail-box">
-                        <label>Full Name</label>
-                        <div>@employee.FirstName @employee.LastName</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Email</label>
-                        <div>@employee.Email</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Company</label>
-                        <div>Arna Technosoft</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Department</label>
-                        <div>@employee.DepartmentName</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Position</label>
-                        <div>@employee.Position</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Manager</label>
-                        <div>@employee.ManagerFullName</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Date Of Birth</label>
-                        <div>@employee.DateOfBirth.ToShortDateString()</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Department Code</label>
-                        <div>@employee.DepartmentCode</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Phone Number</label>
-                        <div>@employee.PhoneNumber</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Hire Date</label>
-                        <div>@employee.HireDate.ToShortDateString()</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Created At</label>
-                        <div>@employee.CreatedBy.ToShortDateString()</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Experience</label>
-                        <div>@experienceString</div>
-                    </div>
-
-                    <div class="detail-box">
-                        <label>Status</label>
-                        <div>
-                            @if (employee.IsActive)
-                            {
-                                <span class="status-active">Active</span>
-                            }
-                            else
-                            {
-                                <span class="status-inactive">Inactive</span>
-                            }
-                        </div>
-                    </div>
-
+            <div class="header">
+                <div>
+                    <h3>Profile Information</h3>
+                    <small class="text-muted">Manage your personal details</small>
                 </div>
+
+                <button class="btn btn-outline-secondary btn-sm"
+                        disabled="@(activeTab == ProfileTab.Others)"
+                        @onclick="HandleEditClick">
+                    <i class="bi bi-pencil"></i> Edit Profile
+                </button>
+            </div>
+
+            <!-- TABS -->
+            <div class="tabs">
+                <button class="@(activeTab == ProfileTab.Personal ? "active" : "")"
+                        @onclick="() => SetTab(ProfileTab.Personal)">
+                    Personal
+                </button>
+
+                <button class="@(activeTab == ProfileTab.Work ? "active" : "")"
+                        @onclick="() => SetTab(ProfileTab.Work)">
+                    Work
+                </button>
+
+                <button class="@(activeTab == ProfileTab.Others ? "active" : "")"
+                        @onclick="() => SetTab(ProfileTab.Others)">
+                    Others
+                </button>
+            </div>
+
+            <!-- TAB CONTENT (NO RESIZE) -->
+            <div class="tab-content">
+
+                @if (activeTab == ProfileTab.Personal)
+                {
+                    <div class="form-grid">
+                        <div class="field"><label>First Name</label><input value="@employee.FirstName" readonly /></div>
+                        <div class="field"><label>Last Name</label><input value="@employee.LastName" readonly /></div>
+                        <div class="field"><label>Email</label><input value="@employee.Email" readonly /></div>
+                        <div class="field"><label>Phone</label><input value="@employee.PhoneNumber" readonly /></div>
+                        <div class="field full"><label>Address</label><input value="123 Main Street, SF" readonly /></div>
+                    </div>
+                }
+
+                @if (activeTab == ProfileTab.Work)
+                {
+                    <div class="form-grid">
+                        <div class="field"><label>Employee ID</label><input value="@employee.EmployeeNumber" readonly /></div>
+                        <div class="field"><label>Department</label><input value="@employee.DepartmentName" readonly /></div>
+                        <div class="field"><label>Department Code</label><input value="@employee.DepartmentCode" readonly /></div>
+                        <div class="field"><label>Position</label><input value="@employee.Position" readonly /></div>
+                        <div class="field"><label>Manager</label><input value="@employee.ManagerFullName" readonly /></div>
+                        <div class="field"><label>Hire Date</label><input value="@employee.HireDate.ToShortDateString()" readonly /></div>
+                    </div>
+                }
+
+                @if (activeTab == ProfileTab.Others)
+                {
+                    <div class="form-grid">
+                        <div class="field"><label>Company</label><input value="Arna Technosoft" readonly /></div>
+                        <div class="field"><label>Status</label><input value="@(employee.IsActive ? "Active" : "Inactive")" readonly /></div>
+                        <div class="field"><label>Experience</label><input value="@experienceString" readonly /></div>
+                        <div class="field"><label>Created At</label><input value="@employee.CreatedBy.ToShortDateString()" readonly /></div>
+                    </div>
+                }
 
             </div>
         </div>
-    }
-    else
-    {
-        <FullPageLoader />
-    }
-
-</div>
+    </div>
+}
+else
+{
+    <FullPageLoader/>
+}
 
 @code {
     private EmployeeDto? employee;
     private string experienceString = "";
+    private ProfileTab activeTab = ProfileTab.Personal;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
         var employeeId = GetEmployeeId();
-        if (employeeId == 0)
-            return;
+        if (employeeId == 0) return;
 
-        var employeeResult = await EmployeeService.GetEmployeeByIdAsync(employeeId);
-        if (!employeeResult.IsSuccess || employeeResult.Data == null)
-            return;
+        var result = await EmployeeService.GetEmployeeByIdAsync(employeeId);
+        if (!result.IsSuccess || result.Data == null) return;
 
-        employee = employeeResult.Data;
+        employee = result.Data;
 
-        var deptResult = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId!.Value);
-        if (deptResult?.Data != null)
+        var dept = await DepartmentService.GetDepartmentByIdAsync(employee.DepartmentId!.Value);
+        if (dept?.Data != null)
         {
-            employee.DepartmentName = deptResult.Data.Name;
-            employee.DepartmentCode = deptResult.Data.Code;
-        }
-
-        if (employee.ManagerId.HasValue)
-        {
-            var employeesResult = await EmployeeService.GetEmployeesAsync();
-            var manager = employeesResult.Data?
-                .FirstOrDefault(e => e.Id == employee.ManagerId.Value);
-
-            if (manager != null)
-                employee.ManagerFullName = $"{manager.FirstName} {manager.LastName}";
+            employee.DepartmentName = dept.Data.Name;
+            employee.DepartmentCode = dept.Data.Code;
         }
 
         CalculateExperience();
+    }
 
-        StateHasChanged();
+    private void SetTab(ProfileTab tab) => activeTab = tab;
+
+    private void HandleEditClick()
+    {
+        if (activeTab == ProfileTab.Others)
+            return; // 🔒 frozen
     }
 
     private void CalculateExperience()
     {
-        if (employee?.HireDate == null)
-        {
-            experienceString = "N/A";
-            return;
-        }
-
-        var doj = employee.HireDate;
+        var doj = employee?.HireDate ?? DateTime.Today;
         var today = DateTime.Today;
-
         var years = today.Year - doj.Year;
         var months = today.Month - doj.Month;
-
-        if (today.Day < doj.Day)
-            months--;
-
-        if (months < 0)
-        {
-            years--;
-            months += 12;
-        }
-
-        experienceString = $"{Math.Max(years, 0)} Y {Math.Max(months, 0)} M";
+        var anchorDate = doj.AddYears(years).AddMonths(months);
+        int days = (today - anchorDate).Days;
+        if (today.Day < doj.Day) months--;
+        if (months < 0) { years--; months += 12; }
+        experienceString = $"{years} Y {months} M {days} D";
     }
 
     private string GetInitials()
@@ -215,4 +171,6 @@
         var l = employee?.LastName?.FirstOrDefault();
         return $"{f}{l}".ToUpper();
     }
+
+    private enum ProfileTab { Personal, Work, Others }
 }

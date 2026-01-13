@@ -1,95 +1,156 @@
-﻿.employee-container {
-    padding: 20px;
+﻿body {
+    background: #f6f7fb;
 }
 
-.employee-card {
-    display: flex;
-    border-radius: 10px;
-    background: white;
-    overflow: hidden;
-    border: 1px solid #e1e1e1;
+.profile-page {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    padding: 24px;
 }
 
-.details-sidebar {
-    width: 260px;
-    background: #f8f9fa;
-    padding: 25px;
-    text-align: center;
+.card-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
 }
 
-.profile-picture {
-    width: 95px;
-    height: 95px;
-    font-size: 32px;
-    background: #343a40;
-    color: white;
+/* LEFT CARD */
+.avatar {
+    width: 110px;
+    height: 110px;
     border-radius: 50%;
+    background: #e9ecef;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: auto;
-}
-
-.employee-name {
-    margin-top: 12px;
+    justify-content: center;
+    font-size: 36px;
     font-weight: 700;
+    margin: auto;
+    position: relative;
 }
 
-.detail-sidebar-title {
-    margin-top: 20px;
-    color: gray;
+.camera {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: #1c4ed8;
+    color: #fff;
+    border-radius: 50%;
+    padding: 6px;
     font-size: 12px;
 }
 
-.detail-sidebar-menu {
-    list-style: none;
-    padding-left: 0;
-    margin-top: 10px;
+.left-info {
+    text-align: center;
+    margin-top: 14px;
 }
 
-    .detail-sidebar-menu li {
-        padding: 6px 0;
+.role-badge {
+    display: inline-block;
+    background: #1c4ed8;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.meta {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+    .meta li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #444;
+    }
+
+/* RIGHT CARD (FIXED HEIGHT) */
+.profile-right-fixed {
+    min-height: 560px; /* 🔒 fixed height */
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tabs {
+    display: inline-flex;
+    background: #f1f3f5;
+    border-radius: 12px;
+    padding: 4px;
+    margin: 20px 0;
+}
+
+    .tabs button {
+        border: none;
+        background: transparent;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #6b7280;
         cursor: pointer;
     }
 
-        .detail-sidebar-menu li.active {
-            font-weight: bold;
+        .tabs button.active {
+            background: #fff;
+            color: #000;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,.1);
         }
 
-.main-content {
+        .tabs button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+.tab-content {
     flex-grow: 1;
-    padding: 30px;
+    display: flex;
+    align-items: flex-start;
 }
 
-.details-grid {
+.form-grid {
+    width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 22px;
-    margin-top: 30px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
 }
 
-.detail-box label {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: gray;
-    letter-spacing: 0.5px;
+.field label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
 }
 
-.detail-box div {
-    font-size: 15px;
-    font-weight: 500;
+.field input {
+    width: 100%;
+    border: none;
+    background: #f8f9fa;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #6b7280;
 }
 
-.status-active {
-    color: white;
-    background: #28a745;
-    padding: 3px 10px;
-    border-radius: 5px;
+.field.full {
+    grid-column: span 2;
 }
 
-.status-inactive {
-    color: white;
-    background: #dc3545;
-    padding: 3px 10px;
-    border-radius: 5px;
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
 }

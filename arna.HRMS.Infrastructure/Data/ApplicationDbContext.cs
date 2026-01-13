@@ -20,6 +20,7 @@ namespace arna.HRMS.Infrastructure.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<AttendanceRequest> AttendanceRequest { get; set; } 
+        public DbSet<FestivalHoliday> FestivalHoliday { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -33,6 +34,7 @@ namespace arna.HRMS.Infrastructure.Data
             builder.ApplyConfiguration(new TimesheetConfiguration());
             builder.ApplyConfiguration(new UserConfiguration());
             builder.ApplyConfiguration(new AttendanceRequestConfiguration());
+            builder.ApplyConfiguration(new FestivalHolidayConfiguration()); 
 
             // ===== Users =====
             builder.Entity<User>().HasData(
