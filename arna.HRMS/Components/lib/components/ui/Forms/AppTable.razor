@@ -1,27 +1,30 @@
-﻿@using arna.HRMS.Components.Common.Tables
-@typeparam TItem
+﻿@typeparam TItem
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
 
-<div class="table-responsive app-grid-wrapper @WrapperClass">
-    <table class="table table-hover align-middle app-grid-table">
+<div class="shadow-sm table-responsive attendance-table-scroll">
+    <table class="table table-striped table-hover align-middle mb-0">
 
-        <thead class="@HeaderClass">
+        <thead class="table-light">
             <tr>
-                @foreach (var h in Headers.Where(h => !h.Hidden))
+                @foreach (var col in Columns)
                 {
-                    <th class="@h.CssClass @(h.NoWrap ? "text-nowrap" : "")">
-                        @h.Title
-                    </th>
+                    <th>@col.Header</th>
+                }
+
+                @if (ShowActions)
+                {
+                    <th class="text-center">Action</th>
                 }
             </tr>
         </thead>
 
         <tbody>
-            @if (Items == null || !Items.Any())
+            @if (Items == null || Items.Count == 0)
             {
                 <tr>
-                    <td colspan="@VisibleColumnCount"
-                        class="text-center text-muted py-4">
-                        No records found
+                    <td colspan="@GetColSpan()" class="text-center text-muted py-4">
+                        No data found
                     </td>
                 </tr>
             }
@@ -29,21 +32,60 @@
             {
                 @foreach (var item in Items)
                 {
-                    @Row(item)@* ✅ THIS IS NOW CORRECT *@
+                    <tr>
+                        @foreach (var col in Columns)
+                        {
+                            <td>
+                                @if (col.CssClassFunc != null)
+                                {
+                                    <span class="@col.CssClassFunc(item)">
+                                        @col.Value(item)
+                                    </span>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(col.CssClass))
+                                {
+                                    <span class="@col.CssClass">
+                                        @col.Value(item)
+                                    </span>
+                                }
+                                else
+                                {
+                                    @col.Value(item)
+                                }
+                            </td>
+                        }
+
+                        @if (ShowActions)
+                        {
+                            <td class="text-center">
+                                <div class="d-inline-flex gap-2">
+                                    <AppButton ButtonClass="btn btn-primary"
+                                               onclick="() => OnEdit.InvokeAsync(item)">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </AppButton>
+
+                                    <AppButton ButtonClass="btn btn-danger"
+                                               onclick="() => OnDelete.InvokeAsync(item)">
+                                        <i class="bi bi-trash"></i>
+                                    </AppButton>
+                                </div>
+                            </td>
+                        }
+                    </tr>
                 }
             }
         </tbody>
-
     </table>
 </div>
 
 @code {
-    [Parameter, EditorRequired] public IEnumerable<TItem>? Items { get; set; }
-    [Parameter, EditorRequired] public IReadOnlyList<TableHeader> Headers { get; set; } = [];
-    [Parameter, EditorRequired] public RenderFragment<TItem> Row { get; set; } = default!;
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public List<TableColumn<TItem>> Columns { get; set; } = new();
 
-    [Parameter] public string HeaderClass { get; set; } = "app-grid-header";
-    [Parameter] public string WrapperClass { get; set; } = "";
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    [Parameter] public EventCallback<TItem> OnDelete { get; set; }
 
-    private int VisibleColumnCount => Headers.Count(h => !h.Hidden);
+    [Parameter] public bool ShowActions { get; set; } = true;
+
+    private int GetColSpan() => Columns.Count + (ShowActions ? 1 : 0);
 }

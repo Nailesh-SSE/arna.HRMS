@@ -4,8 +4,6 @@
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Common
-@using arna.HRMS.Components.Common.Table
-@using arna.HRMS.Components.Common.Tables
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.DTOs
@@ -26,13 +24,13 @@
 
         @if (IsAdmin() || IsSuperAdmin())
         {
-            <AppButton cssclass="btn btn-success" Text = "Add Employee" OnClick="@(() => NavigateTo("/employee/create"))">
+            <AppButton ButtonClass="btn btn-primary" Text = "Add Employee" OnClick="@(() => NavigateTo("/employee/create"))">
                 <i class="bi bi-plus-lg"></i> 
             </AppButton>
         }
     </div>
 
-    <CommonTable TItem="EmployeeDto"
+    <AppTable TItem="EmployeeDto"
                  Items="employees"
                  Columns="TableSchemas.Employees"
                  OnEdit="EditEmployee"

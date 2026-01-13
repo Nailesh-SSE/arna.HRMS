@@ -5,7 +5,14 @@
         @attributes="AdditionalAttributes">
     @if (ChildContent is not null)
     {
-        @ChildContent
+        <span class="d-inline-flex align-items-center gap-2">
+            @ChildContent
+
+            @if (!string.IsNullOrWhiteSpace(Text))
+            {
+                <span>@Text</span>
+            }
+        </span>
     }
     else
     {
@@ -14,7 +21,7 @@
 </button>
 
 @code {
-    [Parameter] public string Text { get; set; } = "Button";
+    [Parameter] public string Text { get; set; } = string.Empty;
     [Parameter] public string Type { get; set; } = "button";
     [Parameter] public bool Disabled { get; set; }
 

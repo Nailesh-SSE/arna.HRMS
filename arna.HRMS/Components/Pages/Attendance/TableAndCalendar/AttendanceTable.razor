@@ -1,53 +1,11 @@
 ﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.Common.Table
 
-<div class="table-card">
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Day</th>
-                    <th>Clock In</th>
-                    <th>Clock Out</th>
-                    <th>Working Hours</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                @foreach (var item in AttendanceList)
-                {
-                    <tr class="@(string.IsNullOrEmpty(item.Status) ? "future-row" : "")">
-                        <td>@item.Date.ToString("dd MMM yyyy")</td>
-                        <td>@item.Day</td>
-                        <td>@(item.ClockIn?.ToString(@"hh\:mm\:ss") ?? "-")</td>
-                        <td>@(item.ClockOut?.ToString(@"hh\:mm\:ss") ?? "-")</td>
-                        <td>@(item.TotalHours > TimeSpan.FromHours(0) ? item.TotalHours.ToString(@"hh\:mm\:ss") : "-")</td>
-                        <td>
-                            @if (string.IsNullOrEmpty(item.Status))
-                            {
-                                <span class="status-muted">—</span>
-                            }
-                            else
-                            {
-                                <span class="status-pill status-@item.Status.ToLower()">
-                                    @item.Status
-                                </span>
-                            }
-                        </td>
-                        <td>
-                            <AppButton Text="Detail"
-                                       ButtonClass="btn btn-info" >
-                            </AppButton>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
+<AppTable TItem="MonthlyAttendanceDto"
+          Items="AttendanceList"
+          Columns="TableSchemas.AttendanceList"
+          ShowActions="false" />
 
 @code {
     [Parameter, EditorRequired]

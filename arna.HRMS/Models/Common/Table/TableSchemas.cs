@@ -32,12 +32,39 @@ public class TableSchemas
         new() { Header = "Number", Value = u => u.EmployeeNumber },
         new() { Header = "Full Name", Value = u => u.FullName },
         new() { Header = "Email", Value = u => u.Email },
-        new() { Header = "Phone", Value = u => u.PhoneNumber },
         new() { Header = "Department Code", Value = u => u.DepartmentCode, CssClass = "badge bg-info" },
         new() { Header = "Manager Name", Value = u => u.ManagerFullName },
         new() { Header = "Position", Value = u => u.Position },
         StatusColumn<EmployeeDto>(u => u.IsActive)
     };
+
+    public static List<TableColumn<MonthlyAttendanceDto>> AttendanceList = new()
+{
+    new() { Header = "Id", Value = u => u.EmployeeId },
+    new() { Header = "Date", Value = u => u.Date.ToString("dd MMM yyyy") },
+    new() { Header = "Day", Value = u => u.Day },
+    new() { Header = "Clock In", Value = u => u.ClockIn?.ToString(@"hh\:mm") ?? "-" },
+    new() { Header = "Clock Out", Value = u => u.ClockOut?.ToString(@"hh\:mm") ?? "-" },
+    new() { Header = "Total Hours", Value = u => u.TotalHours.ToString(@"hh\:mm") },
+
+     new()
+    {
+        Header = "Status",
+        Value = u => u.Status,
+        CssClassFunc = u => u.Status switch
+        {
+            "Present"  => "badge bg-success",
+            "Absent"   => "badge bg-danger",
+            "Holiday"  => "badge bg-secondary",
+            "Leave"    => "badge bg-warning text-dark",
+            "Late"     => "badge bg-info text-dark",
+            "Half-Day" => "badge bg-primary",
+            _          => "badge bg-light text-dark"
+        }
+    }
+};
+
+
 
     // GENERIC STATUS COLUMN
     private static TableColumn<T> StatusColumn<T>(Func<T, bool> isActiveSelector)

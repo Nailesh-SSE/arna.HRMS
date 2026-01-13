@@ -3,7 +3,6 @@
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Department
 @using arna.HRMS.Components.Common
-@using arna.HRMS.Components.Common.Table
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.DTOs
@@ -30,7 +29,7 @@
                class="form-control w-50 shadow-sm" />
     </div>
 
-    <CommonTable TItem="DepartmentDto"
+    <AppTable TItem="DepartmentDto"
                  Items="departments"
                  Columns="TableSchemas.Departments"
                  OnEdit="EditDepartment"

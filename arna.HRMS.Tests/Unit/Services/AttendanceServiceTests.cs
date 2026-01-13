@@ -1,8 +1,9 @@
-﻿using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.ClientServices.FestivalHoliday;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Interfaces;
+using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services;
-using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Models.DTOs;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore.Query;
@@ -20,6 +21,7 @@ public class AttendanceServiceTests
     private Mock<IEmployeeService> _employeeServiceMock = null!;
     private AttendanceRepository _attendanceRepository = null!;
     private AttendanceService _attendanceService = null!;
+    private Mock<IFestivalHolidayService> _festivalHolidayService = null!; 
     private IMapper _mapper = null!;
 
     #region Setup
@@ -29,6 +31,7 @@ public class AttendanceServiceTests
     {
         _baseRepositoryMock = new Mock<IBaseRepository<Attendance>>();
         _employeeServiceMock = new Mock<IEmployeeService>();
+        _festivalHolidayService = new Mock<IFestivalHolidayService>();
 
         _attendanceRepository = new AttendanceRepository(
             _baseRepositoryMock.Object);
@@ -43,7 +46,8 @@ public class AttendanceServiceTests
         _attendanceService = new AttendanceService(
             _attendanceRepository,
             _mapper,
-            _employeeServiceMock.Object);
+            _employeeServiceMock.Object,
+            _festivalHolidayService.Object); 
     }
 
     #endregion
