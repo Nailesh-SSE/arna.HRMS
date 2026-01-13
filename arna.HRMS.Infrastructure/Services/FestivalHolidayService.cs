@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Infrastructure.Interfaces;
+﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Models.DTOs;
 using AutoMapper;
@@ -26,6 +27,22 @@ public class FestivalHolidayService : IFestivalHolidayService
         var holidays = await _festivalHolidayRepository.GetByMonthAsync(year, month);
         return _mapper.Map<List<FestivalHolidayDto>>(holidays);
     }
+    public async Task<FestivalHolidayDto> CreateFestivalHolidayAsync(FestivalHolidayDto festivalHolidayDto)
+    {
+        var Festival = _mapper.Map<FestivalHoliday>(festivalHolidayDto);
+        var createdFestivalHoliday = await _festivalHolidayRepository.CreateFestivalHolidayAsync(Festival);
+        return _mapper.Map<FestivalHolidayDto>(createdFestivalHoliday);
+    }
+    public async Task<bool> DeleteFestivalHolidayAsync(int id)
+    {
+        return await _festivalHolidayRepository.DeleteFestivalHolidayAsync(id);
+    }
 
+    public async Task<FestivalHolidayDto> UpdateFestivalHolidayAsync(FestivalHolidayDto festivalHolidayDto)
+    {
+        var Festival = _mapper.Map<FestivalHoliday>(festivalHolidayDto);
+        var updatedFestivalHoliday = await _festivalHolidayRepository.UpdateFestivalHolidayAsync(Festival);
+        return _mapper.Map<FestivalHolidayDto>(updatedFestivalHoliday);
+    }
 
 }

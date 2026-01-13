@@ -24,4 +24,28 @@ public class FestivalHolidayRepository
             .Where(h => h.Date.Year == year && h.Date.Month == month)
             .ToListAsync();
     }
+    public Task<FestivalHoliday> CreateFestivalHolidayAsync(FestivalHoliday festivalHoliday)
+    {
+        return _baseRepository.AddAsync(festivalHoliday);
+    }
+
+    public Task<FestivalHoliday> UpdateFestivalHolidayAsync(FestivalHoliday festivalHoliday)
+    {
+        return _baseRepository.UpdateAsync(festivalHoliday);
+    }
+
+    public async Task<bool> DeleteFestivalHolidayAsync(int id)
+    {
+        var festivalHoliday = await _baseRepository.GetByIdAsync(id);
+
+        if (festivalHoliday == null)
+            return false;
+
+        festivalHoliday.IsActive = false;
+        festivalHoliday.IsDeleted = true;
+        festivalHoliday.UpdatedBy = DateTime.Now;
+
+        await _baseRepository.UpdateAsync(festivalHoliday);
+        return true;
+    }
 }
