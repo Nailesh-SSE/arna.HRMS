@@ -1,147 +1,57 @@
-﻿@using arna.HRMS.Components.Auth
-@using arna.HRMS.Models.DTOs
-@using arna.HRMS.ClientServices.Employee
-@using Microsoft.AspNetCore.Components.Authorization
-@using arna.HRMS.Models.Enums
-
-@inject IEmployeeService EmployeeService
+﻿@using arna.HRMS.ClientServices.Auth
 @inherits AuthenticatedLayoutBase
 
-<div class="position-fixed top-0 start-0 vh-100 bg-dark text-white d-flex flex-column custom-sidebar"
-     style="width:@(Collapsed ? "80px" : "264px")">
+<div class="bg-dark text-white d-flex flex-column h-100" style="width:260px;">
 
-    <!-- Logo -->
-    <div class="d-flex align-items-center gap-2 p-3 border-bottom border-secondary">
-        <div class="bg-primary rounded d-flex align-items-center justify-content-center"
-             style="width:36px;height:36px;">
-            <i class="bi bi-buildings fs-5"></i>
-        </div>
-
-        @if (!Collapsed)
-        {
-            <span class="fw-bold fs-5">Arna Technosoft</span>
-        }
+    <div class="p-3 border-bottom">
+        <i class="bi bi-buildings fs-5"></i>
+        <strong>Arna Technosoft</strong>
     </div>
 
-    <!-- Navigation -->
-    <nav class="nav nav-pills flex-column gap-1 px-2 py-3">
-        <NavLink href="/" Match="NavLinkMatch.All"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-grid fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Dashboard</span>
-            }
+    <nav class="nav nav-pills flex-column p-2">
+
+        <NavLink href="/" class="nav-link text-white" Match="NavLinkMatch.All">
+            <i class="bi bi-grid me-2"></i> Dashboard
         </NavLink>
 
-        <NavLink href="/employee/employeelist"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-people fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Employees</span>
-            }
+        <NavLink href="/employee" class="nav-link text-white">
+            <i class="bi bi-people me-2"></i> Employees
         </NavLink>
 
-        <NavLink href="/attendance"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-calendar-check fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Attendance</span>
-            }
+        <NavLink href="/attendance" class="nav-link text-white">
+            <i class="bi bi-calendar-check me-2"></i> Attendance
         </NavLink>
 
-        <NavLink href="/leave"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-calendar2 fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Leave</span>
-            }
+        <NavLink href="/leave" class="nav-link text-white">
+            <i class="bi bi-calendar2 me-2"></i> Leave
         </NavLink>
 
-        <NavLink href="/project"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-folder fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Projects</span>
-            }
+        <NavLink href="/project" class="nav-link text-white">
+            <i class="bi bi-folder me-2"></i> Projects
         </NavLink>
 
-        <NavLink href="/timesheet"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-clock fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Timesheet</span>
-            }
+        <NavLink href="/timesheet" class="nav-link text-white">
+            <i class="bi bi-clock me-2"></i> Timesheet
         </NavLink>
 
-        <NavLink href="/reports"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-bar-chart fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>Reports</span>
-            }
+        <NavLink href="/reports" class="nav-link text-white">
+            <i class="bi bi-bar-chart me-2"></i> Reports
         </NavLink>
 
         @if (IsAdmin() || IsSuperAdmin())
         {
-            <NavLink href="/department"
-                     class="nav-link text-white d-flex align-items-center gap-3"
-                     activeClass="active">
-                <i class="bi bi-building fs-5"></i>
-                @if (!Collapsed)
-                {
-                    <span>Department</span>
-                }
+            <NavLink href="/department" class="nav-link text-white">
+                <i class="bi bi-building me-2"></i> Department
+            </NavLink>
+
+            <NavLink href="/users" class="nav-link text-white">
+                <i class="bi bi-person me-2"></i> Users
             </NavLink>
         }
 
-        @if (IsAdmin() || IsSuperAdmin())
-        {
-            <NavLink href="/users"
-                     class="nav-link text-white d-flex align-items-center gap-3"
-                     activeClass="active">
-                <i class="bi bi-person fs-5"></i>
-                @if (!Collapsed)
-                {
-                    <span>Users</span>
-                }
-            </NavLink>
-        }
-
-        <NavLink href="/profile"
-                 class="nav-link text-white d-flex align-items-center gap-3"
-                 activeClass="active">
-            <i class="bi bi-person fs-5"></i>
-            @if (!Collapsed)
-            {
-                <span>My Profile</span>
-            }
+        <NavLink href="/profile" class="nav-link text-white">
+            <i class="bi bi-person me-2"></i> My Profile
         </NavLink>
+
     </nav>
-
-    <!-- Collapse Button -->
-    <div class="collapse-btn" @onclick="OnToggle">
-        <svg viewBox="0 0 24 24">
-            <polyline points="15 6 9 12 15 18" />
-        </svg>
-    </div>
 </div>
-
-@code {
-    [CascadingParameter] public bool Collapsed { get; set; }
-
-    [Parameter] public EventCallback OnToggle { get; set; }
-}

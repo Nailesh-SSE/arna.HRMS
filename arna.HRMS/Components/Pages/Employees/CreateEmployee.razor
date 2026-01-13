@@ -1,5 +1,5 @@
-﻿@page "/employees/create"
-@page "/employees/edit/{Id:int}"
+﻿@page "/employee/create"
+@page "/employee/edit/{Id:int}"
 @using arna.HRMS.ClientServices
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Department
@@ -237,7 +237,7 @@
             else
             {
                 NotificationService.Error($"Employee not found ({result.StatusCode}): {result.Message ?? "Employee not found."}");
-                NavigationManager.NavigateTo("/employee/employeelist");
+                NavigationManager.NavigateTo("/employee");
                 return;
             }
         }
@@ -273,8 +273,8 @@
             NotificationService.Success("Employee created successfully.");
         }
 
-        NavigationManager.NavigateTo("/employee/employeelist");
+        NavigationManager.NavigateTo("/employee");
     }
 
-    private void GoBack() => NavigationManager.NavigateTo("/employee/employeelist");
+    private void GoBack() => NavigationManager.NavigateTo("/employee");
 }

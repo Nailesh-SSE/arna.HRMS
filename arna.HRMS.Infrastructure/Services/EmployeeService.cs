@@ -53,7 +53,7 @@ public class EmployeeService : IEmployeeService
                 Role = UserRole.Employee,
                 PhoneNumber = createdEmployee.PhoneNumber,
                 EmployeeId = createdEmployee.Id,
-                Password = $"{createdEmployee.FirstName}@123"
+                Password = $"{Guid.NewGuid().ToString("N")[..6]}"
             };
 
             await _userServices.CreateUserAsync(userDto);

@@ -4,7 +4,8 @@
     <input type="@Type"
            class="form-control"
            value="@Value"
-           @onchange="OnChange" />
+           @onchange="OnChange" 
+           @attributes="AdditionalAttributes"/>
 
     @ChildContent
 </div>
@@ -16,6 +17,10 @@
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private async Task OnChange(ChangeEventArgs e)
+    // 🔑 THIS IS THE FIX
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+       private async Task OnChange(ChangeEventArgs e)
         => await ValueChanged.InvokeAsync(e.Value?.ToString());
 }

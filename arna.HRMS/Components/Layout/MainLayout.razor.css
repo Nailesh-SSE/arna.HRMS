@@ -1,67 +1,19 @@
-/* ===============================
-   SIDEBAR
-   =============================== */
-.custom-sidebar {
-    z-index: 1040;
+.toasting-container {
+    position: fixed !important;
+    right: 1rem !important;
+    pointer-events: none !important;
+    z-index: 1085 !important; /* above navbar, below modal */
 }
 
-/* ===============================
-   MAIN WRAPPER
-   =============================== */
-.main-wrapper {
-    position: relative;
+.main-scroll::-webkit-scrollbar {
+    width: 6px;
 }
 
-/* ===============================
-   TOAST HOST (BOOTSTRAP SAFE)
-   =============================== */
-.toast-host {
-    z-index: 1080; /* higher than cards, lower than modals */
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 24px;
-    pointer-events: none;
+.main-scroll {
+    scrollbar-width: thin;
 }
 
-    /* Enable interaction only on toast */
-    .toast-host .toast {
-        pointer-events: auto;
-    }
-
-/* ===============================
-   TOAST UI
-   =============================== */
-.toast {
-    min-width: 320px;
-    border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(0,0,0,.18);
-    animation: toast-slide .35s ease;
-}
-
-/* Toast animation */
-@keyframes toast-slide {
-    from {
-        transform: translateY(-10px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-/* ===============================
-   MOBILE FIX
-   =============================== */
-@media (max-width: 768px) {
-    .toast-host {
-        padding: 0 12px;
-        justify-content: center;
-    }
-
-    .toast {
-        width: 100%;
-        max-width: 360px;
-    }
+.sidebar {
+    transition: width .3s !important;
+    overflow: hidden !important;
 }

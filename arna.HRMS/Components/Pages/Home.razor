@@ -38,7 +38,7 @@
     private bool isLoading = true;
     private record MenuItem(string Label, string Icon, string Route);
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         isLoading = false;
     }
@@ -46,7 +46,7 @@
     private readonly List<MenuItem> MenuItems = new()
     {
         new("Task Box", "icons/Task.png", "/taskbox"),
-        new("Employees", "icons/employees.png", "/employee/employeelist"),
+        new("Employees", "icons/employees.png", "/employee"),
         new("Time Sheet", "icons/time.png", "/timesheet"),
         new("Performance", "icons/performance.png", "/performance"),
         new("Project", "icons/project.png", "/project"),

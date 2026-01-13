@@ -4,7 +4,6 @@ using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Models.DTOs;
 using AutoMapper;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -13,18 +12,28 @@ public class AttendanceService : IAttendanceService
     private readonly AttendanceRepository _attendanceRepository;
     private readonly IMapper _mapper;
     private readonly IEmployeeService _employeeService;
+    private readonly IFestivalHolidayService _festivalHolidayService;
 
-    public AttendanceService(AttendanceRepository attendanceRepository, IMapper mapper, IEmployeeService Emp)
+    private static readonly DateTime SystemStartDate = new(2026, 1, 12);
+
+    public AttendanceService(
+        AttendanceRepository attendanceRepository,
+        IMapper mapper,
+        IEmployeeService employeeService,
+        IFestivalHolidayService festivalHolidayService)
     {
         _attendanceRepository = attendanceRepository;
         _mapper = mapper;
-        _employeeService = Emp;
+        _employeeService = employeeService;
+        _festivalHolidayService = festivalHolidayService;
     }
+
+    #region Basic APIs
 
     public async Task<List<AttendanceDto>> GetAttendanceAsync()
     {
-        var Attendance = await _attendanceRepository.GetAttendenceAsync();
-        return _mapper.Map<List<AttendanceDto>>(Attendance);
+        var data = await _attendanceRepository.GetAttendenceAsync();
+        return _mapper.Map<List<AttendanceDto>>(data);
     }
 
     public async Task<AttendanceDto?> GetAttendenceByIdAsync(int id)
@@ -32,26 +41,65 @@ public class AttendanceService : IAttendanceService
         var attendance = await _attendanceRepository.GetAttendanceByIdAsync(id);
         return attendance == null ? null : _mapper.Map<AttendanceDto>(attendance);
     }
+
     public async Task<AttendanceDto> CreateAttendanceAsync(AttendanceDto attendanceDto)
     {
-        var attendanceEntity = _mapper.Map<Attendance>(attendanceDto);
-        var employee = await _employeeService.GetEmployeeByIdAsync(attendanceEntity.EmployeeId);
+        var entity = _mapper.Map<Attendance>(attendanceDto);
 
-        await CreateAbsentAndHolidayAsync(attendanceEntity.EmployeeId, attendanceEntity.Date, employee.HireDate);
+        var employee =
+            await _employeeService.GetEmployeeByIdAsync(entity.EmployeeId);
 
-        var createdAttendance =
-            await _attendanceRepository.CreateAttendanceAsync(attendanceEntity);
+        await CreateAbsentAndHolidayAsync(
+            entity.EmployeeId,
+            entity.Date,
+            employee.HireDate);
 
-        return _mapper.Map<AttendanceDto>(createdAttendance);
+        var created =
+            await _attendanceRepository.CreateAttendanceAsync(entity);
+
+        return _mapper.Map<AttendanceDto>(created);
     }
 
-    public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int empId)
-    {
-        var attendances = await _attendanceRepository
-            .GetAttendanceByMonthAsync(year, month, empId);
+    #endregion
 
-        var result = attendances
-            .GroupBy(a => new { a.EmployeeId, Date = a.Date.Date })
+    #region Monthly Attendance
+
+    public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(
+        int year,
+        int month,
+        int empId)
+    {
+        var attendances =
+            await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId);
+
+        var festivals =
+            await _festivalHolidayService.GetFestivalHolidayByMonthAsync(year,month);
+
+        var monthFestivalDates = festivals
+            .Select(f => f.Date.Date)
+            .ToHashSet();
+
+        // ✅ FORCE nullable DateTime on BOTH sides
+        var combined = attendances
+            .Select(a => new
+            {
+                a.EmployeeId,
+                Date = a.Date.Date,
+                ClockIn = (DateTime?)a.ClockIn,
+                ClockOut = (DateTime?)a.ClockOut
+            })
+            .Concat(
+                monthFestivalDates.Select(d => new
+                {
+                    EmployeeId = empId,
+                    Date = d,
+                    ClockIn = (DateTime?)null,
+                    ClockOut = (DateTime?)null
+                })
+            );
+
+        var result = combined
+            .GroupBy(x => new { x.EmployeeId, x.Date })
             .Select(g =>
             {
                 var date = DateOnly.FromDateTime(g.Key.Date);
@@ -64,23 +112,32 @@ public class AttendanceService : IAttendanceService
                     .Where(x => x.ClockOut.HasValue)
                     .Select(x => x.ClockOut!.Value.TimeOfDay);
 
-                //var totalHours = g.Sum(x => x.TotalHours?.TotalHours ?? 0);
-                var totalHours = clockInTimes.Any() && clockOutTimes.Any() ? (clockOutTimes.Max() - clockInTimes.Min()) : TimeSpan.FromHours(0);
+                TimeSpan? minClockIn =
+                    clockInTimes.Any() ? clockInTimes.Min() : null;
 
-                TimeSpan? minClockIn = clockInTimes.Any() ? clockInTimes.Min() : null;
-                TimeSpan? maxClockOut = clockOutTimes.Any() ? clockOutTimes.Max() : null;
+                TimeSpan? maxClockOut =
+                    clockOutTimes.Any() ? clockOutTimes.Max() : null;
+
+                var totalHours =
+                    minClockIn.HasValue && maxClockOut.HasValue
+                        ? maxClockOut.Value - minClockIn.Value
+                        : TimeSpan.Zero;
+
+                bool isFestivalHoliday =
+                    monthFestivalDates.Contains(g.Key.Date);
 
                 return new MonthlyAttendanceDto
                 {
                     EmployeeId = g.Key.EmployeeId,
                     Date = date,
                     Day = g.Key.Date.DayOfWeek.ToString(),
-
-                    ClockIn =minClockIn,
+                    ClockIn = minClockIn,
                     ClockOut = maxClockOut,
-
                     TotalHours = totalHours,
-                    Status = CalculateStatus(minClockIn, date)
+                    Status = CalculateStatus(
+                        minClockIn,
+                        date,
+                        isFestivalHoliday)
                 };
             })
             .OrderBy(x => x.Date)
@@ -89,24 +146,32 @@ public class AttendanceService : IAttendanceService
         return result;
     }
 
-    private static string CalculateStatus(TimeSpan? clockIn,DateOnly date)
+    #endregion
+
+    #region Status Logic
+
+    private static string CalculateStatus(
+        TimeSpan? clockIn,
+        DateOnly date,
+        bool isFestivalHoliday)
     {
-        bool isWeekend =
-                date.DayOfWeek == DayOfWeek.Saturday ||
-                date.DayOfWeek == DayOfWeek.Sunday;
+        if (isFestivalHoliday || IsWeekend(date))
+            return "Holiday";
+
         if (clockIn.HasValue && clockIn.Value != TimeSpan.Zero)
             return "Present";
-        else if (isWeekend)
-            return "Holiday";
+
         return "Absent";
     }
     /*
-    private static AttendanceStatus CalculateStatus(TimeSpan? clockIn, double totalHours)
+    private static AttendanceStatus CalculateStatus(TimeSpan? clockIn, double totalHours, DateOnly date,
+        bool isFestivalHoliday)
     {
         var officeStart = new TimeSpan(12, 0, 0);   // 12:00 PM
         var officeEnd = new TimeSpan(19, 30, 0);  // 7:30 PM
         var fullDayHours = (officeEnd - officeStart).TotalHours; // 7.5
-
+        if (isFestivalHoliday || IsWeekend(date))
+            return AttendanceStatus.Holiday;
         if (!clockIn.HasValue)
             return AttendanceStatus.Absent;
 
@@ -123,29 +188,29 @@ public class AttendanceService : IAttendanceService
         return AttendanceStatus.Present;
     }*/
 
-    private async Task CreateAbsentAndHolidayAsync(int employeeId, DateTime newAttendanceDate, DateTime EmpHire)
-    {
-        var lastDate = await _attendanceRepository
-            .GetLastAttendanceDateAsync(employeeId);
-        var systemStartDate = new DateTime(2026, 1, 5);
-        DateTime effectiveStartDate;
+    #endregion
 
-        if (!lastDate.HasValue)
-        {
-            effectiveStartDate =
-                EmpHire.Date > systemStartDate
-                    ? EmpHire.Date
-                    : systemStartDate;
-        }
-        else
-        {
-            effectiveStartDate = lastDate.Value.Date;
-        }
+    #region Auto Absent & Holiday Creation
+
+    private async Task CreateAbsentAndHolidayAsync(
+        int employeeId,
+        DateTime newAttendanceDate,
+        DateTime hireDate)
+    {
+        var lastAttendanceDate =
+            await _attendanceRepository.GetLastAttendanceDateAsync(employeeId);
+
+        var effectiveStartDate =
+            lastAttendanceDate?.Date
+            ?? MaxDate(hireDate.Date, SystemStartDate);
 
         if (effectiveStartDate >= newAttendanceDate.Date)
-        {
             return;
-        }
+
+        var festivalDates =
+            (await _festivalHolidayService.GetFestivalHolidayAsync())
+            .Select(f => f.Date.Date)
+            .ToHashSet();
 
         var missingDates = Enumerable
             .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
@@ -153,37 +218,50 @@ public class AttendanceService : IAttendanceService
 
         foreach (var date in missingDates)
         {
-            bool isWeekend =
-                date.DayOfWeek == DayOfWeek.Saturday ||
-                date.DayOfWeek == DayOfWeek.Sunday;
+            bool isHoliday =
+                IsWeekend(date) || festivalDates.Contains(date.Date);
 
-            var attendance = new Attendance
+            await _attendanceRepository.CreateAttendanceAsync(new Attendance
             {
                 EmployeeId = employeeId,
                 Date = date,
                 ClockIn = null,
                 ClockOut = null,
                 TotalHours = TimeSpan.Zero,
-                Status = isWeekend
+                Status = isHoliday
                     ? AttendanceStatus.Holiday
                     : AttendanceStatus.Absent,
-                Notes = isWeekend
+                Notes = isHoliday
                     ? "Holiday"
                     : "Absent"
-            };
-
-            await _attendanceRepository.CreateAttendanceAsync(attendance);
+            });
         }
     }
 
+    #endregion
+
+    #region Today
+
     public async Task<AttendanceDto?> GetTodayLastEntryAsync(int employeeId)
     {
-        var last = await _attendanceRepository
-            .GetLastAttendanceTodayAsync(employeeId);
+        var last =
+            await _attendanceRepository.GetLastAttendanceTodayAsync(employeeId);
 
         return last == null ? null : _mapper.Map<AttendanceDto>(last);
     }
 
+    #endregion
 
+    #region Helpers
 
+    private static bool IsWeekend(DateOnly date) =>
+        date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+    private static bool IsWeekend(DateTime date) =>
+        date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+    private static DateTime MaxDate(DateTime a, DateTime b) =>
+        a > b ? a : b;
+
+    #endregion
 }

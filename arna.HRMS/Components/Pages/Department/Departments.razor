@@ -2,108 +2,51 @@
 
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Department
+@using arna.HRMS.Components.Common
+@using arna.HRMS.Components.Common.Table
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Common
 
 @inject IDepartmentService DepartmentService
-@inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
+@inherits AuthenticatedLayoutBase
+
+<FullPageLoader Visible="isLoading" /> 
 
 <div class="container mt-4">
-
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-primary">Department Directory</h3>
+        <h3 class="fw-bold text-primary">Departments</h3>
 
-        <button class="btn btn-success" @onclick='() => NavigationManager.NavigateTo("/department/create")'>
-            <i class="bi bi-plus-lg"></i> Add Department
-        </button>
-
+        <AppButton cssclass="btn btn-success" Text="Add Department" OnClick="@(() => Navigation.NavigateTo("/department/create"))">
+            <i class="bi bi-plus-lg"></i>
+        </AppButton>
     </div>
 
     <div class="mb-3">
-        <input type="text" placeholder="Search Department..." class="form-control w-50 shadow-sm" />
+        <input type="text" placeholder="Search Departments..."
+               class="form-control w-50 shadow-sm" />
     </div>
 
-
-    @if (departments == null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else
-    {
-        <div class="table-responsive shadow-sm">
-
-            <table class="table table-hover align-middle">
-
-                <thead class="table-dark">
-                    <tr>
-                        <th>Name</th>
-                        <th>Code</th>
-                        <th>Description</th>
-                        <th>Parent DepartMent</th>
-                        <th>Status</th>
-                        <th class="text-center">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach (var depart in departments)
-                    {
-                        <tr>
-                            <td> @depart.Name </td>
-                            <td> @depart.Code </td>
-                            <td> @depart.Description</td>
-                            <td> @depart.ParentDepartMentName</td>
-                            <td>
-                                @if (depart.IsActive)
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-danger">Inactive</span>
-                                }
-                            </td>
-
-                            <td class="text-center">
-                                <div class="btn-group">
-                                    <button class="btn btn-outline-primary btn-sm"
-                                            @onclick="@(() => NavigationManager.NavigateTo($"/department/edit/{depart.Id}"))">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                    <br />
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteDepartment(depart.Id)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-
-            </table>
-        </div>
-    }
+    <CommonTable TItem="DepartmentDto"
+                 Items="departments"
+                 Columns="TableSchemas.Departments"
+                 OnEdit="EditDepartment"
+                 OnDelete="DeleteDepartment" />
 </div>
 
-<style>
-    .table-hover tbody tr:hover {
-        background-color: #f7f9fc !important;
-    }
-</style>
-
 @code {
-    private List<DepartmentDto>? departments;
+    private List<DepartmentDto> departments = new();
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
+        await LoadDepartments();
     }
 
-    private async Task LoadUsers()
+    private async Task LoadDepartments()
     {
         isLoading = true;
 
@@ -121,7 +64,12 @@
         isLoading = false;
     }
 
-    private async Task DeleteDepartment(int id)
+    private void EditDepartment(DepartmentDto department)
+    {
+        Navigation.NavigateTo($"/department/edit/{department.Id}");
+    }
+
+    private async Task DeleteDepartment(DepartmentDto department)
     {
         bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm",
@@ -131,7 +79,7 @@
         if (!isConfirmed)
             return;
 
-        var result = await DepartmentService.DeleteDepartmentAsync(id);
+        var result = await DepartmentService.DeleteDepartmentAsync(department.Id);
 
         if (!result.IsSuccess)
         {
@@ -140,7 +88,6 @@
         }
 
         NotificationService.Success("Department deleted successfully.");
-        await LoadUsers();
+        await LoadDepartments();
     }
 }
-

@@ -4,6 +4,9 @@
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Employee
 @using arna.HRMS.ClientServices.Users
+@using arna.HRMS.Components.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Core.Enums
 @using arna.HRMS.Models.DTOs
 @using arna.HRMS.ClientServices.Common
@@ -14,6 +17,7 @@
 @inject NotificationService NotificationService
 
 <div class="container py-4">
+    <FullPageLoader Visible = "isLoading"/>
 
     <div class="card shadow-sm border-0 rounded-3">
         <div class="card-header bg-primary text-white">
@@ -24,59 +28,60 @@
 
         <div class="card-body p-4">
 
-            @if (isLoading)
-            {
-                <p><em>Loading...</em></p>
-            }
-            else
+            @if (!isLoading)
             {
                 <EditForm Model="user" OnValidSubmit="HandleValidSubmit" autocomplete="off">
                     <DataAnnotationsValidator />
 
                     <div class="row g-4">
-
                         <!-- Username -->
                         <div class="col-md-6">
-                            <label class="form-label">Username</label>
-                            <InputText class="form-control"
-                            autocomplete="new-username"
-                            @bind-Value="user.Username" />
+                            <AppInput Label="Username"
+                                      Value="@user.Username"
+                                      ValueChanged="v => user.Username = v" >
+                                <input autocomplete="off" hidden />
+                            </AppInput>
                             <ValidationMessage For="@(() => user.Username)" />
                         </div>
 
                         <!-- Email -->
                         <div class="col-md-6">
-                            <label class="form-label">Email</label>
-                            <InputText class="form-control"
-                            autocomplete="off"
-                            @bind-Value="user.Email" />
+                            <AppInput Label="Email"
+                                      Type="email"
+                                      Value="@user.Email"
+                                      ValueChanged="@(v => user.Email = v)">
+                                <input autocomplete="off" hidden />
+                            </AppInput>
                             <ValidationMessage For="@(() => user.Email)" />
                         </div>
 
                         <!-- First Name -->
                         <div class="col-md-6">
-                            <label class="form-label">First Name</label>
-                            <InputText class="form-control"
-                            autocomplete="off"
-                            @bind-Value="user.FirstName" />
+                            <AppInput Label="First Name"
+                                      Value="@user.FirstName"
+                                      ValueChanged="@(v => user.FirstName = v)">
+                                <input autocomplete="off" hidden />
+                            </AppInput>
                             <ValidationMessage For="@(() => user.FirstName)" />
                         </div>
 
                         <!-- Last Name -->
                         <div class="col-md-6">
-                            <label class="form-label">Last Name</label>
-                            <InputText class="form-control"
-                            autocomplete="off"
-                            @bind-Value="user.LastName" />
+                            <AppInput Label="Last Name" 
+                                      Value="@user.LastName" 
+                                      ValueChanged="v => user.LastName=v">
+                                <input autocomplete="off" hidden />
+                            </AppInput>
                             <ValidationMessage For="@(() => user.LastName)" />
                         </div>
 
                         <!-- Phone -->
                         <div class="col-md-6">
-                            <label class="form-label">Phone Number</label>
-                            <InputText class="form-control"
-                            autocomplete="off"
-                            @bind-Value="user.PhoneNumber" />
+                            <AppInput Label="Phone Number"
+                                      Value="user.PhoneNumber"
+                                      ValueChanged="v => user.PhoneNumber = v">
+                                <input autocomplete="off" hidden />
+                            </AppInput>
                             <ValidationMessage For="@(() => user.PhoneNumber)" />
                         </div>
 
@@ -96,25 +101,32 @@
 
                         <!-- ROLE -->
                         <div class="col-md-6">
-                            <label class="form-label">Role</label>
-                            <InputSelect TValue="UserRole?"
-                            class="form-select"
-                            @bind-Value="user.Role">
-                                <option value="">Select Role</option>
-                                @foreach (var role in Enum.GetValues<UserRole>())
-                                {
-                                    <option value="@role">@role</option>
-                                }
-                            </InputSelect>
+                            <AppSelect Label="Role"
+                                       Options="RoleOptions"
+                                       Value="@user.Role?.ToString()"
+                                       ValueChanged="v =>
+                                       {
+                                            user.Role = Enum.TryParse<UserRole>(v, out var role)
+                                                        ? role
+                                                        : null;
+                                       }" 
+                        />
+
                             <ValidationMessage For="@(() => user.Role)" />
                         </div>
-
+                        @*
+                            <AppInput Label="Password"
+                                      Type="password" 
+                                      autocomplete="new-password"
+                                      Value="@user.Password"
+                                      ValueChanged="v => user.Password=v" />
+                        *@
                         <!-- PASSWORD -->
                         <div class="col-md-6">
-                            <label class="form-label">Password</label>
-                            <InputText class="form-control"
-                            autocomplete="new-password"
-                            @bind-Value="user.Password" />
+                           <AppInput Label="Password"
+                              Type="password"
+                              Value="@user.Password"
+                              autocomplete="new-password"/>
                             <ValidationMessage For="@(() => user.Password)" />
                         </div>
 
@@ -122,24 +134,21 @@
                         @if (IsEditMode)
                         {
                             <div class="col-md-6 mt-4">
-                                <InputCheckbox class="form-check-input"
-                                @bind-Value="user.IsActive" />
-                                <label class="form-check-label">Active</label>
+                                <AppCheckBox Label="Active"
+                                             Value="@user.IsActive"
+                                             ValueChanged="@(v => user.IsActive = v)" />
                             </div>
                         }
                     </div>
 
                     <div class="mt-5 d-flex justify-content-end gap-3">
-                        <button type="button"
-                        class="btn btn-outline-secondary"
-                        @onclick="GoBack">
-                            Back
-                        </button>
+                        <AppButton Text="Back"
+                                   CssClass="btn btn-outline-secondary px-4"
+                                   OnClick="GoBack" />
 
-                        <button type="submit"
-                        class="btn btn-primary px-4">
-                            @(IsEditMode ? "Update" : "Save")
-                        </button>
+                        <AppButton Text="@(IsEditMode ? "Update" : "Save")"
+                                   Type="submit"
+                                   CssClass="btn btn-primary px-5" />
                     </div>
                 </EditForm>
             }
@@ -154,6 +163,15 @@
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
     private List<EmployeeDto> employees = new();
+
+    private List<SelectOption> RoleOptions = Enum
+       .GetValues<UserRole>()
+       .Select(r => new SelectOption
+       {
+           Value = r.ToString(),
+           Text = r.ToString()
+       })
+       .ToList();
 
     protected override async Task OnParametersSetAsync()
     {
