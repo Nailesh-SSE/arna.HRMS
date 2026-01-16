@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using arna.HRMS.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using arna.HRMS.Infrastructure.Data;
 namespace arna.HRMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260116110325_AddNewFieldInAttendanceRequest")]
+    partial class AddNewFieldInAttendanceRequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,13 +119,11 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Location")
+                        .HasColumnType("int");
 
-                    b.Property<string>("ReasonType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("ReasonType")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("ToDate")
                         .HasColumnType("datetime2");
@@ -191,49 +192,49 @@ namespace arna.HRMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "HR",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(747),
+                            CreatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2600),
                             Description = "Handles recruitment, payroll, and employee relations",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Human Resources",
                             ParentDepartmentId = 1,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(747)
+                            UpdatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2600)
                         },
                         new
                         {
                             Id = 2,
                             Code = "IT",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(750),
+                            CreatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2603),
                             Description = "Manages IT infrastructure and software systems",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Information Technology",
                             ParentDepartmentId = 2,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(751)
+                            UpdatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2603)
                         },
                         new
                         {
                             Id = 3,
                             Code = "FIN",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(752),
+                            CreatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2605),
                             Description = "Responsible for accounting and financial management",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Finance",
                             ParentDepartmentId = 3,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(752)
+                            UpdatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2605)
                         },
                         new
                         {
                             Id = 4,
                             Code = "ADMIN",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(754),
+                            CreatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2606),
                             Description = "Office administration and facilities management",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Administration",
                             ParentDepartmentId = 4,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(754)
+                            UpdatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(2606)
                         });
                 });
 
@@ -611,7 +612,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 265, DateTimeKind.Local).AddTicks(9486),
+                            CreatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(1699),
                             Email = "superadmin123@gmail.com",
                             FirstName = "Super",
                             IsActive = true,
@@ -621,7 +622,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                             PasswordHash = "tv7BX1BYUu7bhR1UacjjLWp5sKyKvqMrp+pFlsFayqg=",
                             PhoneNumber = "9999999999",
                             Role = 1,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 265, DateTimeKind.Local).AddTicks(9498),
+                            UpdatedBy = new DateTime(2026, 1, 16, 16, 33, 22, 833, DateTimeKind.Local).AddTicks(1709),
                             Username = "SuperAdmin"
                         });
                 });

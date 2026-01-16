@@ -1,31 +1,59 @@
-﻿@using arna.HRMS.Components.lib.components.ui
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using System.Linq.Expressions
 @using arna.HRMS.Components.lib.components.ui.Model
 
-<div>
-    <label class="form-label">@Label</label>
+<div class="mb-3">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="form-label">@Label</label>
+    }
 
     <select class="form-select"
             value="@Value"
             @onchange="OnChange">
-        <option value="" selected ="@isPlaceholderSelected">Select</option>
+        <option value="">@Placeholder</option>
 
         @foreach (var item in Options)
         {
             <option value="@item.Value">@item.Text</option>
         }
     </select>
+
+    @if (ValidationExpression != null)
+    {
+        <ValidationMessage For="ValidationExpression" />
+    }
 </div>
 
 @code {
+    [CascadingParameter] private EditContext? EditContext { get; set; }
+
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string Placeholder { get; set; } = "Select";
+
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
+
     [Parameter] public List<SelectOption> Options { get; set; } = new();
 
-    private async Task OnChange(ChangeEventArgs e)
-        => await ValueChanged.InvokeAsync(e.Value?.ToString());
+    private FieldIdentifier _fieldIdentifier;
 
-    private bool isPlaceholderSelected
-        => string.IsNullOrEmpty(Value);
+    protected override void OnParametersSet()
+    {
+        if (EditContext != null && ValidationExpression != null)
+        {
+            _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+        }
+    }
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString();
+
+        await ValueChanged.InvokeAsync(value);
+
+        EditContext?.NotifyFieldChanged(_fieldIdentifier);
+    }
 }

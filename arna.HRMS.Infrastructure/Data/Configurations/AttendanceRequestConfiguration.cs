@@ -10,8 +10,11 @@ public class AttendanceRequestConfiguration : IEntityTypeConfiguration<Attendanc
     {
         builder.HasKey(ae => ae.Id);
 
-        builder.Property(ae => ae.Date)
+        builder.Property(ae => ae.FromDate)
             .IsRequired();
+
+        builder.Property(ae => ae.ToDate)
+       .IsRequired();
 
         builder.Property(ae => ae.ReasonType)
             .IsRequired();

@@ -1,110 +1,339 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.ClientServices.AttendanceRequest
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.Common.AttendenceRequest
+@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.Enums
+
+@inject IAttendanceRequestService AttendanceRequestService
+@inject NotificationService NotificationService
+@inherits AuthenticatedLayoutBase
 
 @if (isVisible)
 {
-    <!-- Drawer -->
-    <div class="drawer d-flex flex-column @(isClosing ? "drawer-closing" : "drawer-open")">
-        <!-- Header -->
-        <div class="d-flex align-items-center justify-content-between border-bottom px-4 py-3">
-            <h5 class="mb-0 fw-semibold">@Title</h5>
+    <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
 
-            <AppButton Text="X"
-                       ButtonClass="btn btn-danger"
-                       OnClick="CloseDrawer" />
+        <div class="drawer d-flex flex-column p-3 @(isClosing ? "drawer-closing" : "drawer-open")">
+
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between border-bottom px-4 py-3">
+                <h5 class="mb-0 fw-semibold">@Title</h5>
+
+                <AppButton Text="X"
+                           ButtonClass="btn btn-danger"
+                           OnClick="CloseDrawer" />
+            </div>
+
+            <!-- Body -->
+            <div class="drawer-body flex-grow-1 overflow-auto p-3">
+
+                <!-- Reason -->
+                <AppSelect Label="Reason*"
+                           Placeholder="Select Reason"
+                           Options="reason"
+                           Value="@SelectedReason"
+                           ValueChanged="@(v => OnValueChanged(v, "Reason"))"
+                           ValidationExpression="@(() => request.ReasonType)" />
+
+                <!-- Dates -->
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <AppDatePicker Label="From Date"
+                                       Value="@DateHelper.Normalize(request.FromDate)"
+                                       ValueChanged="OnFromDateChanged"
+                                       ValidationExpression="@(() => request.FromDate)" />
+
+                    </div>
+                    <div class="col-6">
+                        <AppDatePicker Label="To Date"
+                                       Value="@DateHelper.Normalize(request.ToDate)"
+                                       ValueChanged="OnToDateChanged"
+                                       ValidationExpression="@(() => request.ToDate)" />
+
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <AppSelect Label="Location*"
+                           Placeholder="Select Location"
+                           Options="location"
+                           Value="@SelectedLocation"
+                           ValueChanged="@(v => OnValueChanged(v, "Location"))"
+                           ValidationExpression="@(() => request.Location)" />
+
+                <!-- Clock In / Clock Out -->
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <AppInput Label="Clockin Time"
+                                  Type="time"
+                                  Value="@request.ClockIn?.ToString("HH:mm")"
+                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockIn = d))"
+                                  ValidationExpression="@(() => request.ClockIn)" />
+                    </div>
+
+                    <div class="col-6">
+                        <AppInput Label="Clockout Time"
+                                  Type="time"
+                                  Value="@request.ClockOut?.ToString("HH:mm")"
+                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockOut = d))"
+                                  ValidationExpression="@(() => request.ClockOut)" />
+                    </div>
+                </div>
+
+                <!-- Break Duration -->
+                <AppInput Label="Break Duration (HH:mm)"
+                          Type="text"
+                          Value="@(request.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")"
+                      ValueChanged="@(v => OnTimeSpanChanged(v, t => request.BreakDuration = t))"
+                      placeholder="e.g. 01:00 or 00:30" />
+
+                <!-- Calculated Durations -->
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <AppInput Label="Total Worked Time"
+                                  Type="text"
+                                  Value="9:00:00"
+                                  ReadOnly="true" />
+                    </div>
+
+                    <div class="col-6">
+                        <AppInput Label="Final Work Duration"
+                                  Type="text"
+                                  Value="@request.TotalHours.ToString(@"hh\:mm")"
+                                  ReadOnly="true" />
+                    </div>
+                </div>
+
+                <!-- Message -->
+                <div class="mb-4">
+                    <AppTextArea Label="Message"
+                                 IsRequired="true"
+                                 Rows="3"
+                                 Placeholder="Enter message"
+                                 Value="@request.Description"
+                                 ValueChanged="@(v => request.Description = v)"
+                                 ValidationExpression="@(() => request.Description)" />
+                </div>
+
+                <!-- Footer -->
+                <div class="d-flex justify-content-end gap-2 pt-3">
+                    <AppButton Text="Submit"
+                               Type="submit"
+                               ButtonClass="btn btn-secondary" />
+
+                    <AppButton Text="Cancel"
+                               ButtonClass="btn btn-dark"
+                               OnClick="CloseDrawer" />
+                </div>
+            </div>
         </div>
-        <!-- Body -->
-        <div class="drawer-body flex-grow-1 overflow-auto p-3">
-            <div>
-                <AppSelect Label="Reason*" Placeholder="Select Reason" />
-            </div>
-            <div class="d-flex justify-content-between align-items-center mt-5 mb-5">
-                <AppDatePicker Label="From Date"/>
-
-                <AppDatePicker Label="To Date"/>
-            </div>
-            <div class="mb-3">
-                <AppSelect Label="Reason*" Placeholder="Select Reason" />
-            </div>
-
-            <!-- Overnight Checkout -->
-            <div class="form-check mb-4">
-                <input class="form-check-input" type="checkbox" id="overnightCheckout">
-                <label class="form-check-label" for="overnightCheckout">
-                    Is Clockout time after 00:00 midnight on next date
-                </label>
-            </div>
-
-            <!-- Clock In / Clock Out -->
-            <div class="row mb-4">
-                <div class="col-6">
-                    <AppInput Label="Clockin Time" Type="time" />
-                </div>
-
-                <div class="col-6">
-                    <AppInput Label="Clockin Out" Type="time" />
-                </div>
-            </div>
-
-            <!-- Break Duration -->
-            <div class="mb-4">
-                <AppInput Label="Clockin Time" Type="time" />
-            </div>
-
-            <!-- Work Duration -->
-            <div class="row mb-4">
-                <div class="col-6">
-                    <AppInput Label="Total Work Duration" Type="text" value="09:00:00"/>
-                </div>
-
-                <div class="col-6">
-                    <AppInput Label="Final Work Duration" Type="text"  />
-                </div>
-            </div>
-
-            <!-- Message -->
-            <div class="mb-4">
-                <label class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
-                <textarea class="form-control" rows="3" placeholder="Enter message"></textarea>
-            </div>
-
-            <!-- Footer Buttons -->
-            <div class="d-flex justify-content-end gap-2 border-top pt-3">
-                <AppButton Text="Submit" ButtonClass="btn btn-secondary" />
-                <AppButton Text="Cancel" ButtonClass="btn btn-dark" />
-            </div>
-        </div>
-    </div>
+    </EditForm>
 }
-
 @code {
     [Parameter] public bool IsOpen { get; set; }
     [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+    [Parameter] public string Title { get; set; } = "Attendance Request";
 
-    [Parameter] public string Title { get; set; } = "Drawer";
-    [Parameter] public RenderFragment? ChildContent { get; set; }
+    private AttendanceRequestDto request = new();
+    private EditContext editContext = default!;
+
+    private List<SelectOption> reason = new();
+    private List<SelectOption> location = new();
+
+    private string? SelectedReason;
+    private string? SelectedLocation;
 
     private bool isVisible;
     private bool isClosing;
 
     protected override void OnParametersSet()
     {
+        editContext = new EditContext(request);
+
         if (IsOpen)
         {
             isVisible = true;
             isClosing = false;
+
+            reason = AttendenceRequestDropDown.ReasonOption;
+            location = AttendenceRequestDropDown.LocationOption;
+            request.BreakDuration ??= TimeSpan.Zero;
         }
     }
+
+    /* ----------------- SUBMIT ----------------- */
+
+    private async Task HandleValidSubmit()
+    {
+        CalculationFinalWork();
+
+        var empId = GetEmployeeId();
+        request.EmployeeId = empId;
+
+        var result = await AttendanceRequestService
+            .CreateAttendanceRequestAsync(request);
+
+        if (result.IsSuccess)
+        {
+            NotificationService.Success("Attendance request submitted successfully.");
+
+            ResetForm();
+            await CloseDrawer();
+        }
+        else
+        {
+            NotificationService.Error(result.Message ?? "Failed to submit attendance request.");
+        }
+    }
+
+    /* ----------------- VALUE CHANGES ----------------- */
+
+    private Task OnValueChanged(string? value, string source)
+    {
+        if (source == "Reason")
+        {
+            SelectedReason = value;
+            if (Enum.TryParse<AttendanceReasonType>(value, out var r))
+                request.ReasonType = r;
+        }
+        else if (source == "Location")
+        {
+            SelectedLocation = value;
+            if (Enum.TryParse<AttendanceLocation>(value, out var l))
+                request.Location = l;
+        }
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void OnFromDateChanged(DateTime? date)
+    {
+        request.FromDate = date;
+
+        if (request.FromDate.HasValue)
+        {
+            if (request.ClockIn.HasValue)
+            {
+                var time = request.ClockIn.Value.TimeOfDay;
+                request.ClockIn = request.FromDate.Value.Date.Add(time);
+            }
+
+            if (request.ClockOut.HasValue)
+            {
+                var time = request.ClockOut.Value.TimeOfDay;
+                request.ClockOut = request.FromDate.Value.Date.Add(time);
+            }
+        }
+
+        CalculationFinalWork();
+        StateHasChanged();
+    }
+
+    private void OnToDateChanged(DateTime? date)
+    {
+        request.ToDate = date;
+        StateHasChanged();
+    }
+
+    private void OnClockTimeChanged(string? value, Action<DateTime?> setter)
+    {
+        if (TimeSpan.TryParse(value, out var time))
+        {
+            var baseDate = request.FromDate.HasValue ? request.FromDate.Value.Date : DateTime.Today;
+            setter(baseDate.Add(time));
+        }
+        else
+        {
+            setter(null);
+        }
+
+        CalculationFinalWork();
+    }
+
+
+    private void OnTimeSpanChanged(string? value, Action<TimeSpan?> setter)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            setter(TimeSpan.Zero);   
+            CalculationFinalWork();
+            return;
+        }
+
+        if (TimeSpan.TryParse(value, out var ts))
+        {
+            setter(ts);
+            CalculationFinalWork();
+        }
+    }
+    /* ----------------- CALCULATION ----------------- */
+
+    private void CalculationFinalWork()
+    {
+        request.TotalHours = TimeSpan.Zero;
+
+        if (!request.ClockIn.HasValue || !request.ClockOut.HasValue)
+            return;
+
+        var clockIn = request.ClockIn.Value;
+        var clockOut = request.ClockOut.Value;
+
+        if (clockOut <= clockIn)
+            return;
+
+        var totalWorked = clockOut - clockIn;
+        request.TotalHours = totalWorked;
+
+        var breakDuration = request.BreakDuration ?? TimeSpan.Zero;
+
+        if (breakDuration <= TimeSpan.Zero)
+        {
+            request.TotalHours = totalWorked;
+            return;
+        }
+
+        var finalDuration = totalWorked - breakDuration;
+
+        request.TotalHours = finalDuration > TimeSpan.Zero
+            ? finalDuration
+            : TimeSpan.Zero;
+    }
+
+    /* ----------------- HELPERS ----------------- */
+    public static class DateHelper
+    {
+        public static readonly DateTime MinValidDate = new(1900, 1, 1);
+
+        public static DateTime? Normalize(DateTime? date)
+            => date.HasValue && date.Value >= MinValidDate
+                ? date
+                : null;
+    }
+
+    /* ----------------- DRAWER ----------------- */
 
     private async Task CloseDrawer()
     {
         isClosing = true;
-
-        // Wait for CSS animation to finish
+        ResetForm();
         await Task.Delay(250);
 
         isVisible = false;
         isClosing = false;
 
         await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private void ResetForm()
+    {
+        request = new AttendanceRequestDto();
+        editContext = new EditContext(request);
+
+        SelectedReason = null;
+        SelectedLocation = null;
     }
 }
