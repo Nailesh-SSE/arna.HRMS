@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Common;
 
 namespace arna.HRMS.Core.Entities;
 
@@ -16,7 +16,5 @@ public class AttendanceRequest : BaseEntity
     public TimeSpan TotalHours { get; set; }
     public bool IsApproved { get; set; }=false;
     public DateTime? ApprovedBy { get; set; }
-
-
     public Employee Employee { get; set; }
 }

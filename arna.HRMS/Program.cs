@@ -1,11 +1,14 @@
-using arna.HRMS.ClientServices.Attendance;
-using arna.HRMS.ClientServices.AttendanceRequest;
+using arna.HRMS.ClientServices.Admin.Department;
+using arna.HRMS.ClientServices.Admin.Employee;
+using arna.HRMS.ClientServices.Admin.User;
 using arna.HRMS.ClientServices.Auth;
+using arna.HRMS.ClientServices.Client.Attendance;
+using arna.HRMS.ClientServices.Client.AttendanceRequest;
+using arna.HRMS.ClientServices.Client.Clock;
 using arna.HRMS.ClientServices.Common;
-using arna.HRMS.ClientServices.Department;
-using arna.HRMS.ClientServices.Employee;
-using arna.HRMS.ClientServices.Users;
+using arna.HRMS.ClientServices.Http;
 using arna.HRMS.Components;
+using arna.HRMS.Models.State.Attendance;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
@@ -17,40 +20,75 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Razor Components
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("Default"));
-
+        // ==========================
+        // HttpClient Configuration
+        // ==========================
         builder.Services.AddHttpClient("Default", client =>
         {
-            client.BaseAddress = new Uri("https://localhost:7134/");
+            var baseUrl = builder.Configuration["ApiSettings:BaseUrl"];
+
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                throw new InvalidOperationException("ApiSettings:BaseUrl is missing in appsettings.json");
+
+            client.BaseAddress = new Uri(baseUrl);
         });
 
-        builder.Services.AddScoped<HttpService>();
-        builder.Services.AddScoped<NotificationService>();
-        builder.Services.AddScoped<ApiClients>();
+        // Default HttpClient
+        builder.Services.AddScoped(sp =>
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient("Default")
+        );
 
+        // ==========================
+        // Authentication (Blazor)
+        // ==========================
+        builder.Services.AddAuthorizationCore();
+        builder.Services.AddCascadingAuthenticationState();
+
+        builder.Services.AddScoped<ProtectedLocalStorage>();
+        builder.Services.AddScoped<CustomAuthStateProvider>();
+        builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+            sp.GetRequiredService<CustomAuthStateProvider>());
+
+        // ==========================
+        // App Services
+        // ==========================
+        builder.Services.AddScoped<NotificationService>();
+
+        builder.Services.AddScoped<HttpService>();
+        builder.Services.AddScoped<ApiClients>(sp =>
+        {
+            var httpService = sp.GetRequiredService<HttpService>();
+            var apiClients = new ApiClients(httpService);
+            httpService.SetApiClients(apiClients);
+
+            return apiClients;
+        });
+
+        // ==========================
+        // Feature Services
+        // ==========================
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
         builder.Services.AddScoped<IClockService, ClockService>();
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
-        builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();  
+        builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
         builder.Services.AddScoped<AttendanceState>();
 
-        builder.Services.AddAuthorizationCore();
-
-        builder.Services.AddScoped<ProtectedLocalStorage>();
-        builder.Services.AddScoped<CustomAuthStateProvider>();
-        builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthStateProvider>());
-
+        // Other
         builder.Services.AddMemoryCache();
         builder.Services.AddBlazorBootstrap();
 
         var app = builder.Build();
 
+        // ==========================
+        // Middleware
+        // ==========================
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");

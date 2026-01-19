@@ -1,4 +1,4 @@
-﻿using arna.HRMS.ClientServices.Common;
+﻿using arna.HRMS.ClientServices.Http;
 using Microsoft.AspNetCore.Identity.Data;
 
 namespace arna.HRMS.ClientServices.Auth;
@@ -30,7 +30,14 @@ public class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(result.Data.AccessToken))
             return false;
 
-        await _authStateProvider.LoginAsync(result.Data.AccessToken);
+        if (string.IsNullOrWhiteSpace(result.Data.RefreshToken))
+            return false;
+
+        await _authStateProvider.LoginAsync(
+            result.Data.UserId,
+            result.Data.AccessToken,
+            result.Data.RefreshToken
+        );
 
         return true;
     }
@@ -43,7 +50,7 @@ public class AuthService : IAuthService
         }
         catch
         {
-            // Ignore backend errors
+            // ignore backend errors
         }
 
         await _authStateProvider.LogoutAsync();

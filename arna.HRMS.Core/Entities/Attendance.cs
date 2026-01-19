@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Common;
+using arna.HRMS.Core.Enums;
 
 namespace arna.HRMS.Core.Entities;
 
@@ -11,7 +12,5 @@ public class Attendance : BaseEntity
     public TimeSpan? TotalHours { get; set; }
     public AttendanceStatus Status { get; set; }
     public string Notes { get; set; }
-
-    // Navigation Properties
     public Employee Employee { get; set; }
 }

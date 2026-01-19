@@ -1,0 +1,41 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@inherits AuthenticatedLayoutBase
+
+<div class="bg-dark text-white d-flex flex-column h-100" style="width:260px;">
+
+    <div class="p-3 border-bottom">
+        <i class="bi bi-buildings fs-5"></i>
+        <strong>Arna Technosoft</strong>
+    </div>
+
+    <nav class="nav nav-pills flex-column p-2">
+
+        <NavLink href="/" class="nav-link text-white" Match="NavLinkMatch.All">
+            <i class="bi bi-grid me-2"></i> Dashboard
+        </NavLink>
+
+        <NavLink href="/employee" class="nav-link text-white">
+            <i class="bi bi-people me-2"></i> Employees
+        </NavLink>
+
+        <NavLink href="/attendance" class="nav-link text-white">
+            <i class="bi bi-calendar-check me-2"></i> Attendance
+        </NavLink>
+
+        @if (IsAdmin() || IsSuperAdmin())
+        {
+            <NavLink href="/department" class="nav-link text-white">
+                <i class="bi bi-building me-2"></i> Department
+            </NavLink>
+
+            <NavLink href="/user" class="nav-link text-white">
+                <i class="bi bi-person me-2"></i> Users
+            </NavLink>
+        }
+
+        <NavLink href="/profile" class="nav-link text-white">
+            <i class="bi bi-person me-2"></i> My Profile
+        </NavLink>
+
+    </nav>
+</div>

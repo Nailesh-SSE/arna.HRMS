@@ -1,6 +1,7 @@
-﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
+﻿using arna.HRMS.Core.DTOs.Responses;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Repositories;
+using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Models.DTOs;
 using AutoMapper;
 
@@ -11,34 +12,63 @@ public class AttendanceRequestService : IAttendanceRequestService
     private readonly AttendanceRequestRepository _attendanceRequestRepository;
     private readonly IMapper _mapper;
 
-    public AttendanceRequestService(AttendanceRequestRepository attendanceRequestRepository, IMapper mapper)
+    public AttendanceRequestService(
+        AttendanceRequestRepository attendanceRequestRepository,
+        IMapper mapper)
     {
         _attendanceRequestRepository = attendanceRequestRepository;
         _mapper = mapper;
     }
 
-    public async Task<List<AttendanceRequestDto>> GetAttendanceRequestAsync()
+    public async Task<ServiceResult<List<AttendanceRequestDto>>> GetAttendanceRequestAsync()
     {
-        var AttendanceRequest = await _attendanceRequestRepository.GetAttendanceRequestAsync();
-        return _mapper.Map<List<AttendanceRequestDto>>(AttendanceRequest);
+        var attendanceRequests = await _attendanceRequestRepository.GetAttendanceRequestAsync();
+        var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
+
+        return ServiceResult<List<AttendanceRequestDto>>.Success(list);
     }
 
-    public async Task<AttendanceRequestDto?> GetAttendenceRequestByIdAsync(int id)
+    public async Task<ServiceResult<AttendanceRequestDto?>> GetAttendenceRequestByIdAsync(int id)
     {
+        if (id <= 0)
+            return ServiceResult<AttendanceRequestDto?>.Fail("Invalid AttendanceRequest ID");
+
         var attendance = await _attendanceRequestRepository.GetAttendanceRequestByIdAsync(id);
-        return attendance == null ? null : _mapper.Map<AttendanceRequestDto>(attendance);
+
+        if (attendance == null)
+            return ServiceResult<AttendanceRequestDto?>.Fail("Attendance request not found");
+
+        var dto = _mapper.Map<AttendanceRequestDto>(attendance);
+        return ServiceResult<AttendanceRequestDto?>.Success(dto);
     }
 
-    public async Task<AttendanceRequestDto> CreateAttendanceRequestAsync(AttendanceRequestDto attendanceRequestDto)
+    public async Task<ServiceResult<AttendanceRequestDto>> CreateAttendanceRequestAsync(AttendanceRequestDto attendanceRequestDto)
     {
-        var attendancerRequestEntity = _mapper.Map<AttendanceRequest>(attendanceRequestDto);
-        var createdAttendanceRequest = await _attendanceRequestRepository.CreateAttendanceRequestAsync(attendancerRequestEntity);
+        if (attendanceRequestDto == null)
+            return ServiceResult<AttendanceRequestDto>.Fail("Invalid request");
 
-        return _mapper.Map<AttendanceRequestDto>(createdAttendanceRequest);
+        if (attendanceRequestDto.EmployeeId <= 0)
+            return ServiceResult<AttendanceRequestDto>.Fail("EmployeeId is required");
+
+        var entity = _mapper.Map<AttendanceRequest>(attendanceRequestDto);
+
+        var createdAttendanceRequest =
+            await _attendanceRequestRepository.CreateAttendanceRequestAsync(entity);
+
+        var resultDto = _mapper.Map<AttendanceRequestDto>(createdAttendanceRequest);
+
+        return ServiceResult<AttendanceRequestDto>.Success(resultDto, "Attendance request created successfully");
     }
 
-    public async Task<bool> UpdateAttendanceRequestStatusAsync(int id)
+    public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id)
     {
-        return await _attendanceRequestRepository.UpdateAttendanceRequestStatusAsync(id);
+        if (id <= 0)
+            return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");
+
+        var updated = await _attendanceRequestRepository.UpdateAttendanceRequestStatusAsync(id);
+
+        return updated
+            ? ServiceResult<bool>.Success(true, "Attendance request approved successfully")
+            : ServiceResult<bool>.Fail("Attendance request not found");
     }
 }

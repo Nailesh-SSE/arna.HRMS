@@ -33,6 +33,7 @@ public class EmployeeDto : CommonDto
 
     [Required(ErrorMessage = "Phone number is required.")]
     [Phone(ErrorMessage = "Invalid phone number.")]
+    [StringLength(10)]
     public string PhoneNumber { get; set; }
 
     /* ==============================

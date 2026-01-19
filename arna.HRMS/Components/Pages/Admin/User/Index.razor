@@ -1,0 +1,97 @@
+﻿@page "/user"
+
+@using arna.HRMS.ClientServices.Admin.User
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.DTOs
+@inject IUsersService UsersService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject NotificationService NotificationService
+
+<FullPageLoader Visible="isLoading" />
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-primary">Users</h3>
+
+        <AppButton cssclass="btn btn-success" Text="Add User" OnClick="@(() => NavigationManager.NavigateTo("/user/create"))">
+            <i class="bi bi-plus-lg"></i>
+        </AppButton>
+    </div>
+
+    <div class="mb-3">
+        <input type="text" placeholder="Search Users..."
+               class="form-control w-50 shadow-sm" />
+    </div>
+
+    <AppTable TItem="UserDto"
+                 Items="users"
+                 Columns="TableSchemas.Users"
+                 OnEdit="EditUser"
+                 OnDelete="DeleteUser" />
+
+</div>
+
+@code {
+    private List<UserDto> users = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        isLoading = true;
+
+        var result = await UsersService.GetUsersAsync();
+
+        if (result.IsSuccess && result.Data != null)
+        {
+            users = result.Data;
+        }
+        else if (!result.IsSuccess)
+        {
+            NotificationService.Error($"Failed to load users ({result.StatusCode}): {result.Message}");
+            users = new List<UserDto>();
+        }
+        else
+        {
+            users = new List<UserDto>();
+        }
+        isLoading = false;
+    }
+
+    private void EditUser(UserDto user)
+    {
+        NavigationManager.NavigateTo($"/user/edit/{user.Id}");
+    }
+
+    private async Task DeleteUser(UserDto user)
+    {
+        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete this user?"
+        );
+
+        if (!isConfirmed)
+            return;
+
+        var result = await UsersService.DeleteUserAsync(user.Id);
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
+            return;
+        }
+
+        NotificationService.Success("User deleted successfully.");
+        await LoadUsers();
+    }
+}

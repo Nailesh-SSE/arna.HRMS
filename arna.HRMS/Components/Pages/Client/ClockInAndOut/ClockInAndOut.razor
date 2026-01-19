@@ -1,0 +1,242 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Client.Clock
+@using arna.HRMS.Components.Pages.Attendance
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels
+
+@implements IDisposable
+@inject IClockService ClockService
+@inherits AuthenticatedLayoutBase
+
+<div class="d-flex align-items-center gap-2">
+
+    @if (!IsAdmin() && !IsSuperAdmin())
+    {
+        <!-- LIVE CLOCK -->
+        <span class="clock-pill">
+            <span class="status-dot"></span>
+            <i class="bi bi-clock"></i>
+            <span class="time-text">@CurrentTime</span>
+        </span>
+
+        <!-- CLOCK IN / OUT -->
+        @if (IsClockedIn)
+        {
+            <AppButton ButtonClass="btn btn-danger btn-sm"
+                       OnClick="ClockOutAsync">
+                <i class="bi bi-clock"></i>
+            </AppButton>
+        }
+        else
+        {
+            <AppButton ButtonClass="btn btn-success btn-sm"
+                       OnClick="ClockInAsync">
+                <i class="bi bi-clock"></i>
+            </AppButton>
+        }
+    }
+
+    <!-- LAST ACTION -->
+    @if (!string.IsNullOrEmpty(ActionLabel))
+    {
+        <span class="time-info-pill">
+            <span class="label">@ActionLabel</span>
+            <span>@ActionTime</span>
+        </span>
+    }
+</div>
+
+@if (ShowDynamicForm)
+{
+    <div class="popup-overlay">
+        <div class="popup-card">
+            <ClockInAndOutMessage Model="attendanceViewModel" OnSubmit="SubmitClockInOutAsync" OnCancel="CloseForm" />
+        </div>
+    </div>
+}
+
+@if (ShowToast)
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-4">
+        <div class="toast show shadow border-0">
+            <div class="toast-body">
+                @ToastMessage
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private AttendanceViewModel attendanceViewModel = new();
+
+    private bool IsClockedIn;
+    private bool? PendingClockIn;
+
+    private TimeOnly In;
+    private TimeOnly Out;
+    private TimeOnly AccumulatedHours;
+
+    private string CurrentTime = "";
+    private string? ActionLabel;
+    private string? ActionTime;
+
+    private bool ShowDynamicForm;
+    private bool ShowToast;
+    private string ToastMessage = "";
+
+    private System.Timers.Timer? _timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        StartClock();
+
+        var employeeId = GetEmployeeId();
+        if (employeeId == 0)
+            return;
+
+        var lastEntry = await ClockService.GetClockStatus(employeeId);
+
+        if (!lastEntry.IsSuccess || lastEntry.Data == null)
+        {
+            IsClockedIn = false;
+            return;
+        }
+
+        if (lastEntry.Data.ClockInTime != null && lastEntry.Data.ClockOutTime == null)
+        {
+            IsClockedIn = true;
+
+            In = TimeOnly.FromTimeSpan(lastEntry.Data.ClockInTime.Value);
+            ActionLabel = "Clock In";   // ✅ FIXED
+            ActionTime = In.ToString("HH:mm:ss");
+        }
+    }
+
+    private Task ClockInAsync()
+    {
+        PendingClockIn = true;
+        OpenNoteForm();
+        return Task.CompletedTask;
+    }
+
+    private Task ClockOutAsync()
+    {
+        PendingClockIn = false;
+        OpenNoteForm();
+        return Task.CompletedTask;
+    }
+
+    private void OpenNoteForm()
+    {
+        attendanceViewModel = new AttendanceViewModel();
+        ShowDynamicForm = true;
+    }
+
+    private void CloseForm()
+    {
+        ShowDynamicForm = false;
+    }
+
+    private async Task SubmitClockInOutAsync()
+    {
+        ShowDynamicForm = false;
+
+        var employeeId = GetEmployeeId();
+        if (employeeId == 0)
+            return;
+
+        if (PendingClockIn == true)
+        {
+            IsClockedIn = true;
+            In = TimeOnly.FromDateTime(DateTime.Now);
+
+            ActionLabel = "Clock In";
+            ActionTime = DateTime.Now.ToString("HH:mm:ss");
+
+            var clockInResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
+            {
+                EmployeeId = employeeId,
+                Date = DateTime.Today,
+                ClockInTime = In.ToTimeSpan(),
+                Status = AttendanceStatuses.Present,
+                Notes = attendanceViewModel.Notes,
+                WorkingHours = null
+            });
+
+            if (!clockInResult.IsSuccess)
+            {
+                await ShowNotification(clockInResult.Message ?? "Clock-In failed");
+                return;
+            }
+
+            AccumulatedHours = new TimeOnly(0, 0);
+            await ShowNotification($"Clocked in at {ActionTime}");
+        }
+        else
+        {
+            IsClockedIn = false;
+            Out = TimeOnly.FromDateTime(DateTime.Now);
+
+            ActionLabel = "Clock Out";
+            ActionTime = DateTime.Now.ToString("HH:mm:ss");
+
+            var workedSpan = Out.ToTimeSpan() - In.ToTimeSpan();
+            AccumulatedHours = AccumulatedHours.Add(workedSpan);
+
+            var clockOutResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
+            {
+                EmployeeId = employeeId,
+                Date = DateTime.Today,
+                ClockOutTime = Out.ToTimeSpan(),
+                Status = AttendanceStatuses.Present,
+                Notes = attendanceViewModel.Notes,
+                WorkingHours = AccumulatedHours.ToTimeSpan()
+            });
+
+            if (!clockOutResult.IsSuccess)
+            {
+                await ShowNotification(clockOutResult.Message ?? "Clock-out failed");
+                return;
+            }
+
+            await ShowNotification($"Clocked out | {AccumulatedHours:F2} hrs");
+        }
+    }
+
+    private void StartClock()
+    {
+        UpdateCurrentTime();
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += (_, _) =>
+        {
+            UpdateCurrentTime();
+            InvokeAsync(StateHasChanged);
+        };
+        _timer.Start();
+    }
+
+    private void UpdateCurrentTime()
+    {
+        CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private async Task ShowNotification(string message)
+    {
+        ToastMessage = message;
+        ShowToast = true;
+        StateHasChanged();
+
+        await Task.Delay(2500);
+
+        ShowToast = false;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

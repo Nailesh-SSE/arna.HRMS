@@ -1,0 +1,13 @@
+﻿using arna.HRMS.Core.DTOs.Responses;
+using arna.HRMS.Models.DTOs;
+
+namespace arna.HRMS.Infrastructure.Services.Interfaces;
+
+public interface IAttendanceService
+{
+    Task<ServiceResult<List<AttendanceDto>>> GetAttendanceAsync();
+    Task<ServiceResult<AttendanceDto?>> GetAttendenceByIdAsync(int id);
+    Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto);
+    Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int empId);
+    Task<ServiceResult<AttendanceDto?>> GetTodayLastEntryAsync(int employeeId);
+}

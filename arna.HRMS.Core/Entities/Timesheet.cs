@@ -1,4 +1,6 @@
-﻿namespace arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.Common;
+
+namespace arna.HRMS.Core.Entities;
 
 public class Timesheet : BaseEntity
 {
@@ -8,13 +10,9 @@ public class Timesheet : BaseEntity
     public decimal TotalHours { get; set; }
     public decimal RegularHours { get; set; }
     public decimal OvertimeHours { get; set; }
-    //public TimesheetStatus Status { get; set; }
     public int? ApprovedBy { get; set; }
     public DateTime? ApprovedDate { get; set; }
     public string Notes { get; set; }
-
-    // Navigation Properties
     public Employee Employee { get; set; }
     public Employee ApprovedByEmployee { get; set; }
-    //public ICollection<TimesheetEntry> Entries { get; set; }
 }

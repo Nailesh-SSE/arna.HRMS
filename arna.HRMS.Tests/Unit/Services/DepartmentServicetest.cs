@@ -1,6 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
+using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Models.DTOs;
 using AutoMapper;
@@ -65,8 +65,8 @@ public class DepartmentServiceTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Count, Is.EqualTo(2));
-        Assert.That(result[0].Name, Is.EqualTo("HR"));
+        Assert.That(result.Data?.Count, Is.EqualTo(2));
+        Assert.That(result.Data?.FirstOrDefault()?.Name, Is.EqualTo("HR"));
     }
 
     // =====================================================
@@ -91,7 +91,7 @@ public class DepartmentServiceTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Name, Is.EqualTo("Finance"));
+        Assert.That(result.Data?.Name, Is.EqualTo("Finance"));
     }
 
     // =====================================================
@@ -138,8 +138,8 @@ public class DepartmentServiceTests
         var result = await _departmentService.CreateDepartmentAsync(dto);
 
         // Assert
-        Assert.That(result.Id, Is.EqualTo(3));
-        Assert.That(result.Name, Is.EqualTo("Operations"));
+        Assert.That(result.Data?.Id, Is.EqualTo(3));
+        Assert.That(result.Data?.Name, Is.EqualTo("Operations"));
     }
 
     // =====================================================
@@ -169,7 +169,7 @@ public class DepartmentServiceTests
         var result = await _departmentService.UpdateDepartmentAsync(dto);
 
         // Assert
-        Assert.That(result.Name, Is.EqualTo("Marketing"));
+        Assert.That(result.Data?.Name, Is.EqualTo("Marketing"));
     }
 
     // =====================================================

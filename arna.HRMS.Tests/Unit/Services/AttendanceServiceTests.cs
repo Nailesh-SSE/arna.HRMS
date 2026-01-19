@@ -1,15 +1,13 @@
-﻿using arna.HRMS.ClientServices.FestivalHoliday;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
-using arna.HRMS.Infrastructure.Mapping;
+﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Repositories;
+using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using arna.HRMS.Infrastructure.Services;
+using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Models.DTOs;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;
 using NUnit.Framework;
-using System.Collections;
 using System.Linq.Expressions;
 
 namespace arna.HRMS.Tests.Unit.Services;
@@ -76,7 +74,7 @@ public class AttendanceServiceTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Count, Is.EqualTo(2));
+        Assert.That(result.Data?.Count, Is.EqualTo(2));
     }
 
     // --------------------------------------------------
@@ -102,7 +100,7 @@ public class AttendanceServiceTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Id, Is.EqualTo(10));
+        Assert.That(result!.Data?.Id, Is.EqualTo(10));
     }
 
     // --------------------------------------------------
@@ -151,8 +149,8 @@ public class AttendanceServiceTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Id, Is.EqualTo(100));
-        Assert.That(result.EmployeeId, Is.EqualTo(5));
+        Assert.That(result.Data?.Id, Is.EqualTo(100));
+        Assert.That(result.Data?.EmployeeId, Is.EqualTo(5));
     }
 
     // --------------------------------------------------
@@ -199,8 +197,8 @@ public class AttendanceServiceTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result.Count, Is.EqualTo(2));
-        Assert.That(result.All(x => x.EmployeeId == empId), Is.True);
+        Assert.That(result.Data?.Count, Is.EqualTo(2));
+        Assert.That(result.Data?.All(x => x.EmployeeId == empId), Is.True);
     }
 
     #region EF Core Async Helpers (DO NOT TOUCH)

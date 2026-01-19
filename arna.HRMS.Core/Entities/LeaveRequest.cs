@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Common;
+using arna.HRMS.Core.Enums;
 
 namespace arna.HRMS.Core.Entities;
 
@@ -14,8 +15,6 @@ public class LeaveRequest : BaseEntity
     public int? ApprovedBy { get; set; }
     public DateTime? ApprovedDate { get; set; }
     public string ApprovalNotes { get; set; }
-
-    // Navigation Properties
     public Employee Employee { get; set; }
     public Employee ApprovedByEmployee { get; set; }
 }

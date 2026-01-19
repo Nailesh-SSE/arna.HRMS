@@ -19,9 +19,9 @@
         }
     </select>
 
-    @if (ValidationExpression != null)
+    @if (ValueExpression != null)
     {
-        <ValidationMessage For="ValidationExpression" />
+        <ValidationMessage For="ValueExpression" />
     }
 </div>
 
@@ -34,26 +34,28 @@
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
 
-    [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
+    [Parameter] public Expression<Func<object>>? ValueExpression { get; set; }
 
     [Parameter] public List<SelectOption> Options { get; set; } = new();
 
-    private FieldIdentifier _fieldIdentifier;
+    private FieldIdentifier? _fieldIdentifier;
 
     protected override void OnParametersSet()
     {
-        if (EditContext != null && ValidationExpression != null)
-        {
-            _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
-        }
+        if (EditContext != null && ValueExpression != null)
+            _fieldIdentifier = FieldIdentifier.Create(ValueExpression);
+        else
+            _fieldIdentifier = null;
     }
 
     private async Task OnChange(ChangeEventArgs e)
     {
         var value = e.Value?.ToString();
-
         await ValueChanged.InvokeAsync(value);
 
-        EditContext?.NotifyFieldChanged(_fieldIdentifier);
+        if (EditContext != null && _fieldIdentifier.HasValue)
+        {
+            EditContext.NotifyFieldChanged(_fieldIdentifier.Value);
+        }
     }
 }

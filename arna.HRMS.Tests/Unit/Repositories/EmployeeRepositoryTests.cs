@@ -1,6 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
+using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using Moq;
 using NUnit.Framework;
 

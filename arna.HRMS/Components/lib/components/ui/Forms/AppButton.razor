@@ -2,7 +2,7 @@
         class="@ResolvedClass"
         disabled="@Disabled"
         @onclick="OnClick"
-        @attributes="AdditionalAttributes">
+        @attributes="FilteredAttributes">
     @if (ChildContent is not null)
     {
         <span class="d-inline-flex align-items-center gap-2">
@@ -34,8 +34,28 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private string ResolvedClass =>
-        string.IsNullOrWhiteSpace(ButtonClass)
-            ? DefaultClass
-            : ButtonClass;
+    private string ResolvedClass
+    {
+        get
+        {
+            var finalClass = string.IsNullOrWhiteSpace(ButtonClass)
+                ? DefaultClass
+                : ButtonClass;
+
+            if (AdditionalAttributes != null &&
+                AdditionalAttributes.TryGetValue("class", out var clsObj) &&
+                clsObj is string cls &&
+                !string.IsNullOrWhiteSpace(cls))
+            {
+                finalClass = $"{finalClass} {cls}";
+            }
+
+            return finalClass;
+        }
+    }
+
+    private IReadOnlyDictionary<string, object>? FilteredAttributes =>
+        AdditionalAttributes?
+            .Where(a => a.Key != "class")
+            .ToDictionary(a => a.Key, a => a.Value);
 }

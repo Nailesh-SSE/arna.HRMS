@@ -1,0 +1,156 @@
+﻿body {
+    background: #f6f7fb;
+}
+
+.profile-page {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    padding: 24px;
+}
+
+.card-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.05);
+}
+
+/* LEFT CARD */
+.avatar {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: #e9ecef;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 700;
+    margin: auto;
+    position: relative;
+}
+
+.camera {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    background: #1c4ed8;
+    color: #fff;
+    border-radius: 50%;
+    padding: 6px;
+    font-size: 12px;
+}
+
+.left-info {
+    text-align: center;
+    margin-top: 14px;
+}
+
+.role-badge {
+    display: inline-block;
+    background: #1c4ed8;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+.meta {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+    .meta li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        color: #444;
+    }
+
+/* RIGHT CARD (FIXED HEIGHT) */
+.profile-right-fixed {
+    min-height: 560px; /* 🔒 fixed height */
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.tabs {
+    display: inline-flex;
+    background: #f1f3f5;
+    border-radius: 12px;
+    padding: 4px;
+    margin: 20px 0;
+}
+
+    .tabs button {
+        border: none;
+        background: transparent;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #6b7280;
+        cursor: pointer;
+    }
+
+        .tabs button.active {
+            background: #fff;
+            color: #000;
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0,0,0,.1);
+        }
+
+        .tabs button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+.tab-content {
+    flex-grow: 1;
+    display: flex;
+    align-items: flex-start;
+}
+
+.form-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.field label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.field input {
+    width: 100%;
+    border: none;
+    background: #f8f9fa;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.field.full {
+    grid-column: span 2;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}

@@ -1,0 +1,16 @@
+﻿@using arna.HRMS.Models.ViewModels
+
+<div class="summary-grid">
+    @foreach (var item in SummaryCards)
+    {
+        <div class="summary-tile">
+            <span class="label">@item.Label</span>
+            <span class="count @item.Text">@item.Count</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public List<AttendenceSummaryCard> SummaryCards { get; set; } = new();
+}

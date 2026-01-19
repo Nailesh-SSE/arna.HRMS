@@ -1,0 +1,72 @@
+﻿@using System.Security.Claims
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.Pages.Attendance
+@using arna.HRMS.Components.Pages.Auth
+@using arna.HRMS.Components.Pages.Client.ClockInAndOut
+
+@inherits AuthenticatedLayoutBase
+
+<header class="bg-white border-bottom px-4 py-2
+               d-flex align-items-center sticky-top">
+
+    <!-- LEFT SIDE -->
+    <div class="d-flex align-items-center gap-3">
+
+        <!-- Sidebar Toggle -->
+        <button class="btn btn-outline-secondary"
+                @onclick="OnToggleSidebar">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+
+        <!-- Greeting -->
+        <h5 class="mb-0">
+            @Greeting
+            @if (!string.IsNullOrEmpty(GetUserFullName()))
+            {
+                <span>, @GetUserFullName()</span>
+            }
+        </h5>
+
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="ms-auto d-flex align-items-center gap-3">
+
+        <ClockInAndOut />
+
+        <div class="position-relative">
+            <i class="bi bi-bell fs-5"></i>
+            <span class="position-absolute top-0 start-100 translate-middle
+                         bg-danger rounded-circle"
+                  style="width:8px;height:8px"></span>
+        </div>
+
+        <SimpleUserMenu />
+    </div>
+
+</header>
+
+@code {
+    [Parameter] public EventCallback OnToggleSidebar { get; set; }
+
+    private string Greeting = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        SetGreeting();
+    }
+
+    private void SetGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+
+        Greeting = hour switch
+        {
+            >= 5 and < 12 => "Good Morning",
+            >= 12 and < 17 => "Good Afternoon",
+            >= 17 and < 21 => "Good Evening",
+            _ => "Good Night"
+        };
+    }
+}

@@ -1,7 +1,8 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
 using arna.HRMS.Infrastructure.Repositories;
+using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using arna.HRMS.Infrastructure.Services;
+using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Models.DTOs;
 using AutoMapper;
 using Moq;
@@ -57,8 +58,8 @@ public class EmployeeServiceTests
         var result = await _employeeService.GetEmployeesAsync();
 
         // Assert
-        Assert.That(result.Count, Is.EqualTo(employees.Count));
-        Assert.That(result[0].FullName, Is.EqualTo(employees[0].FirstName + " " + employees[0].LastName));
+        Assert.That(result.Data?.Count, Is.EqualTo(employees.Count));
+        Assert.That(result.Data?.FirstOrDefault()?.FullName, Is.EqualTo(employees[0].FirstName + " " + employees[0].LastName));
     }
 
     [Test]
@@ -69,7 +70,7 @@ public class EmployeeServiceTests
 
         var result = await _employeeService.GetEmployeeByIdAsync(1);
 
-        Assert.That(result.FullName, Is.EqualTo("John Doe"));
+        Assert.That(result.Data?.FullName, Is.EqualTo("John Doe"));
     }
 
     [Test]
@@ -93,7 +94,7 @@ public class EmployeeServiceTests
 
         var result = await _employeeService.CreateEmployeeAsync(employeeDto);
 
-        Assert.That(result.FullName, Is.EqualTo("John Doe"));
+        Assert.That(result.Data?.FullName, Is.EqualTo("John Doe"));
     }
 
     [Test]
@@ -107,7 +108,7 @@ public class EmployeeServiceTests
 
         var result = await _employeeService.UpdateEmployeeAsync(employeeDto);
 
-        Assert.That(result.FullName, Is.EqualTo("Updated User"));
+        Assert.That(result.Data?.FullName, Is.EqualTo("Updated User"));
     }
 
     [Test]

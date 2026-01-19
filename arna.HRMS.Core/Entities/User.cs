@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Common;
+using arna.HRMS.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

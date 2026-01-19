@@ -1,5 +1,4 @@
-﻿using arna.HRMS.Models.Enums;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Security.Claims;
@@ -85,9 +84,9 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         return relative.StartsWith("login", StringComparison.OrdinalIgnoreCase);
     }
 
-    protected bool IsSuperAdmin() => GetUserRole() == UserRole.SuperAdmin.ToString();
+    protected bool IsSuperAdmin() => GetUserRole() == Models.Enums.UserRole.SuperAdmin.ToString();
 
-    protected bool IsAdmin() => GetUserRole() == UserRole.Admin.ToString();
+    protected bool IsAdmin() => GetUserRole() == Models.Enums.UserRole.Admin.ToString();
 
     public void Dispose()
     {

@@ -1,5 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
+using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;

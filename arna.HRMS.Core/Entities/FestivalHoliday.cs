@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Common;
 
 namespace arna.HRMS.Core.Entities;
 

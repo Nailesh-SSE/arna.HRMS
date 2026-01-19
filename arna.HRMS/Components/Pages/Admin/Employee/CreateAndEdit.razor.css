@@ -1,0 +1,23 @@
+﻿.section-title {
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.date-placeholder:not(:focus):invalid {
+    color: transparent;
+}
+
+    .date-placeholder:not(:focus):invalid::before {
+        content: attr(data-placeholder);
+        color: #6c757d;
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+.date-placeholder:focus {
+    color: #212529;
+}

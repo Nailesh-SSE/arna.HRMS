@@ -1,4 +1,6 @@
-﻿namespace arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.Common;
+
+namespace arna.HRMS.Core.Entities;
 
 public class Employee : BaseEntity
 {
@@ -13,8 +15,6 @@ public class Employee : BaseEntity
     public int? ManagerId { get; set; }
     public string Position { get; set; }
     public decimal Salary { get; set; }
-
-    // Navigation Properties
     public Department Department { get; set; }
     public Employee Manager { get; set; }
     public ICollection<Employee> Subordinates { get; set; }
