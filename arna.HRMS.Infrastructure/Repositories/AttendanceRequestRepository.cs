@@ -37,8 +37,8 @@ public class AttendanceRequestRepository
             return false;
 
         attendanceStatus.IsApproved = true;
-        attendanceStatus.ApprovedBy = DateTime.Now;
-        attendanceStatus.UpdatedBy = DateTime.Now;
+        attendanceStatus.ApprovedOn = DateTime.Now;
+        attendanceStatus.UpdatedOn = DateTime.Now;
 
         await _baseRepository.UpdateAsync(attendanceStatus);
         return true; 

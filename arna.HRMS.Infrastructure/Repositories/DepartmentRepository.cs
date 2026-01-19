@@ -46,7 +46,7 @@ public class DepartmentRepository
 
         department.IsActive = false;
         department.IsDeleted = true;
-        department.UpdatedBy = DateTime.Now;
+        department.UpdatedOn = DateTime.Now;
 
         await _baseRepository.UpdateAsync(department);
         return true;

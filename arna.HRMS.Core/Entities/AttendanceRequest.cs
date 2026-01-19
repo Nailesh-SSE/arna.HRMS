@@ -15,6 +15,6 @@ public class AttendanceRequest : BaseEntity
     public TimeSpan? BreakDuration { get; set; }
     public TimeSpan TotalHours { get; set; }
     public bool IsApproved { get; set; }=false;
-    public DateTime? ApprovedBy { get; set; }
+    public DateTime? ApprovedOn { get; set; }
     public Employee Employee { get; set; }
 }

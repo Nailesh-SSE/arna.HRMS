@@ -104,7 +104,7 @@
                         <div class="field"><label>Company</label><input value="Arna Technosoft" readonly /></div>
                         <div class="field"><label>Status</label><input value="@(employee.IsActive ? "Active" : "Inactive")" readonly /></div>
                         <div class="field"><label>Experience</label><input value="@experienceString" readonly /></div>
-                        <div class="field"><label>Created At</label><input value="@employee.CreatedBy.ToShortDateString()" readonly /></div>
+                        <div class="field"><label>Created At</label><input value="@employee.CreatedOn.ToShortDateString()" readonly /></div>
                     </div>
                 }
 

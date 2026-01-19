@@ -15,11 +15,14 @@ public class Employee : BaseEntity
     public int? ManagerId { get; set; }
     public string Position { get; set; }
     public decimal Salary { get; set; }
+
+    // Navigation Properties
     public Department Department { get; set; }
     public Employee Manager { get; set; }
     public ICollection<Employee> Subordinates { get; set; }
     public ICollection<Attendance> Attendances { get; set; }
     public ICollection<LeaveRequest> LeaveRequests { get; set; }
-    public ICollection<Timesheet> Timesheets { get; set; } 
+    public ICollection<Timesheet> Timesheets { get; set; }
     public ICollection<AttendanceRequest> AttendanceRequest { get; set; }
+    public ICollection<EmployeeLeaveBalance> EmployeeLeaveBalance { get; set; }
 }

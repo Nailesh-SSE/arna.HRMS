@@ -43,7 +43,7 @@ public class FestivalHolidayRepository
 
         festivalHoliday.IsActive = false;
         festivalHoliday.IsDeleted = true;
-        festivalHoliday.UpdatedBy = DateTime.Now;
+        festivalHoliday.UpdatedOn = DateTime.Now;
 
         await _baseRepository.UpdateAsync(festivalHoliday);
         return true;

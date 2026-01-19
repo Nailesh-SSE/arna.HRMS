@@ -46,7 +46,7 @@ public class UserRepository
 
         user.IsActive = false;
         user.IsDeleted = true;
-        user.UpdatedBy = DateTime.Now;
+        user.UpdatedOn = DateTime.Now;
 
         await _baseRepository.UpdateAsync(user);
         return true;
@@ -80,7 +80,7 @@ public class UserRepository
 
         user.PasswordHash = HashPassword(newPassword);
         user.Password = newPassword;
-        user.UpdatedBy = DateTime.Now;
+        user.UpdatedOn = DateTime.Now;
 
         await _baseRepository.UpdateAsync(user);
         return true;

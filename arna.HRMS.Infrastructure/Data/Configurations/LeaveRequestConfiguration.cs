@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,7 +12,7 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
         builder.HasKey(lr => lr.Id);
 
         builder.Property(lr => lr.TotalDays)
-            .HasColumnType("decimal(18,2)");
+            .IsRequired();
 
         builder.Property(lr => lr.Reason)
             .HasMaxLength(500);
@@ -19,10 +20,9 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
         builder.Property(lr => lr.ApprovalNotes)
             .HasMaxLength(500);
 
-        // Status as string or int (depending on your enum strategy)
         builder.Property(lr => lr.Status)
-            .HasConversion<string>()
-            .HasMaxLength(20);
+            .HasDefaultValue(LeaveStatus.Pending)
+            .IsRequired();
 
         // Relationship with Employee (Requestor)
         builder.HasOne(lr => lr.Employee)
@@ -34,6 +34,11 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
         builder.HasOne(lr => lr.ApprovedByEmployee)
             .WithMany()
             .HasForeignKey(lr => lr.ApprovedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(lr => lr.LeaveType)
+            .WithMany()
+            .HasForeignKey(lr => lr.LeaveTypeId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -12,8 +12,8 @@ using arna.HRMS.Infrastructure.Data;
 namespace arna.HRMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260116123859_ChangeDataTypeAttendanceRequest")]
-    partial class ChangeDataTypeAttendanceRequest
+    [Migration("20260119140106_ChangeFieldNameByToOn")]
+    partial class ChangeFieldNameByToOn
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,7 +39,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<DateTime?>("ClockOut")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("Date")
@@ -65,7 +65,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<TimeSpan?>("TotalHours")
                         .HasColumnType("time");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -83,7 +83,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ApprovedBy")
+                    b.Property<DateTime?>("ApprovedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<TimeSpan?>("BreakDuration")
@@ -95,7 +95,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<DateTime?>("ClockOut")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
@@ -133,7 +133,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<TimeSpan>("TotalHours")
                         .HasColumnType("time");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -155,7 +155,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
@@ -180,7 +180,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<int?>("ParentDepartmentId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -194,49 +194,49 @@ namespace arna.HRMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "HR",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(747),
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9023),
                             Description = "Handles recruitment, payroll, and employee relations",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Human Resources",
                             ParentDepartmentId = 1,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(747)
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9024)
                         },
                         new
                         {
                             Id = 2,
                             Code = "IT",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(750),
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9026),
                             Description = "Manages IT infrastructure and software systems",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Information Technology",
                             ParentDepartmentId = 2,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(751)
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9026)
                         },
                         new
                         {
                             Id = 3,
                             Code = "FIN",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(752),
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9028),
                             Description = "Responsible for accounting and financial management",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Finance",
                             ParentDepartmentId = 3,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(752)
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9028)
                         },
                         new
                         {
                             Id = 4,
                             Code = "ADMIN",
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(754),
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9029),
                             Description = "Office administration and facilities management",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Administration",
                             ParentDepartmentId = 4,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 266, DateTimeKind.Local).AddTicks(754)
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9029)
                         });
                 });
 
@@ -248,7 +248,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("DateOfBirth")
@@ -302,7 +302,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -320,6 +320,55 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.ToTable("Employees");
                 });
 
+            modelBuilder.Entity("arna.HRMS.Core.Entities.EmployeeLeaveBalance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LeaveMasterId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RemainingLeaves")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalLeaves")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsedLeaves")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("LeaveMasterId");
+
+                    b.HasIndex("EmployeeId", "LeaveMasterId");
+
+                    b.ToTable("EmployeeLeaveBalances");
+                });
+
             modelBuilder.Entity("arna.HRMS.Core.Entities.FestivalHoliday", b =>
                 {
                     b.Property<int>("Id")
@@ -328,7 +377,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("Date")
@@ -349,7 +398,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -361,6 +410,49 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.ToTable("FestivalHoliday");
                 });
 
+            modelBuilder.Entity("arna.HRMS.Core.Entities.LeaveMaster", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LeaveName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("MaxPerYear")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaveName")
+                        .IsUnique();
+
+                    b.ToTable("LeaveMasters");
+                });
+
             modelBuilder.Entity("arna.HRMS.Core.Entities.LeaveRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -370,7 +462,6 @@ namespace arna.HRMS.Infrastructure.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ApprovalNotes")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -380,7 +471,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<DateTime?>("ApprovedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("EmployeeId")
@@ -395,7 +486,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<int>("LeaveType")
+                    b.Property<int>("LeaveTypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("Reason")
@@ -406,15 +497,15 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
 
-                    b.Property<decimal>("TotalDays")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("TotalDays")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -422,6 +513,8 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.HasIndex("ApprovedBy");
 
                     b.HasIndex("EmployeeId");
+
+                    b.HasIndex("LeaveTypeId");
 
                     b.ToTable("LeaveRequests");
                 });
@@ -434,12 +527,24 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedOn")
+                        .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
@@ -449,32 +554,52 @@ namespace arna.HRMS.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9563),
                             Description = "Super Administrator with full permissions",
-                            Name = "SuperAdmin"
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "SuperAdmin",
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9567)
                         },
                         new
                         {
                             Id = 2,
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9576),
                             Description = "Administrator with full permissions",
-                            Name = "Admin"
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Admin",
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9576)
                         },
                         new
                         {
                             Id = 3,
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9577),
                             Description = "Human Resources role",
-                            Name = "HR"
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "HR",
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9578)
                         },
                         new
                         {
                             Id = 4,
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9579),
                             Description = "Manager role with team oversight",
-                            Name = "Manager"
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Manager",
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9579)
                         },
                         new
                         {
                             Id = 5,
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9580),
                             Description = "Standard employee role",
-                            Name = "Employee"
+                            IsActive = true,
+                            IsDeleted = false,
+                            Name = "Employee",
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(9580)
                         });
                 });
 
@@ -492,7 +617,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<DateTime?>("ApprovedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("EmployeeId")
@@ -524,7 +649,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<decimal>("TotalHours")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
@@ -544,7 +669,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("CreatedBy")
+                    b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
@@ -596,7 +721,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedBy")
+                    b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Username")
@@ -614,7 +739,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 265, DateTimeKind.Local).AddTicks(9486),
+                            CreatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(8383),
                             Email = "superadmin123@gmail.com",
                             FirstName = "Super",
                             IsActive = true,
@@ -624,7 +749,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                             PasswordHash = "tv7BX1BYUu7bhR1UacjjLWp5sKyKvqMrp+pFlsFayqg=",
                             PhoneNumber = "9999999999",
                             Role = 1,
-                            UpdatedBy = new DateTime(2026, 1, 16, 18, 8, 57, 265, DateTimeKind.Local).AddTicks(9498),
+                            UpdatedOn = new DateTime(2026, 1, 19, 19, 31, 3, 969, DateTimeKind.Local).AddTicks(8393),
                             Username = "SuperAdmin"
                         });
                 });
@@ -678,6 +803,25 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.Navigation("Manager");
                 });
 
+            modelBuilder.Entity("arna.HRMS.Core.Entities.EmployeeLeaveBalance", b =>
+                {
+                    b.HasOne("arna.HRMS.Core.Entities.Employee", "Employee")
+                        .WithMany("EmployeeLeaveBalance")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("arna.HRMS.Core.Entities.LeaveMaster", "LeaveMaster")
+                        .WithMany("EmployeeLeaveBalances")
+                        .HasForeignKey("LeaveMasterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("LeaveMaster");
+                });
+
             modelBuilder.Entity("arna.HRMS.Core.Entities.LeaveRequest", b =>
                 {
                     b.HasOne("arna.HRMS.Core.Entities.Employee", "ApprovedByEmployee")
@@ -691,9 +835,17 @@ namespace arna.HRMS.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("arna.HRMS.Core.Entities.LeaveMaster", "LeaveType")
+                        .WithMany("LeaveRequests")
+                        .HasForeignKey("LeaveTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("ApprovedByEmployee");
 
                     b.Navigation("Employee");
+
+                    b.Navigation("LeaveType");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.Timesheet", b =>
@@ -737,11 +889,20 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.Navigation("Attendances");
 
+                    b.Navigation("EmployeeLeaveBalance");
+
                     b.Navigation("LeaveRequests");
 
                     b.Navigation("Subordinates");
 
                     b.Navigation("Timesheets");
+                });
+
+            modelBuilder.Entity("arna.HRMS.Core.Entities.LeaveMaster", b =>
+                {
+                    b.Navigation("EmployeeLeaveBalances");
+
+                    b.Navigation("LeaveRequests");
                 });
 #pragma warning restore 612, 618
         }

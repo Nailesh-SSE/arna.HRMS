@@ -27,6 +27,8 @@ public static class DependencyInjection
         services.AddScoped<IUserServices, UserServices>();
         services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
         services.AddScoped<IFestivalHolidayService, FestivalHolidayService>();
+        services.AddScoped<ILeaveService, LeaveService>();
+
 
         // Repositories
         services.AddScoped<DepartmentRepository>();
@@ -35,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<UserRepository>();
         services.AddScoped<AttendanceRequestRepository>();
         services.AddScoped<FestivalHolidayRepository>();
+        services.AddScoped<LeaveRepository>();
 
         // Auth Services
         services.AddScoped<IAuthService, AuthService>();
