@@ -38,10 +38,9 @@
                         <div class="col-md-6">
                             <AppInput Label="Username"
                                       Value="@user.Username"
-                                      ValueChanged="v => user.Username = v" >
-                                <input autocomplete="off" hidden />
+                                      ValueChanged="v => user.Username = v"
+                                      ValidationExpression="@(() => user.Username)">
                             </AppInput>
-                            <ValidationMessage For="@(() => user.Username)" />
                         </div>
 
                         <!-- Email -->
@@ -49,38 +48,35 @@
                             <AppInput Label="Email"
                                       Type="email"
                                       Value="@user.Email"
-                                      ValueChanged="@(v => user.Email = v)">
-                                <input autocomplete="off" hidden />
+                                      ValueChanged="@(v => user.Email = v)"
+                                      ValidationExpression="@(() => user.Email)">
                             </AppInput>
-                            <ValidationMessage For="@(() => user.Email)" />
                         </div>
 
                         <!-- First Name -->
                         <div class="col-md-6">
                             <AppInput Label="First Name"
                                       Value="@user.FirstName"
-                                      ValueChanged="@(v => user.FirstName = v)">
-                                <input autocomplete="off" hidden />
+                                      ValueChanged="@(v => user.FirstName = v)"
+                                      ValidationExpression="@(() => user.FirstName)">
                             </AppInput>
-                            <ValidationMessage For="@(() => user.FirstName)" />
                         </div>
 
                         <!-- Last Name -->
                         <div class="col-md-6">
                             <AppInput Label="Last Name" 
                                       Value="@user.LastName" 
-                                      ValueChanged="v => user.LastName=v">
-                                <input autocomplete="off" hidden />
+                                      ValueChanged="v => user.LastName=v"
+                                      ValidationExpression="@(() => user.LastName)">
                             </AppInput>
-                            <ValidationMessage For="@(() => user.LastName)" />
                         </div>
 
                         <!-- Phone -->
                         <div class="col-md-6">
                             <AppInput Label="Phone Number"
+                                Type="number"
                                       Value="@user.PhoneNumber"
                                       ValueChanged="v => user.PhoneNumber = v">
-                                <input autocomplete="off" hidden />
                             </AppInput>
                             <ValidationMessage For="@(() => user.PhoneNumber)" />
                         </div>
@@ -109,8 +105,8 @@
                                             user.Role = Enum.TryParse<UserRole>(v, out var role)
                                                         ? role
                                                         : null;
-                                       }" />
-                            <ValidationMessage For="@(() => user.Role)" />
+                                       }"
+                                   ValidationExpression="@(() => user.Role)" />
                         </div>
 
                         <!-- PASSWORD -->
@@ -123,23 +119,11 @@
                         </div> *@
 
                         <div class="col-md-6">
-                            <label class="form-label">Password</label>
-
-                            <div class="input-group">
-                                <input class="form-control"
-                                        type="@passwordInputType"
-                                        @bind="user.Password"
-                                        @bind:event="oninput"
-                                        autocomplete="new-password" />
-
-                                <AppButton Type="button"
-                                            ButtonClass="btn btn-outline-secondary"
-                                            OnClick="TogglePasswordVisibility">
-                                    <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>
-                                </AppButton>
-                            </div>
-
-                            <ValidationMessage For="@(() => user.Password)" />
+                            <AppPasswordInput Label="Password"
+                                                IsRequired="true"
+                                                Value="@user.Password"
+                                                ValueChanged="v => user.Password = v"
+                                                ValidationExpression="@(() => user.Password)" />
                         </div>
 
                         <!-- Active (EDIT ONLY) -->
@@ -155,12 +139,12 @@
 
                     <div class="mt-5 d-flex justify-content-end gap-3">
                         <AppButton Text="Back"
-                                   CssClass="btn btn-outline-secondary px-4"
+                                   ButtonClass="btn btn-outline-dark px-4"
                                    OnClick="GoBack" />
 
                         <AppButton Text="@(IsEditMode ? "Update" : "Save")"
                                    Type="submit"
-                                   CssClass="btn btn-primary px-5" />
+                                   ButtonClass="btn btn-primary px-5" />
                     </div>
                 </EditForm>
             }
@@ -175,7 +159,6 @@
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
     private List<EmployeeDto> employees = new();
-    private bool showPassword;
 
     private List<SelectOption> RoleOptions = Enum
        .GetValues<UserRole>()
@@ -257,11 +240,4 @@
     }
 
     private void GoBack() => NavigationManager.NavigateTo("/user");
-
-    private string passwordInputType => showPassword ? "text" : "password";
-
-    private void TogglePasswordVisibility()
-    {
-        showPassword = !showPassword;
-    }
 }
