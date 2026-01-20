@@ -1,6 +1,7 @@
 ﻿using arna.HRMS.Core.DTOs.Responses;
 using arna.HRMS.Models.Common;
 using arna.HRMS.Models.DTOs;
+using arna.HRMS.Models.Enums;
 using Microsoft.AspNetCore.Identity.Data;
 
 namespace arna.HRMS.ClientServices.Http;
@@ -13,6 +14,7 @@ public class ApiClients
     public AttendanceApi Attendance { get; }
     public UserApi Users { get; }
     public AttendanceRequestApi AttendanceRequest { get; }
+    public LeaveApi Leave { get; }
 
     public ApiClients(HttpService http)
     {
@@ -23,6 +25,7 @@ public class ApiClients
         Attendance = new AttendanceApi(http);
         Users = new UserApi(http);
         AttendanceRequest = new AttendanceRequestApi(http);
+        Leave = new LeaveApi(http);
     }
 
     // =========================
@@ -219,9 +222,9 @@ public class ApiClients
             => _http.PostAsync<bool>($"{baseUrl}/{id}/changepassword", newPassword);
     }
 
-    // =========================
+    // ===============================
     // ATTENDANCEREQUEST API (CUSTOM)
-    // =========================
+    // ===============================
     public sealed class AttendanceRequestApi
     {
         private const string baseUrl = "api/attendanceRequest";
@@ -245,5 +248,94 @@ public class ApiClients
 
         public Task<ApiResult<AttendanceRequestDto>> ApproveRequest(int id)
             => _http.GetAsync<AttendanceRequestDto>($"{baseUrl}/approveRequest/{id}");
+    }
+
+    // ===============================
+    // Leave API (CUSTOM)
+    // ===============================
+    public sealed class LeaveApi
+    {
+        private const string baseUrl = "api/leave";
+        private readonly CrudExecutor<LeaveMasterDto> _crudLeaveMaster;
+        private readonly CrudExecutor<LeaveRequestDto> _crudLeaveRequest;
+        private readonly CrudExecutor<EmployeeLeaveBalanceDto> _crudLeaveBalance;
+        private readonly HttpService _http;
+
+        public LeaveApi(HttpService http)
+        {
+            _http = http;
+            _crudLeaveMaster = new CrudExecutor<LeaveMasterDto>(http, baseUrl);
+            _crudLeaveRequest = new CrudExecutor<LeaveRequestDto>(http, baseUrl);
+            _crudLeaveBalance = new CrudExecutor<EmployeeLeaveBalanceDto>(http, baseUrl);
+        }
+
+        // Leave Master Methods
+        public Task<ApiResult<List<LeaveMasterDto>>> GetAllLeaveMaster()
+            => _crudLeaveMaster.GetAll();
+
+        public Task<ApiResult<LeaveMasterDto>> GetLeaveMasterById(int id)
+            => _crudLeaveMaster.GetById(id);
+
+        public Task<ApiResult<LeaveMasterDto>> CreateLeaveMaster(LeaveMasterDto dto)
+            => _crudLeaveMaster.Create(dto);
+
+        public Task<ApiResult<bool>> DeleteLeaveMasterAsync(int id)
+            => _crudLeaveMaster.Delete(id);
+        public async Task<ApiResult<bool>> UpdateLeaveMasterAsync(int id, LeaveMasterDto dto)
+        {
+            var updateResult = await _crudLeaveMaster.UpdateReturnDto(id, dto);
+
+            if (!updateResult.IsSuccess)
+                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update.", updateResult.StatusCode);
+
+            return ApiResult<bool>.Success(true, updateResult.StatusCode);
+        }
+
+        // Leave Request Methods
+        public Task<ApiResult<List<LeaveRequestDto>>> GetAllLeaveRequest()
+            => _crudLeaveRequest.GetAll();
+
+        public Task<ApiResult<LeaveRequestDto>> GetLeaveRequestById(int id)
+            => _crudLeaveRequest.GetById(id);
+
+        public  Task<ApiResult<LeaveRequestDto>> CreateLeaveRequest(LeaveRequestDto dto)
+            => _crudLeaveRequest.Create(dto);
+
+        public async Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id,LeaveRequestDto dto)
+        {
+            var updateResult = await _crudLeaveRequest.UpdateReturnDto(id, dto);
+
+            if (!updateResult.IsSuccess)
+                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update.", updateResult.StatusCode);
+
+            return ApiResult<bool>.Success(true, updateResult.StatusCode);
+        }
+
+        public Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id)
+            => _crudLeaveRequest.Delete(id);
+
+        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, LeaveStatusList status)
+            => _http.PostAsync<bool>($"{baseUrl}/request/status/{leaveRequestId}", new { Status = status });
+
+        public  Task<ApiResult<List<LeaveRequestDto>>> GetPandingLeaveRequestAsync()
+            => _http.GetAsync<List<LeaveRequestDto>>($"{baseUrl}/request/pending");
+
+        // Leave Balance Methods
+        public Task<ApiResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync()
+            => _crudLeaveBalance.GetAll();
+
+        public async Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceDto dto)
+        {
+            var updateResult = await _crudLeaveBalance.UpdateReturnDto(id, dto);
+            if (!updateResult.IsSuccess)
+                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update.", updateResult.StatusCode);
+            return ApiResult<bool>.Success(true, updateResult.StatusCode);
+        }
+
+        public Task<ApiResult<bool>> DeleteLeaveBalanceAsync(int id)
+            => _crudLeaveBalance.Delete(id);
+
+        public Task<ApiResult<EmployeeLeaveBalanceDto?>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
+            => _http.GetAsync<EmployeeLeaveBalanceDto?>($"{baseUrl}/balance/{employeeId}");
     }
 }

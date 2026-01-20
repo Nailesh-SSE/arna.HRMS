@@ -115,7 +115,7 @@ public class LeaveController : ControllerBase
         return Ok(pending);
     }
 
-    [HttpPost("requests/{id:int}/status")]
+    [HttpPost("requests/status/{id:int}")]
     [Authorize(Roles = "SuperAdmin,Admin,HR,Manager")]
     public async Task<IActionResult> UpdateLeaveStatus(int id, [FromQuery] LeaveStatus status)
     {

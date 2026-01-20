@@ -7,6 +7,7 @@ using arna.HRMS.ClientServices.Client.AttendanceRequest;
 using arna.HRMS.ClientServices.Client.Clock;
 using arna.HRMS.ClientServices.Common;
 using arna.HRMS.ClientServices.Http;
+using arna.HRMS.ClientServices.Leave;
 using arna.HRMS.Components;
 using arna.HRMS.Models.State.Attendance;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -78,6 +79,8 @@ public class Program
         builder.Services.AddScoped<IUsersService, UsersService>();
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
         builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
+        builder.Services.AddScoped<ILeaveService, LeaveService>();
+
         builder.Services.AddScoped<AttendanceState>();
 
         // Other
