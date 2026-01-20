@@ -47,29 +47,33 @@
                                 <div class="col-md-6">
                                     <AppInput Label="First Name"
                                               Value="@employee.FirstName"
-                                              ValueChanged="v => employee.FirstName = v" />
-                                    <ValidationMessage For="@(() => employee.FirstName)" />
+                                              ValueChanged="v => employee.FirstName = v"
+                                              ValidationExpression="@(() => employee.FirstName)" />
+                                   
                                 </div>
 
                                 <div class="col-md-6">
                                     <AppInput Label="Last Name"
                                               Value="@employee.LastName"
-                                              ValueChanged="v => employee.LastName = v" />
-                                    <ValidationMessage For="@(() => employee.LastName)" />
+                                              ValueChanged="v => employee.LastName = v" 
+                                              ValidationExpression="@(() => employee.LastName)"/>
+                                   
                                 </div>
 
                                 <div class="col-md-6">
                                     <AppInput Label="Email"
                                               Value="@employee.Email"
-                                              ValueChanged="v => employee.Email = v" />
-                                    <ValidationMessage For="@(() => employee.Email)" />
+                                              ValueChanged="v => employee.Email = v"
+                                              ValidationExpression="@(() => employee.Email)" />
+                                    
                                 </div>
 
                                 <div class="col-md-6">
                                     <AppInput Label="Phone Number"
                                               Value="@employee.PhoneNumber"
-                                              ValueChanged="v => employee.PhoneNumber = v" />
-                                    <ValidationMessage For="@(() => employee.PhoneNumber)" />
+                                              ValueChanged="v => employee.PhoneNumber = v"
+                                              ValidationExpression="@(() => employee.PhoneNumber)" />
+                                    
                                 </div>
 
                             </div>
@@ -82,8 +86,9 @@
                                 <div class="col-md-6">
                                     <AppInput Label="Position"
                                               Value="@employee.Position"
-                                              ValueChanged="v => employee.Position = v">
-                                        <ValidationMessage For="@(() => employee.Position)" />
+                                              ValueChanged="v => employee.Position = v"
+                                              ValidationExpression="@(() => employee.Position)">
+                                        
                                     </AppInput>
                                 </div>
 
@@ -95,8 +100,8 @@
                                               {
                                                   if (decimal.TryParse(v, out var s))
                                                       employee.Salary = s;
-                                              }">
-                                        <ValidationMessage For="@(() => employee.Salary)" />
+                                              }"
+                                          ValidationExpression="@(() => employee.Salary)">
                                     </AppInput>
                                 </div>
 
@@ -108,8 +113,9 @@
                                                {
                                                    employee.DepartmentId =
                                                        int.TryParse(v, out var d) ? d : null;
-                                               }" />
-                                            <ValidationMessage For="@(() => employee.DepartmentId)" />
+                                               }"
+                                           ValidationExpression="@(() => employee.DepartmentId)" />
+                                          
                                 </div>
 
                                 <div class="col-md-6">
@@ -120,7 +126,8 @@
                                                {
                                                    employee.ManagerId =
                                                        int.TryParse(v, out var m) ? m : null;
-                                               }" />
+                                               }"
+                                           ValidationExpression="@(() => employee.ManagerId)" />
                                 </div>
 
                             </div>
@@ -140,8 +147,9 @@
                                               {
                                                   if (DateTime.TryParse(v, out var d))
                                                       employee.DateOfBirth = d;
-                                              }">
-                                        <ValidationMessage For="@(() => employee.DateOfBirth)" />
+                                              }"
+                                          ValidationExpression="@(() => employee.DateOfBirth)">
+                                       
                                     </AppInput>
                                 </div>
 
@@ -155,8 +163,9 @@
                                               {
                                                   if (DateTime.TryParse(v, out var d))
                                                       employee.HireDate = d;
-                                              }">
-                                        <ValidationMessage For="@(() => employee.HireDate)" />
+                                              }"
+                                          ValidationExpression="@(() => employee.HireDate)">
+                                        
                                     </AppInput>
                                 </div>
 
@@ -166,12 +175,12 @@
                         <!-- ACTION BUTTONS -->
                         <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
                             <AppButton Text="Back"
-                                       CssClass="btn btn-outline-secondary px-4"
+                                       ButtonClass="btn btn-dark px-4"
                                        OnClick="GoBack" />
 
-                            <button type="submit" class="btn btn-primary px-4">
+                            <AppButton Type="submit" ButtonClass="btn btn-primary px-4">
                                 @(IsEditMode ? "Update" : "Save")
-                            </button>
+                            </AppButton>
                         </div>
 
                     </div>

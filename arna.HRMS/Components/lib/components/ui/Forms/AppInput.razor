@@ -1,5 +1,5 @@
-﻿@using Microsoft.AspNetCore.Components.Forms
-@using System.Linq.Expressions
+﻿@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Forms
 
 <div class="mb-3">
     @if (!string.IsNullOrWhiteSpace(Label))
@@ -15,9 +15,9 @@
            @onchange="OnChange"
            @attributes="AdditionalAttributes" />
 
-    @if (ValueExpression != null)
+    @if (ValidationExpression != null)
     {
-        <ValidationMessage For="ValueExpression" />
+        <ValidationMessage For="ValidationExpression" />
     }
 
     @ChildContent
@@ -32,7 +32,7 @@
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
 
-    [Parameter] public Expression<Func<string?>>? ValueExpression { get; set; }
+    [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -42,26 +42,23 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private FieldIdentifier? _fieldIdentifier;
+    private FieldIdentifier _fieldIdentifier;
 
     protected override void OnParametersSet()
     {
-        if (EditContext != null && ValueExpression != null)
-            _fieldIdentifier = FieldIdentifier.Create(ValueExpression);
-        else
-            _fieldIdentifier = null;
+        if (EditContext != null && ValidationExpression != null)
+        {
+            _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+        }
     }
 
     private async Task OnChange(ChangeEventArgs e)
     {
-        if (ReadOnly || Disabled)
-            return;
-
-        await ValueChanged.InvokeAsync(e.Value?.ToString());
-
-        if (EditContext != null && _fieldIdentifier.HasValue)
+        if (!ReadOnly && !Disabled)
         {
-            EditContext.NotifyFieldChanged(_fieldIdentifier.Value);
+            await ValueChanged.InvokeAsync(e.Value?.ToString());
+
+            EditContext?.NotifyFieldChanged(_fieldIdentifier);
         }
     }
 }
