@@ -152,12 +152,12 @@ public class LeaveRepository
     {
         return await _leaveBalanceRepo.Query().ToListAsync();
     }
-    public async Task<EmployeeLeaveBalance> GetLeaveBalanceByEmployeeAsync(int id)
+    public async Task<List<EmployeeLeaveBalance>> GetLeaveBalanceByEmployeeAsync(int id)
     {
         return await _leaveBalanceRepo.Query()
             .Where(elb => elb.EmployeeId == id && elb.IsActive && !elb.IsDeleted)
             .OrderByDescending(elb => elb.Id)
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
     }
     public Task<EmployeeLeaveBalance> CreateLeaveBalanceAsync(EmployeeLeaveBalance leaveBalance)

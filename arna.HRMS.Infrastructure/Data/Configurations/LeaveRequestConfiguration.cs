@@ -21,6 +21,8 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
             .HasMaxLength(500);
 
         builder.Property(lr => lr.Status)
+            .HasConversion<string>()      
+            .HasMaxLength(20)
             .HasDefaultValue(LeaveStatus.Pending)
             .IsRequired();
 
@@ -32,7 +34,7 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
 
         // Relationship with Approver (Employee)
         builder.HasOne(lr => lr.ApprovedByEmployee)
-            .WithMany()
+            .WithMany(e => e.ApprovedLeaveRequests)
             .HasForeignKey(lr => lr.ApprovedBy)
             .OnDelete(DeleteBehavior.Restrict);
 

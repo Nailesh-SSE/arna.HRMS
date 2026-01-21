@@ -38,11 +38,15 @@ public class LeaveProfile : Profile
                 o => o.MapFrom(s => s.LeaveType != null
                     ? s.LeaveType.LeaveName
                     : null))
+            .ForMember(d => d.EmployeeName,
+                o => o.MapFrom(s => s.Employee != null
+                    ? $"{s.Employee.FirstName} {s.Employee.LastName}"
+                    : null))
             .ForMember(d => d.ApprovedByName,
                 o => o.MapFrom(s => s.ApprovedByEmployee != null
-                    ? s.ApprovedByEmployee.FirstName
+                    ? $"{s.ApprovedByEmployee.FirstName} {s.ApprovedByEmployee.LastName}"
                     : null));
-
+        
         //Leave Balance
         CreateMap<EmployeeLeaveBalanceDto, EmployeeLeaveBalance>().ReverseMap();
     }

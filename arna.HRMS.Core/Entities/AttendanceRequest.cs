@@ -16,5 +16,7 @@ public class AttendanceRequest : BaseEntity
     public TimeSpan TotalHours { get; set; }
     public bool IsApproved { get; set; }=false;
     public DateTime? ApprovedOn { get; set; }
+    public int? ApprovedBy { get; set; }
     public Employee Employee { get; set; }
+    public Employee ApprovedByEmployee { get; set; }
 }

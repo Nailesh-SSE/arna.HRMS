@@ -264,9 +264,10 @@ public class ApiClients
         public LeaveApi(HttpService http)
         {
             _http = http;
-            _crudLeaveMaster = new CrudExecutor<LeaveMasterDto>(http, baseUrl);
-            _crudLeaveRequest = new CrudExecutor<LeaveRequestDto>(http, baseUrl);
-            _crudLeaveBalance = new CrudExecutor<EmployeeLeaveBalanceDto>(http, baseUrl);
+            _crudLeaveMaster = new CrudExecutor<LeaveMasterDto>(http, $"{baseUrl}/masters");
+            _crudLeaveRequest = new CrudExecutor<LeaveRequestDto>(http, $"{baseUrl}/requests");
+            _crudLeaveBalance = new CrudExecutor<EmployeeLeaveBalanceDto>(http, $"{baseUrl}/balances");
+
         }
 
         // Leave Master Methods
@@ -279,8 +280,6 @@ public class ApiClients
         public Task<ApiResult<LeaveMasterDto>> CreateLeaveMaster(LeaveMasterDto dto)
             => _crudLeaveMaster.Create(dto);
 
-        public Task<ApiResult<bool>> DeleteLeaveMasterAsync(int id)
-            => _crudLeaveMaster.Delete(id);
         public async Task<ApiResult<bool>> UpdateLeaveMasterAsync(int id, LeaveMasterDto dto)
         {
             var updateResult = await _crudLeaveMaster.UpdateReturnDto(id, dto);
@@ -290,6 +289,9 @@ public class ApiClients
 
             return ApiResult<bool>.Success(true, updateResult.StatusCode);
         }
+
+        public Task<ApiResult<bool>> DeleteLeaveMasterAsync(int id)
+            => _crudLeaveMaster.Delete(id);
 
         // Leave Request Methods
         public Task<ApiResult<List<LeaveRequestDto>>> GetAllLeaveRequest()
@@ -315,10 +317,10 @@ public class ApiClients
             => _crudLeaveRequest.Delete(id);
 
         public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, LeaveStatusList status)
-            => _http.PostAsync<bool>($"{baseUrl}/request/status/{leaveRequestId}", new { Status = status });
+        => _http.PostAsync<bool>($"status/{leaveRequestId}?status={status}",null);
 
         public  Task<ApiResult<List<LeaveRequestDto>>> GetPandingLeaveRequestAsync()
-            => _http.GetAsync<List<LeaveRequestDto>>($"{baseUrl}/request/pending");
+            => _http.GetAsync<List<LeaveRequestDto>>($"pending");
 
         // Leave Balance Methods
         public Task<ApiResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync()
@@ -335,7 +337,7 @@ public class ApiClients
         public Task<ApiResult<bool>> DeleteLeaveBalanceAsync(int id)
             => _crudLeaveBalance.Delete(id);
 
-        public Task<ApiResult<EmployeeLeaveBalanceDto?>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
-            => _http.GetAsync<EmployeeLeaveBalanceDto?>($"{baseUrl}/balance/{employeeId}");
+        public Task<ApiResult<List<EmployeeLeaveBalanceDto?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
+            => _http.GetAsync<List<EmployeeLeaveBalanceDto?>>($"{baseUrl}/balance/{employeeId}");
     }
 }

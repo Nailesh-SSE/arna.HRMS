@@ -7,10 +7,13 @@
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.DTOs
+@using arna.HRMS.ClientServices.Leave
+
 @inject IUsersService UsersService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
+@inject ILeaveService LeaveService
 
 <FullPageLoader Visible="isLoading" />
 
@@ -44,6 +47,28 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadUsers();
+
+        //leave Master service test
+        await base.OnInitializedAsync();
+        await LeaveService.GetLeaveMasterAsync();
+        await LeaveService.CreateLeaveMasterAsync(new LeaveMasterDto());
+        await LeaveService.DeleteLeaveMasterAsync(0);
+        await LeaveService.UpdateLeaveMasterAsync(0, new LeaveMasterDto());
+
+        //leave Request service test
+        await LeaveService.GetLeaveRequestAsync();
+        await LeaveService.CreateLeaveRequestAsync(new LeaveRequestDto());
+        await LeaveService.DeleteLeaveRequestAsync(0);
+        await LeaveService.UpdateLeaveRequestAsync(0, new LeaveRequestDto());
+        await LeaveService.GetPandingLeaveRequestAsync();
+        await LeaveService.UpdateStatusLeaveAsync(0,0);
+
+        //Leave Balance service test
+        await LeaveService.GetLeaveBalanceAsync();
+        await LeaveService.DeleteLeaveBalanceAsync(0);
+        await LeaveService.UpdateLeaveBalanceAsync(0, new EmployeeLeaveBalanceDto());
+        await LeaveService.GetLeaveBalanceByEmployeeIdAsync(0);
+        await LeaveService.UpdateLeaveBalanceAsync(0, new EmployeeLeaveBalanceDto());
     }
 
     private async Task LoadUsers()

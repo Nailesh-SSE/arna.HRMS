@@ -4,6 +4,7 @@ using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Models.DTOs;
+using arna.HRMS.Models.Enums;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Services;
@@ -14,19 +15,33 @@ public class AttendanceService : IAttendanceService
     private readonly IMapper _mapper;
     private readonly IEmployeeService _employeeService;
     private readonly IFestivalHolidayService _festivalHolidayService;
+    private readonly ILeaveService _leaveService;
 
     private static readonly DateTime SystemStartDate = new(2026, 1, 12);
+    private AttendanceRepository attendanceRepository;
+    private IEmployeeService object1;
+    private IFestivalHolidayService object2;
 
     public AttendanceService(
         AttendanceRepository attendanceRepository,
         IMapper mapper,
         IEmployeeService employeeService,
-        IFestivalHolidayService festivalHolidayService)
+        IFestivalHolidayService festivalHolidayService,
+        ILeaveService leaveService)
     {
         _attendanceRepository = attendanceRepository;
         _mapper = mapper;
         _employeeService = employeeService;
         _festivalHolidayService = festivalHolidayService;
+        _leaveService = leaveService;
+    }
+
+    public AttendanceService(AttendanceRepository attendanceRepository, IMapper mapper, IEmployeeService object1, IFestivalHolidayService object2)
+    {
+        this.attendanceRepository = attendanceRepository;
+        _mapper = mapper;
+        this.object1 = object1;
+        this.object2 = object2;
     }
 
     #region Basic APIs
@@ -105,6 +120,20 @@ public class AttendanceService : IAttendanceService
         var festivalsResult =
             await _festivalHolidayService.GetFestivalHolidayByMonthAsync(year, month);
 
+        var approvedLeaves = (await _leaveService.GetLeaveRequestAsync()).Data?
+                .Where(l =>
+                    l.EmployeeId == empId &&
+                    l.Status == LeaveStatusList.Approved)
+                .SelectMany(l =>
+                    Enumerable.Range(
+                        0,
+                        (l.EndDate.Date - l.StartDate.Date).Days + 1
+                    )
+                    .Select(offset => l.StartDate.Date.AddDays(offset))
+                )
+        .ToHashSet();
+
+
         if (!festivalsResult.IsSuccess || festivalsResult.Data == null)
             return ServiceResult<List<MonthlyAttendanceDto>>.Fail(festivalsResult.Message);
 
@@ -155,8 +184,10 @@ public class AttendanceService : IAttendanceService
                         ? maxClockOut.Value - minClockIn.Value
                         : TimeSpan.Zero;
 
-                bool isFestivalHoliday =
-                    monthFestivalDates.Contains(g.Key.Date);
+                bool isFestivalHoliday = monthFestivalDates.Contains(g.Key.Date);
+
+                bool isLeave =
+                    approvedLeaves.Contains(g.Key.Date);
 
                 return new MonthlyAttendanceDto
                 {
@@ -166,8 +197,14 @@ public class AttendanceService : IAttendanceService
                     ClockIn = minClockIn,
                     ClockOut = maxClockOut,
                     TotalHours = totalHours,
-                    Status = CalculateStatus(minClockIn, date, isFestivalHoliday)
+                    Status = CalculateStatus(
+                        minClockIn,
+                        date,
+                        isFestivalHoliday,
+                        isLeave
+                    )
                 };
+
             })
             .OrderBy(x => x.Date)
             .ToList();
@@ -179,13 +216,13 @@ public class AttendanceService : IAttendanceService
 
     #region Status Logic
 
-    private static string CalculateStatus(
-        TimeSpan? clockIn,
-        DateOnly date,
-        bool isFestivalHoliday)
+    private static string CalculateStatus(TimeSpan? clockIn, DateOnly date, bool isFestivalHoliday, bool isLeave)
     {
         if (isFestivalHoliday || IsWeekend(date))
             return "Holiday";
+
+        if (isLeave)
+            return "Leave";
 
         if (clockIn.HasValue && clockIn.Value != TimeSpan.Zero)
             return "Present";

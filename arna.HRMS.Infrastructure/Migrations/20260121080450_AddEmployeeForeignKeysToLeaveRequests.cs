@@ -6,23 +6,103 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace arna.HRMS.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddTablesLeaveMasterAndEmployeeLeaveBalance : Migration
+    public partial class AddEmployeeForeignKeysToLeaveRequests : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "Users",
+                newName: "UpdatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedBy",
+                table: "Users",
+                newName: "CreatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "Timesheets",
+                newName: "UpdatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedBy",
+                table: "Timesheets",
+                newName: "CreatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "LeaveRequests",
+                newName: "UpdatedOn");
+
             migrationBuilder.RenameColumn(
                 name: "LeaveType",
                 table: "LeaveRequests",
                 newName: "LeaveTypeId");
 
             migrationBuilder.RenameColumn(
+                name: "CreatedBy",
+                table: "LeaveRequests",
+                newName: "CreatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "FestivalHoliday",
+                newName: "UpdatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedBy",
+                table: "FestivalHoliday",
+                newName: "CreatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "Employees",
+                newName: "UpdatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedBy",
+                table: "Employees",
+                newName: "CreatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "Departments",
+                newName: "UpdatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedBy",
+                table: "Departments",
+                newName: "CreatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "Attendances",
+                newName: "UpdatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedBy",
+                table: "Attendances",
+                newName: "CreatedOn");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedBy",
+                table: "AttendanceRequest",
+                newName: "UpdatedOn");
+
+            migrationBuilder.RenameColumn(
                 name: "Date",
                 table: "AttendanceRequest",
                 newName: "ToDate");
 
-            migrationBuilder.AddColumn<DateTime>(
+            migrationBuilder.RenameColumn(
                 name: "CreatedBy",
+                table: "AttendanceRequest",
+                newName: "FromDate");
+
+            migrationBuilder.AddColumn<DateTime>(
+                name: "CreatedOn",
                 table: "Roles",
                 type: "datetime2",
                 nullable: false,
@@ -43,7 +123,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                 defaultValue: false);
 
             migrationBuilder.AddColumn<DateTime>(
-                name: "UpdatedBy",
+                name: "UpdatedOn",
                 table: "Roles",
                 type: "datetime2",
                 nullable: false,
@@ -101,8 +181,23 @@ namespace arna.HRMS.Infrastructure.Migrations
                 oldClrType: typeof(TimeSpan),
                 oldType: "time");
 
+            migrationBuilder.AlterColumn<int>(
+                name: "ApprovedBy",
+                table: "AttendanceRequest",
+                type: "int",
+                nullable: true,
+                oldClrType: typeof(DateTime),
+                oldType: "datetime2",
+                oldNullable: true);
+
             migrationBuilder.AddColumn<DateTime>(
-                name: "FromDate",
+                name: "ApprovedOn",
+                table: "AttendanceRequest",
+                type: "datetime2",
+                nullable: true);
+
+            migrationBuilder.AddColumn<DateTime>(
+                name: "CreatedOn",
                 table: "AttendanceRequest",
                 type: "datetime2",
                 nullable: false,
@@ -118,8 +213,8 @@ namespace arna.HRMS.Infrastructure.Migrations
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     MaxPerYear = table.Column<int>(type: "int", nullable: false),
                     IsPaid = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedBy = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -140,8 +235,8 @@ namespace arna.HRMS.Infrastructure.Migrations
                     UsedLeaves = table.Column<int>(type: "int", nullable: false),
                     RemainingLeaves = table.Column<int>(type: "int", nullable: false),
                     Year = table.Column<int>(type: "int", nullable: false),
-                    CreatedBy = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false)
                 },
@@ -166,76 +261,81 @@ namespace arna.HRMS.Infrastructure.Migrations
                 table: "Departments",
                 keyColumn: "Id",
                 keyValue: 1,
-                columns: new[] { "CreatedBy", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7844), new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7845) });
+                columns: new[] { "CreatedOn", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1101), new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1101) });
 
             migrationBuilder.UpdateData(
                 table: "Departments",
                 keyColumn: "Id",
                 keyValue: 2,
-                columns: new[] { "CreatedBy", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7847), new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7848) });
+                columns: new[] { "CreatedOn", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1103), new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1103) });
 
             migrationBuilder.UpdateData(
                 table: "Departments",
                 keyColumn: "Id",
                 keyValue: 3,
-                columns: new[] { "CreatedBy", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7849), new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7849) });
+                columns: new[] { "CreatedOn", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1105), new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1105) });
 
             migrationBuilder.UpdateData(
                 table: "Departments",
                 keyColumn: "Id",
                 keyValue: 4,
-                columns: new[] { "CreatedBy", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7850), new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7851) });
+                columns: new[] { "CreatedOn", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1106), new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1106) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 1,
-                columns: new[] { "CreatedBy", "IsActive", "IsDeleted", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7866), true, false, new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7866) });
+                columns: new[] { "CreatedOn", "IsActive", "IsDeleted", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1122), true, false, new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1123) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 2,
-                columns: new[] { "CreatedBy", "IsActive", "IsDeleted", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7868), true, false, new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7869) });
+                columns: new[] { "CreatedOn", "IsActive", "IsDeleted", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1124), true, false, new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1124) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 3,
-                columns: new[] { "CreatedBy", "IsActive", "IsDeleted", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7870), true, false, new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7870) });
+                columns: new[] { "CreatedOn", "IsActive", "IsDeleted", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1125), true, false, new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1125) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 4,
-                columns: new[] { "CreatedBy", "IsActive", "IsDeleted", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7870), true, false, new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7871) });
+                columns: new[] { "CreatedOn", "IsActive", "IsDeleted", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1126), true, false, new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1126) });
 
             migrationBuilder.UpdateData(
                 table: "Roles",
                 keyColumn: "Id",
                 keyValue: 5,
-                columns: new[] { "CreatedBy", "IsActive", "IsDeleted", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7871), true, false, new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7872) });
+                columns: new[] { "CreatedOn", "IsActive", "IsDeleted", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1127), true, false, new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(1127) });
 
             migrationBuilder.UpdateData(
                 table: "Users",
                 keyColumn: "Id",
                 keyValue: 1,
-                columns: new[] { "CreatedBy", "UpdatedBy" },
-                values: new object[] { new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7173), new DateTime(2026, 1, 19, 17, 14, 12, 296, DateTimeKind.Local).AddTicks(7184) });
+                columns: new[] { "CreatedOn", "UpdatedOn" },
+                values: new object[] { new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(415), new DateTime(2026, 1, 21, 13, 34, 49, 800, DateTimeKind.Local).AddTicks(425) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_LeaveRequests_LeaveTypeId",
                 table: "LeaveRequests",
                 column: "LeaveTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AttendanceRequest_ApprovedBy",
+                table: "AttendanceRequest",
+                column: "ApprovedBy");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EmployeeLeaveBalances_EmployeeId",
@@ -259,6 +359,14 @@ namespace arna.HRMS.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.AddForeignKey(
+                name: "FK_AttendanceRequest_Employees_ApprovedBy",
+                table: "AttendanceRequest",
+                column: "ApprovedBy",
+                principalTable: "Employees",
+                principalColumn: "Id",
+                onDelete: ReferentialAction.Restrict);
+
+            migrationBuilder.AddForeignKey(
                 name: "FK_LeaveRequests_LeaveMasters_LeaveTypeId",
                 table: "LeaveRequests",
                 column: "LeaveTypeId",
@@ -270,6 +378,10 @@ namespace arna.HRMS.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_AttendanceRequest_Employees_ApprovedBy",
+                table: "AttendanceRequest");
+
             migrationBuilder.DropForeignKey(
                 name: "FK_LeaveRequests_LeaveMasters_LeaveTypeId",
                 table: "LeaveRequests");
@@ -284,8 +396,12 @@ namespace arna.HRMS.Infrastructure.Migrations
                 name: "IX_LeaveRequests_LeaveTypeId",
                 table: "LeaveRequests");
 
+            migrationBuilder.DropIndex(
+                name: "IX_AttendanceRequest_ApprovedBy",
+                table: "AttendanceRequest");
+
             migrationBuilder.DropColumn(
-                name: "CreatedBy",
+                name: "CreatedOn",
                 table: "Roles");
 
             migrationBuilder.DropColumn(
@@ -297,12 +413,41 @@ namespace arna.HRMS.Infrastructure.Migrations
                 table: "Roles");
 
             migrationBuilder.DropColumn(
-                name: "UpdatedBy",
+                name: "UpdatedOn",
                 table: "Roles");
 
             migrationBuilder.DropColumn(
-                name: "FromDate",
+                name: "ApprovedOn",
                 table: "AttendanceRequest");
+
+            migrationBuilder.DropColumn(
+                name: "CreatedOn",
+                table: "AttendanceRequest");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "Users",
+                newName: "UpdatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedOn",
+                table: "Users",
+                newName: "CreatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "Timesheets",
+                newName: "UpdatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedOn",
+                table: "Timesheets",
+                newName: "CreatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "LeaveRequests",
+                newName: "UpdatedBy");
 
             migrationBuilder.RenameColumn(
                 name: "LeaveTypeId",
@@ -310,9 +455,64 @@ namespace arna.HRMS.Infrastructure.Migrations
                 newName: "LeaveType");
 
             migrationBuilder.RenameColumn(
+                name: "CreatedOn",
+                table: "LeaveRequests",
+                newName: "CreatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "FestivalHoliday",
+                newName: "UpdatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedOn",
+                table: "FestivalHoliday",
+                newName: "CreatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "Employees",
+                newName: "UpdatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedOn",
+                table: "Employees",
+                newName: "CreatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "Departments",
+                newName: "UpdatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedOn",
+                table: "Departments",
+                newName: "CreatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "Attendances",
+                newName: "UpdatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "CreatedOn",
+                table: "Attendances",
+                newName: "CreatedBy");
+
+            migrationBuilder.RenameColumn(
+                name: "UpdatedOn",
+                table: "AttendanceRequest",
+                newName: "UpdatedBy");
+
+            migrationBuilder.RenameColumn(
                 name: "ToDate",
                 table: "AttendanceRequest",
                 newName: "Date");
+
+            migrationBuilder.RenameColumn(
+                name: "FromDate",
+                table: "AttendanceRequest",
+                newName: "CreatedBy");
 
             migrationBuilder.AlterColumn<decimal>(
                 name: "TotalDays",
@@ -368,6 +568,15 @@ namespace arna.HRMS.Infrastructure.Migrations
                 defaultValue: new TimeSpan(0, 0, 0, 0, 0),
                 oldClrType: typeof(TimeSpan),
                 oldType: "time",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "ApprovedBy",
+                table: "AttendanceRequest",
+                type: "datetime2",
+                nullable: true,
+                oldClrType: typeof(int),
+                oldType: "int",
                 oldNullable: true);
 
             migrationBuilder.UpdateData(

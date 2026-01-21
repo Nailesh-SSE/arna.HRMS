@@ -6,6 +6,7 @@ namespace arna.HRMS.Models.DTOs;
 public class LeaveRequestDto : CommonDto
 {
     public int EmployeeId { get; set; }
+    public string? EmployeeName { get; set; }
 
     public int LeaveTypeId { get; set; }
     public string? LeaveTypeName { get; set; }   

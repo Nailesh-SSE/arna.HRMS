@@ -35,7 +35,8 @@ public class LeaveController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        if (await _leaveService.LeaveExistsAsync(dto.LeaveName))
+        var result = await _leaveService.LeaveExistsAsync(dto.LeaveName);
+        if (result.Data)
             return Conflict("Leave already exists");
 
         var created = await _leaveService.CreateLeaveMasterAsync(dto);
@@ -55,8 +56,8 @@ public class LeaveController : ControllerBase
     [HttpDelete("masters/{id:int}")]
     public async Task<IActionResult> DeleteLeaveMaster(int id)
     {
-        var deleted = await _leaveService.DeleteLeaveMasterAsync(id);
-        return deleted ? Ok() : NotFound("Leave master not found");
+        var deletedResult = await _leaveService.DeleteLeaveMasterAsync(id);
+        return deletedResult.Data ? Ok() : NotFound("Leave master not found");
     }
 
     // ============================
@@ -74,7 +75,7 @@ public class LeaveController : ControllerBase
     public async Task<IActionResult> GetLeaveRequestById(int id)
     {
         var leave = await _leaveService.GetLeaveRequestByIdAsync(id);
-        return leave == null ? NotFound("Leave request not found") : Ok(leave);
+        return leave.Data == null ? NotFound("Leave request not found") : Ok(leave);
     }
 
     [HttpPost("requests")]
@@ -104,19 +105,19 @@ public class LeaveController : ControllerBase
     public async Task<IActionResult> DeleteLeaveRequest(int id)
     {
         var deleted = await _leaveService.DeleteLeaveRequestAsync(id);
-        return deleted ? Ok() : NotFound("Leave request not found");
+        return deleted.Data ? Ok() : NotFound("Leave request not found");
     }
 
     [HttpGet("requests/pending")]
     public async Task<IActionResult> GetPendingLeaveRequests()
     {
         var result = await _leaveService.GetLeaveRequestAsync();
-        var pending = result.Where(x => x.Status == LeaveStatusList.Pending);
+        var pending = result.Data?.Where(x => x.Status == LeaveStatusList.Pending);
         return Ok(pending);
     }
 
     [HttpPost("requests/status/{id:int}")]
-    [Authorize(Roles = "SuperAdmin,Admin,HR,Manager")]
+    [Authorize(Roles = UserRoleGroups.AdminRoles)]
     public async Task<IActionResult> UpdateLeaveStatus(int id, [FromQuery] LeaveStatus status)
     {
         if (status != LeaveStatus.Approved && status != LeaveStatus.Rejected)
@@ -125,10 +126,9 @@ public class LeaveController : ControllerBase
         int approvedBy =
             int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-        var result =
-            await _leaveService.UpdateStatusLeaveAsync(id, status, approvedBy);
+        var result =await _leaveService.UpdateStatusLeaveAsync(id, status, approvedBy);
 
-        if (!result)
+        if (!result.Data)
             return BadRequest("Invalid leave request");
 
         return Ok($"Leave {status} successfully");
@@ -172,6 +172,6 @@ public class LeaveController : ControllerBase
     {
         var deleted = await _leaveService.DeleteLeaveBalanceAsync(id);
 
-        return deleted ? Ok() : NotFound("Leave balance not found");
+        return deleted.Data ? Ok() : NotFound("Leave balance not found");
     }
 }

@@ -47,9 +47,14 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(e => e.LeaveRequests)
-            .WithOne(l => l.Employee)
-            .HasForeignKey(l => l.EmployeeId)
-            .OnDelete(DeleteBehavior.Cascade);
+             .WithOne(l => l.Employee)
+             .HasForeignKey(l => l.EmployeeId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(e => e.ApprovedLeaveRequests)
+            .WithOne(l => l.ApprovedByEmployee)
+            .HasForeignKey(l => l.ApprovedBy)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(e => e.Timesheets)
             .WithOne(t => t.Employee)
@@ -60,6 +65,11 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .WithOne(t => t.Employee)
             .HasForeignKey(t => t.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(e => e.AttendanceRequestsApproved)
+            .WithOne(t => t.ApprovedByEmployee)
+            .HasForeignKey(t => t.ApprovedBy)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(e => e.EmployeeLeaveBalance)
             .WithOne(t => t.Employee)

@@ -27,7 +27,7 @@ public interface ILeaveService
     Task<ApiResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync();
     Task<ApiResult<bool>> DeleteLeaveBalanceAsync(int id);
     Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceDto leaveBalanceDto);
-    Task<ApiResult<EmployeeLeaveBalanceDto?>> GetLeaveBalanceByEmployeeIdAsync(int employeeId);
+    Task<ApiResult<List<EmployeeLeaveBalanceDto?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId);
 }
 public class LeaveService : ILeaveService
 {
@@ -86,7 +86,7 @@ public class LeaveService : ILeaveService
     public async Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceDto leaveBalanceDto)
         => await _leaveApi.UpdateLeaveBalanceAsync(id, leaveBalanceDto);
 
-    public async Task<ApiResult<EmployeeLeaveBalanceDto?>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
+    public async Task<ApiResult<List<EmployeeLeaveBalanceDto?>?>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
         => await _leaveApi.GetLeaveBalanceByEmployeeIdAsync(employeeId);
 
 }
