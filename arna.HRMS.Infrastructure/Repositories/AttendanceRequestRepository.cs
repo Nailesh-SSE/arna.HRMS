@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,18 +30,46 @@ public class AttendanceRequestRepository
         return _baseRepository.AddAsync(attendance);
     }
 
-    public async Task<bool> UpdateAttendanceRequestStatusAsync(int id)
+    public Task<AttendanceRequest> UpdateAttendanceRequestAsync(AttendanceRequest attendanceRequest)
     {
-        var attendanceStatus= await _baseRepository.GetByIdAsync(id);
+        return _baseRepository.UpdateAsync(attendanceRequest);
+    }
 
-        if (attendanceStatus == null)
+    public async Task<bool> UpdateAttendanceRequestStatusAsync(int AttendanceRequestId, CommonStatusList status, int approvedBy)
+    {
+        var Request = await _baseRepository.Query()
+            .FirstOrDefaultAsync(lr =>
+                lr.Id == AttendanceRequestId &&
+                lr.IsActive &&
+                !lr.IsDeleted);
+
+        if (Request == null)
             return false;
 
-        attendanceStatus.IsApproved = true;
-        attendanceStatus.ApprovedOn = DateTime.Now;
-        attendanceStatus.UpdatedOn = DateTime.Now;
+        if (Request.Status != CommonStatusList.Pending)
+            return false;
 
-        await _baseRepository.UpdateAsync(attendanceStatus);
-        return true; 
+        Request.Status = status;
+        Request.ApprovedBy = approvedBy;
+        Request.ApprovedOn = DateTime.Now;
+        Request.UpdatedOn = DateTime.Now;
+
+        await _baseRepository.UpdateAsync(Request);
+        return true;
+    }
+
+    public async Task<bool> GetAttendanceRequestCancelAsync(int id, int employeeId)
+    {
+        var attendanceRequest = await _baseRepository.Query()
+            .FirstOrDefaultAsync(ar => ar.Id == id && ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted);
+        if (attendanceRequest == null)
+            return false;
+        if (attendanceRequest.Status != CommonStatusList.Pending)
+            return false;
+        attendanceRequest.Status = CommonStatusList.Cancelled;
+        attendanceRequest.UpdatedOn = DateTime.Now;
+        await _baseRepository.UpdateAsync(attendanceRequest);
+
+        return true;
     }
 }

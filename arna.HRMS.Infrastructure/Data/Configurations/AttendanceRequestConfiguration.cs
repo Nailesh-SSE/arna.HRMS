@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,23 +18,36 @@ public class AttendanceRequestConfiguration : IEntityTypeConfiguration<Attendanc
        .IsRequired();
 
         builder.Property(ae => ae.ReasonType)
+            .HasConversion<string>()
+            .HasMaxLength(60)
             .IsRequired();
+
         builder.Property(ae => ae.Location)
+            .HasConversion<string>()
+            .HasMaxLength(50)
             .IsRequired();
+
         builder.Property(ae => ae.Description)
             .HasMaxLength(1000)
             .HasColumnType("varchar");
+
         builder.Property(ae => ae.ClockIn)
             .IsRequired(false);
             
         builder.Property(ae => ae.ClockOut)
             .IsRequired(false);
+
         builder.Property(ae => ae.BreakDuration)
             .HasColumnType("time");
+
         builder.Property(ae => ae.TotalHours)
             .HasColumnType("time");
-        builder.Property(ae => ae.IsApproved)
-            .HasDefaultValue(false);
+
+        builder.Property(ae => ae.Status)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(CommonStatusList.Pending)
+            .IsRequired();
 
         // Relationship with Employee
         builder.HasOne(a => a.Employee)

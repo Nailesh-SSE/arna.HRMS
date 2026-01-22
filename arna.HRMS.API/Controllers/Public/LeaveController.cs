@@ -94,7 +94,7 @@ public class LeaveController : ControllerBase
         if (id != dto.Id)
             return BadRequest("Invalid Id");
 
-        if (dto.Status != LeaveStatusList.Pending)
+        if (dto.Status != CommonStatus.Pending)
             return BadRequest("Only pending leave requests can be updated");
 
         var updated = await _leaveService.UpdateLeaveRequestAsync(dto);
@@ -112,21 +112,21 @@ public class LeaveController : ControllerBase
     public async Task<IActionResult> GetPendingLeaveRequests()
     {
         var result = await _leaveService.GetLeaveRequestAsync();
-        var pending = result.Data?.Where(x => x.Status == LeaveStatusList.Pending);
+        var pending = result.Data?.Where(x => x.Status == CommonStatus.Pending);
         return Ok(pending);
     }
 
     [HttpPost("requests/status/{id:int}")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> UpdateLeaveStatus(int id, [FromQuery] LeaveStatus status)
+    public async Task<IActionResult> UpdateLeaveStatus(int id, [FromQuery] CommonStatusList status)
     {
-        if (status != LeaveStatus.Approved && status != LeaveStatus.Rejected)
+        if (status != CommonStatusList.Approved && status != CommonStatusList.Rejected)
             return BadRequest("Invalid status");
 
         int approvedBy =
             int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-        var result =await _leaveService.UpdateStatusLeaveAsync(id, status, approvedBy);
+        var result = await _leaveService.UpdateStatusLeaveAsync(id, status, approvedBy);
 
         if (!result.Data)
             return BadRequest("Invalid leave request");

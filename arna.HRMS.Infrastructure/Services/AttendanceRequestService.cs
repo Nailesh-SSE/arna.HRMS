@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Core.DTOs.Responses;
 using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Models.DTOs;
@@ -60,15 +61,36 @@ public class AttendanceRequestService : IAttendanceRequestService
         return ServiceResult<AttendanceRequestDto>.Success(resultDto, "Attendance request created successfully");
     }
 
-    public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id)
+    public async Task<ServiceResult<AttendanceRequestDto>> UpdateAttendanceRequestAsync(AttendanceRequestDto dto)
+    {
+        if (dto == null)
+            return ServiceResult<AttendanceRequestDto>.Fail("Invalid request");
+
+        if (dto.Id <= 0)
+            return ServiceResult<AttendanceRequestDto>.Fail("Invalid Attendance Request ID");
+
+        var Attendance = _mapper.Map<AttendanceRequest>(dto);
+        var updated = await _attendanceRequestRepository.UpdateAttendanceRequestAsync(Attendance);
+        var resultDto = _mapper.Map<AttendanceRequestDto>(updated);
+
+        return ServiceResult<AttendanceRequestDto>.Success(resultDto, "Request updated successfully");
+    }
+
+    public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id, CommonStatusList status, int approvedBy)
     {
         if (id <= 0)
             return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");
 
-        var updated = await _attendanceRequestRepository.UpdateAttendanceRequestStatusAsync(id);
+        var updated = await _attendanceRequestRepository.UpdateAttendanceRequestStatusAsync(id, status, approvedBy);
 
-        return updated
-            ? ServiceResult<bool>.Success(true, "Attendance request approved successfully")
-            : ServiceResult<bool>.Fail("Attendance request not found");
+        return ServiceResult<bool>.Success(updated);
+    }
+
+    public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusCancleAsync(int id, int EmployeeId)
+    {
+        if (id <= 0)
+            return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");
+        var updated = await _attendanceRequestRepository.GetAttendanceRequestCancelAsync(id, EmployeeId);
+        return ServiceResult<bool>.Success(updated);
     }
 }

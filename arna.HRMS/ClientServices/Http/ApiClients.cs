@@ -316,7 +316,7 @@ public class ApiClients
         public Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id)
             => _crudLeaveRequest.Delete(id);
 
-        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, LeaveStatusList status)
+        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, CommonStatus status)
         => _http.PostAsync<bool>($"status/{leaveRequestId}?status={status}",null);
 
         public  Task<ApiResult<List<LeaveRequestDto>>> GetPandingLeaveRequestAsync()

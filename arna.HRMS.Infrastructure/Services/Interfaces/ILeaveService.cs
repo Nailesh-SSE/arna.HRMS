@@ -20,7 +20,7 @@ public interface ILeaveService
     Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
     Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id);
     Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
-    Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, LeaveStatus status, int approvedBy);
+    Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, CommonStatusList status, int approvedBy);
 
     //Leave Balance Methods
     Task<ServiceResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync();

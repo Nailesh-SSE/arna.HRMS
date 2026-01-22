@@ -96,7 +96,7 @@ public class LeaveRepository
     {
         var LeaveRequest = await _leaveRequestRepo.GetByIdAsync(id);
 
-        if (LeaveRequest == null || LeaveRequest.Status == LeaveStatus.Pending)
+        if (LeaveRequest == null || LeaveRequest.Status == CommonStatusList.Pending)
             return false;
 
         LeaveRequest.IsActive = false;
@@ -112,7 +112,7 @@ public class LeaveRepository
             .Include(lr => lr.LeaveType)
             .Where(lr =>
                 lr.EmployeeId == employeeId &&
-                lr.Status == LeaveStatus.Approved &&
+                lr.Status == CommonStatusList.Approved &&
                 lr.IsActive &&
                 !lr.IsDeleted)
             .GroupBy(lr => lr.LeaveType.LeaveName)
@@ -124,7 +124,7 @@ public class LeaveRepository
             .ToDictionaryAsync(x => x.LeaveName, x => x.UsedDays);
     }
 
-    public async Task<bool> UpdateLeaveStatusAsync(int leaveRequestId, LeaveStatus status, int approvedBy)
+    public async Task<bool> UpdateLeaveStatusAsync(int leaveRequestId, CommonStatusList status, int approvedBy)
     {
         var leaveRequest = await _leaveRequestRepo.Query()
             .FirstOrDefaultAsync(lr =>
@@ -135,7 +135,7 @@ public class LeaveRepository
         if (leaveRequest == null)
             return false;
 
-        if (leaveRequest.Status != LeaveStatus.Pending)
+        if (leaveRequest.Status != CommonStatusList.Pending)
             return false;
 
         leaveRequest.Status = status;

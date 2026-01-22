@@ -1,6 +1,6 @@
 ﻿namespace arna.HRMS.Models.Enums;
 
-public enum LeaveStatusList
+public enum CommonStatus
 {
     Pending = 1,
     Approved = 2,

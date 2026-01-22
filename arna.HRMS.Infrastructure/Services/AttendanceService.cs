@@ -123,7 +123,7 @@ public class AttendanceService : IAttendanceService
         var approvedLeaves = (await _leaveService.GetLeaveRequestAsync()).Data?
                 .Where(l =>
                     l.EmployeeId == empId &&
-                    l.Status == LeaveStatusList.Approved)
+                    l.Status == CommonStatus.Approved)
                 .SelectMany(l =>
                     Enumerable.Range(
                         0,

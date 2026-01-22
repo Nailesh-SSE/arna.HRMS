@@ -18,7 +18,7 @@ public class LeaveRequestDto : CommonDto
 
     public string Reason { get; set; }
 
-    public LeaveStatusList Status { get; set; } = LeaveStatusList.Pending;
+    public CommonStatus Status { get; set; } = CommonStatus.Pending;
 
     public int? ApprovedBy { get; set; }
     public string? ApprovedByName { get; set; }

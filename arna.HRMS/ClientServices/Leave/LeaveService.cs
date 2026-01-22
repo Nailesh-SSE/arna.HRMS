@@ -21,7 +21,7 @@ public interface ILeaveService
     Task<ApiResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
     Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id);
     Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestDto Dto);
-    Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, LeaveStatusList status);
+    Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, CommonStatus status);
 
     //Leave Balance Methods
     Task<ApiResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync();
@@ -73,7 +73,7 @@ public class LeaveService : ILeaveService
     public async Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestDto Dto)
         => await _leaveApi.UpdateLeaveRequestAsync(id, Dto);
 
-    public async Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, LeaveStatusList status)
+    public async Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, CommonStatus status)
         => await _leaveApi.UpdateStatusLeaveAsync(leaveRequestId, status);
 
     //Leave Balance Methods

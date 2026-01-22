@@ -96,12 +96,12 @@ public class LeaveService : ILeaveService
         return ServiceResult<LeaveRequestDto>.Success(Data);
     }
 
-    public async Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, LeaveStatus status, int approvedBy)
+    public async Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, CommonStatusList status, int approvedBy)
     {
         var updated = await _leaveRepository
             .UpdateLeaveStatusAsync(leaveRequestId, status, approvedBy);
 
-        if (!updated || status != LeaveStatus.Approved)
+        if (!updated || status != CommonStatusList.Approved)
             return ServiceResult<bool>.Fail("Failed to update leave status or status is not approved.");
 
         var leaveRequest = await _leaveRepository

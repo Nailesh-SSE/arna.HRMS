@@ -11,7 +11,7 @@ public class LeaveRequest : BaseEntity
     public DateTime EndDate { get; set; }
     public int TotalDays { get; set; }
     public string Reason { get; set; }
-    public LeaveStatus Status { get; set; } = LeaveStatus.Pending;  
+    public CommonStatusList Status { get; set; } = CommonStatusList.Pending;  
     public int? ApprovedBy { get; set; }
     public DateTime? ApprovedDate { get; set; }
     public string? ApprovalNotes { get; set; }

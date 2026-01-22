@@ -33,6 +33,8 @@ public class AttendanceRequestDto : CommonDto
 
     [Required(ErrorMessage = "Message is required")]
     public string? Description { get; set; }
-    public bool IsApproved { get; set; } = false;
-    public DateTime? ApprovedBy { get; set; }
+    public CommonStatus Status { get; set; } = CommonStatus.Pending;
+    public DateTime? ApprovedOn { get; set; }
+    public int? ApprovedBy { get; set; }
+    public string? ApprovedByName { get; set; }
 }
