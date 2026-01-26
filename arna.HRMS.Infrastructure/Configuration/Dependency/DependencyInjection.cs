@@ -15,7 +15,14 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
         // AutoMapper
+        services.AddAutoMapper(typeof(AttendanceProfile).Assembly);
+        services.AddAutoMapper(typeof(AttendanceRequestProfile).Assembly);
+        services.AddAutoMapper(typeof(DepartmentProfile).Assembly);
+        services.AddAutoMapper(typeof(EmployeeProfile).Assembly);
+        services.AddAutoMapper(typeof(FestivalHolidayProfile).Assembly);
+        services.AddAutoMapper(typeof(LeaveProfile).Assembly);
         services.AddAutoMapper(typeof(UserProfile).Assembly);
+        services.AddAutoMapper(typeof(RoleProfile).Assembly);
 
         // Base repository
         services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
@@ -28,7 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
         services.AddScoped<IFestivalHolidayService, FestivalHolidayService>();
         services.AddScoped<ILeaveService, LeaveService>();
-
+        services.AddScoped<IRoleService, RoleService>();
 
         // Repositories
         services.AddScoped<DepartmentRepository>();
@@ -38,6 +45,7 @@ public static class DependencyInjection
         services.AddScoped<AttendanceRequestRepository>();
         services.AddScoped<FestivalHolidayRepository>();
         services.AddScoped<LeaveRepository>();
+        services.AddScoped<RoleRepository>();
 
         // Auth Services
         services.AddScoped<IAuthService, AuthService>();

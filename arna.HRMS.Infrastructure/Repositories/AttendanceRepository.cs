@@ -17,6 +17,7 @@ public class AttendanceRepository
     {
         return await _baseRepository.Query()
             .Include(x => x.Employee)
+            .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
 

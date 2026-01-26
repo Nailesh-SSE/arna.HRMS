@@ -15,7 +15,7 @@ public class FestivalHolidayRepository
 
     public async Task<List<FestivalHoliday>> GetFestivalHolidayAsync()
     {
-        return await _baseRepository.Query().ToListAsync();
+        return await _baseRepository.Query().OrderByDescending(x => x.Id).ToListAsync();
     }
 
     public async Task<List<FestivalHoliday>> GetByMonthAsync(int year, int month)

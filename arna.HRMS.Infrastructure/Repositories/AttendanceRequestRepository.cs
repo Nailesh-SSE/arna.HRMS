@@ -16,7 +16,7 @@ public class AttendanceRequestRepository
 
     public async Task<List<AttendanceRequest>> GetAttendanceRequestAsync()
     {
-        return await _baseRepository.Query().Include(d=>d.Employee).ToListAsync();
+        return await _baseRepository.Query().Include(d=>d.Employee).OrderByDescending(x => x.Id).ToListAsync();
     }
 
     public async Task<AttendanceRequest?> GetAttendanceRequestByIdAsync(int id)

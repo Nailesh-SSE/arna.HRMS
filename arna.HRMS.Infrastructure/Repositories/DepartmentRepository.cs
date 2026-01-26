@@ -18,6 +18,7 @@ public class DepartmentRepository
         return await _baseRepository.Query()
             .Include(d => d.ParentDepartment)
             .Where(d => d.IsActive && !d.IsDeleted)
+            .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
 

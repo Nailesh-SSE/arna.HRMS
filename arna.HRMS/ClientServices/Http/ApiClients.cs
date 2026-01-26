@@ -17,6 +17,7 @@ public class ApiClients
     public UserApi Users { get; }
     public AttendanceRequestApi AttendanceRequest { get; }
     public LeaveApi Leave { get; }
+    public RoleApi Role { get; }
 
     public ApiClients(HttpService http)
     {
@@ -28,6 +29,7 @@ public class ApiClients
         Users = new UserApi(http);
         AttendanceRequest = new AttendanceRequestApi(http);
         Leave = new LeaveApi(http);
+        Role = new RoleApi(http);
     }
 
     // =========================
@@ -341,5 +343,41 @@ public class ApiClients
 
         public Task<ApiResult<List<EmployeeLeaveBalanceViewModel?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
             => _http.GetAsync<List<EmployeeLeaveBalanceViewModel?>>($"{baseUrl}/balance/{employeeId}");
+    }
+
+    // =========================
+    // ROLE API (CUSTOM)
+    // =========================
+    public sealed class RoleApi
+    {
+        private const string baseUrl = "api/role";
+        private readonly CrudExecutor<RoleViewModel> _crud; 
+
+        public RoleApi(HttpService http)
+        {
+            _crud = new CrudExecutor<RoleViewModel>(http, baseUrl);
+        }
+
+        public Task<ApiResult<List<RoleViewModel>>> GetAll()
+            => _crud.GetAll();
+
+        public Task<ApiResult<RoleViewModel>> GetById(int id)
+            => _crud.GetById(id);
+
+        public Task<ApiResult<RoleViewModel>> Create(RoleViewModel dto)
+            => _crud.Create(dto);
+
+        public async Task<ApiResult<bool>> Update(int id, RoleViewModel dto)
+        {
+            var updateResult = await _crud.UpdateReturnDto(id, dto);
+
+            if (!updateResult.IsSuccess)
+                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update user.", updateResult.StatusCode);
+
+            return ApiResult<bool>.Success(true, updateResult.StatusCode);
+        }
+
+        public Task<ApiResult<bool>> Delete(int id)
+            => _crud.Delete(id);
     }
 }

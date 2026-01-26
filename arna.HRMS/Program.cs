@@ -1,5 +1,6 @@
 using arna.HRMS.ClientServices.Admin.Department;
 using arna.HRMS.ClientServices.Admin.Employee;
+using arna.HRMS.ClientServices.Admin.Role;
 using arna.HRMS.ClientServices.Admin.User;
 using arna.HRMS.ClientServices.Auth;
 using arna.HRMS.ClientServices.Client.Attendance;
@@ -80,6 +81,7 @@ public class Program
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
         builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
         builder.Services.AddScoped<ILeaveService, LeaveService>();
+        builder.Services.AddScoped<IRoleService, RoleService>();
 
         builder.Services.AddScoped<AttendanceState>();
 
