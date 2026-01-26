@@ -63,9 +63,9 @@ public class AttendanceRequestController : ControllerBase
     [HttpGet("employee/{employeeId:int}")]
     public async Task<IActionResult> GetAttendanceRequestsByEmployee(int employeeId)
     {
-        var result = await _attendanceRequestService.GetAttendanceRequestAsync();
-        var employeeRequests = result.Data?.Where(x => x.EmployeeId == employeeId).OrderByDescending(d => d.Id);
-        return Ok(employeeRequests);
+        
+        var result = await _attendanceRequestService.GetAttendanceRequestsByEmployeeAsync(employeeId);
+        return Ok(result);
     }
 
     [HttpPost("cancel/{id:int}/{employeeId:int}")]
@@ -81,9 +81,8 @@ public class AttendanceRequestController : ControllerBase
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
     public async Task<IActionResult> GetPendingAttendanceRequests()
     {
-        var result = await _attendanceRequestService.GetAttendanceRequestAsync();
-        var pending = result.Data?.Where(x => x.Status == Status.Pending).OrderByDescending(d => d.Id);
-        return Ok(pending);
+        var result = await _attendanceRequestService.GetPendingAttendanceRequestesAsync();
+        return Ok(result);
     }
 
     [HttpPost("status/{id:int}")]

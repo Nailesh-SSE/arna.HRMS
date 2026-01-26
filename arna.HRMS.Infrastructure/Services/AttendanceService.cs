@@ -5,6 +5,7 @@ using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -17,9 +18,6 @@ public class AttendanceService : IAttendanceService
     private readonly ILeaveService _leaveService;
 
     private static readonly DateTime SystemStartDate = new(2026, 1, 12);
-    private AttendanceRepository attendanceRepository;
-    private IEmployeeService object1;
-    private IFestivalHolidayService object2;
 
     public AttendanceService(
         AttendanceRepository attendanceRepository,
@@ -33,14 +31,6 @@ public class AttendanceService : IAttendanceService
         _employeeService = employeeService;
         _festivalHolidayService = festivalHolidayService;
         _leaveService = leaveService;
-    }
-
-    public AttendanceService(AttendanceRepository attendanceRepository, IMapper mapper, IEmployeeService object1, IFestivalHolidayService object2)
-    {
-        this.attendanceRepository = attendanceRepository;
-        _mapper = mapper;
-        this.object1 = object1;
-        this.object2 = object2;
     }
 
     #region Basic APIs
@@ -67,7 +57,7 @@ public class AttendanceService : IAttendanceService
         return ServiceResult<AttendanceDto?>.Success(dto);
     }
 
-    public async Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto)
+    public async Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync([FromBody] AttendanceDto attendanceDto)
     {
         if (attendanceDto == null)
             return ServiceResult<AttendanceDto>.Fail("Invalid request");
@@ -115,23 +105,8 @@ public class AttendanceService : IAttendanceService
         var attendances =
             await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId);
 
-        // festivalHolidayService returns ServiceResult<List<FestivalHolidayDto>>
         var festivalsResult =
             await _festivalHolidayService.GetFestivalHolidayByMonthAsync(year, month);
-
-        var approvedLeaves = (await _leaveService.GetLeaveRequestAsync()).Data?
-                .Where(l =>
-                    l.EmployeeId == empId &&
-                    l.Status == Status.Approved)
-                .SelectMany(l =>
-                    Enumerable.Range(
-                        0,
-                        (l.EndDate.Date - l.StartDate.Date).Days + 1
-                    )
-                    .Select(offset => l.StartDate.Date.AddDays(offset))
-                )
-        .ToHashSet();
-
 
         if (!festivalsResult.IsSuccess || festivalsResult.Data == null)
             return ServiceResult<List<MonthlyAttendanceDto>>.Fail(festivalsResult.Message);
@@ -146,7 +121,8 @@ public class AttendanceService : IAttendanceService
                 a.EmployeeId,
                 Date = a.Date.Date,
                 ClockIn = (DateTime?)a.ClockIn,
-                ClockOut = (DateTime?)a.ClockOut
+                ClockOut = (DateTime?)a.ClockOut,
+
             })
             .Concat(
                 monthFestivalDates.Select(d => new
@@ -154,7 +130,7 @@ public class AttendanceService : IAttendanceService
                     EmployeeId = empId,
                     Date = d,
                     ClockIn = (DateTime?)null,
-                    ClockOut = (DateTime?)null
+                    ClockOut = (DateTime?)null,
                 })
             );
 
@@ -185,8 +161,13 @@ public class AttendanceService : IAttendanceService
 
                 bool isFestivalHoliday = monthFestivalDates.Contains(g.Key.Date);
 
-                bool isLeave =
-                    approvedLeaves.Contains(g.Key.Date);
+                var dailyStatuses = attendances
+                .Where(a =>
+                    a.EmployeeId == g.Key.EmployeeId &&
+                    a.Date.Date == g.Key.Date
+                )
+                .Select(a => a.Status)
+                .ToList();
 
                 return new MonthlyAttendanceDto
                 {
@@ -196,12 +177,7 @@ public class AttendanceService : IAttendanceService
                     ClockIn = minClockIn,
                     ClockOut = maxClockOut,
                     TotalHours = totalHours,
-                    Status = CalculateStatus(
-                        minClockIn,
-                        date,
-                        isFestivalHoliday,
-                        isLeave
-                    )
+                    Status = CalculateStatus(dailyStatuses, isFestivalHoliday, date)
                 };
 
             })
@@ -215,15 +191,18 @@ public class AttendanceService : IAttendanceService
 
     #region Status Logic
 
-    private static string CalculateStatus(TimeSpan? clockIn, DateOnly date, bool isFestivalHoliday, bool isLeave)
+    private static String CalculateStatus(
+    IEnumerable<AttendanceStatus> statuses,
+    bool isFestivalHoliday,
+    DateOnly date)
     {
         if (isFestivalHoliday || IsWeekend(date))
             return "Holiday";
 
-        if (isLeave)
+        if (statuses.Contains(AttendanceStatus.Leave))
             return "Leave";
 
-        if (clockIn.HasValue && clockIn.Value != TimeSpan.Zero)
+        if (statuses.Contains(AttendanceStatus.Present))
             return "Present";
 
         return "Absent";
@@ -249,6 +228,18 @@ public class AttendanceService : IAttendanceService
             return;
 
         var festivalResult = await _festivalHolidayService.GetFestivalHolidayAsync();
+        var approvedLeaves = (await _leaveService.GetLeaveRequestAsync()).Data?
+                .Where(l =>
+                    l.EmployeeId == employeeId &&
+                    l.Status == Status.Approved)
+                .SelectMany(l =>
+                    Enumerable.Range(
+                        0,
+                        (l.EndDate.Date - l.StartDate.Date).Days + 1
+                    )
+                    .Select(offset => l.StartDate.Date.AddDays(offset))
+                )
+                .ToHashSet() ?? new HashSet<DateTime>();
 
         var festivalDates = (festivalResult.Data ?? new List<FestivalHolidayDto>())
             .Select(f => f.Date.Date)
@@ -260,23 +251,26 @@ public class AttendanceService : IAttendanceService
 
         foreach (var date in missingDates)
         {
-            bool isHoliday =
-                IsWeekend(date) || festivalDates.Contains(date.Date);
+            bool isHoliday = IsWeekend(date) || festivalDates.Contains(date.Date);
+            bool isLeave = approvedLeaves.Contains(date.Date);
 
-            await _attendanceRepository.CreateAttendanceAsync(new Attendance
+            if (!isLeave || !isHoliday)
             {
-                EmployeeId = employeeId,
-                Date = date,
-                ClockIn = null,
-                ClockOut = null,
-                TotalHours = TimeSpan.Zero,
-                Status = isHoliday
+                await _attendanceRepository.CreateAttendanceAsync(new Attendance
+                {
+                    EmployeeId = employeeId,
+                    Date = date,
+                    ClockIn = null,
+                    ClockOut = null,
+                    TotalHours = TimeSpan.Zero,
+                    Status = isHoliday
                     ? AttendanceStatus.Holiday
                     : AttendanceStatus.Absent,
-                Notes = isHoliday
+                    Notes = isHoliday
                     ? "Holiday"
                     : "Absent"
-            });
+                });
+            }
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,7 @@ public class AttendanceRepository
     {
         _baseRepository = baseRepository;
     }
-    
+
     public async Task<List<Attendance>> GetAttendenceAsync()
     {
         return await _baseRepository.Query()
@@ -40,7 +41,7 @@ public class AttendanceRepository
     public async Task<DateTime?> GetLastAttendanceDateAsync(int employeeId)
     {
         return await _baseRepository.Query()
-            .Where(x => x.EmployeeId == employeeId)
+            .Where(x => x.EmployeeId == employeeId && x.Status == AttendanceStatus.Present)
             .OrderByDescending(x => x.Date)
             .Select(x => (DateTime?)x.Date.Date)
             .FirstOrDefaultAsync();
@@ -52,7 +53,7 @@ public class AttendanceRepository
             .Where(a =>
                 a.EmployeeId == employeeId &&
                 a.Date.Date == DateTime.Today)
-            .OrderByDescending(a => a.Id) 
+            .OrderByDescending(a => a.Id)
             .FirstOrDefaultAsync();
     }
 

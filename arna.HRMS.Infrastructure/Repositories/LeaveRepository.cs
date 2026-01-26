@@ -74,12 +74,32 @@ public class LeaveRepository
             .Where(x => x.IsActive && !x.IsDeleted)
             .ToListAsync();
     }
+
+    public async Task<List<LeaveRequest>> GetPendingLeaveRequest()
+    {
+        return await _leaveRequestRepo.Query()
+            .Include(lr => lr.Employee)
+            .Where(x => x.Status == Status.Pending && x.IsActive && !x.IsDeleted)
+            .OrderByDescending(o => o.Id)
+            .ToListAsync();
+    }
+
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(int id)
     {
         return await _leaveRequestRepo.Query()
             .Include(e => e.Employee)
             .Include(e => e.LeaveType)
             .FirstOrDefaultAsync(e => e.Id == id && e.IsActive && !e.IsDeleted);
+    }
+
+    public async Task<List<LeaveRequest>> GetLeaveRequestByEmployeeIdAsync(int employeeId)
+    {
+        return await _leaveRequestRepo.Query()
+            .Include(e => e.Employee)
+            .Include(e => e.LeaveType)
+            .Where(e => e.EmployeeId == employeeId && e.IsActive && !e.IsDeleted)
+            .OrderByDescending(o => o.Id)
+            .ToListAsync();
     }
 
     public Task<LeaveRequest> CreateLeaveRequestAsync(LeaveRequest leaveRequest)
@@ -144,6 +164,21 @@ public class LeaveRepository
         leaveRequest.UpdatedOn = DateTime.Now;
 
         await _leaveRequestRepo.UpdateAsync(leaveRequest);
+        return true;
+    }
+
+    public async Task<bool> UpdateLeaveRequestStatusCancel(int id, int employeeId)
+    {
+        var attendanceRequest = await _leaveRequestRepo.Query()
+            .FirstOrDefaultAsync(ar => ar.Id == id && ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted);
+        if (attendanceRequest == null)
+            return false;
+        if (attendanceRequest.Status != Status.Pending)
+            return false;
+        attendanceRequest.Status = Status.Cancelled;
+        attendanceRequest.UpdatedOn = DateTime.Now;
+        await _leaveRequestRepo.UpdateAsync(attendanceRequest);
+
         return true;
     }
 

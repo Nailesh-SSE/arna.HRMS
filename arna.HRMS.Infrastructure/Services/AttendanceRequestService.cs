@@ -12,13 +12,16 @@ public class AttendanceRequestService : IAttendanceRequestService
 {
     private readonly AttendanceRequestRepository _attendanceRequestRepository;
     private readonly IMapper _mapper;
+    private readonly IAttendanceService _attendanceService;
 
     public AttendanceRequestService(
         AttendanceRequestRepository attendanceRequestRepository,
-        IMapper mapper)
+        IMapper mapper,
+        IAttendanceService attendanceService)
     {
         _attendanceRequestRepository = attendanceRequestRepository;
         _mapper = mapper;
+        _attendanceService = attendanceService;
     }
 
     public async Task<ServiceResult<List<AttendanceRequestDto>>> GetAttendanceRequestAsync()
@@ -26,6 +29,13 @@ public class AttendanceRequestService : IAttendanceRequestService
         var attendanceRequests = await _attendanceRequestRepository.GetAttendanceRequestAsync();
         var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
 
+        return ServiceResult<List<AttendanceRequestDto>>.Success(list);
+    }
+
+    public async Task<ServiceResult<List<AttendanceRequestDto>>> GetPendingAttendanceRequestesAsync()
+    {
+        var attendanceRequests = await _attendanceRequestRepository.GetPandingAttendanceRequestes();
+        var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
         return ServiceResult<List<AttendanceRequestDto>>.Success(list);
     }
 
@@ -41,6 +51,16 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         var dto = _mapper.Map<AttendanceRequestDto>(attendance);
         return ServiceResult<AttendanceRequestDto?>.Success(dto);
+    }
+
+    public async Task<ServiceResult<List<AttendanceRequestDto>>> GetAttendanceRequestsByEmployeeAsync(int employeeId)
+    {
+        if (employeeId <= 0)
+            return ServiceResult<List<AttendanceRequestDto>>.Fail("Invalid Employee ID");
+        var attendanceRequests =
+            await _attendanceRequestRepository.GetAttendanceRequestsByEmployee(employeeId);
+        var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
+        return ServiceResult<List<AttendanceRequestDto>>.Success(list);
     }
 
     public async Task<ServiceResult<AttendanceRequestDto>> CreateAttendanceRequestAsync(AttendanceRequestDto attendanceRequestDto)
@@ -83,8 +103,104 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         var updated = await _attendanceRequestRepository.UpdateAttendanceRequestStatusAsync(id, status, approvedBy);
 
+        var attendanceRequest = await _attendanceRequestRepository.GetAttendanceRequestByIdAsync(id);
+        var dto = _mapper.Map<AttendanceRequestDto>(attendanceRequest);
+        if (status == Status.Approved && updated)
+        {
+            await CreateAttendanceFromRequestAsync(dto);
+        }
+
         return ServiceResult<bool>.Success(updated);
     }
+
+    private async Task CreateAttendanceFromRequestAsync(AttendanceRequestDto req)
+    {
+        var fromDate = req.FromDate!.Value.Date;
+        var toDate = req.ToDate!.Value.Date;
+
+        var clockIn = req.ClockIn!.Value.TimeOfDay;
+        var clockOut = req.ClockOut!.Value.TimeOfDay;
+
+        if (fromDate == toDate)
+        {
+            var existingClockInOnly =
+                (await _attendanceService.GetAttendanceAsync())
+                    .Data?
+                    .FirstOrDefault(a =>
+                        a.EmployeeId == req.EmployeeId &&
+                        a.Date.Date == fromDate &&
+                        a.ClockInTime.HasValue &&
+                        !a.ClockOutTime.HasValue &&
+                        a.ClockInTime.Value.Hours == clockIn.Hours &&
+                        a.ClockInTime.Value.Minutes == clockIn.Minutes
+                    );
+
+            if (existingClockInOnly != null)
+            {
+                await InsertAttendance(
+                    req,
+                    fromDate,
+                    null,
+                    clockOut,
+                    (clockOut - (existingClockInOnly.ClockInTime ?? TimeSpan.Zero))
+                );
+                return;
+            }
+
+            await InsertAttendance(req, fromDate, clockIn, null, TimeSpan.Zero);
+            await InsertAttendance(req, fromDate, null, clockOut, req.TotalHours);
+            return;
+        }
+
+
+        await InsertAttendance(req, fromDate, clockIn, null, TimeSpan.Zero);
+
+        await InsertAttendance(
+            req,
+            fromDate,
+            null,
+            new TimeSpan(23, 59, 59),
+            new TimeSpan(23, 59, 59) - clockIn
+        );
+
+        await InsertAttendance(
+            req,
+            toDate,
+            TimeSpan.Zero,
+            null,
+            TimeSpan.Zero
+        );
+
+        await InsertAttendance(
+            req,
+            toDate,
+            null,
+            clockOut,
+            clockOut
+        );
+    }
+
+    private async Task InsertAttendance(
+    AttendanceRequestDto req,
+    DateTime date,
+    TimeSpan? clockIn,
+    TimeSpan? clockOut,
+    TimeSpan totalHours)
+    {
+        var attendance = new AttendanceDto
+        {
+            EmployeeId = req.EmployeeId,
+            Date = date,
+            ClockInTime = clockIn,
+            ClockOutTime = clockOut,
+            WorkingHours = totalHours,
+            Status = AttendanceStatus.Present,
+            Notes = req.Description
+        };
+
+        await _attendanceService.CreateAttendanceAsync(attendance);
+    }
+
 
     public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusCancleAsync(int id, int EmployeeId)
     {

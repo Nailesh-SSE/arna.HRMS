@@ -16,11 +16,14 @@ public interface ILeaveService
 
     //Leave Request Methods
     Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestAsync();
+    Task<ServiceResult<List<LeaveRequestDto>>> GetPendingLeaveRequest();
     Task<ServiceResult<LeaveRequestDto>> GetLeaveRequestByIdAsync(int Id);
+    Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestByEmployeeIdAsync(int employeeId);
     Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
     Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id);
     Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
     Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status, int approvedBy);
+    Task<ServiceResult<bool>> UpdateLeaveRequestStatusCancelAsync(int id, int employeeId);
 
     //Leave Balance Methods
     Task<ServiceResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync();

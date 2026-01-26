@@ -19,7 +19,8 @@ public class AttendanceServiceTests
     private Mock<IEmployeeService> _employeeServiceMock = null!;
     private AttendanceRepository _attendanceRepository = null!;
     private AttendanceService _attendanceService = null!;
-    private Mock<IFestivalHolidayService> _festivalHolidayService = null!; 
+    private Mock<IFestivalHolidayService> _festivalHolidayService = null!;
+    private Mock<ILeaveService> _leaveServiceMock = null!;
     private IMapper _mapper = null!;
 
     #region Setup
@@ -30,6 +31,7 @@ public class AttendanceServiceTests
         _baseRepositoryMock = new Mock<IBaseRepository<Attendance>>();
         _employeeServiceMock = new Mock<IEmployeeService>();
         _festivalHolidayService = new Mock<IFestivalHolidayService>();
+        _leaveServiceMock = new Mock<ILeaveService>();
 
         _attendanceRepository = new AttendanceRepository(
             _baseRepositoryMock.Object);
@@ -45,7 +47,8 @@ public class AttendanceServiceTests
             _attendanceRepository,
             _mapper,
             _employeeServiceMock.Object,
-            _festivalHolidayService.Object); 
+            _festivalHolidayService.Object,
+            _leaveServiceMock.Object);
     }
 
     #endregion

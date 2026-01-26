@@ -302,7 +302,7 @@ public class ApiClients
         public Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestById(int id)
             => _crudLeaveRequest.GetById(id);
 
-        public  Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequest(LeaveRequestViewModel dto)
+        public Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequest(LeaveRequestViewModel dto)
             => _crudLeaveRequest.Create(dto);
 
         public async Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestViewModel dto)
@@ -319,10 +319,16 @@ public class ApiClients
             => _crudLeaveRequest.Delete(id);
 
         public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status)
-        => _http.PostAsync<bool>($"status/{leaveRequestId}?status={status}",null);
+            => _http.PostAsync<bool>($"{baseUrl}/requests/status/{leaveRequestId}?status={status}", new { });
 
-        public  Task<ApiResult<List<LeaveRequestViewModel>>> GetPandingLeaveRequestAsync()
-            => _http.GetAsync<List<LeaveRequestViewModel>>($"pending");
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetPandingLeaveRequestAsync()
+            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/pending");
+
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByEmployee(int employeeid)
+            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/employee/{employeeid}");
+
+        public Task<ApiResult<bool>> UpadteLeaverequestStatusCancle(int leaveRequestId, int employeeid)
+            => _http.PostAsync<bool>($"{baseUrl}/requests/cancel/{leaveRequestId}?employeeid={employeeid}", new { });
 
         // Leave Balance Methods
         public Task<ApiResult<List<EmployeeLeaveBalanceViewModel>>> GetLeaveBalanceAsync()
@@ -340,6 +346,7 @@ public class ApiClients
             => _crudLeaveBalance.Delete(id);
 
         public Task<ApiResult<List<EmployeeLeaveBalanceViewModel?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
-            => _http.GetAsync<List<EmployeeLeaveBalanceViewModel?>>($"{baseUrl}/balance/{employeeId}");
+            => _http.GetAsync<List<EmployeeLeaveBalanceViewModel?>>($"{baseUrl}/balances/employee/{employeeId}");
+
     }
 }

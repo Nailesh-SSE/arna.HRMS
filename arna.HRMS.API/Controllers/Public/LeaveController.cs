@@ -108,16 +108,16 @@ public class LeaveController : ControllerBase
     }
 
     [HttpGet("requests/pending")]
+    [Authorize(Roles = UserRoleGroups.AdminRoles)]
     public async Task<IActionResult> GetPendingLeaveRequests()
     {
-        var result = await _leaveService.GetLeaveRequestAsync();
-        var pending = result.Data?.Where(x => x.Status == Status.Pending);
-        return Ok(pending);
+        var result = await _leaveService.GetPendingLeaveRequest();
+        return Ok(result);
     }
 
-    [HttpPost("requests/status/{id:int}")]
+    [HttpPost("requests/status/{leaveRequestId:int}")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> UpdateLeaveStatus(int id, [FromQuery] Status status)
+    public async Task<IActionResult> UpdateLeaveStatus(int leaveRequestId, [FromQuery] Status status)
     {
         if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status");
@@ -125,12 +125,28 @@ public class LeaveController : ControllerBase
         int approvedBy =
             int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-        var result = await _leaveService.UpdateStatusLeaveAsync(id, status, approvedBy);
+        var result = await _leaveService.UpdateStatusLeaveAsync(leaveRequestId, status, approvedBy);
 
         if (!result.Data)
             return BadRequest("Invalid leave request");
 
         return Ok($"Leave {status} successfully");
+    }
+
+    [HttpGet("requests/employee/{employeeid:int}")]
+    public async Task<IActionResult> GetEmployeeLeaveRequest(int employeeid)
+    {
+        var data = await _leaveService.GetLeaveRequestByEmployeeIdAsync(employeeid);
+        return Ok(data);
+    }
+
+    [HttpPost("requests/cancel/{leaveRequestId:int}")]
+    public async Task<IActionResult> CancleLeaveRequest(int leaveRequestId, int employeeid)
+    {
+        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(leaveRequestId, employeeid);
+        if (!result.Data)
+            return BadRequest("Invalid leave request");
+        return Ok("Leave request cancelled successfully");
     }
 
     // ============================

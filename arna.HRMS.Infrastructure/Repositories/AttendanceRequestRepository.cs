@@ -19,10 +19,28 @@ public class AttendanceRequestRepository
         return await _baseRepository.Query().Include(d=>d.Employee).ToListAsync();
     }
 
+    public async Task<List<AttendanceRequest>> GetPandingAttendanceRequestes()
+    {
+        return await _baseRepository.Query()
+            .Where(ar => ar.Status == Status.Pending && ar.IsActive && !ar.IsDeleted)
+            .Include(d => d.Employee)
+            .OrderByDescending(d => d.Id)
+            .ToListAsync();
+    }
+
     public async Task<AttendanceRequest?> GetAttendanceRequestByIdAsync(int id)
     {
         var attendence = await _baseRepository.GetByIdAsync(id);
         return attendence;
+    }
+
+    public async Task<List<AttendanceRequest>> GetAttendanceRequestsByEmployee(int employeeId)
+    {
+        return await _baseRepository.Query()
+            .Where(ar => ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted)
+            .Include(d => d.Employee)
+            .OrderByDescending(d => d.Id)
+            .ToListAsync();
     }
 
     public Task<AttendanceRequest> CreateAttendanceRequestAsync(AttendanceRequest attendance)
