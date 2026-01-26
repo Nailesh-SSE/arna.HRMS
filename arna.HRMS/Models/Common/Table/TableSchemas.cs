@@ -11,7 +11,6 @@ public class TableSchemas
         new() { Header = "Username", Value = u => u.Username },
         new() { Header = "Email", Value = u => u.Email },
         new() { Header = "Full Name", Value = u => u.FullName },
-        new() { Header = "Phone", Value = u => u.PhoneNumber },
         new() { Header = "Role", Value = u => u.Role },
         new() { Header = "Employee", Value = u => u.EmployeeName },
         StatusColumn<UserViewModel>(u => u.IsActive)
@@ -39,33 +38,38 @@ public class TableSchemas
         StatusColumn<EmployeeViewModel>(u => u.IsActive)
     };
 
+    // ATTENDANCE TABLE
     public static List<TableColumn<MonthlyAttendanceViewModel>> AttendanceList = new()
-{
-    new() { Header = "Id", Value = u => u.EmployeeId },
-    new() { Header = "Date", Value = u => u.Date.ToString("dd MMM yyyy") },
-    new() { Header = "Day", Value = u => u.Day },
-    new() { Header = "Clock In", Value = u => u.ClockIn?.ToString(@"hh\:mm") ?? "-" },
-    new() { Header = "Clock Out", Value = u => u.ClockOut?.ToString(@"hh\:mm") ?? "-" },
-    new() { Header = "Total Hours", Value = u => u.TotalHours.ToString(@"hh\:mm") },
-
-     new()
     {
-        Header = "Status",
-        Value = u => u.Status,
-        CssClassFunc = u => u.Status switch
-        {
-            "Present"  => "badge bg-success",
-            "Absent"   => "badge bg-danger",
-            "Holiday"  => "badge bg-secondary",
-            "Leave"    => "badge bg-warning text-dark",
-            "Late"     => "badge bg-info text-dark",
-            "Half-Day" => "badge bg-primary",
-            _          => "badge bg-light text-dark"
-        }
-    }
-};
+        new() { Header = "Date", Value = u => u.Date.ToString("dd MMM yyyy") },
+        new() { Header = "Day", Value = u => u.Day },
+        new() { Header = "Clock In", Value = u => u.ClockIn?.ToString(@"hh\:mm") ?? "-" },
+        new() { Header = "Clock Out", Value = u => u.ClockOut?.ToString(@"hh\:mm") ?? "-" },
+        new() { Header = "Total Hours", Value = u => u.TotalHours.ToString(@"hh\:mm") },
 
+         new()
+         {
+              Header = "Status",
+              Value = u => u.Status,
+              CssClassFunc = u => u.Status switch
+              {
+                   "Present"  => "badge bg-success",
+                   "Absent"   => "badge bg-danger",
+                   "Holiday"  => "badge bg-secondary",
+                   "Leave"    => "badge bg-warning text-dark",
+                   "Late"     => "badge bg-info text-dark",
+                   "Half-Day" => "badge bg-primary",
+                   _          => "badge bg-light text-dark"
+              }
+         }
+    };
 
+    // ROLE TABLE
+    public static List<TableColumn<RoleViewModel>> Roles = new()
+    {
+        new() { Header = "Name", Value = r => r.Name },
+        new() { Header = "Description", Value = r => r.Description }
+    };
 
     // GENERIC STATUS COLUMN
     private static TableColumn<T> StatusColumn<T>(Func<T, bool> isActiveSelector)

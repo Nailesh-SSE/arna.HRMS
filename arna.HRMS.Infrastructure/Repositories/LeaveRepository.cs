@@ -24,6 +24,7 @@ public class LeaveRepository
     {
         return await _leaveMasterRepo.Query()
             .Where(x => x.IsActive && !x.IsDeleted)
+            .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
     public async Task<LeaveMaster?> GetLeaveMasterByIdAsync(int id)

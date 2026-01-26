@@ -1,0 +1,139 @@
+﻿@page "/role/create"
+@page "/role/edit/{Id:int}"
+
+@using arna.HRMS.ClientServices.Admin.Role
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.ViewModels
+
+@inject IRoleService RoleService
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+
+<div class="container py-4">
+    <FullPageLoader Visible="isLoading" />
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                @(IsEditMode ? "Edit Role" : "Create Role")
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            @if (!isLoading)
+            {
+                <EditForm Model="role" OnValidSubmit="HandleValidSubmit" autocomplete="off">
+                    <DataAnnotationsValidator />
+
+                    <div class="row g-4">
+                        <!-- Name -->
+                        <div class="col-md-6">
+                            <AppInput Label="Name"
+                                Value="@role.Name"
+                                ValueChanged="v => role.Name = v"
+                                ValidationExpression="@(() => role.Name)">
+                            </AppInput>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="col-md-6">
+                            <AppInput Label="Description"
+                                Value="@role.Description"
+                                ValueChanged="@(v => role.Description = v)"
+                                ValidationExpression="@(() => role.Description)">
+                            </AppInput>
+                        </div>
+
+                        <!-- Active -->
+                        @if (IsEditMode)
+                        {
+                            <div class="col-md-6 mt-4">
+                                <AppCheckBox Label="Active"
+                                Value="@role.IsActive"
+                                ValueChanged="@(v => role.IsActive = v)" />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-5 d-flex justify-content-end gap-3">
+                        <AppButton Text="Back"
+                        ButtonClass="btn btn-outline-dark px-4"
+                        OnClick="GoBack" />
+
+                        <AppButton Text="@(IsEditMode ? "Update" : "Save")"
+                        Type="submit"
+                        ButtonClass="btn btn-primary px-5" />
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private RoleViewModel role = new();
+    private bool isLoading = true;
+    private bool IsEditMode => Id.HasValue;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+
+        if (IsEditMode)
+        {
+            var result = await RoleService.GetRoleByIdAsync(Id!.Value);
+
+            if (result.IsSuccess && result.Data != null)
+            {
+                role = result.Data;
+            }
+            else
+            {
+                NotificationService.Error($"{result.Message ?? "Role not found."}");
+                NavigationManager.NavigateTo("/role");
+            }
+        }
+        else
+        {
+            role = new RoleViewModel();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (IsEditMode)
+        {
+            var result = await RoleService.UpdateRoleAsync(Id!.Value, role);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error($"{result.Message ?? "Unable to update role."}");
+                return;
+            }
+
+            NotificationService.Success("Role updated successfully.");
+        }
+        else
+        {
+            var result = await RoleService.CreateRoleAsync(role);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error($"{result.Message ?? "Unable to create role."}");
+                return;
+            }
+
+            NotificationService.Success("Role created successfully.");
+        }
+
+        NavigationManager.NavigateTo("/role");
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/role");
+}

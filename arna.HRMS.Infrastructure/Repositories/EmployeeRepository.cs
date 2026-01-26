@@ -19,6 +19,7 @@ public class EmployeeRepository
             .Include(e => e.Department)
             .Include(e => e.Manager)
             .Where(e => e.IsActive && !e.IsDeleted)
+            .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
 

@@ -18,6 +18,7 @@ public class UserRepository
         return await _baseRepository.Query()
             .Include(x => x.Employee)
             .Where(x => x.IsActive && !x.IsDeleted)
+            .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
 
