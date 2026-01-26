@@ -1,5 +1,4 @@
-﻿using arna.HRMS.Models.DTOs;
-using arna.HRMS.Models.ViewModels;
+﻿using arna.HRMS.Models.ViewModels.Attendance;
 
 namespace arna.HRMS.Models.State.Attendance;
 
@@ -17,8 +16,8 @@ public class AttendanceState
     public int Month { get; set; }
 
     /* ================= DATA ================= */
-    public List<MonthlyAttendanceDto> AttendanceList { get; set; } = new();
-    public Dictionary<DateOnly, MonthlyAttendanceDto> AttendanceLookup { get; set; } = new();
+    public List<MonthlyAttendanceViewModel> AttendanceList { get; set; } = new();
+    public Dictionary<DateOnly, MonthlyAttendanceViewModel> AttendanceLookup { get; set; } = new();
     public List<AttendenceSummaryCard> SummaryCards { get; set; } = new();
 
     public TimeSpan TotalWorkingHours { get; set; }

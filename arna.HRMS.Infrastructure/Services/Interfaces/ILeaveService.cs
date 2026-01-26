@@ -1,6 +1,6 @@
-﻿using arna.HRMS.Core.DTOs.Responses;
+﻿using arna.HRMS.Core.Common.ServiceResult;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
-using arna.HRMS.Models.DTOs;
 
 namespace arna.HRMS.Infrastructure.Services.Interfaces;
 
@@ -20,7 +20,7 @@ public interface ILeaveService
     Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
     Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id);
     Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
-    Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, CommonStatusList status, int approvedBy);
+    Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status, int approvedBy);
 
     //Leave Balance Methods
     Task<ServiceResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync();

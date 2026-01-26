@@ -1,10 +1,9 @@
-﻿using arna.HRMS.Core.DTOs.Responses;
+﻿using arna.HRMS.Core.Common.ServiceResult;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.DTOs;
-using arna.HRMS.Models.Enums;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Services;
@@ -123,7 +122,7 @@ public class AttendanceService : IAttendanceService
         var approvedLeaves = (await _leaveService.GetLeaveRequestAsync()).Data?
                 .Where(l =>
                     l.EmployeeId == empId &&
-                    l.Status == CommonStatus.Approved)
+                    l.Status == Status.Approved)
                 .SelectMany(l =>
                     Enumerable.Range(
                         0,

@@ -1,7 +1,7 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
+﻿using arna.HRMS.Core.DTOs;
 using Microsoft.AspNetCore.Http;
 
-namespace arna.HRMS.Infrastructure.Handler;
+namespace arna.HRMS.Infrastructure.Middleware;
 
 public class TestAuthHeaderMiddleware
 {

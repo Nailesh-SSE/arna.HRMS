@@ -1,6 +1,6 @@
 ﻿using arna.HRMS.Infrastructure.Configuration;
 using arna.HRMS.Infrastructure.Configuration.Dependency;
-using arna.HRMS.Infrastructure.Handler;
+using arna.HRMS.Infrastructure.Middleware;
 
 namespace arna.HRMS.API
 {

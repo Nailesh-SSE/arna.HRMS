@@ -1,15 +1,15 @@
 ﻿using arna.HRMS.ClientServices.Http;
 using arna.HRMS.Models.Common;
-using arna.HRMS.Models.DTOs;
+using arna.HRMS.Models.ViewModels.Attendance;
 
 namespace arna.HRMS.ClientServices.Client.AttendanceRequest;
 
 public interface IAttendanceRequestService
 {
-    Task<ApiResult<List<AttendanceRequestDto>>> GetAttendanceRequestAsync();
-    Task<ApiResult<AttendanceRequestDto>> GetAttendanceRequestByIdAsync(int id);
-    Task<ApiResult<AttendanceRequestDto>> CreateAttendanceRequestAsync(AttendanceRequestDto AttendanceRequestDto);
-    Task<ApiResult<AttendanceRequestDto>> UpdateAttendanceRequestAsync(int id);
+    Task<ApiResult<List<AttendanceRequestViewModel>>> GetAttendanceRequestAsync();
+    Task<ApiResult<AttendanceRequestViewModel>> GetAttendanceRequestByIdAsync(int id);
+    Task<ApiResult<AttendanceRequestViewModel>> CreateAttendanceRequestAsync(AttendanceRequestViewModel model);
+    Task<ApiResult<AttendanceRequestViewModel>> UpdateAttendanceRequestAsync(int id);
 }
 
 public class AttendanceRequestService : IAttendanceRequestService
@@ -21,15 +21,15 @@ public class AttendanceRequestService : IAttendanceRequestService
         _attendanceRequest = api.AttendanceRequest;
     }
 
-    public Task<ApiResult<List<AttendanceRequestDto>>> GetAttendanceRequestAsync()
+    public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAttendanceRequestAsync()
         => _attendanceRequest.GetAll();
 
-    public Task<ApiResult<AttendanceRequestDto>> GetAttendanceRequestByIdAsync(int id)
+    public Task<ApiResult<AttendanceRequestViewModel>> GetAttendanceRequestByIdAsync(int id)
         => _attendanceRequest.GetById(id);
 
-    public Task<ApiResult<AttendanceRequestDto>> CreateAttendanceRequestAsync(AttendanceRequestDto dto)
-        => _attendanceRequest.Create(dto);
+    public Task<ApiResult<AttendanceRequestViewModel>> CreateAttendanceRequestAsync(AttendanceRequestViewModel model)
+        => _attendanceRequest.Create(model);
 
-    public Task<ApiResult<AttendanceRequestDto>> UpdateAttendanceRequestAsync(int id)
+    public Task<ApiResult<AttendanceRequestViewModel>> UpdateAttendanceRequestAsync(int id)
         => _attendanceRequest.ApproveRequest(id);  
 }

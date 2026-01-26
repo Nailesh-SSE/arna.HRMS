@@ -6,7 +6,7 @@
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
-@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.ViewModels
 
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
@@ -29,7 +29,7 @@
         }
     </div>
 
-    <AppTable TItem="EmployeeDto"
+    <AppTable TItem="EmployeeViewModel"
                  Items="employees"
                  Columns="TableSchemas.Employees"
                  OnEdit="EditEmployee"
@@ -40,7 +40,7 @@
 
 @code {
 
-    private List<EmployeeDto> employees = new();
+    private List<EmployeeViewModel> employees = new();
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -82,12 +82,12 @@
         NavigationManager.NavigateTo(route);
     }
 
-    private void EditEmployee(EmployeeDto employeeDto)
+    private void EditEmployee(EmployeeViewModel model)
     {
-        NavigationManager.NavigateTo($"/employee/edit/{employeeDto.Id}");
+        NavigationManager.NavigateTo($"/employee/edit/{model.Id}");
     }
 
-    private async Task DeleteEmployee(EmployeeDto employeeDto)
+    private async Task DeleteEmployee(EmployeeViewModel model)
     {
         bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm",
@@ -97,7 +97,7 @@
         if (!isConfirmed)
             return;
 
-        var result = await EmployeeService.DeleteEmployeeAsync(employeeDto.Id);
+        var result = await EmployeeService.DeleteEmployeeAsync(model.Id);
 
         if (!result.IsSuccess)
         {

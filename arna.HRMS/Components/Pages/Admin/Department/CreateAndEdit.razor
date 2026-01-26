@@ -6,7 +6,7 @@
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
-@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.ViewModels
 
 @inject IDepartmentService DepartmentService
 @inject NavigationManager NavigationManager
@@ -34,22 +34,21 @@
                             <AppInput Label="Department Name"
                                       Value="@department.Name"
                                       ValueChanged="v => department.Name = v"
-                            />
-                            <ValidationMessage For="@(() => department.Name)" />
+                                      ValidationExpression="() => department.Name" />
                         </div>
 
                         <div class="col-md-6">
                             <AppInput Label="Code"
                                       Value="@department.Code"
-                                      ValueChanged="v => department.Code = v" />
-                            <ValidationMessage For="@(() => department.Code)" />
+                                      ValueChanged="v => department.Code = v"
+                                      ValidationExpression="() => department.Code" />
                         </div>
 
                         <div class="col-md-6">
                             <AppInput Label="Description"
                                       Value="@department.Description"
-                                      ValueChanged="v => department.Description = v" />
-                            <ValidationMessage For="@(() => department.Description)" />
+                                      ValueChanged="v => department.Description = v"
+                                      ValidationExpression="() => department.Description" />
                         </div>
 
                         <div class="col-md-6">
@@ -60,9 +59,8 @@
                                             {
                                                 department.ParentDepartmentId=
                                                 int.TryParse(v, out var d) ? d : null;
-                                             }" 
-                            />
-                            <ValidationMessage For="@(() => department.ParentDepartmentId)" />
+                                            }"
+                                        ValidationExpression="() => department.ParentDepartmentId" />
                         </div>
 
                         <!-- Active (EDIT ONLY) -->
@@ -78,12 +76,12 @@
 
                     <div class="mt-5 d-flex justify-content-end gap-3">
                         <AppButton Text="Back"
-                                   CssClass="btn btn-outline-secondary px-4"
+                                   ButtonClass="btn btn-outline-secondary px-4"
                                    OnClick="GoBack" />
 
                         <AppButton Text="@(IsEditMode ? "Update" : "Save")"
                                    Type="submit"
-                                   CssClass="btn btn-primary px-5" />
+                                   ButtonClass="btn btn-primary px-5" />
                     </div>
                 </EditForm>
             }
@@ -94,7 +92,7 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-    private DepartmentDto department= new();
+    private DepartmentViewModel department = new();
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
     private List<SelectOption> departmentlist = new();
@@ -129,7 +127,7 @@
         }
         else
         {
-            department = new DepartmentDto
+            department = new DepartmentViewModel
             {
                 IsActive = true,
             };

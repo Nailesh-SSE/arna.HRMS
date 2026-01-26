@@ -1,7 +1,6 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.DTOs;
-using arna.HRMS.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -94,7 +93,7 @@ public class LeaveController : ControllerBase
         if (id != dto.Id)
             return BadRequest("Invalid Id");
 
-        if (dto.Status != CommonStatus.Pending)
+        if (dto.Status != Status.Pending)
             return BadRequest("Only pending leave requests can be updated");
 
         var updated = await _leaveService.UpdateLeaveRequestAsync(dto);
@@ -112,15 +111,15 @@ public class LeaveController : ControllerBase
     public async Task<IActionResult> GetPendingLeaveRequests()
     {
         var result = await _leaveService.GetLeaveRequestAsync();
-        var pending = result.Data?.Where(x => x.Status == CommonStatus.Pending);
+        var pending = result.Data?.Where(x => x.Status == Status.Pending);
         return Ok(pending);
     }
 
     [HttpPost("requests/status/{id:int}")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> UpdateLeaveStatus(int id, [FromQuery] CommonStatusList status)
+    public async Task<IActionResult> UpdateLeaveStatus(int id, [FromQuery] Status status)
     {
-        if (status != CommonStatusList.Approved && status != CommonStatusList.Rejected)
+        if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status");
 
         int approvedBy =

@@ -1,7 +1,6 @@
-﻿using AutoMapper;
-using arna.HRMS.Core.DTOs.Requests;
+﻿using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
-using arna.HRMS.Models.DTOs;
+using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Mapping;
 

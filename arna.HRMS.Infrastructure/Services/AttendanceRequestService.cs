@@ -1,9 +1,9 @@
-﻿using arna.HRMS.Core.DTOs.Responses;
+﻿using arna.HRMS.Core.Common.ServiceResult;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.DTOs;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Services;
@@ -76,7 +76,7 @@ public class AttendanceRequestService : IAttendanceRequestService
         return ServiceResult<AttendanceRequestDto>.Success(resultDto, "Request updated successfully");
     }
 
-    public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id, CommonStatusList status, int approvedBy)
+    public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id, Status status, int approvedBy)
     {
         if (id <= 0)
             return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");

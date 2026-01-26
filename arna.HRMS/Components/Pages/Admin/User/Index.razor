@@ -3,11 +3,11 @@
 @using arna.HRMS.ClientServices.Admin.User
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Common
+@using arna.HRMS.ClientServices.Leave
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
-@using arna.HRMS.Models.DTOs
-@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.Models.ViewModels
 
 @inject IUsersService UsersService
 @inject NavigationManager NavigationManager
@@ -32,7 +32,7 @@
                class="form-control w-50 shadow-sm" />
     </div>
 
-    <AppTable TItem="UserDto"
+    <AppTable TItem="UserViewModel"
                  Items="users"
                  Columns="TableSchemas.Users"
                  OnEdit="EditUser"
@@ -41,34 +41,12 @@
 </div>
 
 @code {
-    private List<UserDto> users = new();
+    private List<UserViewModel> users = new();
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadUsers();
-
-        //leave Master service test
-        await base.OnInitializedAsync();
-        await LeaveService.GetLeaveMasterAsync();
-        await LeaveService.CreateLeaveMasterAsync(new LeaveMasterDto());
-        await LeaveService.DeleteLeaveMasterAsync(0);
-        await LeaveService.UpdateLeaveMasterAsync(0, new LeaveMasterDto());
-
-        //leave Request service test
-        await LeaveService.GetLeaveRequestAsync();
-        await LeaveService.CreateLeaveRequestAsync(new LeaveRequestDto());
-        await LeaveService.DeleteLeaveRequestAsync(0);
-        await LeaveService.UpdateLeaveRequestAsync(0, new LeaveRequestDto());
-        await LeaveService.GetPandingLeaveRequestAsync();
-        await LeaveService.UpdateStatusLeaveAsync(0,0);
-
-        //Leave Balance service test
-        await LeaveService.GetLeaveBalanceAsync();
-        await LeaveService.DeleteLeaveBalanceAsync(0);
-        await LeaveService.UpdateLeaveBalanceAsync(0, new EmployeeLeaveBalanceDto());
-        await LeaveService.GetLeaveBalanceByEmployeeIdAsync(0);
-        await LeaveService.UpdateLeaveBalanceAsync(0, new EmployeeLeaveBalanceDto());
     }
 
     private async Task LoadUsers()
@@ -84,21 +62,21 @@
         else if (!result.IsSuccess)
         {
             NotificationService.Error($"Failed to load users ({result.StatusCode}): {result.Message}");
-            users = new List<UserDto>();
+            users = new List<UserViewModel>();
         }
         else
         {
-            users = new List<UserDto>();
+            users = new List<UserViewModel>();
         }
         isLoading = false;
     }
 
-    private void EditUser(UserDto user)
+    private void EditUser(UserViewModel model)
     {
-        NavigationManager.NavigateTo($"/user/edit/{user.Id}");
+        NavigationManager.NavigateTo($"/user/edit/{model.Id}");
     }
 
-    private async Task DeleteUser(UserDto user)
+    private async Task DeleteUser(UserViewModel model)
     {
         bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm",
@@ -108,7 +86,7 @@
         if (!isConfirmed)
             return;
 
-        var result = await UsersService.DeleteUserAsync(user.Id);
+        var result = await UsersService.DeleteUserAsync(model.Id);
 
         if (!result.IsSuccess)
         {

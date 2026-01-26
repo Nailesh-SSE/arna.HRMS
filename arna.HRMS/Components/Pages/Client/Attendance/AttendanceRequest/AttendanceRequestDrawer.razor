@@ -3,9 +3,9 @@
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
-@using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.Dropdown
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Attendance
 
 @inject IAttendanceRequestService AttendanceRequestService
 @inject NotificationService NotificationService
@@ -87,8 +87,7 @@
                 <AppInput Label="Break Duration (HH:mm)"
                           Type="text"
                           Value="@(request.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")"
-                          ValueChanged="@(v => OnTimeSpanChanged(v, t => request.BreakDuration = t))"
-                          placeholder="e.g. 01:00 or 00:30" />
+                          ValueChanged="@(v => OnTimeSpanChanged(v, t => request.BreakDuration = t))" />
 
                 <!-- Calculated Durations -->
                 <div class="row mb-4">
@@ -137,7 +136,7 @@
     [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
     [Parameter] public string Title { get; set; } = "Attendance Request";
 
-    private AttendanceRequestDto request = new();
+    private AttendanceRequestViewModel request = new();
     private EditContext editContext = default!;
 
     private List<SelectOption> reason = new();
@@ -330,7 +329,7 @@
 
     private void ResetForm()
     {
-        request = new AttendanceRequestDto();
+        request = new AttendanceRequestViewModel();
         editContext = new EditContext(request);
 
         SelectedReason = null;

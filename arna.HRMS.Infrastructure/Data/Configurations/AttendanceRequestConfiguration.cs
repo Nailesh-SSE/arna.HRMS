@@ -46,7 +46,7 @@ public class AttendanceRequestConfiguration : IEntityTypeConfiguration<Attendanc
         builder.Property(ae => ae.Status)
             .HasConversion<string>()
             .HasMaxLength(20)
-            .HasDefaultValue(CommonStatusList.Pending)
+            .HasDefaultValue(Status.Pending)
             .IsRequired();
 
         // Relationship with Employee

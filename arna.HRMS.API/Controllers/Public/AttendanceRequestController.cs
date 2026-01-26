@@ -1,7 +1,6 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.DTOs;
-using arna.HRMS.Models.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -83,15 +82,15 @@ public class AttendanceRequestController : ControllerBase
     public async Task<IActionResult> GetPendingAttendanceRequests()
     {
         var result = await _attendanceRequestService.GetAttendanceRequestAsync();
-        var pending = result.Data?.Where(x => x.Status == CommonStatus.Pending).OrderByDescending(d => d.Id);
+        var pending = result.Data?.Where(x => x.Status == Status.Pending).OrderByDescending(d => d.Id);
         return Ok(pending);
     }
 
     [HttpPost("status/{id:int}")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> ApproveAttendanceRequest(int id, [FromQuery] CommonStatusList status)
+    public async Task<IActionResult> ApproveAttendanceRequest(int id, [FromQuery] Status status)
     {
-        if (status != CommonStatusList.Approved && status != CommonStatusList.Rejected)
+        if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status");
 
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

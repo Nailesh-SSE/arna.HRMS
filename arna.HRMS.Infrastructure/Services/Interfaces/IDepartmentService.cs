@@ -1,6 +1,5 @@
-﻿using arna.HRMS.Core.DTOs.Responses;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Core.Common.ServiceResult;
+using arna.HRMS.Core.DTOs;
 namespace arna.HRMS.Infrastructure.Services.Interfaces;
 
 public interface IDepartmentService

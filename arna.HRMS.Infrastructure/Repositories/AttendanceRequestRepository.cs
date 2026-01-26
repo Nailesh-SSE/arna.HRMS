@@ -35,7 +35,7 @@ public class AttendanceRequestRepository
         return _baseRepository.UpdateAsync(attendanceRequest);
     }
 
-    public async Task<bool> UpdateAttendanceRequestStatusAsync(int AttendanceRequestId, CommonStatusList status, int approvedBy)
+    public async Task<bool> UpdateAttendanceRequestStatusAsync(int AttendanceRequestId, Status status, int approvedBy)
     {
         var Request = await _baseRepository.Query()
             .FirstOrDefaultAsync(lr =>
@@ -46,7 +46,7 @@ public class AttendanceRequestRepository
         if (Request == null)
             return false;
 
-        if (Request.Status != CommonStatusList.Pending)
+        if (Request.Status != Status.Pending)
             return false;
 
         Request.Status = status;
@@ -64,9 +64,9 @@ public class AttendanceRequestRepository
             .FirstOrDefaultAsync(ar => ar.Id == id && ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted);
         if (attendanceRequest == null)
             return false;
-        if (attendanceRequest.Status != CommonStatusList.Pending)
+        if (attendanceRequest.Status != Status.Pending)
             return false;
-        attendanceRequest.Status = CommonStatusList.Cancelled;
+        attendanceRequest.Status = Status.Cancelled;
         attendanceRequest.UpdatedOn = DateTime.Now;
         await _baseRepository.UpdateAsync(attendanceRequest);
 

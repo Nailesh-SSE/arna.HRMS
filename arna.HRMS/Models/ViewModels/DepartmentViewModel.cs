@@ -1,19 +1,20 @@
-﻿using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Models.Common;
 using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Models.ViewModels;
 
-public class DepartmentViewModel
+public class DepartmentViewModel : CommonViewModel
 {
-    public DepartmentDto Department { get; set; }
-    public int Id { get; set; }
     [Required(ErrorMessage = "Invalid Detartment Name")]
-    public string DepartmentName { get; set; }
+    public string Name { get; set; }
+
     [Required]
     public string Code { get; set; }
+
     [Required(ErrorMessage = "Invalid Detartment Description")]
     public string Description { get; set; }
+
     public int? ParentDepartmentId { get; set; }
-    [Display(Name = "Status")]
-    public bool IsActive { get; set; }
+
+    public string? ParentDepartMentName { get; set; }
 }

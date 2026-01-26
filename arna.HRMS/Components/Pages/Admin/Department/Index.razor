@@ -6,7 +6,7 @@
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
-@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.ViewModels
 
 @inject IDepartmentService DepartmentService
 @inject IJSRuntime JsRuntime
@@ -29,7 +29,7 @@
                class="form-control w-50 shadow-sm" />
     </div>
 
-    <AppTable TItem="DepartmentDto"
+    <AppTable TItem="DepartmentViewModel"
                  Items="departments"
                  Columns="TableSchemas.Departments"
                  OnEdit="EditDepartment"
@@ -37,7 +37,7 @@
 </div>
 
 @code {
-    private List<DepartmentDto> departments = new();
+    private List<DepartmentViewModel> departments = new();
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
@@ -57,18 +57,18 @@
         }
         else
         {
-            departments = new List<DepartmentDto>();
+            departments = new List<DepartmentViewModel>();
         }
 
         isLoading = false;
     }
 
-    private void EditDepartment(DepartmentDto department)
+    private void EditDepartment(DepartmentViewModel model)
     {
-        Navigation.NavigateTo($"/department/edit/{department.Id}");
+        Navigation.NavigateTo($"/department/edit/{model.Id}");
     }
 
-    private async Task DeleteDepartment(DepartmentDto department)
+    private async Task DeleteDepartment(DepartmentViewModel model)
     {
         bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm",
@@ -78,7 +78,7 @@
         if (!isConfirmed)
             return;
 
-        var result = await DepartmentService.DeleteDepartmentAsync(department.Id);
+        var result = await DepartmentService.DeleteDepartmentAsync(model.Id);
 
         if (!result.IsSuccess)
         {

@@ -1,8 +1,6 @@
-﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Entities;
 using AutoMapper;
-using Microsoft.AspNetCore.Identity.Data;
-using RegisterRequest = arna.HRMS.Core.DTOs.Requests.RegisterRequest;
 
 namespace arna.HRMS.Infrastructure.Mapping;
 
@@ -10,12 +8,6 @@ public class UserProfile : Profile
 {
     public UserProfile()
     {
-        CreateMap<LoginRequest, UserDto>();
-
-        CreateMap<RegisterRequest, UserDto>()
-            .ForMember(dest => dest.PasswordHash, opt =>
-                opt.MapFrom(src => HashPassword(src.Password) ?? ""));
-
         // Map entity -> DTO
         CreateMap<User, UserDto>()
             .ForMember(dest => dest.EmployeeName,

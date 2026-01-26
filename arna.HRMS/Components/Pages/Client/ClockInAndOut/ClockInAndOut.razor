@@ -2,9 +2,9 @@
 @using arna.HRMS.ClientServices.Client.Clock
 @using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Models.ViewModels.Attendance
 
 @implements IDisposable
 @inject IClockService ClockService
@@ -156,7 +156,7 @@
             ActionLabel = "Clock In";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
-            var clockInResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
+            var clockInResult = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
@@ -186,7 +186,7 @@
             var workedSpan = Out.ToTimeSpan() - In.ToTimeSpan();
             AccumulatedHours = AccumulatedHours.Add(workedSpan);
 
-            var clockOutResult = await ClockService.CreateAttendanceAsync(new AttendanceDto
+            var clockOutResult = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,

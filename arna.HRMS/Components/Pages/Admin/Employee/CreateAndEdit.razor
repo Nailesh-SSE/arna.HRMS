@@ -8,7 +8,6 @@
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
-@using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.ViewModels
 
 @inject IEmployeeService EmployeeService
@@ -193,14 +192,14 @@
 @code {
     [Parameter] public int? Id { get; set; }
 
-    private EmployeeDto employee = new();
+    private EmployeeViewModel employee = new();
     private EditContext editContext;
 
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
 
-    private List<DepartmentDto> departments = new();
-    private List<EmployeeDto> managers = new();
+    private List<DepartmentViewModel> departments = new();
+    private List<EmployeeViewModel> managers = new();
 
     private List<SelectOption> DepartmentsOptions = new();
     private List<SelectOption> ManagersOptions = new();

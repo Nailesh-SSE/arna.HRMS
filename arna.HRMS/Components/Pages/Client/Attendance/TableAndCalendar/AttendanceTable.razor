@@ -1,13 +1,13 @@
 ﻿@using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Models.DTOs
 @using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels.Attendance
 
-<AppTable TItem="MonthlyAttendanceDto"
+<AppTable TItem="MonthlyAttendanceViewModel"
           Items="AttendanceList"
           Columns="TableSchemas.AttendanceList"
           ShowActions="false" />
 
 @code {
     [Parameter, EditorRequired]
-    public List<MonthlyAttendanceDto> AttendanceList { get; set; } = new();
+    public List<MonthlyAttendanceViewModel> AttendanceList { get; set; } = new();
 }

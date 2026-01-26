@@ -1,12 +1,11 @@
-﻿using arna.HRMS.Models.DTOs;
-using arna.HRMS.Models.ViewModels;
+﻿using arna.HRMS.Models.ViewModels.Attendance;
 
 namespace arna.HRMS.Helper.Attendance;
 
 public static class AttendanceSummaryBuilder
 {
     public static List<AttendenceSummaryCard> Build(
-        List<MonthlyAttendanceDto> attendance)
+        List<MonthlyAttendanceViewModel> attendance)
     {
         if (attendance == null || !attendance.Any())
             return new List<AttendenceSummaryCard>();
@@ -23,7 +22,7 @@ public static class AttendanceSummaryBuilder
     }
 
     private static AttendenceSummaryCard Create(
-        List<MonthlyAttendanceDto> attendance,
+        List<MonthlyAttendanceViewModel> attendance,
         string status,
         string css)
     {

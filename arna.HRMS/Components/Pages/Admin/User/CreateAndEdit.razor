@@ -8,8 +8,8 @@
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
-@using arna.HRMS.Core.Enums
-@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels
 
 @inject IUsersService UsersService
 @inject IEmployeeService EmployeeService
@@ -74,11 +74,10 @@
                         <!-- Phone -->
                         <div class="col-md-6">
                             <AppInput Label="Phone Number"
-                                Type="number"
                                       Value="@user.PhoneNumber"
-                                      ValueChanged="v => user.PhoneNumber = v">
+                                      ValueChanged="v => user.PhoneNumber = v"
+                                      ValidationExpression="@(() => user.PhoneNumber)">
                             </AppInput>
-                            <ValidationMessage For="@(() => user.PhoneNumber)" />
                         </div>
 
                         <!-- Employee -->
@@ -108,15 +107,6 @@
                                        }"
                                    ValidationExpression="@(() => user.Role)" />
                         </div>
-
-                        <!-- PASSWORD -->
-                        @* <div class="col-md-6">
-                           <AppInput Label="Password"
-                              Type="password"
-                              Value="@user.Password"
-                              autocomplete="new-password"/>
-                            <ValidationMessage For="@(() => user.Password)" />
-                        </div> *@
 
                         <div class="col-md-6">
                             <AppPasswordInput Label="Password"
@@ -155,10 +145,10 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-    private UserDto user = new();
+    private UserViewModel user = new();
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
-    private List<EmployeeDto> employees = new();
+    private List<EmployeeViewModel> employees = new();
 
     private List<SelectOption> RoleOptions = Enum
        .GetValues<UserRole>()
@@ -199,7 +189,7 @@
         }
         else
         {
-            user = new UserDto
+            user = new UserViewModel
             {
                 IsActive = true,
                 Role = null

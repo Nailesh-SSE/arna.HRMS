@@ -1,15 +1,15 @@
 ﻿using arna.HRMS.ClientServices.Http;
 using arna.HRMS.Models.Common;
-using arna.HRMS.Models.DTOs;
+using arna.HRMS.Models.ViewModels;
 
 namespace arna.HRMS.ClientServices.Admin.Employee;
 
 public interface IEmployeeService
 {
-    Task<ApiResult<List<EmployeeDto>>> GetEmployeesAsync();
-    Task<ApiResult<EmployeeDto>> GetEmployeeByIdAsync(int id);
-    Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto);
-    Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeDto dto);
+    Task<ApiResult<List<EmployeeViewModel>>> GetEmployeesAsync();
+    Task<ApiResult<EmployeeViewModel>> GetEmployeeByIdAsync(int id);
+    Task<ApiResult<EmployeeViewModel>> CreateEmployeeAsync(EmployeeViewModel model);
+    Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeViewModel model);
     Task<ApiResult<bool>> DeleteEmployeeAsync(int id);
 }
 
@@ -22,18 +22,18 @@ public class EmployeeService : IEmployeeService
         _employees = api.Employees;
     }
 
-    public Task<ApiResult<List<EmployeeDto>>> GetEmployeesAsync()
+    public Task<ApiResult<List<EmployeeViewModel>>> GetEmployeesAsync()
         => _employees.GetAll();
 
-    public Task<ApiResult<EmployeeDto>> GetEmployeeByIdAsync(int id)
+    public Task<ApiResult<EmployeeViewModel>> GetEmployeeByIdAsync(int id)
         => _employees.GetById(id);
 
-    public Task<ApiResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto)
-        => _employees.Create(dto);
+    public Task<ApiResult<EmployeeViewModel>> CreateEmployeeAsync(EmployeeViewModel model)
+        => _employees.Create(model);
 
-    public Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeDto dto)
-        => _employees.Update(id, dto);
+    public Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeViewModel model)
+        => _employees.Update(id, model);
 
     public Task<ApiResult<bool>> DeleteEmployeeAsync(int id)
-        => _employees.Delete(id);
+        => _employees.Delete(id); 
 }

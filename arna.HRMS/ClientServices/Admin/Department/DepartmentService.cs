@@ -1,15 +1,15 @@
 ﻿using arna.HRMS.ClientServices.Http;
 using arna.HRMS.Models.Common;
-using arna.HRMS.Models.DTOs;
+using arna.HRMS.Models.ViewModels;
 
 namespace arna.HRMS.ClientServices.Admin.Department;
 
 public interface IDepartmentService
 {
-    Task<ApiResult<List<DepartmentDto>>> GetDepartmentsAsync();
-    Task<ApiResult<DepartmentDto>> GetDepartmentByIdAsync(int id);
-    Task<ApiResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto dto);
-    Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentDto dto);
+    Task<ApiResult<List<DepartmentViewModel>>> GetDepartmentsAsync();
+    Task<ApiResult<DepartmentViewModel>> GetDepartmentByIdAsync(int id);
+    Task<ApiResult<DepartmentViewModel>> CreateDepartmentAsync(DepartmentViewModel model);
+    Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentViewModel model);
     Task<ApiResult<bool>> DeleteDepartmentAsync(int id);
 }
 
@@ -22,17 +22,17 @@ public class DepartmentService : IDepartmentService
         _departments = api.Departments;
     }
 
-    public Task<ApiResult<List<DepartmentDto>>> GetDepartmentsAsync()
+    public Task<ApiResult<List<DepartmentViewModel>>> GetDepartmentsAsync()
         => _departments.GetAll();
 
-    public Task<ApiResult<DepartmentDto>> GetDepartmentByIdAsync(int id)
+    public Task<ApiResult<DepartmentViewModel>> GetDepartmentByIdAsync(int id)
         => _departments.GetById(id);
 
-    public Task<ApiResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto dto)
-        => _departments.Create(dto);
+    public Task<ApiResult<DepartmentViewModel>> CreateDepartmentAsync(DepartmentViewModel model)
+        => _departments.Create(model);
 
-    public Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentDto dto)
-        => _departments.Update(id, dto);
+    public Task<ApiResult<bool>> UpdateDepartmentAsync(int id, DepartmentViewModel model)
+        => _departments.Update(id, model); 
 
     public Task<ApiResult<bool>> DeleteDepartmentAsync(int id)
         => _departments.Delete(id);

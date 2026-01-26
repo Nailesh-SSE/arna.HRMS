@@ -23,7 +23,7 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
         builder.Property(lr => lr.Status)
             .HasConversion<string>()      
             .HasMaxLength(20)
-            .HasDefaultValue(CommonStatusList.Pending)
+            .HasDefaultValue(Status.Pending)
             .IsRequired();
 
         // Relationship with Employee (Requestor)

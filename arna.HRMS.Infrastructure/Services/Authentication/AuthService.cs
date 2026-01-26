@@ -1,16 +1,15 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.DTOs.Responses;
+﻿using arna.HRMS.Core.Common.ServiceResult;
+using arna.HRMS.Core.Common.Token;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Configuration;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Services.Authentication.Interfaces;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.DTOs;
 using AutoMapper;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using RegisterRequest = arna.HRMS.Core.DTOs.Requests.RegisterRequest;
 
 namespace arna.HRMS.Infrastructure.Services.Authentication;
 
@@ -57,27 +56,27 @@ public class AuthService : IAuthService
         return ServiceResult<AuthResponse>.Success(authData, "Login successful");
     }
 
-    public async Task<ServiceResult<AuthResponse>> RegisterAsync(RegisterRequest request)
+    public async Task<ServiceResult<AuthResponse>> RegisterAsync(UserDto dto)
     {
-        if (request == null)
+        if (dto == null)
             return ServiceResult<AuthResponse>.Fail("Invalid request");
 
-        if (string.IsNullOrWhiteSpace(request.Username))
+        if (string.IsNullOrWhiteSpace(dto.Username))
             return ServiceResult<AuthResponse>.Fail("Username is required");
 
-        if (string.IsNullOrWhiteSpace(request.Email))
+        if (string.IsNullOrWhiteSpace(dto.Email))
             return ServiceResult<AuthResponse>.Fail("Email is required");
 
-        if (string.IsNullOrWhiteSpace(request.Password))
+        if (string.IsNullOrWhiteSpace(dto.Password))
             return ServiceResult<AuthResponse>.Fail("Password is required");
 
-        if (request.Password.Length < 6)
+        if (dto.Password.Length < 6)
             return ServiceResult<AuthResponse>.Fail("Password must be at least 6 characters");
 
-        if (await _userServices.UserExistsAsync(request.Email))
+        if (await _userServices.UserExistsAsync(dto.Email))
             return ServiceResult<AuthResponse>.Fail("Email already exists");
 
-        var model = _mapper.Map<UserDto>(request);
+        var model = _mapper.Map<UserDto>(dto);
         var user = await _userServices.CreateUserEntityAsync(model);
 
         if (user == null)
@@ -88,7 +87,7 @@ public class AuthService : IAuthService
         return ServiceResult<AuthResponse>.Success(authData, "Registration successful");
     }
 
-    public async Task<ServiceResult<AuthResponse>> RefreshTokenAsync(RefreshTokenRequest request)
+    public async Task<ServiceResult<AuthResponse>> RefreshTokenAsync(RefreshTokenDto request)
     {
         if (request == null)
             return ServiceResult<AuthResponse>.Fail("Invalid request");

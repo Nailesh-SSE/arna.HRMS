@@ -1,9 +1,9 @@
-﻿using arna.HRMS.Core.DTOs.Responses;
+﻿using arna.HRMS.Core.Common.ServiceResult;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.DTOs;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Services;

@@ -1,7 +1,7 @@
 ﻿using arna.HRMS.ClientServices.Auth;
-using arna.HRMS.Core.DTOs.Responses;
+using arna.HRMS.Core.Common.ServiceResult;
 using arna.HRMS.Models.Common;
-using arna.HRMS.Models.DTOs;
+using arna.HRMS.Models.ViewModels;
 using System.Net;
 using System.Text.Json;
 
@@ -170,7 +170,7 @@ public class HttpService
             if (userId <= 0 || string.IsNullOrWhiteSpace(refreshToken))
                 return false;
 
-            var refreshResult = await _apiClients.Auth.RefreshToken(new RefreshTokenRequestDto
+            var refreshResult = await _apiClients.Auth.RefreshToken(new RefreshTokenViewModel
             {
                 UserId = userId,
                 RefreshToken = refreshToken

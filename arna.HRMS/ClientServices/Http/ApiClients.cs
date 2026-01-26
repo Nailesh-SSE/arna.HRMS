@@ -1,7 +1,9 @@
-﻿using arna.HRMS.Core.DTOs.Responses;
-using arna.HRMS.Models.Common;
-using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
+using arna.HRMS.Models.ViewModels;
+using arna.HRMS.Models.ViewModels.Attendance;
+using arna.HRMS.Models.ViewModels.Auth;
+using arna.HRMS.Models.ViewModels.Leave;
 using Microsoft.AspNetCore.Identity.Data;
 
 namespace arna.HRMS.ClientServices.Http;
@@ -74,7 +76,7 @@ public class ApiClients
         public Task<ApiResult<AuthResponse>> Login(LoginRequest request)
             => _http.PostAsync<AuthResponse>($"{baseUrl}/login", request);
 
-        public Task<ApiResult<AuthResponse>> RefreshToken(RefreshTokenRequestDto request)
+        public Task<ApiResult<AuthResponse>> RefreshToken(RefreshTokenViewModel request)
             => _http.PostAsync<AuthResponse>($"{baseUrl}/refresh", request);
 
         public Task<ApiResult<bool>> Logout()
@@ -87,23 +89,23 @@ public class ApiClients
     public sealed class EmployeeApi
     {
         private const string baseUrl = "api/employees";
-        private readonly CrudExecutor<EmployeeDto> _crud;
+        private readonly CrudExecutor<EmployeeViewModel> _crud;
 
         public EmployeeApi(HttpService http)
         {
-            _crud = new CrudExecutor<EmployeeDto>(http, baseUrl);
+            _crud = new CrudExecutor<EmployeeViewModel>(http, baseUrl);
         }
 
-        public Task<ApiResult<List<EmployeeDto>>> GetAll()
+        public Task<ApiResult<List<EmployeeViewModel>>> GetAll()
             => _crud.GetAll();
 
-        public Task<ApiResult<EmployeeDto>> GetById(int id)
+        public Task<ApiResult<EmployeeViewModel>> GetById(int id)
             => _crud.GetById(id);
 
-        public Task<ApiResult<EmployeeDto>> Create(EmployeeDto dto)
+        public Task<ApiResult<EmployeeViewModel>> Create(EmployeeViewModel dto)
             => _crud.Create(dto);
 
-        public async Task<ApiResult<bool>> Update(int id, EmployeeDto dto)
+        public async Task<ApiResult<bool>> Update(int id, EmployeeViewModel dto)
         {
             var updateResult = await _crud.UpdateReturnDto(id, dto);
 
@@ -123,23 +125,23 @@ public class ApiClients
     public sealed class DepartmentApi
     {
         private const string baseUrl = "api/department";
-        private readonly CrudExecutor<DepartmentDto> _crud;
+        private readonly CrudExecutor<DepartmentViewModel> _crud;
 
         public DepartmentApi(HttpService http)
         {
-            _crud = new CrudExecutor<DepartmentDto>(http, baseUrl);
+            _crud = new CrudExecutor<DepartmentViewModel>(http, baseUrl);
         }
 
-        public Task<ApiResult<List<DepartmentDto>>> GetAll()
+        public Task<ApiResult<List<DepartmentViewModel>>> GetAll()
             => _crud.GetAll();
 
-        public Task<ApiResult<DepartmentDto>> GetById(int id)
+        public Task<ApiResult<DepartmentViewModel>> GetById(int id)
             => _crud.GetById(id);
 
-        public Task<ApiResult<DepartmentDto>> Create(DepartmentDto dto)
+        public Task<ApiResult<DepartmentViewModel>> Create(DepartmentViewModel dto)
             => _crud.Create(dto);
 
-        public async Task<ApiResult<bool>> Update(int id, DepartmentDto dto)
+        public async Task<ApiResult<bool>> Update(int id, DepartmentViewModel dto)
         {
             var updateResult = await _crud.UpdateReturnDto(id, dto);
 
@@ -159,26 +161,26 @@ public class ApiClients
     public sealed class AttendanceApi
     {
         private const string baseUrl = "api/attendance";
-        private readonly CrudExecutor<AttendanceDto> _crud;
+        private readonly CrudExecutor<AttendanceViewModel> _crud;
         private readonly HttpService _http;
 
         public AttendanceApi(HttpService http)
         {
             _http = http;
-            _crud = new CrudExecutor<AttendanceDto>(http, baseUrl);
+            _crud = new CrudExecutor<AttendanceViewModel>(http, baseUrl);
         }
 
-        public Task<ApiResult<AttendanceDto>> GetById(int id)
+        public Task<ApiResult<AttendanceViewModel>> GetById(int id)
             => _crud.GetById(id);
 
-        public Task<ApiResult<List<MonthlyAttendanceDto>>> GetByMonth(int year, int month, int empId)
-            => _http.GetAsync<List<MonthlyAttendanceDto>>($"{baseUrl}/monthly/?year={year}&month={month}&empId={empId}");
+        public Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetByMonth(int year, int month, int empId)
+            => _http.GetAsync<List<MonthlyAttendanceViewModel>>($"{baseUrl}/monthly/?year={year}&month={month}&empId={empId}");
 
-        public Task<ApiResult<AttendanceDto>> Create(AttendanceDto dto)
+        public Task<ApiResult<AttendanceViewModel>> Create(AttendanceViewModel dto)
             => _crud.Create(dto);
 
-        public Task<ApiResult<AttendanceDto>> GetClockStatus(int employeeId)
-            => _http.GetAsync<AttendanceDto>($"{baseUrl}/clockStatus/{employeeId}");
+        public Task<ApiResult<AttendanceViewModel>> GetClockStatus(int employeeId)
+            => _http.GetAsync<AttendanceViewModel>($"{baseUrl}/clockStatus/{employeeId}");
     }
 
     // =========================
@@ -187,25 +189,25 @@ public class ApiClients
     public sealed class UserApi
     {
         private const string baseUrl = "api/users";
-        private readonly CrudExecutor<UserDto> _crud;
+        private readonly CrudExecutor<UserViewModel> _crud;
         private readonly HttpService _http;
 
         public UserApi(HttpService http)
         {
             _http = http;
-            _crud = new CrudExecutor<UserDto>(http, baseUrl);
+            _crud = new CrudExecutor<UserViewModel>(http, baseUrl);
         }
 
-        public Task<ApiResult<List<UserDto>>> GetAll()
+        public Task<ApiResult<List<UserViewModel>>> GetAll()
             => _crud.GetAll();
 
-        public Task<ApiResult<UserDto>> GetById(int id)
+        public Task<ApiResult<UserViewModel>> GetById(int id)
             => _crud.GetById(id);
 
-        public Task<ApiResult<UserDto>> Create(UserDto dto)
+        public Task<ApiResult<UserViewModel>> Create(UserViewModel dto)
             => _crud.Create(dto);
 
-        public async Task<ApiResult<bool>> Update(int id, UserDto dto)
+        public async Task<ApiResult<bool>> Update(int id, UserViewModel dto)
         {
             var updateResult = await _crud.UpdateReturnDto(id, dto);
 
@@ -228,26 +230,26 @@ public class ApiClients
     public sealed class AttendanceRequestApi
     {
         private const string baseUrl = "api/attendanceRequest";
-        private readonly CrudExecutor<AttendanceRequestDto> _crud;
+        private readonly CrudExecutor<AttendanceRequestViewModel> _crud;
         private readonly HttpService _http;
 
         public AttendanceRequestApi(HttpService http)
         {
             _http = http;
-            _crud = new CrudExecutor<AttendanceRequestDto>(http, baseUrl);
+            _crud = new CrudExecutor<AttendanceRequestViewModel>(http, baseUrl);
         }
 
-        public Task<ApiResult<List<AttendanceRequestDto>>> GetAll()
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll()
             => _crud.GetAll();
 
-        public Task<ApiResult<AttendanceRequestDto>> GetById(int id)
+        public Task<ApiResult<AttendanceRequestViewModel>> GetById(int id)
             => _crud.GetById(id);
 
-        public Task<ApiResult<AttendanceRequestDto>> Create(AttendanceRequestDto dto)
+        public Task<ApiResult<AttendanceRequestViewModel>> Create(AttendanceRequestViewModel dto)
             => _crud.Create(dto);
 
-        public Task<ApiResult<AttendanceRequestDto>> ApproveRequest(int id)
-            => _http.GetAsync<AttendanceRequestDto>($"{baseUrl}/approveRequest/{id}");
+        public Task<ApiResult<AttendanceRequestViewModel>> ApproveRequest(int id)
+            => _http.GetAsync<AttendanceRequestViewModel>($"{baseUrl}/status/{id}");
     }
 
     // ===============================
@@ -256,31 +258,31 @@ public class ApiClients
     public sealed class LeaveApi
     {
         private const string baseUrl = "api/leave";
-        private readonly CrudExecutor<LeaveMasterDto> _crudLeaveMaster;
-        private readonly CrudExecutor<LeaveRequestDto> _crudLeaveRequest;
-        private readonly CrudExecutor<EmployeeLeaveBalanceDto> _crudLeaveBalance;
+        private readonly CrudExecutor<LeaveMasterViewModel> _crudLeaveMaster;
+        private readonly CrudExecutor<LeaveRequestViewModel> _crudLeaveRequest;
+        private readonly CrudExecutor<EmployeeLeaveBalanceViewModel> _crudLeaveBalance;
         private readonly HttpService _http;
 
         public LeaveApi(HttpService http)
         {
             _http = http;
-            _crudLeaveMaster = new CrudExecutor<LeaveMasterDto>(http, $"{baseUrl}/masters");
-            _crudLeaveRequest = new CrudExecutor<LeaveRequestDto>(http, $"{baseUrl}/requests");
-            _crudLeaveBalance = new CrudExecutor<EmployeeLeaveBalanceDto>(http, $"{baseUrl}/balances");
+            _crudLeaveMaster = new CrudExecutor<LeaveMasterViewModel>(http, $"{baseUrl}/masters");
+            _crudLeaveRequest = new CrudExecutor<LeaveRequestViewModel>(http, $"{baseUrl}/requests");
+            _crudLeaveBalance = new CrudExecutor<EmployeeLeaveBalanceViewModel>(http, $"{baseUrl}/balances");
 
         }
 
         // Leave Master Methods
-        public Task<ApiResult<List<LeaveMasterDto>>> GetAllLeaveMaster()
+        public Task<ApiResult<List<LeaveMasterViewModel>>> GetAllLeaveMaster()
             => _crudLeaveMaster.GetAll();
 
-        public Task<ApiResult<LeaveMasterDto>> GetLeaveMasterById(int id)
+        public Task<ApiResult<LeaveMasterViewModel>> GetLeaveMasterById(int id)
             => _crudLeaveMaster.GetById(id);
 
-        public Task<ApiResult<LeaveMasterDto>> CreateLeaveMaster(LeaveMasterDto dto)
+        public Task<ApiResult<LeaveMasterViewModel>> CreateLeaveMaster(LeaveMasterViewModel dto)
             => _crudLeaveMaster.Create(dto);
 
-        public async Task<ApiResult<bool>> UpdateLeaveMasterAsync(int id, LeaveMasterDto dto)
+        public async Task<ApiResult<bool>> UpdateLeaveMasterAsync(int id, LeaveMasterViewModel dto)
         {
             var updateResult = await _crudLeaveMaster.UpdateReturnDto(id, dto);
 
@@ -294,16 +296,16 @@ public class ApiClients
             => _crudLeaveMaster.Delete(id);
 
         // Leave Request Methods
-        public Task<ApiResult<List<LeaveRequestDto>>> GetAllLeaveRequest()
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetAllLeaveRequest()
             => _crudLeaveRequest.GetAll();
 
-        public Task<ApiResult<LeaveRequestDto>> GetLeaveRequestById(int id)
+        public Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestById(int id)
             => _crudLeaveRequest.GetById(id);
 
-        public  Task<ApiResult<LeaveRequestDto>> CreateLeaveRequest(LeaveRequestDto dto)
+        public  Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequest(LeaveRequestViewModel dto)
             => _crudLeaveRequest.Create(dto);
 
-        public async Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id,LeaveRequestDto dto)
+        public async Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestViewModel dto)
         {
             var updateResult = await _crudLeaveRequest.UpdateReturnDto(id, dto);
 
@@ -316,17 +318,17 @@ public class ApiClients
         public Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id)
             => _crudLeaveRequest.Delete(id);
 
-        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, CommonStatus status)
+        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status)
         => _http.PostAsync<bool>($"status/{leaveRequestId}?status={status}",null);
 
-        public  Task<ApiResult<List<LeaveRequestDto>>> GetPandingLeaveRequestAsync()
-            => _http.GetAsync<List<LeaveRequestDto>>($"pending");
+        public  Task<ApiResult<List<LeaveRequestViewModel>>> GetPandingLeaveRequestAsync()
+            => _http.GetAsync<List<LeaveRequestViewModel>>($"pending");
 
         // Leave Balance Methods
-        public Task<ApiResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync()
+        public Task<ApiResult<List<EmployeeLeaveBalanceViewModel>>> GetLeaveBalanceAsync()
             => _crudLeaveBalance.GetAll();
 
-        public async Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceDto dto)
+        public async Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceViewModel dto)
         {
             var updateResult = await _crudLeaveBalance.UpdateReturnDto(id, dto);
             if (!updateResult.IsSuccess)
@@ -337,7 +339,7 @@ public class ApiClients
         public Task<ApiResult<bool>> DeleteLeaveBalanceAsync(int id)
             => _crudLeaveBalance.Delete(id);
 
-        public Task<ApiResult<List<EmployeeLeaveBalanceDto?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
-            => _http.GetAsync<List<EmployeeLeaveBalanceDto?>>($"{baseUrl}/balance/{employeeId}");
+        public Task<ApiResult<List<EmployeeLeaveBalanceViewModel?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
+            => _http.GetAsync<List<EmployeeLeaveBalanceViewModel?>>($"{baseUrl}/balance/{employeeId}");
     }
 }

@@ -1,9 +1,9 @@
-﻿using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.DTOs;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore.Query;
 using Moq;

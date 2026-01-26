@@ -4,7 +4,7 @@
 @using arna.HRMS.ClientServices.Admin.Employee
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Loader
-@using arna.HRMS.Models.DTOs
+@using arna.HRMS.Models.ViewModels
 
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
@@ -118,7 +118,7 @@ else
 }
 
 @code {
-    private EmployeeDto? employee;
+    private EmployeeViewModel? employee;
     private string experienceString = "";
     private ProfileTab activeTab = ProfileTab.Personal;
 

@@ -1,17 +1,17 @@
-﻿using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Models.ViewModels.Attendance;
 
-namespace arna.HRMS.Helpers.Attendance;
+namespace arna.HRMS.Helper.Attendance;
 
 public static class MonthlyAttendanceBuilder
 {
-    public static List<MonthlyAttendanceDto> Build(
+    public static List<MonthlyAttendanceViewModel> Build(
         int year,
         int month,
         int employeeId,
-        List<MonthlyAttendanceDto> apiData)
+        List<MonthlyAttendanceViewModel> apiData)
     {
         var lookup = apiData.ToDictionary(x => x.Date);
-        var result = new List<MonthlyAttendanceDto>();
+        var result = new List<MonthlyAttendanceViewModel>();
 
         int daysInMonth = DateTime.DaysInMonth(year, month);
 
@@ -27,7 +27,7 @@ public static class MonthlyAttendanceBuilder
             else
             {
                 // ✅ Blank record (future or not-yet-recorded)
-                result.Add(new MonthlyAttendanceDto
+                result.Add(new MonthlyAttendanceViewModel
                 {
                     EmployeeId = employeeId,
                     Date = date,

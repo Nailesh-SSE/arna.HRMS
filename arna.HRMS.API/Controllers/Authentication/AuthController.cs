@@ -1,11 +1,10 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.DTOs.Responses;
+﻿using arna.HRMS.Core.Common.Token;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Services.Authentication.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using RegisterRequest = arna.HRMS.Core.DTOs.Requests.RegisterRequest;
 
 namespace arna.HRMS.API.Controllers.Authentication;
 
@@ -36,9 +35,9 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [AllowAnonymous]
-    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
+    public async Task<ActionResult<AuthResponse>> Register([FromBody] UserDto dto)
     {
-        var result = await _authService.RegisterAsync(request);
+        var result = await _authService.RegisterAsync(dto);
 
         if (!result.IsSuccess)
             return BadRequest(result);
@@ -48,7 +47,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
     {
         var result = await _authService.RefreshTokenAsync(request);
 

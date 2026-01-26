@@ -1,5 +1,5 @@
-﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Models.DTOs;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Entities;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Mapping;
