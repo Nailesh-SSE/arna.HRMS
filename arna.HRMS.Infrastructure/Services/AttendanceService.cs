@@ -86,8 +86,7 @@ public class AttendanceService : IAttendanceService
 
     #endregion
 
-    #region Monthly Attendance
-
+    #region Monthly Attendance Api
     public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(
         int year,
         int month,
@@ -105,112 +104,136 @@ public class AttendanceService : IAttendanceService
         var attendances =
             await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId);
 
-        var festivalsResult =
-            await _festivalHolidayService.GetFestivalHolidayByMonthAsync(year, month);
+        return ServiceResult<List<MonthlyAttendanceDto>>.Success((List<MonthlyAttendanceDto>)attendances);
 
-        if (!festivalsResult.IsSuccess || festivalsResult.Data == null)
-            return ServiceResult<List<MonthlyAttendanceDto>>.Fail(festivalsResult.Message);
+    }
+    #endregion
 
-        var monthFestivalDates = festivalsResult.Data
-            .Select(f => f.Date.Date)
-            .ToHashSet();
+        #region Monthly Attendance
 
-        var combined = attendances
-            .Select(a => new
-            {
-                a.EmployeeId,
-                Date = a.Date.Date,
-                ClockIn = (DateTime?)a.ClockIn,
-                ClockOut = (DateTime?)a.ClockOut,
+        /*public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(
+            int year,
+            int month,
+            int empId)
+        {
+            if (year <= 0)
+                return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid year");
 
-            })
-            .Concat(
-                monthFestivalDates.Select(d => new
+            if (month < 1 || month > 12)
+                return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid month");
+
+            if (empId <= 0)
+                return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid Employee ID");
+
+            var attendances =
+                await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId);
+
+            var festivalsResult =
+                await _festivalHolidayService.GetFestivalHolidayByMonthAsync(year, month);
+
+            if (!festivalsResult.IsSuccess || festivalsResult.Data == null)
+                return ServiceResult<List<MonthlyAttendanceDto>>.Fail(festivalsResult.Message);
+
+            var monthFestivalDates = festivalsResult.Data
+                .Select(f => f.Date.Date)
+                .ToHashSet();
+
+            var combined = attendances
+                .Select(a => new
                 {
-                    EmployeeId = empId,
-                    Date = d,
-                    ClockIn = (DateTime?)null,
-                    ClockOut = (DateTime?)null,
+                    a.EmployeeId,
+                    Date = a.Date.Date,
+                    ClockIn = (DateTime?)a.ClockIn,
+                    ClockOut = (DateTime?)a.ClockOut,
+
                 })
-            );
+                .Concat(
+                    monthFestivalDates.Select(d => new
+                    {
+                        EmployeeId = empId,
+                        Date = d,
+                        ClockIn = (DateTime?)null,
+                        ClockOut = (DateTime?)null,
+                    })
+                );
 
-        var result = combined
-            .GroupBy(x => new { x.EmployeeId, x.Date })
-            .Select(g =>
-            {
-                var date = DateOnly.FromDateTime(g.Key.Date);
+            var result = combined
+                .GroupBy(x => new { x.EmployeeId, x.Date })
+                .Select(g =>
+                {
+                    var date = DateOnly.FromDateTime(g.Key.Date);
 
-                var clockInTimes = g
-                    .Where(x => x.ClockIn.HasValue)
-                    .Select(x => x.ClockIn!.Value.TimeOfDay);
+                    var clockInTimes = g
+                        .Where(x => x.ClockIn.HasValue)
+                        .Select(x => x.ClockIn!.Value.TimeOfDay);
 
-                var clockOutTimes = g
-                    .Where(x => x.ClockOut.HasValue)
-                    .Select(x => x.ClockOut!.Value.TimeOfDay);
+                    var clockOutTimes = g
+                        .Where(x => x.ClockOut.HasValue)
+                        .Select(x => x.ClockOut!.Value.TimeOfDay);
 
-                TimeSpan? minClockIn =
-                    clockInTimes.Any() ? clockInTimes.Min() : null;
+                    TimeSpan? minClockIn =
+                        clockInTimes.Any() ? clockInTimes.Min() : null;
 
-                TimeSpan? maxClockOut =
-                    clockOutTimes.Any() ? clockOutTimes.Max() : null;
+                    TimeSpan? maxClockOut =
+                        clockOutTimes.Any() ? clockOutTimes.Max() : null;
 
-                var totalHours =
-                    minClockIn.HasValue && maxClockOut.HasValue
-                        ? maxClockOut.Value - minClockIn.Value
-                        : TimeSpan.Zero;
+                    var totalHours =
+                        minClockIn.HasValue && maxClockOut.HasValue
+                            ? maxClockOut.Value - minClockIn.Value
+                            : TimeSpan.Zero;
 
-                bool isFestivalHoliday = monthFestivalDates.Contains(g.Key.Date);
+                    bool isFestivalHoliday = monthFestivalDates.Contains(g.Key.Date);
 
-                var dailyStatuses = attendances
-                .Where(a =>
-                    a.EmployeeId == g.Key.EmployeeId &&
-                    a.Date.Date == g.Key.Date
-                )
-                .Select(a => a.Status)
+                    var dailyStatuses = attendances
+                    .Where(a =>
+                        a.EmployeeId == g.Key.EmployeeId &&
+                        a.Date.Date == g.Key.Date
+                    )
+                    .Select(a => a.Status)
+                    .ToList();
+
+                    return new MonthlyAttendanceDto
+                    {
+                        EmployeeId = g.Key.EmployeeId,
+                        Date = date,
+                        Day = g.Key.Date.DayOfWeek.ToString(),
+                        ClockIn = minClockIn,
+                        ClockOut = maxClockOut,
+                        TotalHours = totalHours,
+                        Status = CalculateStatus(dailyStatuses, isFestivalHoliday, date)
+                    };
+
+                })
+                .OrderBy(x => x.Date)
                 .ToList();
 
-                return new MonthlyAttendanceDto
-                {
-                    EmployeeId = g.Key.EmployeeId,
-                    Date = date,
-                    Day = g.Key.Date.DayOfWeek.ToString(),
-                    ClockIn = minClockIn,
-                    ClockOut = maxClockOut,
-                    TotalHours = totalHours,
-                    Status = CalculateStatus(dailyStatuses, isFestivalHoliday, date)
-                };
+            return ServiceResult<List<MonthlyAttendanceDto>>.Success(result);
+        }*/
 
-            })
-            .OrderBy(x => x.Date)
-            .ToList();
+        #endregion
 
-        return ServiceResult<List<MonthlyAttendanceDto>>.Success(result);
-    }
+        #region Status Logic
 
-    #endregion
+        /*private static String CalculateStatus(
+        IEnumerable<AttendanceStatus> statuses,
+        bool isFestivalHoliday,
+        DateOnly date)
+        {
+            if (isFestivalHoliday || IsWeekend(date))
+                return "Holiday";
 
-    #region Status Logic
+            if (statuses.Contains(AttendanceStatus.Leave))
+                return "Leave";
 
-    private static String CalculateStatus(
-    IEnumerable<AttendanceStatus> statuses,
-    bool isFestivalHoliday,
-    DateOnly date)
-    {
-        if (isFestivalHoliday || IsWeekend(date))
-            return "Holiday";
+            if (statuses.Contains(AttendanceStatus.Present))
+                return "Present";
 
-        if (statuses.Contains(AttendanceStatus.Leave))
-            return "Leave";
+            return "Absent";
+        }*/
 
-        if (statuses.Contains(AttendanceStatus.Present))
-            return "Present";
+        #endregion
 
-        return "Absent";
-    }
-
-    #endregion
-
-    #region Auto Absent & Holiday Creation
+        #region Auto Absent & Holiday Creation
 
     private async Task CreateAbsentAndHolidayAsync(
         int employeeId,

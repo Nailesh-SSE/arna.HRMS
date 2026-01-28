@@ -21,6 +21,17 @@
 .attendance-svg.absent .tick-circle {
     stroke: #dc2626;
 }
+.attendance-svg.holiday .person,
+.attendance-svg.holiday .tick,
+.attendance-svg.holiday .tick-circle {
+    stroke: #5c9ded;
+}
+
+.attendance-svg.leave .person,
+.attendance-svg.leave .tick,
+.attendance-svg.leave .tick-circle {
+    stroke: #ffc107;
+}
 
 .attendance-svg.no-data .tick,
 .attendance-svg.no-data .tick-circle {

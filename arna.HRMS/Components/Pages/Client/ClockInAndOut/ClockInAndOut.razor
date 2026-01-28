@@ -25,6 +25,7 @@
         @if (IsClockedIn)
         {
             <AppButton ButtonClass="btn btn-danger btn-sm"
+                       Disabled="DisableClockOut"
                        OnClick="ClockOutAsync">
                 <i class="bi bi-clock"></i>
             </AppButton>
@@ -32,6 +33,7 @@
         else
         {
             <AppButton ButtonClass="btn btn-success btn-sm"
+                       Disabled="DisableClockIn"
                        OnClick="ClockInAsync">
                 <i class="bi bi-clock"></i>
             </AppButton>
@@ -52,7 +54,9 @@
 {
     <div class="popup-overlay">
         <div class="popup-card">
-            <ClockInAndOutMessage Model="attendanceViewModel" OnSubmit="SubmitClockInOutAsync" OnCancel="CloseForm" />
+            <ClockInAndOutMessage Model="attendanceViewModel"
+                                  OnSubmit="SubmitClockInOutAsync"
+                                  OnCancel="CloseForm" />
         </div>
     </div>
 }
@@ -69,10 +73,14 @@
 }
 
 @code {
+
     private AttendanceViewModel attendanceViewModel = new();
 
     private bool IsClockedIn;
     private bool? PendingClockIn;
+
+    private bool DisableClockOut = false;
+    private bool DisableClockIn = false;
 
     private TimeOnly In;
     private TimeOnly Out;
@@ -86,7 +94,8 @@
     private bool ShowToast;
     private string ToastMessage = "";
 
-    private System.Timers.Timer? _timer;
+    private System.Timers.Timer? _clockTimer;
+    private System.Timers.Timer? _clockOutCooldownTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,30 +109,37 @@
         var lastEntry = await ClockService.GetClockStatus(employeeId);
 
         if (!lastEntry.IsSuccess || lastEntry.Data == null)
-        {
-            IsClockedIn = false;
             return;
-        }
 
         if (lastEntry.Data.ClockInTime != null && lastEntry.Data.ClockOutTime == null)
         {
             IsClockedIn = true;
+            DisableClockOut = true;
 
             In = TimeOnly.FromTimeSpan(lastEntry.Data.ClockInTime.Value);
-            ActionLabel = "Clock In";   // ✅ FIXED
+            ActionLabel = "Clock In";
             ActionTime = In.ToString("HH:mm:ss");
+
+            StartClockOutCooldown(60);
         }
     }
 
     private Task ClockInAsync()
     {
         PendingClockIn = true;
+
+        DisableClockIn = true;   
+        DisableClockOut = true;  
+
         OpenNoteForm();
         return Task.CompletedTask;
     }
 
     private Task ClockOutAsync()
     {
+        if (DisableClockOut)
+            return Task.CompletedTask;
+
         PendingClockIn = false;
         OpenNoteForm();
         return Task.CompletedTask;
@@ -156,37 +172,43 @@
             ActionLabel = "Clock In";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
-            var clockInResult = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
+            var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
                 ClockInTime = In.ToTimeSpan(),
                 Status = AttendanceStatuses.Present,
-                Notes = attendanceViewModel.Notes,
-                WorkingHours = null
+                Notes = attendanceViewModel.Notes
             });
 
-            if (!clockInResult.IsSuccess)
+            if (!result.IsSuccess)
             {
-                await ShowNotification(clockInResult.Message ?? "Clock-In failed");
+                DisableClockIn = false;
+                DisableClockOut = false;
+                await ShowNotification(result.Message ?? "Clock-In failed");
                 return;
             }
 
             AccumulatedHours = new TimeOnly(0, 0);
+
+            StartClockOutCooldown(60);
+
             await ShowNotification($"Clocked in at {ActionTime}");
         }
         else
         {
             IsClockedIn = false;
+            DisableClockIn = false;
+
             Out = TimeOnly.FromDateTime(DateTime.Now);
 
             ActionLabel = "Clock Out";
             ActionTime = DateTime.Now.ToString("HH:mm:ss");
 
-            var workedSpan = Out.ToTimeSpan() - In.ToTimeSpan();
-            AccumulatedHours = AccumulatedHours.Add(workedSpan);
+            var worked = Out.ToTimeSpan() - In.ToTimeSpan();
+            AccumulatedHours = AccumulatedHours.Add(worked);
 
-            var clockOutResult = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
+            var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
@@ -196,31 +218,51 @@
                 WorkingHours = AccumulatedHours.ToTimeSpan()
             });
 
-            if (!clockOutResult.IsSuccess)
+            if (!result.IsSuccess)
             {
-                await ShowNotification(clockOutResult.Message ?? "Clock-out failed");
+                await ShowNotification(result.Message ?? "Clock-Out failed");
                 return;
             }
 
-            await ShowNotification($"Clocked out | {AccumulatedHours:F2} hrs");
+            await ShowNotification($"Clocked out | {AccumulatedHours:hh\\:mm\\:ss}");
         }
     }
 
     private void StartClock()
     {
         UpdateCurrentTime();
-        _timer = new System.Timers.Timer(1000);
-        _timer.Elapsed += (_, _) =>
+
+        _clockTimer = new System.Timers.Timer(1000);
+        _clockTimer.Elapsed += (_, _) =>
         {
             UpdateCurrentTime();
             InvokeAsync(StateHasChanged);
         };
-        _timer.Start();
+        _clockTimer.Start();
     }
 
     private void UpdateCurrentTime()
     {
         CurrentTime = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private void StartClockOutCooldown(int seconds)
+    {
+        _clockOutCooldownTimer?.Dispose();
+
+        DisableClockOut = true;
+        StateHasChanged();
+
+        _clockOutCooldownTimer = new System.Timers.Timer(seconds * 1000);
+        _clockOutCooldownTimer.AutoReset = false;
+
+        _clockOutCooldownTimer.Elapsed += (_, _) =>
+        {
+            DisableClockOut = false;
+            InvokeAsync(StateHasChanged);
+        };
+
+        _clockOutCooldownTimer.Start();
     }
 
     private async Task ShowNotification(string message)
@@ -237,6 +279,7 @@
 
     public void Dispose()
     {
-        _timer?.Dispose();
+        _clockTimer?.Dispose();
+        _clockOutCooldownTimer?.Dispose();
     }
 }

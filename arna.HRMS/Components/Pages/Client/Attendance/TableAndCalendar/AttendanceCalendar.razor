@@ -35,7 +35,13 @@
                         </div>
 
                         <div class="hours">
-                            @attendance.TotalHours.ToString(@"hh\:mm") hrs
+                            @(
+                                attendance.ClockIn.HasValue && 
+                                attendance.ClockOut.HasValue && 
+                                attendance.TotalHours.HasValue
+                                    ? attendance.TotalHours.Value.ToString(@"hh\:mm\:ss") + " "+"hrs"
+                                    : "-"
+                            )
                         </div>
                     }
                     else

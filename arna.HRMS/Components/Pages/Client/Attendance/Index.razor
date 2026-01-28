@@ -157,7 +157,7 @@
         State.TotalWorkingHours =
             State.AttendanceList.Aggregate(
                 TimeSpan.Zero,
-                (total, item) => total + item.TotalHours
+                (total, item) => total + (item.TotalHours ?? TimeSpan.Zero)
             );
 
 
