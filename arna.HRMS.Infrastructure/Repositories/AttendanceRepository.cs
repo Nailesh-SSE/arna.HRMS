@@ -10,14 +10,11 @@ public class AttendanceRepository
 {
     private readonly IBaseRepository<Attendance> _baseRepository;
     private readonly FestivalHolidayRepository _festivalHolidayRepository;
-
-
     public AttendanceRepository(IBaseRepository<Attendance> baseRepository, FestivalHolidayRepository festivalHolidayRepository)
     {
         _baseRepository = baseRepository;
         _festivalHolidayRepository = festivalHolidayRepository;
     }
-
     public async Task<List<Attendance>> GetAttendenceAsync()
     {
         return await _baseRepository.Query()
@@ -142,6 +139,10 @@ public class AttendanceRepository
         if (isFestivalHoliday)
             return "Holiday";
 
+        var hasAttendance = statuses.Any();
+        if (IsWeekend(date) && !hasAttendance)
+            return "Holiday";
+
         if (statuses.Contains(AttendanceStatus.Present))
             return "Present";
 
@@ -157,11 +158,7 @@ public class AttendanceRepository
         if (statuses.Contains(AttendanceStatus.Leave))
             return "Leave";
 
-        var hasAttendance = statuses.Any();
-        if (IsWeekend(date) && !hasAttendance)
-            return "Holiday";
-
-        return "Absent";
+        return "Holiday";
     }
 
 

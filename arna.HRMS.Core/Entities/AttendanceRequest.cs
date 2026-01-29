@@ -15,7 +15,7 @@ public class AttendanceRequest : BaseEntity
     public DateTime? ClockOut { get; set; }
     public TimeSpan? BreakDuration { get; set; }
     public TimeSpan TotalHours { get; set; }
-    public Status Status { get; set; } = Status.Pending;
+    public Status? Status { get; set; }
     public DateTime? ApprovedOn { get; set; }
     public int? ApprovedBy { get; set; }
     public Employee Employee { get; set; }

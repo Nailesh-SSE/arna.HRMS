@@ -219,7 +219,9 @@ public class LeaveService : ILeaveService
                     ClockOutTime = null,
                     WorkingHours = TimeSpan.Zero,
                     Status = AttendanceStatus.Leave,
-                    Notes = leaveRequest.Reason
+                    Notes = leaveRequest.Reason,
+                    Latitude = null,
+                    Longitude = null
                 };
                 var dto = _mapper.Map<Attendance>(attendance);
                 await _attendanceService.CreateAttendanceAsync(dto);

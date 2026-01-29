@@ -12,5 +12,7 @@ public class Attendance : BaseEntity
     public TimeSpan? TotalHours { get; set; }
     public AttendanceStatus Status { get; set; }
     public string Notes { get; set; }
+    public Double? Latitude { get; set; }
+    public Double? Longitude { get; set; }
     public Employee Employee { get; set; }
 }

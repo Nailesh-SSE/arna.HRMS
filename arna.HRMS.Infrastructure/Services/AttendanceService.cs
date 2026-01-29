@@ -6,6 +6,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.JSInterop;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -16,6 +17,7 @@ public class AttendanceService : IAttendanceService
     private readonly IEmployeeService _employeeService;
     private readonly IFestivalHolidayService _festivalHolidayService;
     private readonly ILeaveService _leaveService;
+    
 
     private static readonly DateTime SystemStartDate = new(2026, 1, 12);
 
@@ -277,7 +279,7 @@ public class AttendanceService : IAttendanceService
             bool isHoliday = IsWeekend(date) || festivalDates.Contains(date.Date);
             bool isLeave = approvedLeaves.Contains(date.Date);
 
-            if (!isLeave || !isHoliday)
+            if (!isLeave && !isHoliday)
             {
                 await _attendanceRepository.CreateAttendanceAsync(new Attendance
                 {
@@ -291,7 +293,10 @@ public class AttendanceService : IAttendanceService
                     : AttendanceStatus.Absent,
                     Notes = isHoliday
                     ? "Holiday"
-                    : "Absent"
+                    : "Absent",
+                    Latitude = null,
+                    Longitude = null
+
                 });
             }
         }

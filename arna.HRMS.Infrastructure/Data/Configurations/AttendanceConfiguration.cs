@@ -25,6 +25,12 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
         builder.Property(a => a.Notes)
             .HasMaxLength(1000);
 
+        builder.Property(a=> a.Latitude)
+            .IsRequired(false);
+
+        builder.Property(a=> a.Longitude)
+            .IsRequired(false);
+
         // Relationship with Employee
         builder.HasOne(a => a.Employee)
             .WithMany(e => e.Attendances)

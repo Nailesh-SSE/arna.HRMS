@@ -88,6 +88,7 @@ public class Program
         // Other
         builder.Services.AddMemoryCache();
         builder.Services.AddBlazorBootstrap();
+        builder.Services.AddGeolocationServices();
 
         var app = builder.Build();
 

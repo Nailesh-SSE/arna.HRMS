@@ -14,6 +14,7 @@ public class AttendanceViewModel : CommonViewModel
 
     [Required(ErrorMessage = "Note is required")]
     public string Notes { get; set; }
-
+    public Double? Latitude { get; set; }
+    public Double? Longitude { get; set; }
     public TimeSpan? WorkingHours { get; set; }
 }

@@ -11,5 +11,7 @@ public class AttendanceDto : BaseEntity
     public TimeSpan? ClockOutTime { get; set; }
     public AttendanceStatus Status { get; set; }
     public string Notes { get; set; }
+    public Double? Latitude { get; set; }
+    public Double? Longitude { get; set; }
     public TimeSpan? WorkingHours { get; set; }
 }

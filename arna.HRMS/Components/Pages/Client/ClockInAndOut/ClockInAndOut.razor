@@ -14,14 +14,12 @@
 
     @if (!IsAdmin() && !IsSuperAdmin())
     {
-        <!-- LIVE CLOCK -->
         <span class="clock-pill">
             <span class="status-dot"></span>
             <i class="bi bi-clock"></i>
             <span class="time-text">@CurrentTime</span>
         </span>
 
-        <!-- CLOCK IN / OUT -->
         @if (IsClockedIn)
         {
             <AppButton ButtonClass="btn btn-danger btn-sm"
@@ -40,7 +38,6 @@
         }
     }
 
-    <!-- LAST ACTION -->
     @if (!string.IsNullOrEmpty(ActionLabel))
     {
         <span class="time-info-pill">
@@ -65,9 +62,7 @@
 {
     <div class="toast-container position-fixed bottom-0 end-0 p-4">
         <div class="toast show shadow border-0">
-            <div class="toast-body">
-                @ToastMessage
-            </div>
+            <div class="toast-body">@ToastMessage</div>
         </div>
     </div>
 }
@@ -79,8 +74,8 @@
     private bool IsClockedIn;
     private bool? PendingClockIn;
 
-    private bool DisableClockOut = false;
-    private bool DisableClockIn = false;
+    private bool DisableClockOut;
+    private bool DisableClockIn;
 
     private TimeOnly In;
     private TimeOnly Out;
@@ -94,13 +89,17 @@
     private bool ShowToast;
     private string ToastMessage = "";
 
-    private System.Timers.Timer? _clockTimer;
-    private System.Timers.Timer? _clockOutCooldownTimer;
+    private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _clockOutCooldownCts;
+
+    private double? CurrentLatitude;
+    private double? CurrentLongitude;
+    private bool IsGettingLocation;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        StartClock();
+        StartClockLoop();
 
         var employeeId = GetEmployeeId();
         if (employeeId == 0)
@@ -114,35 +113,45 @@
         if (lastEntry.Data.ClockInTime != null && lastEntry.Data.ClockOutTime == null)
         {
             IsClockedIn = true;
-            DisableClockOut = true;
 
             In = TimeOnly.FromTimeSpan(lastEntry.Data.ClockInTime.Value);
             ActionLabel = "Clock In";
             ActionTime = In.ToString("HH:mm:ss");
 
-            StartClockOutCooldown(60);
+            var clockInDateTime = DateTime.Today.Add(In.ToTimeSpan());
+            var elapsedSeconds = (DateTime.Now - clockInDateTime).TotalSeconds;
+
+            if (elapsedSeconds < 60)
+            {
+                _ = StartClockOutCooldownAsync((int)(60 - elapsedSeconds));
+            }
+            else
+            {
+                DisableClockOut = false;
+            }
         }
     }
 
-    private Task ClockInAsync()
+    private async Task ClockInAsync()
     {
         PendingClockIn = true;
+        DisableClockIn = true;
 
-        DisableClockIn = true;   
-        DisableClockOut = true;  
-
-        OpenNoteForm();
-        return Task.CompletedTask;
+        var canProceed = await PrepareClockActionAsync();
+        if (!canProceed)
+            return;
     }
 
-    private Task ClockOutAsync()
+    private async Task ClockOutAsync()
     {
         if (DisableClockOut)
-            return Task.CompletedTask;
+            return;
 
         PendingClockIn = false;
-        OpenNoteForm();
-        return Task.CompletedTask;
+
+        var canProceed = await PrepareClockActionAsync();
+        if (!canProceed)
+            return;
     }
 
     private void OpenNoteForm()
@@ -158,6 +167,12 @@
 
     private async Task SubmitClockInOutAsync()
     {
+        if (CurrentLatitude == null || CurrentLongitude == null)
+        {
+            await ShowNotification("Location is required");
+            return;
+        }
+
         ShowDynamicForm = false;
 
         var employeeId = GetEmployeeId();
@@ -176,23 +191,23 @@
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
-                ClockInTime = In.ToTimeSpan(),
+                ClockInTime = new TimeSpan(In.Hour, In.Minute, In.Second),
                 Status = AttendanceStatuses.Present,
-                Notes = attendanceViewModel.Notes
+                Notes = attendanceViewModel.Notes,
+                WorkingHours = TimeSpan.Zero,
+                Latitude = CurrentLatitude,
+                Longitude = CurrentLongitude
             });
 
             if (!result.IsSuccess)
             {
                 DisableClockIn = false;
-                DisableClockOut = false;
                 await ShowNotification(result.Message ?? "Clock-In failed");
                 return;
             }
 
             AccumulatedHours = new TimeOnly(0, 0);
-
-            StartClockOutCooldown(60);
-
+            _ = StartClockOutCooldownAsync(60);
             await ShowNotification($"Clocked in at {ActionTime}");
         }
         else
@@ -212,10 +227,12 @@
             {
                 EmployeeId = employeeId,
                 Date = DateTime.Today,
-                ClockOutTime = Out.ToTimeSpan(),
+                ClockOutTime = new TimeSpan(Out.Hour, Out.Minute, Out.Second),
                 Status = AttendanceStatuses.Present,
                 Notes = attendanceViewModel.Notes,
-                WorkingHours = AccumulatedHours.ToTimeSpan()
+                WorkingHours = AccumulatedHours.ToTimeSpan(),
+                Latitude = CurrentLatitude,
+                Longitude = CurrentLongitude
             });
 
             if (!result.IsSuccess)
@@ -226,19 +243,68 @@
 
             await ShowNotification($"Clocked out | {AccumulatedHours:hh\\:mm\\:ss}");
         }
+        CurrentLatitude = null;
+        CurrentLongitude = null;
     }
 
-    private void StartClock()
+    private void StartClockLoop()
     {
-        UpdateCurrentTime();
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
 
-        _clockTimer = new System.Timers.Timer(1000);
-        _clockTimer.Elapsed += (_, _) =>
+        // Use PeriodicTimer to avoid System.Timers cross-thread callbacks.
+        var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _ = Task.Run(async () =>
         {
-            UpdateCurrentTime();
-            InvokeAsync(StateHasChanged);
-        };
-        _clockTimer.Start();
+            try
+            {
+                while (await timer.WaitForNextTickAsync(ct))
+                {
+                    UpdateCurrentTime();
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                timer.Dispose();
+            }
+        }, ct);
+    }
+
+    private async Task StartClockOutCooldownAsync(int seconds)
+    {
+        _clockOutCooldownCts?.Cancel();
+        _clockOutCooldownCts = new CancellationTokenSource();
+        var ct = _clockOutCooldownCts.Token;
+
+        DisableClockOut = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
+            DisableClockOut = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task ShowNotification(string message)
+    {
+        ToastMessage = message;
+        ShowToast = true;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            await Task.Delay(2500);
+        }
+        catch (OperationCanceledException) { }
+
+        ShowToast = false;
+        await InvokeAsync(StateHasChanged);
     }
 
     private void UpdateCurrentTime()
@@ -246,40 +312,34 @@
         CurrentTime = DateTime.Now.ToString("HH:mm:ss");
     }
 
-    private void StartClockOutCooldown(int seconds)
-    {
-        _clockOutCooldownTimer?.Dispose();
-
-        DisableClockOut = true;
-        StateHasChanged();
-
-        _clockOutCooldownTimer = new System.Timers.Timer(seconds * 1000);
-        _clockOutCooldownTimer.AutoReset = false;
-
-        _clockOutCooldownTimer.Elapsed += (_, _) =>
-        {
-            DisableClockOut = false;
-            InvokeAsync(StateHasChanged);
-        };
-
-        _clockOutCooldownTimer.Start();
-    }
-
-    private async Task ShowNotification(string message)
-    {
-        ToastMessage = message;
-        ShowToast = true;
-        StateHasChanged();
-
-        await Task.Delay(2500);
-
-        ShowToast = false;
-        StateHasChanged();
-    }
-
     public void Dispose()
     {
-        _clockTimer?.Dispose();
-        _clockOutCooldownTimer?.Dispose();
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _clockOutCooldownCts?.Cancel();
+        _clockOutCooldownCts?.Dispose();
+    }
+
+    private async Task<bool> PrepareClockActionAsync()
+    {
+        IsGettingLocation = true;
+
+        var location = await ClockService.GetCurrentLocationAsync();
+
+        IsGettingLocation = false;
+
+        if (location == null)
+        {
+            DisableClockIn = false;
+            DisableClockOut = false;
+            await ShowNotification("Location permission is required");
+            return false;
+        }
+
+        CurrentLatitude = location.Value.Latitude;
+        CurrentLongitude = location.Value.Longitude;
+
+        OpenNoteForm();
+        return true;
     }
 }

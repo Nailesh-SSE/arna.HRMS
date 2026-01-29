@@ -142,25 +142,28 @@ public class AttendanceRequestService : IAttendanceRequestService
                     fromDate,
                     null,
                     clockOut,
-                    (clockOut - (existingClockInOnly.ClockInTime ?? TimeSpan.Zero))
+                    (clockOut - (existingClockInOnly.ClockInTime ?? TimeSpan.Zero)),
+                    null,
+                    null
                 );
                 return;
             }
 
-            await InsertAttendance(req, fromDate, clockIn, null, TimeSpan.Zero);
-            await InsertAttendance(req, fromDate, null, clockOut, req.TotalHours);
+            await InsertAttendance(req, fromDate, clockIn, null, TimeSpan.Zero, null, null);
+            await InsertAttendance(req, fromDate, null, clockOut, req.TotalHours, null, null);
             return;
         }
 
-
-        await InsertAttendance(req, fromDate, clockIn, null, TimeSpan.Zero);
+        await InsertAttendance(req, fromDate, clockIn, null, TimeSpan.Zero, null, null);
 
         await InsertAttendance(
             req,
             fromDate,
             null,
             new TimeSpan(23, 59, 59),
-            new TimeSpan(23, 59, 59) - clockIn
+            new TimeSpan(23, 59, 59) - clockIn,
+            null,
+            null
         );
 
         await InsertAttendance(
@@ -168,7 +171,9 @@ public class AttendanceRequestService : IAttendanceRequestService
             toDate,
             TimeSpan.Zero,
             null,
-            TimeSpan.Zero
+            TimeSpan.Zero,
+            null,
+            null
         );
 
         await InsertAttendance(
@@ -176,7 +181,9 @@ public class AttendanceRequestService : IAttendanceRequestService
             toDate,
             null,
             clockOut,
-            clockOut
+            clockOut,
+            null,
+            null
         );
     }
 
@@ -185,7 +192,9 @@ public class AttendanceRequestService : IAttendanceRequestService
     DateTime date,
     TimeSpan? clockIn,
     TimeSpan? clockOut,
-    TimeSpan totalHours)
+    TimeSpan totalHours,
+    double? latitude,
+    double? longitude)
     {
         var attendance = new AttendanceDto
         {
@@ -195,7 +204,9 @@ public class AttendanceRequestService : IAttendanceRequestService
             ClockOutTime = clockOut,
             WorkingHours = totalHours,
             Status = AttendanceStatus.Present,
-            Notes = req.Description
+            Notes = req.Description,
+            Latitude = latitude,
+            Longitude = longitude
         };
 
         await _attendanceService.CreateAttendanceAsync(attendance);
