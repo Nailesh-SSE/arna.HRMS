@@ -12,12 +12,17 @@ public class UserProfile : Profile
         CreateMap<User, UserDto>()
             .ForMember(dest => dest.EmployeeName,
                 opt => opt.MapFrom(src =>
-                    src.Employee != null ? $"{src.Employee.FirstName} {src.Employee.LastName}" : ""));
+                    src.Employee != null ? $"{src.Employee.FirstName} {src.Employee.LastName}" : ""))
+            .ForMember(dest => dest.Role,
+                opt => opt.MapFrom(src =>
+                    src.Role != null ? src.Role.Name : ""));
 
         // Map DTO -> entity 
         CreateMap<UserDto, User>()
             .ForMember(dest => dest.PasswordHash, opt =>
-                opt.MapFrom(src => HashPassword(src.Password) ?? ""));
+                opt.MapFrom(src => HashPassword(src.Password) ?? ""))
+            .ForMember(dest => dest.Role, opt => opt.Ignore())
+            .ForMember(dest => dest.Employee, opt => opt.Ignore());
     }
 
     private string HashPassword(string password)

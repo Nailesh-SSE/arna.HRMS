@@ -11,13 +11,15 @@ public class AttendanceRepositoryTests
 {
     private Mock<IBaseRepository<Attendance>> _baseRepositoryMock;
     private AttendanceRepository _attendanceRepository;
+    private Mock<FestivalHolidayRepository> _festivalHolidayRepositoryMock;
 
     [SetUp]
     public void Setup()
     {
         _baseRepositoryMock = new Mock<IBaseRepository<Attendance>>();
         _attendanceRepository = new AttendanceRepository(
-            _baseRepositoryMock.Object);
+            _baseRepositoryMock.Object,
+            _festivalHolidayRepositoryMock.Object);
     }
 
     // --------------------------------------------------

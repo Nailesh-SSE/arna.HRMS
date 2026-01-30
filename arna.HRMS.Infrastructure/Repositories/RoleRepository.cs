@@ -26,6 +26,11 @@ public class RoleRepository
         return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
     }
 
+    public async Task<Role?> GetRoleByNameAsync(string name)
+    { 
+        return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Name == name && x.IsActive && !x.IsDeleted);
+    }
+
     public Task<Role> CreateRoleAsync(Role role)
     {
         return _baseRepository.AddAsync(role);

@@ -38,7 +38,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(20);
 
-        builder.Property(d => d.Role)
+        builder.Property(d => d.RoleId)
             .IsRequired();
 
         builder.Property(d => d.RefreshToken)
@@ -52,7 +52,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasOne(d => d.Employee)
             .WithMany()
             .HasForeignKey(d => d.EmployeeId)
-            .OnDelete(DeleteBehavior.SetNull); 
+            .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(d => d.Role)
+            .WithMany()
+            .HasForeignKey(d => d.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

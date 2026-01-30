@@ -18,6 +18,7 @@ public class EmployeeServiceTests
     private IMapper _mapper;
     private EmployeeService _employeeService;
     private Mock<IUserServices> _userServicesMock;
+    private Mock<IRoleService> _roleServicesMock;
 
     [SetUp]
     public void Setup()
@@ -30,6 +31,8 @@ public class EmployeeServiceTests
 
         _userServicesMock = new Mock<IUserServices>();
 
+        _roleServicesMock = new Mock<IRoleService>();
+
         // 3️⃣ Configure AutoMapper as in the real app
         var mapperConfig = new MapperConfiguration(cfg =>
         {
@@ -39,7 +42,7 @@ public class EmployeeServiceTests
         _mapper = mapperConfig.CreateMapper();
 
         // 4️⃣ Create the service
-        _employeeService = new EmployeeService(_employeeRepository, _mapper, _userServicesMock.Object);
+        _employeeService = new EmployeeService(_employeeRepository, _mapper, _userServicesMock.Object, _roleServicesMock.Object);
     }
 
     [Test]

@@ -22,6 +22,7 @@ public class AttendanceServiceTests
     private Mock<IFestivalHolidayService> _festivalHolidayService = null!;
     private Mock<ILeaveService> _leaveServiceMock = null!;
     private IMapper _mapper = null!;
+    private Mock<FestivalHolidayRepository> _festivalHolidayRepositoryMock = null!;
 
     #region Setup
 
@@ -32,9 +33,11 @@ public class AttendanceServiceTests
         _employeeServiceMock = new Mock<IEmployeeService>();
         _festivalHolidayService = new Mock<IFestivalHolidayService>();
         _leaveServiceMock = new Mock<ILeaveService>();
+        _festivalHolidayRepositoryMock = new Mock<FestivalHolidayRepository>();
 
         _attendanceRepository = new AttendanceRepository(
-            _baseRepositoryMock.Object);
+            _baseRepositoryMock.Object,
+            _festivalHolidayRepositoryMock.Object);
 
         var mapperConfig = new MapperConfiguration(cfg =>
         {
