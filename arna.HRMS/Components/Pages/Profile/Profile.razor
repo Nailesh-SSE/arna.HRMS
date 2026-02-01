@@ -1,23 +1,28 @@
 ﻿@page "/profile"
+
 @using arna.HRMS.ClientServices.Admin.Department
 @using arna.HRMS.ClientServices.Admin.Employee
 @using arna.HRMS.ClientServices.Admin.User
 @using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Models.ViewModels
 
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
 @inject IUsersService UserService
+@inject NotificationService NotificationService
 @inherits AuthenticatedLayoutBase
 
-@if (displayModel == null)
+@if (profile == null)
 {
     <FullPageLoader />
 }
 else
 {
     <div class="profile-page">
+
+        <!-- LEFT CARD -->
         <div class="card-box">
             <div class="avatar">
                 @Initials
@@ -25,78 +30,125 @@ else
             </div>
 
             <div class="left-info">
-                <h4>@displayModel.FullName</h4>
-                @if (!string.IsNullOrEmpty(displayModel.Position))
+                <h4>@profile.FullName</h4>
+
+                @if (!string.IsNullOrEmpty(profile.Position))
                 {
-                    <div class="text-muted">@displayModel.Position</div>
+                    <div class="text-muted">@profile.Position</div>
                 }
+
                 <span class="role-badge">@GetUserRole()</span>
             </div>
 
             <ul class="meta">
-                <li><i class="bi bi-envelope"></i> @displayModel.Email</li>
-                @if (!string.IsNullOrEmpty(displayModel.PhoneNumber))
+                <li><i class="bi bi-envelope"></i> @profile.Email</li>
+
+                @if (!string.IsNullOrEmpty(profile.PhoneNumber))
                 {
-                    <li><i class="bi bi-telephone"></i> @displayModel.PhoneNumber</li>
+                    <li><i class="bi bi-telephone"></i> @profile.PhoneNumber</li>
                 }
-                @if (!string.IsNullOrEmpty(displayModel.DepartmentName))
+
+                @if (!string.IsNullOrEmpty(profile.DepartmentName))
                 {
-                    <li><i class="bi bi-building"></i> @displayModel.DepartmentName</li>
+                    <li><i class="bi bi-building"></i> @profile.DepartmentName</li>
                 }
-                <li><i class="bi bi-calendar"></i> Joined @displayModel.CreatedOn.ToString("MMMM yyyy")</li>
+
+                <li>
+                    <i class="bi bi-calendar"></i>
+                    Joined @profile.CreatedOn.ToString("MMMM yyyy")
+                </li>
             </ul>
         </div>
 
         @if (isFullEmployeeProfile)
         {
+            <!-- RIGHT CARD -->
             <div class="card-box profile-right-fixed">
+
+                <!-- HEADER -->
                 <div class="header">
                     <div>
                         <h3>Profile Information</h3>
                         <small class="text-muted">Manage your personal details</small>
                     </div>
+
                     <button class="btn btn-outline-secondary btn-sm"
-                            disabled="@(activeTab == ProfileTab.Others)"
-                            @onclick="HandleEditClick">
-                        <i class="bi bi-pencil"></i> Edit Profile
+                            disabled="@(activeTab != ProfileTab.Personal)"
+                            @onclick="ToggleEditMode">
+                        <i class="bi @(isEditMode ? "bi-check-lg" : "bi-pencil")"></i>
+                        @(isEditMode ? "Save Profile" : "Edit Profile")
                     </button>
                 </div>
 
+                <!-- TABS -->
                 <div class="tabs">
                     @foreach (ProfileTab tab in Enum.GetValues(typeof(ProfileTab)))
                     {
-                        <button class="@(activeTab == tab ? "active" : "")" @onclick="() => activeTab = tab">
-                            @tab.ToString()
+                        <button class="@(activeTab == tab ? "active" : "")"
+                                disabled="@isEditMode"
+                                @onclick="() => activeTab = tab">
+                            @tab
                         </button>
                     }
                 </div>
 
+                <!-- CONTENT -->
                 <div class="tab-content">
                     <div class="form-grid">
+
                         @switch (activeTab)
                         {
                             case ProfileTab.Personal:
-                                <div class="field"><label>First Name</label><input value="@displayModel.FirstName" readonly /></div>
-                                <div class="field"><label>Last Name</label><input value="@displayModel.LastName" readonly /></div>
-                                <div class="field"><label>Email</label><input value="@displayModel.Email" readonly /></div>
-                                <div class="field"><label>Phone</label><input value="@displayModel.PhoneNumber" readonly /></div>
-                                <div class="field full"><label>Address</label><input value="123 Main Street, SF" readonly /></div>
-                                break;
+                                <div class="field">
+                                    <label>First Name</label>
+                                    <input @bind="profile.FirstName"
+                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                           readonly="@(!isEditMode)" />
+                                </div>
+
+                                <div class="field">
+                                    <label>Last Name</label>
+                                    <input @bind="profile.LastName"
+                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                           readonly="@(!isEditMode)" />
+                                </div>
+
+                                <div class="field">
+                                    <label>Email</label>
+                                    <input @bind="profile.Email"
+                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                           readonly="@(!isEditMode)" />
+                                </div>
+
+                                <div class="field">
+                                    <label>Phone</label>
+                                    <input @bind="profile.PhoneNumber"
+                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                           readonly="@(!isEditMode)" />
+                                </div>
+
+                                <div class="field full">
+                                    <label>Address</label>
+                                    <input value="123 Main Street, SF"
+                                           class="profile-input read-mode"
+                                           readonly />
+                                </div>
+                            break;
 
                             case ProfileTab.Work:
-                                <div class="field"><label>Employee ID</label><input value="@displayModel.EmployeeNumber" readonly /></div>
-                                <div class="field"><label>Department</label><input value="@displayModel.DepartmentName" readonly /></div>
-                                <div class="field"><label>Position</label><input value="@displayModel.Position" readonly /></div>
-                                <div class="field"><label>Manager</label><input value="@displayModel.ManagerFullName" readonly /></div>
-                                <div class="field"><label>Hire Date</label><input value="@displayModel.HireDate?.ToShortDateString()" readonly /></div>
-                                break;
+                                <div class="field"><label>Employee ID</label><input @bind="profile.EmployeeNumber" class="profile-input read-mode" readonly /></div>
+                                <div class="field"><label>Department</label><input @bind="profile.DepartmentName" class="profile-input read-mode" readonly /></div>
+                                <div class="field"><label>Position</label><input @bind="profile.Position" class="profile-input read-mode" readonly /></div>
+                                <div class="field"><label>Manager</label><input @bind="profile.ManagerFullName" class="profile-input read-mode" readonly /></div>
+                                <div class="field"><label>Hire Date</label><input value="@profile.HireDate?.ToShortDateString()" class="profile-input read-mode" readonly /></div>
+                            break;
 
                             case ProfileTab.Others:
-                                <div class="field"><label>Company</label><input value="Arna Technosoft" readonly /></div>
-                                <div class="field"><label>Status</label><input value="@(displayModel.IsActive ? "Active" : "Inactive")" readonly /></div>
-                                <div class="field"><label>Experience</label><input value="@ExperienceString" readonly /></div>
-                                <div class="field"><label>Created At</label><input value="@displayModel.CreatedOn.ToShortDateString()" readonly /></div>
-                                break;
+                                <div class="field"><label>Company</label><input value="Arna Technosoft" class="profile-input read-mode" readonly /></div>
+                                <div class="field"><label>Status</label><input value="@(profile.IsActive ? "Active" : "Inactive")" class="profile-input read-mode" readonly /></div>
+                                <div class="field"><label>Experience</label><input value="@ExperienceString" class="profile-input read-mode" readonly /></div>
+                                <div class="field"><label>Created On</label><input value="@profile.CreatedOn.ToShortDateString()" class="profile-input read-mode" readonly /></div>
+                            break;
                         }
                     </div>
                 </div>
@@ -106,9 +158,12 @@ else
 }
 
 @code {
-    private ProfileViewModel? displayModel;
+    private ProfileViewModel? profile;
     private ProfileTab activeTab = ProfileTab.Personal;
-    private bool isFullEmployeeProfile => displayModel?.IsEmployee ?? false;
+    private bool isEditMode = false;
+    private EmployeeViewModel? employee;
+
+    private bool isFullEmployeeProfile => profile?.IsEmployee ?? false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,13 +175,14 @@ else
             var result = await EmployeeService.GetEmployeeByIdAsync(employeeId);
             if (result.IsSuccess && result.Data != null)
             {
-                displayModel = new ProfileViewModel(result.Data);
+                employee = result.Data;
+                profile = new ProfileViewModel(result.Data);
 
                 var dept = await DepartmentService.GetDepartmentByIdAsync(result.Data.DepartmentId ?? 0);
                 if (dept?.Data != null)
                 {
-                    displayModel.DepartmentName = dept.Data.Name;
-                    displayModel.DepartmentCode = dept.Data.Code;
+                    profile.DepartmentName = dept.Data.Name;
+                    profile.DepartmentCode = dept.Data.Code;
                 }
             }
         }
@@ -136,30 +192,83 @@ else
             var user = await UserService.GetUserByIdAsync(userId);
             if (user?.Data != null)
             {
-                displayModel = new ProfileViewModel(user.Data);
+                profile = new ProfileViewModel(user.Data);
             }
         }
     }
 
-    private string Initials => $"{(displayModel?.FirstName?.FirstOrDefault() ?? 'U')}{(displayModel?.LastName?.FirstOrDefault() ?? ' ')}".Trim().ToUpper();
+    private async Task ToggleEditMode()
+    {
+        if (!isEditMode)
+        {
+            isEditMode = true;
+            return;
+        }
+
+        var updatedEmployee = MapProfileToEmployee(profile!, employee!);
+
+        var result = await EmployeeService.UpdateEmployeeAsync(updatedEmployee.Id, updatedEmployee);
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error(result.Message ?? "Unable to update employee.");
+            return;
+        }
+
+        NotificationService.Success("Employee updated successfully.");
+        isEditMode = false;
+    }
+
+    private string Initials =>
+        $"{profile?.FirstName?.FirstOrDefault() ?? 'U'}{profile?.LastName?.FirstOrDefault() ?? ' '}"
+        .Trim()
+        .ToUpper();
 
     private string ExperienceString
     {
         get
         {
-            var doj = displayModel?.HireDate ?? DateTime.Today;
-            var today = DateTime.Today;
-            var years = today.Year - doj.Year;
-            var months = today.Month - doj.Month;
-            var anchorDate = doj.AddYears(years).AddMonths(months);
-            int days = (today - anchorDate).Days;
-            if (today.Day < doj.Day) months--;
-            if (months < 0) { years--; months += 12; }
+            var start = profile?.HireDate ?? DateTime.Today;
+            var end = DateTime.Today;
+
+            if (end < start)
+                return "0 Y 0 M 0 D";
+
+            int years = end.Year - start.Year;
+            int months = end.Month - start.Month;
+            int days = end.Day - start.Day;
+
+            if (days < 0)
+            {
+                months--;
+                var prevMonth = end.AddMonths(-1);
+                days += DateTime.DaysInMonth(prevMonth.Year, prevMonth.Month);
+            }
+
+            if (months < 0)
+            {
+                years--;
+                months += 12;
+            }
+
             return $"{years} Y {months} M {days} D";
         }
     }
 
-    private void HandleEditClick() => _ = activeTab == ProfileTab.Others ? null : "Trigger Edit Logic";
+    private enum ProfileTab
+    {
+        Personal,
+        Work,
+        Others
+    }
 
-    private enum ProfileTab { Personal, Work, Others }
+    private static EmployeeViewModel MapProfileToEmployee(ProfileViewModel profile, EmployeeViewModel employee)
+    {
+        employee.FirstName = profile.FirstName;
+        employee.LastName = profile.LastName;
+        employee.Email = profile.Email;
+        employee.PhoneNumber = profile.PhoneNumber;
+
+        return employee;
+    }
 }

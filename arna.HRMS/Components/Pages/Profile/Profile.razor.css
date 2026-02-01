@@ -154,3 +154,45 @@ button:disabled {
     cursor: not-allowed;
     opacity: 0.6;
 }
+
+/* INPUT BASE */
+.profile-input {
+    width: 100%;
+    font-size: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+    /* READ MODE */
+    .profile-input.read-mode {
+        border: none;
+        outline: none;
+        box-shadow: none;
+        background: transparent;
+        color: #6b7280;
+        pointer-events: none;
+        padding-left: 0;
+    }
+
+    /* EDIT MODE */
+    .profile-input.edit-mode {
+        background: #fff;
+        border: 1px solid #ced4da;
+        color: #111827;
+    }
+
+        /* EDIT MODE FOCUS */
+        .profile-input.edit-mode:focus {
+            border-color: #1c4ed8;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(28, 78, 216, 0.15);
+        }
+
+/* EDIT MODE CONTAINER HIGHLIGHT */
+.form-grid.editing {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 12px;
+}
+
