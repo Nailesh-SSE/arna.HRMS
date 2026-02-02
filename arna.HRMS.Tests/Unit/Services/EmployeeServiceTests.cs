@@ -1,10 +1,13 @@
-﻿using arna.HRMS.Core.DTOs;
+﻿using arna.HRMS.Core.Common.ServiceResult;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
+using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
+using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
 
@@ -13,122 +16,266 @@ namespace arna.HRMS.Tests.Unit.Services;
 [TestFixture]
 public class EmployeeServiceTests
 {
-    private Mock<IBaseRepository<Employee>> _baseRepositoryMock;
-    private EmployeeRepository _employeeRepository;
-    private IMapper _mapper;
-    private EmployeeService _employeeService;
-    private Mock<IUserServices> _userServicesMock;
+    private ApplicationDbContext _dbContext = null!;
+    private EmployeeService _employeeService = null!;
+    private Mock<IUserServices> _userServicesMock = null!;
+    private IMapper _mapper = null!;
+
+    // -------------------- SETUP --------------------
 
     [SetUp]
-    public void Setup()
+    public async Task Setup()
     {
-        // 1️⃣ Mock the base repository, which is used by EmployeeRepository internally
-        _baseRepositoryMock = new Mock<IBaseRepository<Employee>>();
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
 
-        // 2️⃣ Real EmployeeRepository, inject the mocked base repository
-        _employeeRepository = new EmployeeRepository(_baseRepositoryMock.Object);
+        _dbContext = new ApplicationDbContext(options);
+
+        _dbContext.Departments.Add(new Department
+        {
+            Id = 1,
+            Name = "IT",
+            Code = "IT",
+            Description = "Information Technology"
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        var baseRepository = new BaseRepository<Employee>(_dbContext);
+        var employeeRepository = new EmployeeRepository(baseRepository);
 
         _userServicesMock = new Mock<IUserServices>();
 
-        // 3️⃣ Configure AutoMapper as in the real app
         var mapperConfig = new MapperConfiguration(cfg =>
         {
+            // DTO → Entity (IGNORE navigation properties)
+            cfg.CreateMap<EmployeeDto, Employee>()
+                .ForMember(dest => dest.Department, opt => opt.Ignore()) // 🔥 REQUIRED
+                .ForMember(dest => dest.Manager, opt => opt.Ignore());
+
+            // Entity → DTO
             cfg.CreateMap<Employee, EmployeeDto>()
-                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"));
+                .ForMember(dest => dest.DepartmentCode,
+                    opt => opt.MapFrom(src => src.Department != null ? src.Department.Code : ""))
+                .ForMember(dest => dest.ManagerFullName,
+                    opt => opt.MapFrom(src =>
+                        src.Manager != null
+                            ? $"{src.Manager.FirstName} {src.Manager.LastName}"
+                            : ""));
         });
+
+
         _mapper = mapperConfig.CreateMapper();
 
-        // 4️⃣ Create the service
-        _employeeService = new EmployeeService(_employeeRepository, _mapper, _userServicesMock.Object);
+        _employeeService = new EmployeeService(
+            employeeRepository,
+            _mapper,
+            _userServicesMock.Object
+        );
     }
+
+    // -------------------- GET ALL --------------------
 
     [Test]
     public async Task GetEmployeesAsync_ReturnsEmployeeDtoList()
     {
-        // Arrange: mock base repository method
-        var employees = new List<Employee>
-        {
-            new Employee { Id = 1, FirstName = "John", LastName = "Doe" },
-            new Employee { Id = 2, FirstName = "Jane", LastName = "Smith" }
-        };
+        _dbContext.Employees.AddRange(
+            new Employee
+            {
+                EmployeeNumber = "Emp001",
+                FirstName = "John",
+                LastName = "Doe",
+                Email = "john@a.com",
+                PhoneNumber = "1111111111",
+                Position = "Developer",
+                Salary = 50000,
+                DepartmentId = 1,
+                HireDate = DateTime.Now,
+                DateOfBirth = DateTime.Now.AddYears(-25)
+            },
+            new Employee
+            {
+                EmployeeNumber = "Emp002",
+                FirstName = "Jane",
+                LastName = "Smith",
+                Email = "jane@b.com",
+                PhoneNumber = "2222002222",
+                Position = "Tester",
+                Salary = 4000,
+                DepartmentId = 1,
+                HireDate = DateTime.Now,
+                DateOfBirth = DateTime.Now.AddYears(-24)
+            },
+            new Employee
+            {
+                EmployeeNumber = "Emp003",
+                FirstName = "Pratham",
+                LastName = "Smith",
+                Email = "pratham@b.com",
+                PhoneNumber = "2222222222",
+                Position = "Tester",
+                Salary = 45000,
+                DepartmentId = 1,
+                HireDate = DateTime.Now,
+                DateOfBirth = DateTime.Now.AddYears(-24)
+            }
+        );
 
-        _baseRepositoryMock.Setup(r => r.GetAllAsync()).ReturnsAsync(employees);
+        await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _employeeService.GetEmployeesAsync();
 
-        // Assert
-        Assert.That(result.Data?.Count, Is.EqualTo(employees.Count));
-        Assert.That(result.Data?.FirstOrDefault()?.FullName, Is.EqualTo(employees[0].FirstName + " " + employees[0].LastName));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data!.Count, Is.EqualTo(3));
+        Assert.That(result.Data![2].FullName, Is.EqualTo("John Doe"));
+        Assert.That(result.Data![1].FullName, Is.EqualTo("Jane Smith"));
+        Assert.That(result.Data![0].FullName, Is.EqualTo("Pratham Smith"));
+    }
+
+    // -------------------- GET BY ID --------------------
+
+    [Test]
+    public async Task GetEmployeeByIdAsync_WhenExists_ReturnsEmployee()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp003",
+            FirstName = "Alex",
+            LastName = "Brown",
+            Email = "alex@test.com",
+            PhoneNumber = "3333333333",
+            Position = "Manager",
+            Salary = 80000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-30)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.GetEmployeeByIdAsync(employee.Id);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data!.FullName, Is.EqualTo("Alex Brown"));
     }
 
     [Test]
-    public async Task GetEmployeeByIdAsync_WhenEmployeeExists_ReturnsEmployeeDto()
+    public async Task GetEmployeeByIdAsync_WhenNotExists_ReturnsFail()
     {
-        var employee = new Employee { Id = 1, FirstName = "John", LastName = "Doe" };
-        _baseRepositoryMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(employee);
+        var result = await _employeeService.GetEmployeeByIdAsync(999);
 
-        var result = await _employeeService.GetEmployeeByIdAsync(1);
-
-        Assert.That(result.Data?.FullName, Is.EqualTo("John Doe"));
+        Assert.That(result.IsSuccess, Is.False);
     }
 
-    [Test]
-    public async Task GetEmployeeByIdAsync_WhenEmployeeDoesNotExist_ReturnsNull()
-    {
-        _baseRepositoryMock.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((Employee)null);
-
-        var result = await _employeeService.GetEmployeeByIdAsync(99);
-
-        Assert.That(result, Is.Null);
-    }
+    // -------------------- CREATE --------------------
 
     [Test]
     public async Task CreateEmployeeAsync_ReturnsCreatedEmployeeDto()
     {
-        var employee = new Employee { Id = 1, FirstName = "John", LastName = "Doe" };
-        var employeeDto = new EmployeeDto { Id = 1, FirstName = "Updated", LastName = "User" };
+        var dto = new EmployeeDto
+        {
+            FirstName = "Chris",
+            LastName = "Evans",
+            DepartmentName = "INFORMATION TECHNOLOGY",
+            Email = "chris@test.com",
+            PhoneNumber = "4444444444",
+            DateOfBirth = DateTime.Now.AddYears(-28),
+            HireDate = DateTime.Now,
+            DepartmentId = 1,
+            DepartmentCode = "IT",
+            Position = "Developer",
+            Salary = 60000
+        };
 
-        // ✅ Mock the underlying AddAsync, NOT EmployeeRepository.CreateEmployeeAsync
-        _baseRepositoryMock.Setup(r => r.AddAsync(employee)).ReturnsAsync(employee);
+        _userServicesMock
+            .Setup(u => u.CreateUserAsync(It.IsAny<UserDto>()))
+            .ReturnsAsync(ServiceResult<UserDto>.Success(new UserDto()));
 
-        var result = await _employeeService.CreateEmployeeAsync(employeeDto);
+        var result = await _employeeService.CreateEmployeeAsync(dto);
 
-        Assert.That(result.Data?.FullName, Is.EqualTo("John Doe"));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.Data!.FullName, Is.EqualTo("Chris Evans"));
+        Assert.That(await _dbContext.Employees.CountAsync(), Is.EqualTo(1));
     }
+
+    // -------------------- UPDATE --------------------
 
     [Test]
     public async Task UpdateEmployeeAsync_ReturnsUpdatedEmployeeDto()
     {
-        var employee = new Employee { Id = 1, FirstName = "Updated", LastName = "User" };
-        var employeeDto = new EmployeeDto { Id = 1, FirstName = "Updated", LastName = "User" };
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp004",
+            FirstName = "Old",
+            LastName = "Name",
+            Email = "update@test.com",
+            PhoneNumber = "5555555555",
+            Position = "Tester",
+            Salary = 40000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-29)
+        };
 
-        // ✅ Mock the underlying UpdateAsync
-        _baseRepositoryMock.Setup(r => r.UpdateAsync(employee)).ReturnsAsync(employee);
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
 
-        var result = await _employeeService.UpdateEmployeeAsync(employeeDto);
+        var dto = new EmployeeDto
+        {
+            Id = employee.Id,
+            FirstName = "Updated",
+            LastName = "User",
+            Email = employee.Email,
+            PhoneNumber = employee.PhoneNumber,
+            DateOfBirth = employee.DateOfBirth,
+            HireDate = employee.HireDate,
+            DepartmentId = 1,
+            Position = "Manager",
+            Salary = 90000
+        };
 
-        Assert.That(result.Data?.FullName, Is.EqualTo("Updated User"));
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data!.FullName, Is.EqualTo("Updated User"));
+    }
+
+    // -------------------- DELETE --------------------
+
+    [Test]
+    public async Task DeleteEmployeeAsync_WhenDeleted_ReturnsSuccess()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp005",
+            FirstName = "Delete",
+            LastName = "Me",
+            Email = "delete@test.com",
+            PhoneNumber = "6666666666",
+            Position = "Support",
+            Salary = 30000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-27)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.DeleteEmployeeAsync(employee.Id);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.True);
     }
 
     [Test]
-    public async Task DeleteEmployeeAsync_ReturnsTrue_WhenDeleted()
+    public async Task DeleteEmployeeAsync_WhenNotFound_ReturnsFail()
     {
-        // ✅ Mock the underlying DeleteAsync
-        _baseRepositoryMock.Setup(r => r.DeleteAsync(1)).ReturnsAsync(true);
+        var result = await _employeeService.DeleteEmployeeAsync(999);
 
-        var result = await _employeeService.DeleteEmployeeAsync(1);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public async Task DeleteEmployeeAsync_ReturnsFalse_WhenEmployeeNotFound()
-    {
-        _baseRepositoryMock.Setup(r => r.DeleteAsync(99)).ReturnsAsync(false);
-
-        var result = await _employeeService.DeleteEmployeeAsync(99);
-
-        Assert.That(result, Is.False);
+        Assert.That(result.IsSuccess, Is.False);
     }
 }

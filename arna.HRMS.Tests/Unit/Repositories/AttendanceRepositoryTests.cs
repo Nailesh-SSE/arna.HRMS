@@ -10,14 +10,17 @@ namespace arna.HRMS.Tests.Unit.Repositories;
 public class AttendanceRepositoryTests
 {
     private Mock<IBaseRepository<Attendance>> _baseRepositoryMock;
+    private Mock<FestivalHolidayRepository> _festivalHolidayRepositoryMock;
     private AttendanceRepository _attendanceRepository;
 
     [SetUp]
     public void Setup()
     {
         _baseRepositoryMock = new Mock<IBaseRepository<Attendance>>();
-        _attendanceRepository = new AttendanceRepository(
-            _baseRepositoryMock.Object);
+        _festivalHolidayRepositoryMock = new Mock<FestivalHolidayRepository>(null); // Pass required constructor args if any
+                                _attendanceRepository = new AttendanceRepository(
+            _baseRepositoryMock.Object,
+            _festivalHolidayRepositoryMock.Object);
     }
 
     // --------------------------------------------------
