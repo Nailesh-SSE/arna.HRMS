@@ -17,6 +17,7 @@ public class UserRepository
     {
         return await _baseRepository.Query()
             .Include(x => x.Employee)
+            .Include(x => x.Role)
             .Where(x => x.IsActive && !x.IsDeleted)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
@@ -26,6 +27,7 @@ public class UserRepository
     {
         return await _baseRepository.Query()
             .Include(x => x.Employee)
+            .Include(x => x.Role)
             .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
     }
 
@@ -68,9 +70,10 @@ public class UserRepository
 
         return await _baseRepository.Query()
             .Include(x => x.Employee)
-            .FirstOrDefaultAsync(u =>
-                u.Username.Trim().ToLower() == usernameOrEmail ||
-                u.Email.Trim().ToLower() == usernameOrEmail);
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted &&
+                (u.Username.Trim().ToLower() == usernameOrEmail ||
+                 u.Email.Trim().ToLower() == usernameOrEmail));
     }
 
     public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)

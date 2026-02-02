@@ -19,7 +19,7 @@ public class AttendanceService : IAttendanceService
     private readonly ILeaveService _leaveService;
     
 
-    private static readonly DateTime SystemStartDate = new(2026, 1, 12);
+    private static readonly DateTime SystemStartDate = new(2026, 2, 1);
 
     public AttendanceService(
         AttendanceRepository attendanceRepository,

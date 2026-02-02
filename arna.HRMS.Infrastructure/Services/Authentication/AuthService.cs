@@ -146,7 +146,7 @@ public class AuthService : IAuthService
             FullName = user.FullName ?? string.Empty,
             Email = user.Email ?? string.Empty,
             EmployeeId = user.EmployeeId,
-            Role = user.Role
+            Role = user.Role?.Name ?? string.Empty,
         };
     }
 }

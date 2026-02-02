@@ -2,6 +2,7 @@
 @page "/user/edit/{Id:int}"
 
 @using arna.HRMS.ClientServices.Admin.Employee
+@using arna.HRMS.ClientServices.Admin.Role
 @using arna.HRMS.ClientServices.Admin.User
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Common
@@ -15,6 +16,7 @@
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
+@inject IRoleService RoleService
 
 <div class="container py-4">
     <FullPageLoader Visible = "isLoading"/>
@@ -37,46 +39,46 @@
                         <!-- Username -->
                         <div class="col-md-6">
                             <AppInput Label="Username"
-                                      Value="@user.Username"
-                                      ValueChanged="v => user.Username = v"
-                                      ValidationExpression="@(() => user.Username)">
+                            Value="@user.Username"
+                            ValueChanged="v => user.Username = v"
+                            ValidationExpression="@(() => user.Username)">
                             </AppInput>
                         </div>
 
                         <!-- Email -->
                         <div class="col-md-6">
                             <AppInput Label="Email"
-                                      Type="email"
-                                      Value="@user.Email"
-                                      ValueChanged="@(v => user.Email = v)"
-                                      ValidationExpression="@(() => user.Email)">
+                            Type="email"
+                            Value="@user.Email"
+                            ValueChanged="@(v => user.Email = v)"
+                            ValidationExpression="@(() => user.Email)">
                             </AppInput>
                         </div>
 
                         <!-- First Name -->
                         <div class="col-md-6">
                             <AppInput Label="First Name"
-                                      Value="@user.FirstName"
-                                      ValueChanged="@(v => user.FirstName = v)"
-                                      ValidationExpression="@(() => user.FirstName)">
+                            Value="@user.FirstName"
+                            ValueChanged="@(v => user.FirstName = v)"
+                            ValidationExpression="@(() => user.FirstName)">
                             </AppInput>
                         </div>
 
                         <!-- Last Name -->
                         <div class="col-md-6">
                             <AppInput Label="Last Name" 
-                                      Value="@user.LastName" 
-                                      ValueChanged="v => user.LastName=v"
-                                      ValidationExpression="@(() => user.LastName)">
+                            Value="@user.LastName" 
+                            ValueChanged="v => user.LastName=v"
+                            ValidationExpression="@(() => user.LastName)">
                             </AppInput>
                         </div>
 
                         <!-- Phone -->
                         <div class="col-md-6">
                             <AppInput Label="Phone Number"
-                                      Value="@user.PhoneNumber"
-                                      ValueChanged="v => user.PhoneNumber = v"
-                                      ValidationExpression="@(() => user.PhoneNumber)">
+                            Value="@user.PhoneNumber"
+                            ValueChanged="v => user.PhoneNumber = v"
+                            ValidationExpression="@(() => user.PhoneNumber)">
                             </AppInput>
                         </div>
 
@@ -97,23 +99,18 @@
                         <!-- ROLE -->
                         <div class="col-md-6">
                             <AppSelect Label="Role"
-                                       Options="RoleOptions"
-                                       Value="@user.Role?.ToString()"
-                                       ValueChanged="v =>
-                                       {
-                                            user.Role = Enum.TryParse<UserRole>(v, out var role)
-                                                        ? role
-                                                        : null;
-                                       }"
-                                   ValidationExpression="@(() => user.Role)" />
+                                       Options="roles"
+                                       Value="@user.RoleId.ToString()"
+                                       ValueChanged="v => user.RoleId = int.Parse(v!)"
+                                       ValidationExpression="@(() => user.RoleId)" />
                         </div>
 
                         <div class="col-md-6">
                             <AppPasswordInput Label="Password"
-                                                IsRequired="true"
-                                                Value="@user.Password"
-                                                ValueChanged="v => user.Password = v"
-                                                ValidationExpression="@(() => user.Password)" />
+                            IsRequired="true"
+                            Value="@user.Password"
+                            ValueChanged="v => user.Password = v"
+                            ValidationExpression="@(() => user.Password)" />
                         </div>
 
                         <!-- Active (EDIT ONLY) -->
@@ -121,20 +118,20 @@
                         {
                             <div class="col-md-6 mt-4">
                                 <AppCheckBox Label="Active"
-                                             Value="@user.IsActive"
-                                             ValueChanged="@(v => user.IsActive = v)" />
+                                Value="@user.IsActive"
+                                ValueChanged="@(v => user.IsActive = v)" />
                             </div>
                         }
                     </div>
 
                     <div class="mt-5 d-flex justify-content-end gap-3">
                         <AppButton Text="Back"
-                                   ButtonClass="btn btn-outline-dark px-4"
-                                   OnClick="GoBack" />
+                        ButtonClass="btn btn-outline-dark px-4"
+                        OnClick="GoBack" />
 
                         <AppButton Text="@(IsEditMode ? "Update" : "Save")"
-                                   Type="submit"
-                                   ButtonClass="btn btn-primary px-5" />
+                        Type="submit"
+                        ButtonClass="btn btn-primary px-5" />
                     </div>
                 </EditForm>
             }
@@ -149,20 +146,13 @@
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
     private List<EmployeeViewModel> employees = new();
-
-    private List<SelectOption> RoleOptions = Enum
-       .GetValues<UserRole>()
-       .Select(r => new SelectOption
-       {
-           Value = r.ToString(),
-           Text = r.ToString()
-       })
-       .ToList();
+    private List<SelectOption> roles = new();
 
     protected override async Task OnParametersSetAsync()
     {
         isLoading = true;
 
+        // Employees
         var employeeResult = await EmployeeService.GetEmployeesAsync();
         if (employeeResult.IsSuccess && employeeResult.Data != null)
         {
@@ -171,6 +161,23 @@
         else
         {
             employees = new(); 
+        }
+
+        // Roles
+        var roleResult = await RoleService.GetRolesAsync();
+        if (roleResult.IsSuccess && roleResult.Data != null)
+        {
+            roles = roleResult.Data
+                .Select(r => new SelectOption
+                    {
+                        Value = r.Id.ToString(),
+                        Text = r.Name.ToString()
+                    })
+                .ToList();
+        }
+        else
+        {
+            roles = new();
         }
 
         if (IsEditMode)
@@ -191,8 +198,7 @@
         {
             user = new UserViewModel
             {
-                IsActive = true,
-                Role = null
+                IsActive = true
             };
         }
 

@@ -20,6 +20,7 @@ public class AttendanceServiceTests
     private ApplicationDbContext _dbContext = null!;
     private AttendanceService _attendanceService = null!;
     private IMapper _mapper = null!;
+    private Mock<FestivalHolidayRepository> _festivalHolidayRepositoryMock = null!;
 
     private Mock<IEmployeeService> _employeeServiceMock = null!;
     private Mock<IFestivalHolidayService> _festivalHolidayServiceMock = null!;
@@ -51,6 +52,7 @@ public class AttendanceServiceTests
         _employeeServiceMock = new Mock<IEmployeeService>();
         _festivalHolidayServiceMock = new Mock<IFestivalHolidayService>();
         _leaveServiceMock = new Mock<ILeaveService>();
+        _festivalHolidayRepositoryMock = new Mock<FestivalHolidayRepository>();
 
         // ---------- Mapper ----------
         var mapperConfig = new MapperConfiguration(cfg =>

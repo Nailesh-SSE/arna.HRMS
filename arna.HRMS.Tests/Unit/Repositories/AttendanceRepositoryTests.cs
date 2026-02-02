@@ -12,6 +12,7 @@ public class AttendanceRepositoryTests
     private Mock<IBaseRepository<Attendance>> _baseRepositoryMock;
     private Mock<FestivalHolidayRepository> _festivalHolidayRepositoryMock;
     private AttendanceRepository _attendanceRepository;
+    private Mock<FestivalHolidayRepository> _festivalHolidayRepositoryMock;
 
     [SetUp]
     public void Setup()

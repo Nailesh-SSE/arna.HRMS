@@ -33,14 +33,12 @@ public class JwtService : IJwtService
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Username ?? string.Empty),
             new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-            new Claim(ClaimTypes.Role, user.Role.ToString()),
+            new Claim(ClaimTypes.Role, user.Role?.Name.ToString() ?? string.Empty),
             new Claim("FullName", user.FullName ?? string.Empty),
             new Claim("EmployeeId", user.EmployeeId.ToString() ?? string.Empty),
+            new Claim("RoleId", user.RoleId.ToString() ?? string.Empty),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-
-        if (user.EmployeeId.HasValue)
-            claims.Add(new Claim("EmployeeId", user.EmployeeId.Value.ToString()));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

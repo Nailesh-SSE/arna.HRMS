@@ -13,15 +13,18 @@ public class EmployeeService : IEmployeeService
     private readonly EmployeeRepository _employeeRepository;
     private readonly IUserServices _userServices;
     private readonly IMapper _mapper;
+    private readonly IRoleService _roleService;
 
     public EmployeeService(
         EmployeeRepository employeeRepository,
         IMapper mapper,
-        IUserServices userServices)
+        IUserServices userServices,
+        IRoleService roleService)
     {
         _employeeRepository = employeeRepository;
         _mapper = mapper;
         _userServices = userServices;
+        _roleService = roleService;
     }
 
     public async Task<ServiceResult<List<EmployeeDto>>> GetEmployeesAsync()
@@ -75,6 +78,10 @@ public class EmployeeService : IEmployeeService
 
         if (createdEmployee != null)
         {
+            var role = await _roleService.GetRoleByNameAsync(UserRole.Employee.ToString());
+            if(role == null || !role.IsSuccess || role.Data == null)
+                return ServiceResult<EmployeeDto>.Fail("Employee role not found");
+
             var userDto = new UserDto
             {
                 Username = createdEmployee.FirstName,
@@ -82,7 +89,7 @@ public class EmployeeService : IEmployeeService
                 FirstName = createdEmployee.FirstName,
                 LastName = createdEmployee.LastName,
                 EmployeeName = createdEmployee.FirstName + " " + createdEmployee.LastName,
-                Role = UserRole.Employee,
+                RoleId = role.Data.Id,
                 PhoneNumber = createdEmployee.PhoneNumber,
                 EmployeeId = createdEmployee.Id,
                 Password = $"{Guid.NewGuid().ToString("N")[..6]}"

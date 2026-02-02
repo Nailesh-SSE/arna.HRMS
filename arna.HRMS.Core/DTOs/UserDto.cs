@@ -1,5 +1,4 @@
 ﻿using arna.HRMS.Core.Common;
-using arna.HRMS.Core.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Core.DTOs;
@@ -30,7 +29,8 @@ public class UserDto : BaseEntity
     public string LastName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Role is required")]
-    public UserRole? Role { get; set; }
+    public int RoleId { get; set; }
+    public string? Role { get; set; }
 
     [Required(ErrorMessage = "Phone Number is required")]
     [Phone(ErrorMessage = "Invalid phone number")]

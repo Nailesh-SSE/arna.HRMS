@@ -38,6 +38,19 @@ public class RoleService : IRoleService
         return ServiceResult<RoleDto?>.Success(role);
     }
 
+    public async Task<ServiceResult<RoleDto?>> GetRoleByNameAsync(string name)
+    {
+        if(string.IsNullOrWhiteSpace(name))
+            return ServiceResult<RoleDto?>.Fail("Invalid Role");
+
+        var result = await _roleRepository.GetRoleByNameAsync(name);
+        if (result == null)
+            return ServiceResult<RoleDto?>.Fail("Role not found"); 
+
+        var role = _mapper.Map<RoleDto?>(result);
+        return ServiceResult<RoleDto?>.Success(role);
+    }
+
     public async Task<ServiceResult<RoleDto>> CreateRoleAsync(RoleDto dto)
     {
         if (dto == null)
