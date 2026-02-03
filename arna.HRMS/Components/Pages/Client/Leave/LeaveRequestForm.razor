@@ -1,0 +1,149 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.ViewModels.Leave
+
+@if (ShowModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="background: rgba(0,0,0,0.45);">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">@(IsEditMode ? "Update Leave" : "Apply Leave")</h5>
+                    <button type="button" class="btn-close" aria-label="Close" @onclick="OnCloseModal"></button>
+                </div>
+
+                <EditForm EditContext="EditContext" OnValidSubmit="OnSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <AppSelect Label="Leave Type *"
+                                       Options="LeaveOptions"
+                                       Value="@((Model.LeaveTypeId == 0) ? "" : Model.LeaveTypeId.ToString())"
+                                       ValueChanged="OnLeaveTypeChanged"
+                                       ValidationExpression="() => Model.LeaveTypeId"
+                                       Placeholder="Select leave type" />
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <AppDatePicker Label="Start Date *"
+                                               Value="@Model.StartDate"
+                                               ValueChanged="OnFromChanged"
+                                               ValidationExpression="() => Model.StartDate" />
+                            </div>
+                            <div class="col-md-6">
+                                <AppDatePicker Label="End Date *"
+                                               Value="@Model.EndDate"
+                                               ValueChanged="OnToChanged"
+                                               ValidationExpression="() => Model.EndDate" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3 mt-2">
+                            <div class="form-group">
+                                <label class="form-label">Total Days</label>
+                                <div class="form-control-plaintext">@Model.TotalDays</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <AppTextArea Label="Reason *"
+                                         Rows="4"
+                                         Value="@Model.Reason"
+                                         ValueChanged="@(async v => await OnReasonChanged(v))"
+                                         ValidationExpression="() => Model.Reason"
+                                         Placeholder="Please provide reason for your leave..." />
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <AppButton type="button" class="btn btn-outline-secondary" Onclick="OnCloseModal">Cancel</AppButton>
+                        <AppButton type="submit" class="btn btn-primary" disabled="@(!IsFormValid || IsSubmitting)">
+                            @if (IsSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Submitting...</span>
+                            }
+                            else
+                            {
+                                <span> @(IsEditMode ? "Update Request" : "Submit Request")</span>
+                            }
+                        </AppButton>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool ShowModal { get; set; }
+    [Parameter] public EventCallback<bool> ShowModalChanged { get; set; }
+    [Parameter] public LeaveRequestViewModel Model { get; set; } = new();
+    [Parameter] public List<SelectOption> LeaveOptions { get; set; } = new();
+    [Parameter] public List<LeaveMasterViewModel> LeaveMasters { get; set; } = new();
+    [Parameter] public List<EmployeeLeaveBalanceViewModel> Summaries { get; set; } = new();
+    [Parameter] public EditContext EditContext { get; set; } = null!;
+    [Parameter] public bool IsFormValid { get; set; }
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    private async Task OnCloseModal()
+    {
+        await ShowModalChanged.InvokeAsync(false);
+    }
+
+    private async Task OnLeaveTypeChanged(string? v)
+    {
+        Model.LeaveTypeId = int.TryParse(v, out var id) ? id : 0;
+        EditContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.LeaveTypeId)));
+        await Task.CompletedTask;
+    }
+
+    private async Task OnFromChanged(DateTime? d)
+    {
+        Model.StartDate = d ?? DateTime.Today;
+        CalculateDays();
+        EditContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.StartDate)));
+        EditContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.TotalDays)));
+        await Task.CompletedTask;
+    }
+
+    private async Task OnToChanged(DateTime? d)
+    {
+        Model.EndDate = d ?? DateTime.Today;
+        CalculateDays();
+        EditContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.EndDate)));
+        EditContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.TotalDays)));
+        await Task.CompletedTask;
+    }
+
+    private async Task OnReasonChanged(string? v)
+    {
+        Model.Reason = v ?? string.Empty;
+        EditContext?.NotifyFieldChanged(new FieldIdentifier(Model, nameof(Model.Reason)));
+        await Task.CompletedTask;
+    }
+
+    private async Task OnSubmit()
+    {
+        await OnValidSubmit.InvokeAsync();
+    }
+
+    private void CalculateDays()
+        => Model.TotalDays = (Model.EndDate - Model.StartDate).Days + 1;
+
+    private async Task Close()
+   => await ShowModalChanged.InvokeAsync(false);
+
+    private async Task Submit()
+        => await OnValidSubmit.InvokeAsync();
+}

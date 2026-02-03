@@ -146,7 +146,8 @@ public class LeaveController : ControllerBase
         var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(leaveRequestId, employeeid);
         if (!result.Data)
             return BadRequest("Invalid leave request");
-        return Ok("Leave request cancelled successfully");
+
+        return Ok(result);
     }
 
     // ============================

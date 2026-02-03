@@ -117,27 +117,27 @@ public class LeaveService : ILeaveService
                 .ToHashSet()
                 ?? new HashSet<DateTime>();
 
-        int actualLeaveDays = CalculateActualLeaveDays(
-            LeaveRequestDto.StartDate,
-            LeaveRequestDto.EndDate,
-            festivalDates);
+            int actualLeaveDays = CalculateActualLeaveDays(
+                LeaveRequestDto.StartDate,
+                LeaveRequestDto.EndDate,
+                festivalDates);
 
-        var hasInsufficientBalance = balance.Any(w =>
-         w.LeaveMasterId == LeaveRequestDto.LeaveTypeId &&
-         w.RemainingLeaves < actualLeaveDays
-         );
+            var hasInsufficientBalance = balance.Any(w =>
+             w.LeaveMasterId == LeaveRequestDto.LeaveTypeId &&
+             w.RemainingLeaves < actualLeaveDays
+             );
 
-        if (hasInsufficientBalance)
-        {
-            return ServiceResult<LeaveRequestDto>
-                .Fail("Insufficient leave balance");
+            if (hasInsufficientBalance)
+            {
+                return ServiceResult<LeaveRequestDto>
+                    .Fail("Insufficient leave balance");
+            }
+
+            var leave = _mapper.Map<LeaveRequest>(LeaveRequestDto);
+            var createdLeaveRequest = await _leaveRepository.CreateLeaveRequestAsync(leave);
+            var Data = _mapper.Map<LeaveRequestDto>(createdLeaveRequest);
+            return ServiceResult<LeaveRequestDto>.Success(Data);
         }
-
-        var leave = _mapper.Map<LeaveRequest>(LeaveRequestDto);
-        var createdLeaveRequest = await _leaveRepository.CreateLeaveRequestAsync(leave);
-        var Data = _mapper.Map<LeaveRequestDto>(createdLeaveRequest);
-        return ServiceResult<LeaveRequestDto>.Success(Data);
-    }
     public async Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id)
     {
         var Data = await _leaveRepository.DeleteLeaveRequestAsync(id);

@@ -22,6 +22,10 @@
             <i class="bi bi-calendar-check me-2"></i> Attendance
         </NavLink>
 
+        <NavLink href="/leaverequest" class="nav-link text-white">
+                <i class="bi bi-calendar-event me-2"></i> Leave
+        </NavLink>
+
         @if (IsAdmin() || IsSuperAdmin())
         {
             <NavLink href="/department" class="nav-link text-white">

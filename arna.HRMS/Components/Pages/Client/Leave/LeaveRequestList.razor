@@ -1,0 +1,128 @@
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Models.Enums
+
+<div class="requests-section">
+
+    <h5 class="fw-bold mb-3">Recent Leave Requests</h5>
+
+    @if (Requests == null || Requests.Count == 0)
+    {
+        <div class="text-center text-muted py-4">
+            No leave requests
+        </div>
+    }
+    else
+    {
+        @foreach (var req in Requests)
+        {
+            <div class="card shadow-sm mb-3 border-start request-card">
+
+                <div class="card-body py-3">
+
+                    <div class="row align-items-center g-3">
+
+                        <!-- LEFT (3) -->
+                        <div class="col-12 col-md-3 d-flex align-items-center gap-3">
+
+                            <div class="avatar">
+                                @GetInitials(req.EmployeeName)
+                            </div>
+
+                            <div>
+                                <div class="d-flex justify-content-around">
+                                    <div class="fw-semibold me-2">@req.EmployeeName</div>
+                                    <span class="badge text-dark small">
+                                        @req.TotalDays days
+                                    </span>
+                                </div>
+
+                                <div class="small text-muted">
+                                    @req.StartDate.ToString("MMM dd") -
+                                    @req.EndDate.ToString("MMM dd, yyyy")
+                                </div>
+
+
+                            </div>
+                        </div>
+
+
+                        <!-- CENTER (6) -->
+                        <div class="col-12 col-md-6">
+
+                            <div class="reason-box text-truncate-2"
+                                 title="@req.Reason">
+                                @req.Reason
+                            </div>
+
+                        </div>
+
+
+                        <!-- RIGHT (3) -->
+                        <div class="col-12 col-md-3 text-md-end">
+
+                            @if (req.Status == Status.Pending)
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    Pending
+                                </span>
+                                <AppButton class="btn btn-sm btn-outline-dark ms-md-2 mt-2 mt-md-0"
+                                           OnClick="@(async () => await OnEdit.InvokeAsync(req.Id))">
+                                    <i class="bi bi-pencil-square"></i>
+                                </AppButton>
+                                <AppButton class="btn btn-sm btn-outline-danger ms-md-2 mt-2 mt-md-0" OnClick="@(async () => await OnCancel.InvokeAsync(req.Id))">
+                                    <i class="bi bi-x-octagon-fill"></i>
+                                </AppButton>
+
+                            }
+                            else if (req.Status == Status.Approved)
+                            {
+                                <span class="badge bg-success">Approved</span>
+                            }
+                            else if (req.Status == Status.Rejected)
+                            {
+                                <span class="badge bg-danger">Rejected</span>
+                            }
+                            else if (req.Status == Status.Cancelled)
+                            {
+                                <span class="badge bg-secondary">Cancelled</span>
+                            }
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        }
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public List<LeaveRequestViewModel>
+    Requests
+    { get; set; } = new();
+    [Parameter]
+    public EventCallback<int>
+        OnCancel
+    { get; set; }
+    [Parameter]
+    public EventCallback<int>
+        OnEdit
+    { get; set; }
+
+    private string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName))
+            return "U";
+
+        var parts = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        return parts.Length == 1
+        ? parts[0][0].ToString().ToUpper()
+        : $"{parts[0][0]}{parts[^1][0]}".ToUpper();
+    }
+}
+
