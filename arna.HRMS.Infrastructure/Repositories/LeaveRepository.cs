@@ -98,7 +98,7 @@ public class LeaveRepository
         return await _leaveRequestRepo.Query()
             .Include(e => e.Employee)
             .Include(e => e.LeaveType)
-            .Where(e => e.EmployeeId == employeeId && e.IsActive && !e.IsDeleted)
+            .Where(e => e.EmployeeId == employeeId && e.IsActive && !e.IsDeleted && e.Status != Status.Cancelled)
             .OrderByDescending(o => o.Id)
             .ToListAsync();
     }
@@ -191,6 +191,7 @@ public class LeaveRepository
     public async Task<List<EmployeeLeaveBalance>> GetLeaveBalanceByEmployeeAsync(int id)
     {
         return await _leaveBalanceRepo.Query()
+            .Include(x => x.LeaveMaster)
             .Where(elb => elb.EmployeeId == id && elb.IsActive && !elb.IsDeleted)
             .OrderByDescending(elb => elb.Id)
             .ToListAsync();

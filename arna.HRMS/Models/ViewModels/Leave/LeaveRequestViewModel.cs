@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Models.ViewModels.Leave;
 
@@ -16,6 +17,9 @@ public class LeaveRequestViewModel : CommonViewModel
 
     public int TotalDays { get; set; }
 
+    public int ReasonId { get; set; }
+
+    [Required(ErrorMessage = "Reason is required.")]
     public string Reason { get; set; }
 
     public Status Status { get; set; } = Status.Pending;

@@ -1,0 +1,334 @@
+﻿@page "/leaverequest"
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Models.Dropdown
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+
+@inject ILeaveService LeaveService
+@inject NotificationService NotificationService
+@inject IJSRuntime JsRuntime
+
+@inherits AuthenticatedLayoutBase
+
+<FullPageLoader Visible="isLoading" />
+
+@if (!isLoading)
+{
+    <PageTitle>Leave Management</PageTitle>
+
+    <div class="leave-management-container">
+
+        <div class="leave-header d-flex justify-content-between align-items-center">
+            <div>
+                <h1>Leave Management</h1>
+            </div>
+
+            <button class="btn btn-primary btn-lg"
+                    @onclick="OpenCreateModal">
+                + Apply Leave
+            </button>
+        </div>
+
+        <LeaveSummaries Summaries="summaries" LeaveMasters="leaveMasters" />
+
+        <LeaveRequestList Requests="requests"
+                           OnCancel="handleCancelRequest"
+                           OnEdit="handleUpdateRequest" />
+    </div>
+
+    <LeaveRequestForm ShowModal="showModal"
+                      ShowModalChanged="OnModalChanged"
+                      Model="leave"
+                      LeaveOptions="leaveOptions"
+                      LeaveMasters="leaveMasters"
+                      Summaries="summaries"
+                      EditContext="editContext"
+                      IsFormValid="isFormValid"
+                      IsSubmitting="isSubmitting"
+                      IsEditMode="isEditMode"
+                      OnValidSubmit="HandleSubmit" />
+}
+
+@code {
+
+    private EditContext? editContext;
+    private ValidationMessageStore? messageStore;
+
+    private LeaveRequestViewModel leave = new();
+    private LeaveRequestViewModel? originalLeave;
+
+    private bool showModal;
+    private bool isLoading = true;
+    private bool isSubmitting;
+    private bool isFormValid;
+
+    private bool isEditMode = false;
+    private int editingId = 0;
+
+    private List<LeaveRequestViewModel> requests = new();
+    private List<EmployeeLeaveBalanceViewModel> summaries = new();
+    private List<SelectOption> leaveOptions = new();
+    private List<LeaveMasterViewModel> leaveMasters = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserAsync();
+
+        InitializeForm(GetEmployeeId());
+
+        await LoadLeaveMasters();
+        await Task.WhenAll(LoadBalances(), LoadRequests());
+
+        isLoading = false;
+    }
+
+
+    private void OpenCreateModal()
+    {
+        ResetForm();
+        isEditMode = false;
+        showModal = true;
+    }
+
+
+    private async Task handleUpdateRequest(int id)
+    {
+        var req = requests.FirstOrDefault(x => x.Id == id);
+        if (req == null) return;
+
+        leave = Clone(req);
+        originalLeave = Clone(req);
+
+        editingId = id;
+        isEditMode = true;
+
+        InitializeEditContext();
+
+        showModal = true;
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+
+        CalculateDays();
+
+        if (!ValidateAvailability())
+        {
+            isSubmitting = false;
+            return;
+        }
+
+        // ========= EDIT =========
+        if (isEditMode)
+        {
+            if (!HasChanges())
+            {
+                NotificationService.Info("Nothing changed.");
+                showModal = false;
+                isSubmitting = false;
+                return;
+            }
+
+            var updateResult =
+                await LeaveService.UpdateLeaveRequestAsync(editingId, leave);
+
+            if (updateResult?.IsSuccess == true)
+            {
+                NotificationService.Success("Leave updated successfully.");
+                await LoadRequests();
+                await LoadBalances();
+                showModal = false;
+                ResetForm();
+            }
+
+            isSubmitting = false;
+            return;
+        }
+
+        // ========= CREATE =========
+        var createResult =
+            await LeaveService.CreateLeaveRequestAsync(leave);
+
+        if (createResult?.IsSuccess == true)
+        {
+            NotificationService.Success("Leave submitted successfully.");
+            await LoadRequests();
+            await LoadBalances();
+            showModal = false;
+            ResetForm();
+        }
+
+        isSubmitting = false;
+    }
+
+
+    private async Task LoadLeaveMasters()
+    {
+        var result = await LeaveService.GetLeaveMasterAsync();
+
+        if (result?.IsSuccess == true && result.Data != null)
+            leaveMasters = result.Data;
+    }
+
+    private async Task LoadBalances()
+    {
+        var result = await LeaveService.GetLeaveBalanceByEmployeeIdAsync(leave.EmployeeId);
+
+        if (result?.IsSuccess == true && result.Data != null)
+        {
+            summaries = result.Data
+                .GroupBy(x => x.LeaveMasterId)
+                .Select(g => g.OrderByDescending(b => b.Id).First())
+                .ToList();
+        }
+
+        BuildLeaveOptions();
+    }
+
+    private async Task LoadRequests()
+    {
+        var result = await LeaveService.GetLeaveRequestByEmployee(leave.EmployeeId);
+
+        if (result?.IsSuccess == true && result.Data != null)
+            requests = result.Data;
+    }
+
+    private bool ValidateAvailability()
+    {
+        if (editContext == null || messageStore == null)
+            return true;
+
+        messageStore.Clear();
+        bool isValid = true;
+
+        if (leave.LeaveTypeId == 0)
+        {
+            messageStore.Add(
+                new FieldIdentifier(leave, nameof(leave.LeaveTypeId)),
+                "Please select leave type.");
+
+            isValid = false;
+        }
+
+        if (leave.TotalDays <= 0)
+        {
+            messageStore.Add(
+                new FieldIdentifier(leave, nameof(leave.TotalDays)),
+                "Total days must be at least 1.");
+
+            isValid = false;
+        }
+
+        editContext.NotifyValidationStateChanged();
+        return isValid;
+    }
+
+    private void BuildLeaveOptions()
+    {
+        leaveOptions = leaveMasters.Select(master =>
+        {
+            var balance = summaries.FirstOrDefault(x => x.LeaveMasterId == master.Id);
+            var remaining = balance?.RemainingLeaves ?? 0;
+
+            return new SelectOption
+            {
+                Value = master.Id.ToString(),
+                Text = $"{master.LeaveName} ({remaining} left)",
+                IsDisabled = remaining == 0
+            };
+        }).ToList();
+    }
+
+    private LeaveRequestViewModel Clone(LeaveRequestViewModel x)
+        => new()
+        {
+            Id = x.Id,
+            EmployeeId = x.EmployeeId,
+            EmployeeName = x.EmployeeName,
+            LeaveTypeId = x.LeaveTypeId,
+            LeaveTypeName = x.LeaveTypeName,
+            StartDate = x.StartDate,
+            EndDate = x.EndDate,
+            TotalDays = x.TotalDays,
+            Reason = x.Reason,
+            Status = x.Status
+        };
+
+    private bool HasChanges()
+    {
+        if (originalLeave == null) return true;
+
+        return
+            leave.LeaveTypeId != originalLeave.LeaveTypeId ||
+            leave.StartDate != originalLeave.StartDate ||
+            leave.EndDate != originalLeave.EndDate ||
+            leave.Reason != originalLeave.Reason ||
+            leave.TotalDays != originalLeave.TotalDays;
+    }
+
+    private void InitializeForm(int employeeId)
+    {
+        leave = new LeaveRequestViewModel
+        {
+            EmployeeId = employeeId,
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today
+        };
+
+        InitializeEditContext();
+    }
+
+    private void InitializeEditContext()
+    {
+        editContext = new EditContext(leave);
+        messageStore = new ValidationMessageStore(editContext);
+
+        editContext.OnFieldChanged += (_, __) =>
+        {
+            isFormValid = editContext.Validate();
+            StateHasChanged();
+        };
+    }
+
+    private void ResetForm()
+    {
+        InitializeForm(GetEmployeeId());
+        isEditMode = false;
+        editingId = 0;
+        originalLeave = null;
+    }
+
+    private async Task OnModalChanged(bool val)
+    {
+        showModal = val;
+        if (!val) ResetForm();
+    }
+
+    private void CalculateDays()
+        => leave.TotalDays = (leave.EndDate - leave.StartDate).Days + 1;
+
+    private async Task handleCancelRequest(int leaveRequestId)
+    {
+        if (!await JsRuntime.InvokeAsync<bool>("confirm", "Cancel this request?"))
+            return;
+
+        var result = await LeaveService.UpadteLeaverequestStatusCancle(leaveRequestId, GetEmployeeId());
+
+        if (result?.IsSuccess == true)
+        {
+            await LoadRequests();
+            await LoadBalances();
+            NotificationService.Success("Cancelled successfully.");
+        }
+    }
+}

@@ -93,33 +93,41 @@ public class LeaveService : ILeaveService
 
     public async Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto LeaveRequestDto)
     {
-        var balance = await _leaveRepository.GetLeaveBalanceByEmployeeAsync(LeaveRequestDto.EmployeeId);
-        var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
-                .Data?
-                .Select(f => f.Date.Date)
-                .ToHashSet()
-                ?? new HashSet<DateTime>();
-
-        int actualLeaveDays = CalculateActualLeaveDays(
-            LeaveRequestDto.StartDate,
-            LeaveRequestDto.EndDate,
-            festivalDates);
-
-        var hasInsufficientBalance = balance.Any(w =>
-         w.LeaveMasterId == LeaveRequestDto.LeaveTypeId &&
-         w.RemainingLeaves < actualLeaveDays
-         );
-
-        if (hasInsufficientBalance)
+        try
         {
-            return ServiceResult<LeaveRequestDto>
-                .Fail("Insufficient leave balance");
-        }
+            var balance = await _leaveRepository.GetLeaveBalanceByEmployeeAsync(LeaveRequestDto.EmployeeId);
+            var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
+                    .Data?
+                    .Select(f => f.Date.Date)
+                    .ToHashSet()
+                    ?? new HashSet<DateTime>();
 
-        var leave = _mapper.Map<LeaveRequest>(LeaveRequestDto);
-        var createdLeaveRequest = await _leaveRepository.CreateLeaveRequestAsync(leave);
-        var Data = _mapper.Map<LeaveRequestDto>(createdLeaveRequest);
-        return ServiceResult<LeaveRequestDto>.Success(Data);
+            int actualLeaveDays = CalculateActualLeaveDays(
+                LeaveRequestDto.StartDate,
+                LeaveRequestDto.EndDate,
+                festivalDates);
+
+            var hasInsufficientBalance = balance.Any(w =>
+             w.LeaveMasterId == LeaveRequestDto.LeaveTypeId &&
+             w.RemainingLeaves < actualLeaveDays
+             );
+
+            if (hasInsufficientBalance)
+            {
+                return ServiceResult<LeaveRequestDto>
+                    .Fail("Insufficient leave balance");
+            }
+
+            var leave = _mapper.Map<LeaveRequest>(LeaveRequestDto);
+            var createdLeaveRequest = await _leaveRepository.CreateLeaveRequestAsync(leave);
+            var Data = _mapper.Map<LeaveRequestDto>(createdLeaveRequest);
+            return ServiceResult<LeaveRequestDto>.Success(Data);
+        }
+        catch (Exception ex)
+        {
+            throw;
+        }
+        
     }
     public async Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id)
     {
