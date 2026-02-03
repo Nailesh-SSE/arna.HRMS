@@ -1,21 +1,19 @@
 ﻿using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
+using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
+using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore.Query;
-using Moq;
+using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
-using System.Linq.Expressions;
 
 namespace arna.HRMS.Tests.Unit.Services;
 
 [TestFixture]
 public class DepartmentServiceTests
 {
-    private Mock<IBaseRepository<Department>> _baseRepositoryMock = null!;
-    private DepartmentRepository _departmentRepository = null!;
+    private ApplicationDbContext _dbContext = null!;
     private DepartmentService _departmentService = null!;
     private IMapper _mapper = null!;
 
@@ -25,10 +23,14 @@ public class DepartmentServiceTests
     [SetUp]
     public void Setup()
     {
-        _baseRepositoryMock = new Mock<IBaseRepository<Department>>();
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
 
-        _departmentRepository = new DepartmentRepository(
-            _baseRepositoryMock.Object);
+        _dbContext = new ApplicationDbContext(options);
+
+        var baseRepository = new BaseRepository<Department>(_dbContext);
+        var departmentRepository = new DepartmentRepository(baseRepository);
 
         var mapperConfig = new MapperConfiguration(cfg =>
         {
@@ -39,7 +41,7 @@ public class DepartmentServiceTests
         _mapper = mapperConfig.CreateMapper();
 
         _departmentService = new DepartmentService(
-            _departmentRepository,
+            departmentRepository,
             _mapper);
     }
 
@@ -49,127 +51,112 @@ public class DepartmentServiceTests
     [Test]
     public async Task GetDepartmentAsync_ReturnsAllDepartments()
     {
-        // Arrange
-        var departments = new List<Department>
-        {
-            new Department { Id = 1, Name = "HR", IsActive = true, IsDeleted = false },
-            new Department { Id = 2, Name = "IT", IsActive = true, IsDeleted = false }
-        };
+        _dbContext.Departments.AddRange(
+            new Department
+            {
+                Name = "HR",
+                Code = "CHR",
+                Description = "Human Resource",
+                IsActive = true,
+                IsDeleted = false
+            },
+            new Department
+            {
+                Name = "IT",
+                Code = "CIT",
+                Description = "Information Technology",
+                IsActive = true,
+                IsDeleted = false
+            }
+        );
 
-        _baseRepositoryMock
-            .Setup(r => r.Query())
-            .Returns(departments.AsAsyncQueryable());
+        await _dbContext.SaveChangesAsync();
 
-        // Act
         var result = await _departmentService.GetDepartmentAsync();
 
-        // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Data?.Count, Is.EqualTo(2));
-        Assert.That(result.Data?.FirstOrDefault()?.Name, Is.EqualTo("HR"));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data!.Count, Is.EqualTo(2));
+        Assert.That(result.Data![0].Name, Is.EqualTo("IT"));
     }
 
     // =====================================================
-    // GetDepartmentByIdAsync - FOUND
+    // GetDepartmentByIdAsync
     // =====================================================
     [Test]
     public async Task GetDepartmentByIdAsync_ReturnsDto_WhenFound()
     {
-        // Arrange
         var department = new Department
         {
-            Id = 1,
-            Name = "Finance"
+            Name = "Finance",
+            Code = "FIN",
+            Description = "Finance Department",
+            IsActive = true,
+            IsDeleted = false
         };
 
-        _baseRepositoryMock
-            .Setup(r => r.GetByIdAsync(1))
-            .ReturnsAsync(department);
+        _dbContext.Departments.Add(department);
+        await _dbContext.SaveChangesAsync();
 
-        // Act
-        var result = await _departmentService.GetDepartmentByIdAsync(1);
+        var result = await _departmentService.GetDepartmentByIdAsync(department.Id);
 
-        // Assert
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.Data?.Name, Is.EqualTo("Finance"));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data!.Name, Is.EqualTo("Finance"));
     }
 
-    // =====================================================
-    // GetDepartmentByIdAsync - NOT FOUND
-    // =====================================================
     [Test]
-    public async Task GetDepartmentByIdAsync_ReturnsNull_WhenNotFound()
+    public async Task GetDepartmentByIdAsync_ReturnsFail_WhenNotFound()
     {
-        // Arrange
-        _baseRepositoryMock
-            .Setup(r => r.GetByIdAsync(It.IsAny<int>()))
-            .ReturnsAsync((Department?)null);
+        var result = await _departmentService.GetDepartmentByIdAsync(999);
 
-        // Act
-        var result = await _departmentService.GetDepartmentByIdAsync(99);
-
-        // Assert
-        Assert.That(result, Is.Null);
+        Assert.That(result.IsSuccess, Is.False);
     }
 
-    // =====================================================
-    // CreateDepartmentAsync
-    // =====================================================
     [Test]
     public async Task CreateDepartmentAsync_ReturnsCreatedDepartmentDto()
     {
-        // Arrange
         var dto = new DepartmentDto
         {
-            Name = "Operations"
+            Name = "Operations",
+            Code = "OPS",
+            Description = "Operations Department"
         };
 
-        var savedDepartment = new Department
-        {
-            Id = 3,
-            Name = "Operations"
-        };
-
-        _baseRepositoryMock
-            .Setup(r => r.AddAsync(It.IsAny<Department>()))
-            .ReturnsAsync(savedDepartment);
-
-        // Act
         var result = await _departmentService.CreateDepartmentAsync(dto);
 
-        // Assert
-        Assert.That(result.Data?.Id, Is.EqualTo(3));
-        Assert.That(result.Data?.Name, Is.EqualTo("Operations"));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data!.Name, Is.EqualTo("Operations"));
+        Assert.That(await _dbContext.Departments.CountAsync(), Is.EqualTo(1));
     }
 
-    // =====================================================
-    // UpdateDepartmentAsync
-    // =====================================================
     [Test]
     public async Task UpdateDepartmentAsync_ReturnsUpdatedDepartmentDto()
     {
-        // Arrange
+        var department = new Department
+        {
+            Name = "Marketing",
+            Code = "MKT",
+            Description = "Marketing Dept",
+            IsActive = true,
+            IsDeleted = false
+        };
+
+        _dbContext.Departments.Add(department);
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.Entry(department).State = EntityState.Detached;
+
         var dto = new DepartmentDto
         {
-            Id = 4,
-            Name = "Marketing"
+            Id = department.Id,
+            Name = "Marketing Updated",
+            Code = "MKT",
+            Description = "Updated Marketing Dept"
         };
 
-        var updatedDepartment = new Department
-        {
-            Id = 4,
-            Name = "Marketing"
-        };
-
-        _baseRepositoryMock
-            .Setup(r => r.UpdateAsync(It.IsAny<Department>()))
-            .ReturnsAsync(updatedDepartment);
-
-        // Act
         var result = await _departmentService.UpdateDepartmentAsync(dto);
 
-        // Assert
-        Assert.That(result.Data?.Name, Is.EqualTo("Marketing"));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data!.Name, Is.EqualTo("Marketing Updated"));
     }
 
     // =====================================================
@@ -178,112 +165,24 @@ public class DepartmentServiceTests
     [Test]
     public async Task DeleteDepartmentAsync_ReturnsTrue_WhenDeleted()
     {
-        // Arrange
         var department = new Department
         {
-            Id = 1,
             Name = "HR",
+            Code = "CHR",
+            Description = "Human Resource",
             IsActive = true,
             IsDeleted = false
         };
 
-        _baseRepositoryMock
-            .Setup(r => r.GetByIdAsync(1))
-            .ReturnsAsync(department);
+        _dbContext.Departments.Add(department);
+        await _dbContext.SaveChangesAsync();
 
-        _baseRepositoryMock
-            .Setup(r => r.UpdateAsync(It.IsAny<Department>()))
-            .ReturnsAsync(department);
+        var result = await _departmentService.DeleteDepartmentAsync(department.Id);
+        var updated = await _dbContext.Departments.FindAsync(department.Id);
+        Assert.That(updated!.IsActive, Is.False);
+        Assert.That(updated.IsDeleted, Is.True);
+        Assert.That(result.Data, Is.True);
 
-        // Act
-        var result = await _departmentService.DeleteDepartmentAsync(1);
-
-        // Assert
-        Assert.That(result, Is.True);
-        Assert.That(department.IsActive, Is.False);
-        Assert.That(department.IsDeleted, Is.True);
+        
     }
 }
-
-#region EF Core 8 Async IQueryable Helpers (CORRECT)
-
-// -----------------------------
-// THIS FIXES CS0738 (EF Core 8)
-// -----------------------------
-
-internal class TestAsyncQueryProvider<TEntity> : IAsyncQueryProvider
-{
-    private readonly IQueryProvider _inner;
-
-    internal TestAsyncQueryProvider(IQueryProvider inner)
-    {
-        _inner = inner;
-    }
-
-    public IQueryable CreateQuery(Expression expression)
-        => new TestAsyncEnumerable<TEntity>(expression);
-
-    public IQueryable<TElement> CreateQuery<TElement>(Expression expression)
-        => new TestAsyncEnumerable<TElement>(expression);
-
-    public object Execute(Expression expression)
-        => _inner.Execute(expression)!;
-
-    public TResult Execute<TResult>(Expression expression)
-        => _inner.Execute<TResult>(expression)!;
-
-    // 🔑 EF Core 8 expects TResult (NOT Task<TResult>)
-    public TResult ExecuteAsync<TResult>(
-        Expression expression,
-        CancellationToken cancellationToken)
-        => Execute<TResult>(expression);
-}
-
-internal class TestAsyncEnumerable<T> : EnumerableQuery<T>, IAsyncEnumerable<T>, IQueryable<T>
-{
-    public TestAsyncEnumerable(IEnumerable<T> enumerable)
-        : base(enumerable)
-    {
-    }
-
-    public TestAsyncEnumerable(Expression expression)
-        : base(expression)
-    {
-    }
-
-    public IAsyncEnumerator<T> GetAsyncEnumerator(
-        CancellationToken cancellationToken = default)
-        => new TestAsyncEnumerator<T>(this.AsEnumerable().GetEnumerator());
-
-    IQueryProvider IQueryable.Provider
-        => new TestAsyncQueryProvider<T>(this);
-}
-
-internal class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
-{
-    private readonly IEnumerator<T> _inner;
-
-    public TestAsyncEnumerator(IEnumerator<T> inner)
-    {
-        _inner = inner;
-    }
-
-    public T Current => _inner.Current;
-
-    public ValueTask<bool> MoveNextAsync()
-        => new ValueTask<bool>(_inner.MoveNext());
-
-    public ValueTask DisposeAsync()
-    {
-        _inner.Dispose();
-        return ValueTask.CompletedTask;
-    }
-}
-
-public static class AsyncQueryableExtensions
-{
-    public static IQueryable<T> AsAsyncQueryable<T>(this IEnumerable<T> source)
-        => new TestAsyncEnumerable<T>(source);
-}
-
-#endregion
