@@ -16,7 +16,7 @@ public interface ILeaveService
 
     //Leave Request Methods
     Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestAsync();
-    Task<ServiceResult<List<LeaveRequestDto>>> GetPendingLeaveRequest();
+    Task<ServiceResult<List<LeaveRequestDto>>> GetByStatusAsync(Status status);
     Task<ServiceResult<LeaveRequestDto>> GetLeaveRequestByIdAsync(int Id);
     Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestByEmployeeIdAsync(int employeeId);
     Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);

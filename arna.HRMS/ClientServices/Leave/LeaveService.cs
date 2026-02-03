@@ -16,7 +16,7 @@ public interface ILeaveService
 
     //Leave Request Methods
     Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestAsync();
-    Task<ApiResult<List<LeaveRequestViewModel>>> GetPandingLeaveRequestAsync();
+    Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByStatusAsync(Status status);
     Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestByIdAsync(int Id);
     Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequestAsync(LeaveRequestViewModel leaveRequestViewModel);
     Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id);
@@ -60,8 +60,8 @@ public class LeaveService : ILeaveService
     public async Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestAsync()
         => await _leaveApi.GetAllLeaveRequest();
 
-    public async Task<ApiResult<List<LeaveRequestViewModel>>> GetPandingLeaveRequestAsync()
-        => await _leaveApi.GetPandingLeaveRequestAsync();
+    public async Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByStatusAsync(Status status)
+        => await _leaveApi.GetRequestByStatusAsync(status);
 
     public async Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestByIdAsync(int Id)
         => await _leaveApi.GetLeaveRequestById(Id);

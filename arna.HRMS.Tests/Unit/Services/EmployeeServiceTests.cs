@@ -19,6 +19,7 @@ public class EmployeeServiceTests
     private ApplicationDbContext _dbContext = null!;
     private EmployeeService _employeeService = null!;
     private Mock<IUserServices> _userServicesMock = null!;
+    private Mock<IRoleService> _roleServiceMock = null!;
     private IMapper _mapper = null!;
 
     // -------------------- SETUP --------------------
@@ -46,12 +47,13 @@ public class EmployeeServiceTests
         var employeeRepository = new EmployeeRepository(baseRepository);
 
         _userServicesMock = new Mock<IUserServices>();
+        _roleServiceMock = new Mock<IRoleService>();
 
         var mapperConfig = new MapperConfiguration(cfg =>
         {
             // DTO → Entity (IGNORE navigation properties)
             cfg.CreateMap<EmployeeDto, Employee>()
-                .ForMember(dest => dest.Department, opt => opt.Ignore()) // 🔥 REQUIRED
+                .ForMember(dest => dest.Department, opt => opt.Ignore()) 
                 .ForMember(dest => dest.Manager, opt => opt.Ignore());
 
             // Entity → DTO
@@ -71,7 +73,8 @@ public class EmployeeServiceTests
         _employeeService = new EmployeeService(
             employeeRepository,
             _mapper,
-            _userServicesMock.Object
+            _userServicesMock.Object,
+            _roleServiceMock.Object
         );
     }
 
@@ -189,9 +192,20 @@ public class EmployeeServiceTests
             Salary = 60000
         };
 
-        _userServicesMock
-            .Setup(u => u.CreateUserAsync(It.IsAny<UserDto>()))
-            .ReturnsAsync(ServiceResult<UserDto>.Success(new UserDto()));
+        _roleServiceMock.Setup(r => r.GetRoleByNameAsync("Employee"))
+            .ReturnsAsync(ServiceResult<RoleDto>.Success(new RoleDto { Id = 2, Name = "Employee" }));
+        var uDto = new UserDto
+        {
+            FullName = "Chris Evans",
+            Email = dto.Email,
+            PhoneNumber = dto.PhoneNumber,
+            RoleId= 2
+        };
+        _userServicesMock.Setup(u => u.CreateUserAsync(It.Is<UserDto>(x =>
+                x.Email == uDto.Email &&
+                x.FullName == uDto.FullName &&
+                x.RoleId == uDto.RoleId)))
+            .ReturnsAsync(ServiceResult<UserDto>.Success(uDto));
 
         var result = await _employeeService.CreateEmployeeAsync(dto);
 
@@ -222,6 +236,8 @@ public class EmployeeServiceTests
 
         _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
+
+        _dbContext.Entry(employee).State = EntityState.Detached;
 
         var dto = new EmployeeDto
         {
@@ -277,5 +293,84 @@ public class EmployeeServiceTests
         var result = await _employeeService.DeleteEmployeeAsync(999);
 
         Assert.That(result.IsSuccess, Is.False);
+    }
+
+    [Test]
+    public async Task EmployeeExist_when_found()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp005",
+            FirstName = "employee",
+            LastName = "Me",
+            Email = "exist@test.com",
+            PhoneNumber = "6666666666",
+            Position = "Support Manager",
+            Salary = 30000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now.AddYears(-5),
+            DateOfBirth = DateTime.Now.AddYears(-27)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var employee2 = new Employee
+        {
+            EmployeeNumber = "Emp006",
+            FirstName = "Employee",
+            LastName = "Me",
+            Email = "exist@test.com",
+            PhoneNumber = "6666666666",
+            Position = "Support",
+            Salary = 3000000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-27)
+        };
+
+        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber);
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task EmployeeExist_when_Not_Phone_found()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp005",
+            FirstName = "employee",
+            LastName = "Me",
+            Email = "exist@test.com",
+            PhoneNumber = "6666666666",
+            Position = "Support Manager",
+            Salary = 30000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now.AddYears(-5),
+            DateOfBirth = DateTime.Now.AddYears(-27)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var employee2 = new Employee
+        {
+            EmployeeNumber = "Emp006",
+            FirstName = "Employee",
+            LastName = "Me",
+            Email = "exist2@test.com",
+            PhoneNumber = "6666446666",
+            Position = "Support",
+            Salary = 3000000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-27)
+        };
+
+        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee does not exist"));
     }
 }

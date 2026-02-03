@@ -76,13 +76,20 @@ public class LeaveRepository
             .ToListAsync();
     }
 
-    public async Task<List<LeaveRequest>> GetPendingLeaveRequest()
+    public async Task<List<LeaveRequest>> GetLeaveRequestsByStatusAsync(Status status)
     {
-        return await _leaveRequestRepo.Query()
-            .Include(lr => lr.Employee)
-            .Where(x => x.Status == Status.Pending && x.IsActive && !x.IsDeleted)
-            .OrderByDescending(o => o.Id)
-            .ToListAsync();
+        if (status == null)
+        {
+            return await GetLeaveRequestAsync();
+        }
+        else
+        {
+            return await _leaveRequestRepo.Query()
+                .Include(lr => lr.Employee)
+                .Where(x => x.Status == status && x.IsActive && !x.IsDeleted)
+                .OrderByDescending(o => o.Id)
+                .ToListAsync();        }
+            
     }
 
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(int id)
@@ -210,7 +217,7 @@ public class LeaveRepository
     {
         var leaveBalance = await _leaveBalanceRepo.GetByIdAsync(id);
 
-        if (leaveBalance == null)
+        if (leaveBalance == null || (leaveBalance.IsActive==false && leaveBalance.IsDeleted==true))
             return false;
 
         leaveBalance.IsActive = false;

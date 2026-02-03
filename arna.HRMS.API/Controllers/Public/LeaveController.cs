@@ -107,11 +107,11 @@ public class LeaveController : ControllerBase
         return deleted.Data ? Ok() : NotFound("Leave request not found");
     }
 
-    [HttpGet("requests/pending")]
+    [HttpGet("requests/{status}")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> GetPendingLeaveRequests()
+    public async Task<IActionResult> GetLeaveRequestsByStatus(Status status)
     {
-        var result = await _leaveService.GetPendingLeaveRequest();
+        var result = await _leaveService.GetByStatusAsync(status);
         return Ok(result);
     }
 

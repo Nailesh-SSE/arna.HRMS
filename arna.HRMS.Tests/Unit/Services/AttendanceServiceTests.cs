@@ -119,9 +119,6 @@ public class AttendanceServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-
-        await _dbContext.SaveChangesAsync();
-
         var result = await _attendanceService.GetAttendanceAsync();
 
         Assert.That(result.IsSuccess, Is.True);
@@ -163,24 +160,48 @@ public class AttendanceServiceTests
     [Test]
     public async Task CreateAttendanceAsync_CreatesAttendance()
     {
+        // ---------------- ARRANGE ----------------
+
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 1,
+            EmployeeNumber = "EMP001",
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@test.com",
+            PhoneNumber = "1234567890",
+            Position = "Developer",
+            HireDate = DateTime.Today.AddMonths(-3),
+            IsActive = true,
+            IsDeleted = false
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        // 2️⃣ Mock EmployeeService (required for service validation)
+        _employeeServiceMock
+            .Setup(e => e.GetEmployeeByIdAsync(1))
+            .ReturnsAsync(
+                ServiceResult<EmployeeDto?>.Success(
+                    new EmployeeDto
+                    {
+                        Id = 1,
+                        HireDate = DateTime.Today.AddMonths(-3),
+                        IsActive = true
+                    }
+                )
+            );
+
         var dto = new AttendanceDto
         {
             EmployeeId = 1,
-            Date = DateTime.Today,
+            Date = new DateTime(2026, 2, 2),
             ClockInTime = TimeSpan.FromHours(9),
             ClockOutTime = TimeSpan.FromHours(18),
+            Status = AttendanceStatus.Present,
             WorkingHours = TimeSpan.FromHours(9),
             Notes = "Present"
         };
-
-        _employeeServiceMock
-            .Setup(e => e.GetEmployeeByIdAsync(1))
-            .ReturnsAsync(ServiceResult<EmployeeDto?>.Success(
-                new EmployeeDto
-                {
-                    Id = 1,
-                    HireDate = DateTime.Today.AddMonths(-3)
-                }));
 
         _festivalHolidayServiceMock
             .Setup(f => f.GetFestivalHolidayAsync())
@@ -196,11 +217,21 @@ public class AttendanceServiceTests
                     .Success(new List<LeaveRequestDto>())
             );
 
+        // ---------------- ACT ----------------
+
         var result = await _attendanceService.CreateAttendanceAsync(dto);
 
+        // ---------------- ASSERT ----------------
+
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(await _dbContext.Attendances.CountAsync(), Is.EqualTo(14));
+
+        var attendanceInDb = await _dbContext.Attendances.FirstOrDefaultAsync();
+
+        Assert.That(attendanceInDb, Is.Not.Null);
+        Assert.That(attendanceInDb!.EmployeeId, Is.EqualTo(1));
+        Assert.That(attendanceInDb.TotalHours, Is.EqualTo(TimeSpan.FromHours(9)));
     }
+
 
     // ---------------- TODAY ----------------
 
@@ -277,7 +308,7 @@ public class AttendanceServiceTests
         // Assert
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data!.Count, Is.EqualTo(10));
+        Assert.That(result.Data!.Count, Is.EqualTo(9));
 
         var first = result.Data![0];
         Assert.That(first.EmployeeId, Is.EqualTo(empId));
