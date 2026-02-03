@@ -48,6 +48,10 @@ public class LeaveProfile : Profile
                     : null));
         
         //Leave Balance
-        CreateMap<EmployeeLeaveBalanceDto, EmployeeLeaveBalance>().ReverseMap();
+        CreateMap<EmployeeLeaveBalanceDto, EmployeeLeaveBalance>();
+
+        CreateMap<EmployeeLeaveBalance, EmployeeLeaveBalanceDto>()
+            .ForMember(dest => dest.LeaveMasterName, 
+            opt => opt.MapFrom(src => src.LeaveMaster != null ? $"{src.LeaveMaster.LeaveName}" : ""));
     }
 }

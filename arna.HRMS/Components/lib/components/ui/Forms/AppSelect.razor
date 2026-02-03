@@ -15,7 +15,7 @@
 
         @foreach (var item in Options)
         {
-            <option value="@item.Value">@item.Text</option>
+            <option value="@item.Value" disabled="@item.IsDisabled">@item.Text</option>
         }
     </select>
 

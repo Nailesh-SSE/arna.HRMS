@@ -1,0 +1,72 @@
+.summary-section {
+    margin-bottom: 28px;
+}
+
+.summary-title {
+    font-weight: 800;
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.summary-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #e9eef6;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.summary-card.exhausted {
+    opacity: 0.7;
+    background: #f9fafb;
+}
+
+.progress {
+    height: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #eef2ff;
+}
+
+.progress-bar {
+    transition: width 0.3s ease;
+}
+
+.progress-healthy {
+    background: linear-gradient(90deg, #20c997, #0ea5a3);
+}
+
+.progress-warning {
+    background: linear-gradient(90deg, #ffc107, #ff8c00);
+}
+
+.progress-critical {
+    background: linear-gradient(90deg, #dc3545, #c82333);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+@media (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-card {
+        padding: 12px;
+    }
+}

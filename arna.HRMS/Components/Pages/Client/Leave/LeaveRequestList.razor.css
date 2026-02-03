@@ -1,0 +1,36 @@
+﻿.requests-section {
+    margin-top: 20px;
+}
+
+/* avatar */
+.avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: #e9f2ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+/* reason box */
+.reason-box {
+    text-align: center;
+    padding: 0px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* 2 line clamp */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* small card polish */
+.request-card {
+    border-radius: 10px;
+}
