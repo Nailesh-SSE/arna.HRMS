@@ -323,8 +323,8 @@ public class ApiClients
         public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status)
             => _http.PostAsync<bool>($"{baseUrl}/requests/status/{leaveRequestId}?status={status}", new { });
 
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetPandingLeaveRequestAsync()
-            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/pending");
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetRequestByStatusAsync(Status status)
+            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/{status}");
 
         public Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByEmployee(int employeeid)
             => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/employee/{employeeid}");
