@@ -43,7 +43,7 @@ public class UserRepository
 
     public async Task<bool> DeleteUserAsync(int id)
     {
-        var user = await _baseRepository.GetByIdAsync(id);
+        var user = await GetUserByIdAsync(id);
         if (user == null)
             return false;
 
@@ -58,7 +58,8 @@ public class UserRepository
     public async Task<bool> UserExistsAsync(string email)
     {
         email = (email ?? string.Empty).Trim().ToLower();
-        return await _baseRepository.Query().AnyAsync(u => u.Email.Trim().ToLower() == email);
+        return await _baseRepository.Query()
+            .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted && u.Email.Trim().ToLower() == email) != null;
     }
 
     public async Task<User?> GetByUsernameOrEmailAsync(string usernameOrEmail)
@@ -78,7 +79,7 @@ public class UserRepository
 
     public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)
     {
-        var user = await _baseRepository.GetByIdAsync(id);
+        var user = await GetUserByIdAsync(id);
         if (user == null)
             return false;
 

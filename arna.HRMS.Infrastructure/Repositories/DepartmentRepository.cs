@@ -24,7 +24,9 @@ public class DepartmentRepository
 
     public async Task<Department?> GetDepartmentByIdAsync(int id)
     {
-        var department = await _baseRepository.GetByIdAsync(id);
+        var department = await _baseRepository.Query()
+            .FirstOrDefaultAsync(d => d.Id == id && d.IsActive && !d.IsDeleted);
+
         return department;
     }
 
@@ -40,7 +42,7 @@ public class DepartmentRepository
 
     public async Task<bool> DeleteDepartmentAsync(int id)
     {
-        var department = await _baseRepository.GetByIdAsync(id);
+        var department = await GetDepartmentByIdAsync(id);
 
         if (department == null)
             return false;

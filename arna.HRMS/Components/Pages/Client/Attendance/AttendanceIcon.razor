@@ -21,7 +21,7 @@
 </svg>
 
 @code {
-    [Parameter] public string Status { get; set; } = "no-data";
+    [Parameter] public string? Status { get; set; }
 
-    private string CssClass => Status.ToLowerInvariant();
+    private string CssClass => (Status ?? "").ToLowerInvariant();
 }

@@ -43,7 +43,7 @@ public class EmployeeRepository
 
     public async Task<bool> DeleteEmployeeAsync(int id)
     {
-        var employee = await _baseRepository.GetByIdAsync(id);
+        var employee = await GetEmployeeByIdAsync(id);
         if (employee == null)
             return false;
 
@@ -63,9 +63,9 @@ public class EmployeeRepository
         email = email?.Trim().ToLower() ?? string.Empty;
         phoneNumber = phoneNumber?.Trim() ?? string.Empty;
 
-        return await _baseRepository.Query().AnyAsync(e =>
-            e.Email.ToLower() == email ||
-            e.PhoneNumber == phoneNumber);
+        return await _baseRepository.Query().FirstOrDefaultAsync(e =>
+            (e.Email.ToLower() == email || e.PhoneNumber == phoneNumber) &&
+            e.IsActive && !e.IsDeleted) != null;
     }
 
     public async Task<string?> GetLastEmployeeNumberAsync()

@@ -8,28 +8,33 @@ public static class AttendanceSummaryBuilder
         List<MonthlyAttendanceViewModel> attendance)
     {
         if (attendance == null || !attendance.Any())
-            return new List<AttendenceSummaryCard>();
+            return new();
+
+        var employees = attendance
+            .SelectMany(d => d.Employees)
+            .Where(e => !string.IsNullOrWhiteSpace(e.Status))
+            .ToList();
 
         return new List<AttendenceSummaryCard>
         {
-            Create(attendance, "Present",  "text-success"),
-            Create(attendance, "Holiday",  "text-primary"),
-            Create(attendance, "Leave",    "text-warning"),
-            Create(attendance, "Late",     "text-info"),
-            Create(attendance, "Absent",   "text-danger"),
-            Create(attendance, "Half-Day",      "text-secondary")
+            Create(employees, "Present",  "text-success"),
+            Create(employees, "Holiday",  "text-primary"),
+            Create(employees, "Leave",    "text-warning"),
+            Create(employees, "Late",     "text-info"),
+            Create(employees, "Absent",   "text-danger"),
+            Create(employees, "Half-Day", "text-secondary")
         };
     }
 
     private static AttendenceSummaryCard Create(
-        List<MonthlyAttendanceViewModel> attendance,
+        List<EmployeeDailyAttendanceViewModel> employees,
         string status,
         string css)
     {
         return new AttendenceSummaryCard
         {
             Label = status,
-            Count = attendance.Count(x => x.Status.ToString() == status),
+            Count = employees.Count(e => e.Status == status),
             Text = css
         };
     }

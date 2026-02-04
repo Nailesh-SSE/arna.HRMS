@@ -8,6 +8,6 @@ public interface IAttendanceService
     Task<ServiceResult<List<AttendanceDto>>> GetAttendanceAsync();
     Task<ServiceResult<AttendanceDto?>> GetAttendenceByIdAsync(int id);
     Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto);
-    Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int empId);
+    Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date);
     Task<ServiceResult<AttendanceDto?>> GetTodayLastEntryAsync(int employeeId);
 }

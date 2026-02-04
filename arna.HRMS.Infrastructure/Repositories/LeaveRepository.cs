@@ -27,11 +27,13 @@ public class LeaveRepository
             .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
+
     public async Task<LeaveMaster?> GetLeaveMasterByIdAsync(int id)
     {
         return await _leaveMasterRepo.Query()
             .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
     }
+
     public Task<LeaveMaster> CreateLeaveMasterAsync(LeaveMaster leaveMaster)
     {
         return _leaveMasterRepo.AddAsync(leaveMaster);
@@ -44,7 +46,7 @@ public class LeaveRepository
 
     public async Task<bool> DeleteLeaveMasterAsync(int id)
     {
-        var leaveMaster = await _leaveMasterRepo.GetByIdAsync(id);
+        var leaveMaster = await GetLeaveMasterByIdAsync(id);
 
         if (leaveMaster == null)
             return false;
@@ -56,6 +58,7 @@ public class LeaveRepository
         await _leaveMasterRepo.UpdateAsync(leaveMaster);
         return true;
     }
+
     public async Task<bool> LeaveExistsAsync(string Name)
     {
         if (string.IsNullOrWhiteSpace(Name))
@@ -63,8 +66,8 @@ public class LeaveRepository
 
         Name = Name?.Trim().ToLower() ?? string.Empty;
 
-        return await _leaveMasterRepo.Query().AnyAsync(e =>
-            e.LeaveName.ToLower() == Name);
+        return await _leaveMasterRepo.Query()
+            .FirstOrDefaultAsync(x => x.LeaveName.ToLower() == Name && x.IsActive && !x.IsDeleted) != null;
     }
 
     //Leave Request related methods can be added here as needed
@@ -73,6 +76,7 @@ public class LeaveRepository
         return await _leaveRequestRepo.Query()
             .Include(lr => lr.Employee)
             .Where(x => x.IsActive && !x.IsDeleted)
+            .OrderByDescending(o => o.Id)
             .ToListAsync();
     }
 
@@ -88,8 +92,8 @@ public class LeaveRepository
                 .Include(lr => lr.Employee)
                 .Where(x => x.StatusId == status && x.IsActive && !x.IsDeleted)
                 .OrderByDescending(o => o.Id)
-                .ToListAsync();        }
-            
+                .ToListAsync();
+        }
     }
 
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(int id)
@@ -122,7 +126,7 @@ public class LeaveRepository
 
     public async Task<bool> DeleteLeaveRequestAsync(int id)
     {
-        var LeaveRequest = await _leaveRequestRepo.GetByIdAsync(id);
+        var LeaveRequest = await GetLeaveRequestByIdAsync(id);
 
         if (LeaveRequest == null || LeaveRequest.StatusId == Status.Pending)
             return false;
@@ -154,11 +158,7 @@ public class LeaveRepository
 
     public async Task<bool> UpdateLeaveStatusAsync(int leaveRequestId, Status status, int approvedBy)
     {
-        var leaveRequest = await _leaveRequestRepo.Query()
-            .FirstOrDefaultAsync(lr =>
-                lr.Id == leaveRequestId &&
-                lr.IsActive &&
-                !lr.IsDeleted);
+        var leaveRequest = await GetLeaveRequestByIdAsync(leaveRequestId);
 
         if (leaveRequest == null)
             return false;
@@ -193,8 +193,19 @@ public class LeaveRepository
     //Leave Balance related methods can be added here as needed
     public async Task<List<EmployeeLeaveBalance>> GetLeaveBalanceAsync()
     {
-        return await _leaveBalanceRepo.Query().ToListAsync();
+        return await _leaveBalanceRepo.Query()
+            .Where(elb => elb.IsActive && !elb.IsDeleted)
+            .OrderByDescending(elb => elb.Id)
+            .ToListAsync();
     }
+
+    public async Task<EmployeeLeaveBalance?> GetEmployeeLeaveBalanceByIdAsync(int id)
+    {
+        return await _leaveBalanceRepo.Query()
+            .Include(x => x.LeaveMaster)
+            .FirstOrDefaultAsync(elb => elb.Id == id && elb.IsActive && !elb.IsDeleted); 
+    }
+
     public async Task<List<EmployeeLeaveBalance>> GetLeaveBalanceByEmployeeAsync(int id)
     {
         return await _leaveBalanceRepo.Query()
@@ -216,9 +227,9 @@ public class LeaveRepository
 
     public async Task<bool> DeleteLeaveBalanceAsync(int id)
     {
-        var leaveBalance = await _leaveBalanceRepo.GetByIdAsync(id);
+        var leaveBalance = await GetEmployeeLeaveBalanceByIdAsync(id);
 
-        if (leaveBalance == null || (leaveBalance.IsActive==false && leaveBalance.IsDeleted==true))
+        if (leaveBalance == null)
             return false;
 
         leaveBalance.IsActive = false;

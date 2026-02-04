@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.Common;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace arna.HRMS.Core.Entities;
 
@@ -15,6 +16,9 @@ public class Employee : BaseEntity
     public int? ManagerId { get; set; }
     public string Position { get; set; }
     public decimal Salary { get; set; }
+
+    [NotMapped]
+    public string FullName => $"{FirstName} {LastName}";
 
     // Navigation Properties
     public Department Department { get; set; }

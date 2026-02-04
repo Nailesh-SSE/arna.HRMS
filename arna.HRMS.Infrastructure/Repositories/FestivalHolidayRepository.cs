@@ -15,13 +15,21 @@ public class FestivalHolidayRepository
 
     public async Task<List<FestivalHoliday>> GetFestivalHolidayAsync()
     {
-        return await _baseRepository.Query().OrderByDescending(x => x.Id).ToListAsync();
+        return await _baseRepository.Query()
+            .Where(h => h.IsActive && !h.IsDeleted)
+            .OrderByDescending(x => x.Id).ToListAsync();
+    }
+
+    public async Task<FestivalHoliday?> GetByIdAsync(int id)
+    {
+        return await _baseRepository.Query()
+            .FirstOrDefaultAsync(h => h.Id == id && h.IsActive && !h.IsDeleted); 
     }
 
     public async Task<List<FestivalHoliday>> GetByMonthAsync(int year, int month)
     {
         return await _baseRepository.Query()
-            .Where(h => h.Date.Year == year && h.Date.Month == month)
+            .Where(h => h.Date.Year == year && h.Date.Month == month && h.IsActive && !h.IsDeleted)
             .ToListAsync();
     }
     public Task<FestivalHoliday> CreateFestivalHolidayAsync(FestivalHoliday festivalHoliday)
@@ -36,7 +44,7 @@ public class FestivalHolidayRepository
 
     public async Task<bool> DeleteFestivalHolidayAsync(int id)
     {
-        var festivalHoliday = await _baseRepository.GetByIdAsync(id);
+        var festivalHoliday = await GetByIdAsync(id);
 
         if (festivalHoliday == null)
             return false;

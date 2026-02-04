@@ -1,16 +1,9 @@
-﻿using arna.HRMS.Core.Common;
+﻿namespace arna.HRMS.Core.DTOs;
 
-namespace arna.HRMS.Core.DTOs;
-
-public class MonthlyAttendanceDto : BaseEntity
+public class MonthlyAttendanceDto
 {
-    public int EmployeeId { get; set; }
     public DateOnly Date { get; set; }
     public string Day { get; set; }
-    public TimeSpan? ClockIn { get; set; }
-    public TimeSpan? ClockOut { get; set; }
-    public TimeSpan? WorkingHours { get; set; }
-    public TimeSpan? BreakDuration { get; set; }
-    public TimeSpan? TotalHours { get; set; }
-    public string? Status { get; set; }
+    public List<EmployeeDailyAttendanceDto> Employees { get; set; } = new();
 }
+    

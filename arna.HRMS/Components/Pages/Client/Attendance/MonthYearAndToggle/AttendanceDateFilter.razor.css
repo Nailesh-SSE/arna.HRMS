@@ -1,0 +1,75 @@
+﻿.picker-wrapper {
+    position: relative;
+    margin-left: 10px;
+}
+
+.picker-card {
+    background: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    min-width: 220px;
+    position: relative;
+    box-shadow: 0 6px 20px rgba(0,0,0,.08);
+    cursor: pointer;
+}
+
+.picker-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.picker-value {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    margin-top: 4px;
+}
+
+.calendar-icon {
+    font-size: 18px;
+}
+
+.picker-popup {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    background: white;
+    padding: 14px;
+    border-radius: 18px;
+    box-shadow: 0 20px 40px rgba(0,0,0,.15);
+    width: 300px;
+    z-index: 60;
+}
+
+.picker-overlay {
+    position: fixed;
+    inset: 0;
+    background: transparent;
+    z-index: 50;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.day-btn {
+    border: none;
+    background: transparent;
+    padding: 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+    .day-btn:hover {
+        background: #f1f5f9;
+    }
+
+    .day-btn.active {
+        background: #2563eb;
+        color: white;
+    }

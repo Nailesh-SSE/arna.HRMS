@@ -43,7 +43,7 @@ public class RoleRepository
 
     public async Task<bool> DeleteRoleAsync(int id)
     {
-        var role = await _baseRepository.GetByIdAsync(id);
+        var role = await GetRoleByIdAsync(id);
         if (role == null)
             return false;
 
@@ -57,6 +57,6 @@ public class RoleRepository
     public async Task<bool> RoleExistsAsync(string name)
     {
         name = (name ?? string.Empty).Trim().ToLower();
-        return await _baseRepository.Query().AnyAsync(r => r.Name.Trim().ToLower() == name);
+        return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Name.ToLower() == name && x.IsActive && !x.IsDeleted) != null;
     }
 }

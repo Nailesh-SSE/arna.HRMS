@@ -1,0 +1,140 @@
+﻿@using arna.HRMS.Models.ViewModels.Attendance
+
+<div class="container py-4">
+
+    <div class="position-relative ps-5">
+
+        <!-- vertical line -->
+        <div class="timeline-line"></div>
+
+        @foreach (var day in Attendance)
+        {
+            var loggedEmployees = day.Employees.Count(e => e.ClockIn.HasValue || e.ClockOut.HasValue);
+            var activeEmployees = day.Employees.Count(e => e.Status == "Present");
+
+            <div class="row mb-5 position-relative">
+
+                <!-- DATE -->
+                <div class="col-auto position-absolute timeline-date">
+                    <div class="date-box @(day.Date == DateOnly.FromDateTime(DateTime.Today) ? "today" : "")">
+                        <div class="fw-bold fs-5">@day.Date.Day</div>
+                        <small>@day.Date.ToString("MMM")</small>
+                    </div>
+                </div>
+
+                <!-- CONTENT -->
+                <div class="col content-box">
+
+                    <div class="card shadow-sm border-0 rounded-4">
+
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+
+                            <div>
+                                <h6 class="mb-0">@day.Date.ToString("dddd")</h6>
+                                <span class="badge bg-primary-subtle text-primary">
+                                    @loggedEmployees Actives
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="row g-3">
+
+                                @foreach (var emp in day.Employees)
+                                {
+                                    var productivity = emp.TotalHours.TotalHours <= 0
+                                    ? 0
+                                    : Math.Min((emp.TotalHours.TotalHours / 8.0) * 100, 100);
+
+                                    <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
+
+                                        <div class="border p-3 h-100 hover-card employee-box">
+
+                                            <!-- profile -->
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+
+                                                <div class="avatar position-relative">
+                                                    @emp.EmployeeName?[0]
+                                                    <span class="status-dot @GetStatusColor(emp.Status)"></span>
+                                                </div>
+
+                                                <div>
+                                                    <strong>@emp.EmployeeName</strong><br />
+                                                    <small class="@GetStatusTextClass(emp.Status)">
+                                                        @(emp.Status ?? "")
+                                                    </small>
+                                                </div>
+
+                                            </div>
+
+                                            <!-- metrics -->
+                                            <div class="bg-light rounded-3 p-2 small d-flex justify-content-between">
+
+                                                <div>
+                                                    <div class="text-muted">Shift</div>
+                                                    @(emp.ClockIn?.ToString(@"hh\:mm") ?? "--")
+                                                    -
+                                                    @(emp.ClockOut?.ToString(@"hh\:mm") ?? "--")
+                                                </div>
+
+                                                <div>
+                                                    <div class="text-muted">Work</div>
+                                                    @emp.WorkingHours.ToString(@"hh\:mm")
+                                                </div>
+
+                                                <div>
+                                                    <div class="text-muted">Break</div>
+                                                    @emp.BreakDuration.ToString(@"hh\:mm")
+                                                </div>
+
+                                                <div>
+                                                    <div class="text-muted">Total</div>
+                                                    @emp.TotalHours.ToString(@"hh\:mm")
+                                                </div>
+
+                                            </div>
+
+                                            <div class="progress mt-2" style="height:4px">
+                                                <div class="progress-bar" style="width:@productivity%"></div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                }
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<MonthlyAttendanceViewModel> Attendance { get; set; } = new();
+
+    private string GetStatusColor(string? status) => status switch
+    {
+        "Present" => "bg-status-present",
+        "Leave" => "bg-status-leave",
+        "Late" => "bg-status-late",
+        "Absent" => "bg-status-absent",
+        "Holiday" => "bg-status-holiday",
+        "HalfDay" => "bg-status-halfday",
+        _ => "bg-secondary"
+    };
+
+    private string GetStatusTextClass(string? status) => status switch
+    {
+        "Present" => "text-status-present",
+        "Leave" => "text-status-leave",
+        "Late" => "text-status-late",
+        "Absent" => "text-status-absent",
+        "Holiday" => "text-status-holiday",
+        "HalfDay" => "text-status-halfday",
+        _ => "text-secondary"
+    };
+}

@@ -21,30 +21,27 @@
 
     @if (!isLoading)
     {
+        <!-- ================= HEADER ================= -->
         <div class="dashboard-header">
-            <div>
-                <div class="d-flex align-items-center position-relative">
-                    <!-- Title -->
-                    <h2 class="mb-0">
-                        Attendance Overview
-                    </h2>
+            <div class="d-flex align-items-center position-relative">
+                <h2 class="mb-0">Attendance Overview</h2>
 
-                    <!-- Right Button -->
-                    <div class="ms-auto">
-                        <AppButton Text="Request"
-                                   ButtonClass="btn btn-dark px-5"
-                                   OnClick="OpenDrawer" />
-                    </div>
+                <div class="ms-auto">
+                    <AppButton Text="Request"
+                               ButtonClass="btn btn-dark px-5"
+                               OnClick="OpenDrawer" />
                 </div>
-
-                <p class="text-muted mt-2">
-                    View and track your monthly attendance
-                </p>
             </div>
+
+            <p class="text-muted mt-2">
+                View and track your monthly attendance
+            </p>
         </div>
 
+        <!-- ================= SUMMARY ================= -->
         <AttendanceSummary SummaryCards="State.SummaryCards" />
 
+        <!-- ================= TOTAL HOURS ================= -->
         <div class="hours-kpi">
             <div class="hours-info">
                 <span class="hours-label">Total Working Hours</span>
@@ -56,20 +53,41 @@
             </div>
         </div>
 
+        <!-- ================= MONTH + VIEW TOGGLE ================= -->
         <div class="select-month-view-toggle">
             <SelectMonthAndYear Year="@State.Year"
                                 Month="@State.Month"
                                 OnChange="OnMonthSelected" />
 
+            @if (IsAdmin() || IsSuperAdmin())
+            {
+                <AttendanceDateFilter Year="@State.Year"
+                                      Month="@State.Month"
+                                      SelectedDate="@State.SelectedDate"
+                                      DateChanged="OnDateSelected" />
+            }
+
             <AttendanceViewToggle ActiveView="@State.ViewMode"
                                   OnChange="SetView" />
         </div>
 
-        @if (State.ViewMode == AttendanceState.TABLE)
+        <!-- ================= ADMIN vs EMPLOYEE VIEW ================= -->
+        @if (IsAdmin() || IsSuperAdmin())
         {
-            <AttendanceTable AttendanceList="State.AttendanceList" />
+            @if (State.ViewMode == AttendanceState.TABLE)
+            {
+                <EmployeeAttendanceDetailsView Attendance="State.AttendanceList" />
+            }
+        }
+        else
+        {
+            @if (State.ViewMode == AttendanceState.TABLE)
+            {
+                <EmployeeAttendanceTableView Attendance="State.AttendanceList" />
+            }
         }
 
+        <!-- ================= CALENDAR VIEW ================= -->
         @if (State.ViewMode == AttendanceState.CALENDAR)
         {
             <AttendanceCalendar Year="@State.Year"
@@ -78,7 +96,7 @@
         }
     }
 
-    <!-- Drawer (ALWAYS rendered) -->
+    <!-- ================= REQUEST DRAWER ================= -->
     <AttendanceRequestDrawer IsOpen="@isDrawerOpen"
                              IsOpenChanged="@(v => isDrawerOpen = v)"
                              Title="Attendance Request" />
@@ -86,13 +104,12 @@
 
 @code {
     private bool isLoading = true;
-    private bool hasLoaded = false;
-    private bool isDrawerOpen = false;
+    private bool hasLoaded;
+    private bool isDrawerOpen;
+    public DateTime? SelectedDate { get; set; }
 
     private void OpenDrawer()
-    {
-        isDrawerOpen = true;
-    }
+        => isDrawerOpen = true;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -132,38 +149,74 @@
         State.Year = value.year;
         State.Month = value.month;
         State.SelectedMonth = $"{value.year}-{value.month:D2}";
+        State.SelectedDate = null;
         await LoadData();
     }
 
     private async Task LoadData()
     {
-        var empId = GetEmployeeId();
-        if (empId == 0)
-            return;
+        int empId;
 
+        if (IsAdmin() || IsSuperAdmin())
+        {
+            empId = State.SelectedEmployeeId;
+        }
+        else
+        {
+            empId = GetEmployeeId();
+            if (empId == 0)
+                return;
+        }
+
+        // 🔥 LOAD GROUPED DATA
         State.AttendanceList =
             await AttendanceService.GetAttendanceByMonthAsync(
                 State.Year,
                 State.Month,
-                empId
+                empId,
+                State.SelectedDate
             );
 
+        // 🔥 LOOKUP FOR CALENDAR
         State.AttendanceLookup =
-            State.AttendanceList
-                .Where(x => x.Date.Year == State.Year &&
-                            x.Date.Month == State.Month)
-                .ToDictionary(x => x.Date);
+            State.AttendanceList.ToDictionary(x => x.Date);
 
+        // 🔥 TOTAL WORKING HOURS (CORRECT FOR GROUPED MODEL)
         State.TotalWorkingHours =
-            State.AttendanceList.Aggregate(
-                TimeSpan.Zero,
-                (total, item) => total + (item.TotalHours ?? TimeSpan.Zero)
-            );
+            State.AttendanceList
+                .SelectMany(d => d.Employees)
+                .Aggregate(
+                    TimeSpan.Zero,
+                    (total, emp) => total + emp.TotalHours
+                );
 
-
+        // 🔥 SUMMARY
         State.SummaryCards =
             AttendanceSummaryBuilder.Build(State.AttendanceList);
     }
+
+    private async Task OnDateSelected(DateTime? date)
+    {
+        State.SelectedDate = date;
+
+        if (date.HasValue)
+        {
+            State.Year = date.Value.Year;
+            State.Month = date.Value.Month;
+            State.SelectedMonth = $"{State.Year}-{State.Month:D2}";
+        }
+
+        await LoadData();
+    }
+
+    private string MinDate =>
+    new DateTime(State.Year, State.Month, 1).ToString("yyyy-MM-dd");
+
+    private string MaxDate =>
+        new DateTime(State.Year, State.Month, 1)
+            .AddMonths(1)
+            .AddDays(-1)
+            .ToString("yyyy-MM-dd");
 
     private void SetView(string mode)
         => State.ViewMode = mode;

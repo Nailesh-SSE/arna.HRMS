@@ -16,7 +16,10 @@ public class AttendanceRequestRepository
 
     public async Task<List<AttendanceRequest>> GetAttendanceRequestAsync()
     {
-        return await _baseRepository.Query().Include(d=>d.Employee).OrderByDescending(x => x.Id).ToListAsync();
+        return await _baseRepository.Query()
+            .Include(d => d.Employee)
+            .Where(x => x.IsActive && !x.IsDeleted)
+            .OrderByDescending(x => x.Id).ToListAsync();
     }
 
     public async Task<List<AttendanceRequest>> GetPandingAttendanceRequestes()
@@ -30,8 +33,9 @@ public class AttendanceRequestRepository
 
     public async Task<AttendanceRequest?> GetAttendanceRequestByIdAsync(int id)
     {
-        var attendence = await _baseRepository.GetByIdAsync(id);
-        return attendence;
+        return await _baseRepository.Query()
+                .Include(x => x.Employee)
+                .FirstOrDefaultAsync(x=> x.Id == id && x.IsActive && !x.IsDeleted);
     }
 
     public async Task<List<AttendanceRequest>> GetAttendanceRequestsByEmployee(int employeeId)
@@ -53,26 +57,22 @@ public class AttendanceRequestRepository
         return _baseRepository.UpdateAsync(attendanceRequest);
     }
 
-    public async Task<bool> UpdateAttendanceRequestStatusAsync(int AttendanceRequestId, Status status, int approvedBy)
+    public async Task<bool> UpdateAttendanceRequestStatusAsync(int attendanceRequestId, Status status, int approvedBy)
     {
-        var Request = await _baseRepository.Query()
-            .FirstOrDefaultAsync(lr =>
-                lr.Id == AttendanceRequestId &&
-                lr.IsActive &&
-                !lr.IsDeleted);
+        var request = await GetAttendanceRequestByIdAsync(attendanceRequestId);
 
-        if (Request == null)
+        if (request == null)
             return false;
 
-        if (Request.StatusId != Status.Pending)
+        if (request.StatusId != Status.Pending)
             return false;
 
-        Request.StatusId = status;
-        Request.ApprovedBy = approvedBy;
-        Request.ApprovedOn = DateTime.Now;
-        Request.UpdatedOn = DateTime.Now;
+        request.StatusId = status;
+        request.ApprovedBy = approvedBy;
+        request.ApprovedOn = DateTime.Now;
+        request.UpdatedOn = DateTime.Now;
 
-        await _baseRepository.UpdateAsync(Request);
+        await _baseRepository.UpdateAsync(request);
         return true;
     }
 
@@ -80,10 +80,13 @@ public class AttendanceRequestRepository
     {
         var attendanceRequest = await _baseRepository.Query()
             .FirstOrDefaultAsync(ar => ar.Id == id && ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted);
+
         if (attendanceRequest == null)
             return false;
+
         if (attendanceRequest.StatusId != Status.Pending)
             return false;
+
         attendanceRequest.StatusId = Status.Cancelled;
         attendanceRequest.UpdatedOn = DateTime.Now;
         await _baseRepository.UpdateAsync(attendanceRequest);

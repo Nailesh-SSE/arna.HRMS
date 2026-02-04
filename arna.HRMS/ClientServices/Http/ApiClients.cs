@@ -175,8 +175,8 @@ public class ApiClients
         public Task<ApiResult<AttendanceViewModel>> GetById(int id)
             => _crud.GetById(id);
 
-        public Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetByMonth(int year, int month, int empId)
-            => _http.GetAsync<List<MonthlyAttendanceViewModel>>($"{baseUrl}/monthly/?year={year}&month={month}&empId={empId}");
+        public Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetByMonth(int year, int month, int empId, DateTime? date)
+            => _http.GetAsync<List<MonthlyAttendanceViewModel>>($"{baseUrl}/monthly-attendance?year={year}&month={month}&empId={empId}&date={date?.ToString("yyyy-MM-dd")}");
 
         public Task<ApiResult<AttendanceViewModel>> Create(AttendanceViewModel dto)
             => _crud.Create(dto);

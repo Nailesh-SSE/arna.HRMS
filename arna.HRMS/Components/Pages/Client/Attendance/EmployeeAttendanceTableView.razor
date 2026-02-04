@@ -1,0 +1,78 @@
+﻿@using arna.HRMS.Models.ViewModels.Attendance
+
+<div class="table-responsive attendance-table-wrapper">
+
+    <table class="table align-middle table-hover attendance-table">
+
+        <thead class="table-light sticky-top custom-table">
+            <tr>
+                <th>Date</th>
+                <th>Clock In</th>
+                <th>Clock Out</th>
+                <th>Break</th>
+                <th>Work</th>
+                <th>Total</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var day in Attendance)
+            {
+                var emp = day.Employees.FirstOrDefault();
+                if (emp == null) continue;
+
+                <tr>
+
+                    <td>
+                        <div class="fw-semibold">@day.Date.ToString("dd MMM yyyy")</div>
+                        <small class="text-muted">@day.Day</small>
+                    </td>
+
+                    <td class="fw-semibold text-primary">
+                        @(emp.ClockIn?.ToString(@"hh\:mm") ?? "--")
+                    </td>
+
+                    <td class="fw-semibold text-primary">
+                        @(emp.ClockOut?.ToString(@"hh\:mm") ?? "--")
+                    </td>   
+
+                    <td>
+                        @emp.BreakDuration.ToString(@"hh\:mm")
+                    </td>
+
+                    <td>
+                        @emp.WorkingHours.ToString(@"hh\:mm")
+                    </td>
+
+                    <td class="fw-bold">
+                        @emp.TotalHours.ToString(@"hh\:mm")
+                    </td>
+
+                    <td>
+                        <span class="status-pill @GetStatusClass(emp.Status)">
+                            @(emp.Status ?? "—")
+                        </span>
+                    </td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+</div>
+
+
+@code {
+    [Parameter, EditorRequired]
+    public List<MonthlyAttendanceViewModel> Attendance { get; set; } = new();
+
+    private static string GetStatusClass(string? status) => status switch
+    {
+        "Present" => "badge bg-success",
+        "Holiday" => "badge bg-info text-dark",
+        "Leave" => "badge bg-warning text-dark",
+        "Late" => "badge bg-primary",
+        _ => "badge bg-secondary"
+    };
+}

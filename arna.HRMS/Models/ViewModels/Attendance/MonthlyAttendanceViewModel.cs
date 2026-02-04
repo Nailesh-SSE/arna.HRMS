@@ -1,16 +1,8 @@
-﻿using arna.HRMS.Models.Common;
+﻿namespace arna.HRMS.Models.ViewModels.Attendance;
 
-namespace arna.HRMS.Models.ViewModels.Attendance;
-
-public class MonthlyAttendanceViewModel : CommonViewModel
+public class MonthlyAttendanceViewModel 
 {
-    public int EmployeeId { get; set; }
     public DateOnly Date { get; set; }
-    public string Day { get; set; }
-    public TimeSpan? ClockIn { get; set; }
-    public TimeSpan? ClockOut { get; set; }
-    public TimeSpan? WorkingHours { get; set; }
-    public TimeSpan? BreakDuration { get; set; }
-    public TimeSpan? TotalHours { get; set; }
-    public string? Status { get; set; }
+    public string Day { get; set; } = string.Empty;
+    public List<EmployeeDailyAttendanceViewModel> Employees { get; set; } = new();
 }

@@ -39,6 +39,7 @@ public class LeaveServiceTests
         var employeeLeaveBalanceBaseRepo = new BaseRepository<EmployeeLeaveBalance>(_dbContext);
         var attendanceBaseRepo = new BaseRepository<Attendance>(_dbContext);
         var festivalBaseRepo = new BaseRepository<FestivalHoliday>(_dbContext);
+        var employeeBaseRepo = new BaseRepository<Employee>(_dbContext);
 
         var leaveRepository = new LeaveRepository(
             leaveMasterBaseRepo,
@@ -46,8 +47,9 @@ public class LeaveServiceTests
             employeeLeaveBalanceBaseRepo);
 
         var festivalHolidayRepository = new FestivalHolidayRepository(festivalBaseRepo);
+        var employeeRepository = new EmployeeRepository(employeeBaseRepo);
 
-        _attendanceRepository = new AttendanceRepository(attendanceBaseRepo, festivalHolidayRepository);
+        _attendanceRepository = new AttendanceRepository(attendanceBaseRepo, festivalHolidayRepository, employeeRepository);
 
         _festivalHolidayServiceMock = new Mock<IFestivalHolidayService>();
 

@@ -1,8 +1,6 @@
 ﻿@using arna.HRMS.Models.ViewModels.Attendance
 
 <div class="calendar-container">
-
-    <!-- Week Header -->
     <div class="calendar-header">
         @foreach (var d in WeekDays)
         {
@@ -10,7 +8,6 @@
         }
     </div>
 
-    <!-- Calendar Grid -->
     <div class="calendar-grid">
         @foreach (var day in CalendarDays)
         {
@@ -21,27 +18,23 @@
             else
             {
                 AttendanceLookup.TryGetValue(
-                    DateOnly.FromDateTime(day.Value),
-                    out var attendance
+                DateOnly.FromDateTime(day.Value),
+                out var attendance
                 );
+
+                var emp = attendance?.Employees.FirstOrDefault();
 
                 <div class="calendar-cell">
                     <div class="date">@day.Value.Day</div>
 
-                    @if (attendance != null)
+                    @if (emp != null)
                     {
-                        <div class="attendance-icon-wrapper">
-                            <AttendanceIcon Status="@attendance.Status" />
-                        </div>
+                        <AttendanceIcon Status="@(emp.Status ?? "")" />
 
                         <div class="hours">
-                            @(
-                                attendance.ClockIn.HasValue && 
-                                attendance.ClockOut.HasValue && 
-                                attendance.TotalHours.HasValue
-                                    ? attendance.TotalHours.Value.ToString(@"hh\:mm\:ss") + " "+"hrs"
-                                    : "-"
-                            )
+                            @(emp.ClockIn.HasValue && emp.ClockOut.HasValue 
+                                ? emp.TotalHours.ToString(@"hh\:mm") + " hrs"
+                                : "-")
                         </div>
                     }
                     else
@@ -55,46 +48,23 @@
 </div>
 
 @code {
-
-    [Parameter, EditorRequired]
-    public int Year { get; set; }
-
-    [Parameter, EditorRequired]
-    public int Month { get; set; }
-
-    [Parameter, EditorRequired]
-    public Dictionary<DateOnly, MonthlyAttendanceViewModel> AttendanceLookup { get; set; } = new();
+    [Parameter, EditorRequired] public int Year { get; set; }
+    [Parameter, EditorRequired] public int Month { get; set; }
+    [Parameter, EditorRequired] public Dictionary<DateOnly, MonthlyAttendanceViewModel> AttendanceLookup { get; set; } = new();
 
     private List<DateTime?> CalendarDays = new();
 
     private static readonly string[] WeekDays =
         { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 
-
-    private int _prevYear;
-    private int _prevMonth;
-    protected override void OnParametersSet()
-    {
-        if (Year < 1 || Month < 1 || Month > 12)
-            return;
-
-        if (_prevYear != Year || _prevMonth != Month)
-        {
-            _prevYear = Year;
-            _prevMonth = Month;
-            BuildCalendar();
-        }
-    }
+    protected override void OnParametersSet() => BuildCalendar();
 
     private void BuildCalendar()
     {
         CalendarDays.Clear();
 
-        if (Year < 1 || Month < 1 || Month > 12)
-            return;
-
         var firstDay = new DateTime(Year, Month, 1);
-        int daysInMonth = DateTime.DaysInMonth(Year, Month);
+        var daysInMonth = DateTime.DaysInMonth(Year, Month);
 
         for (int i = 0; i < (int)firstDay.DayOfWeek; i++)
             CalendarDays.Add(null);
@@ -102,5 +72,4 @@
         for (int d = 1; d <= daysInMonth; d++)
             CalendarDays.Add(new DateTime(Year, Month, d));
     }
-
 }

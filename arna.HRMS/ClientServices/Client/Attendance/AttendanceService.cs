@@ -1,5 +1,4 @@
 ﻿using arna.HRMS.ClientServices.Http;
-using arna.HRMS.Helper.Attendance;
 using arna.HRMS.Models.ViewModels.Attendance;
 
 namespace arna.HRMS.ClientServices.Client.Attendance;
@@ -7,7 +6,7 @@ namespace arna.HRMS.ClientServices.Client.Attendance;
 public interface IAttendanceService
 {
     Task<AttendanceViewModel?> GetAttendanceByIdAsync(int id);
-    Task<List<MonthlyAttendanceViewModel>> GetAttendanceByMonthAsync(int year, int month, int empId);
+    Task<List<MonthlyAttendanceViewModel>> GetAttendanceByMonthAsync(int year, int month, int empId, DateTime? date); 
 }
 
 public class AttendanceService : IAttendanceService
@@ -25,12 +24,9 @@ public class AttendanceService : IAttendanceService
         return result.Data;
     }
 
-    public async Task<List<MonthlyAttendanceViewModel>> GetAttendanceByMonthAsync(int year, int month, int empId)
+    public async Task<List<MonthlyAttendanceViewModel>> GetAttendanceByMonthAsync(int year, int month, int empId, DateTime? date)
     {
-        var result = await _attendance.GetByMonth(year, month, empId);
-
-        var apiData = result.Data ?? new List<MonthlyAttendanceViewModel>();
-
-        return MonthlyAttendanceBuilder.Build(year, month, empId, apiData);
+        var result = await _attendance.GetByMonth(year, month, empId, date);
+        return result.Data ?? new List<MonthlyAttendanceViewModel>();
     }
 }

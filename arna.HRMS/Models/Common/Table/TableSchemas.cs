@@ -39,33 +39,6 @@ public class TableSchemas
         StatusColumn<EmployeeViewModel>(u => u.IsActive)
     };
 
-    // ATTENDANCE TABLE
-    public static List<TableColumn<MonthlyAttendanceViewModel>> AttendanceList = new()
-    {
-        new() { Header = "Date", Value = u => u.Date.ToString("dd MMM yyyy") },
-        new() { Header = "Day", Value = u => u.Day },
-        new() { Header = "Clock In", Value = u => u.ClockIn?.ToString(@"hh\:mm\:ss") ?? "-" },
-        new() { Header = "Clock Out", Value = u => u.ClockOut?.ToString(@"hh\:mm\:ss") ?? "-" },
-        new() {Header = "Working Hours", Value = u =>u.ClockIn.HasValue && u.ClockOut.HasValue ? u.WorkingHours.Value.ToString(@"hh\:mm\:ss") : "-"},
-        new() {Header = "Break Duration", Value = u => u.ClockIn.HasValue && u.ClockOut.HasValue ? u.BreakDuration.Value.ToString(@"hh\:mm\:ss") : "-"},
-        new() {Header = "Total Hours", Value = u => u.ClockIn.HasValue && u.ClockOut.HasValue ? u.TotalHours.Value.ToString(@"hh\:mm\:ss") : "-"},
-
-         new()
-         {
-              Header = "Status",
-              Value = u => u.Status,
-              CssClassFunc = u => u.Status switch
-              {
-                   "Present"  => "badge bg-success",
-                   "Absent"   => "badge bg-danger",
-                   "Holiday"  => "badge bg-info text-dark",
-                   "Leave"    => "badge bg-warning text-dark",
-                   "Late"     => "badge bg-info text-dark",
-                   "Half-Day" => "badge bg-primary",
-                   _          => "badge bg-light text-dark"
-              }
-         }
-    };
 
     // ROLE TABLE
     public static List<TableColumn<RoleViewModel>> Roles = new()

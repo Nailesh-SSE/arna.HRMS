@@ -46,13 +46,10 @@ public class AttendanceController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("monthly")]
-    public async Task<IActionResult> GetAttendanceByMonth(
-        [FromQuery] int year,
-        [FromQuery] int month,
-        [FromQuery] int empId)
+    [HttpGet("monthly-attendance")]
+    public async Task<IActionResult> GetAttendanceByMonth([FromQuery] int year, [FromQuery] int month, [FromQuery] int? empId, [FromQuery] DateTime? date)
     {
-        var result = await _attendanceService.GetAttendanceByMonthAsync(year, month, empId);
+        var result = await _attendanceService.GetAttendanceByMonthAsync(year, month, empId, date);
 
         if (!result.IsSuccess)
             return BadRequest(result.Message);

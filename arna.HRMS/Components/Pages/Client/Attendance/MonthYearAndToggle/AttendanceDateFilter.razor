@@ -1,0 +1,58 @@
+﻿<div class="picker-wrapper">
+
+    <div class="picker-card" @onclick="Toggle">
+        <div class="picker-value">
+            @(SelectedDate?.ToString("dd MMM yyyy") ?? "Select date")
+            <span class="calendar-icon">📅</span>
+        </div>
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="picker-overlay" @onclick="Close"></div>
+
+        <div class="picker-popup" @onclick:stopPropagation>
+
+            <div class="calendar-grid">
+                @foreach (var day in DaysInMonth)
+                {
+                    <button class="day-btn @(day == SelectedDate?.Day ? "active" : "")"
+                            @onclick="() => SelectDay(day)">
+                        @day
+                    </button>
+                }
+            </div>
+
+        </div>
+    }
+</div>
+
+
+@code {
+
+    [Parameter] public int Year { get; set; }
+    [Parameter] public int Month { get; set; }
+    [Parameter] public DateTime? SelectedDate { get; set; }
+    [Parameter] public EventCallback<DateTime?> DateChanged { get; set; }
+
+    private bool IsOpen;
+
+    private List<int> DaysInMonth =>
+        Enumerable.Range(1, DateTime.DaysInMonth(Year, Month)).ToList();
+
+    private void Toggle() => IsOpen = !IsOpen;
+
+    private async Task SelectDay(int day)
+    {
+        var date = new DateTime(Year, Month, day);
+        SelectedDate = date;
+        IsOpen = false;
+
+        await DateChanged.InvokeAsync(date);
+    }
+
+    private void Close()
+    {
+        IsOpen = false;
+    }
+}

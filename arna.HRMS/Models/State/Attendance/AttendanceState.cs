@@ -4,7 +4,6 @@ namespace arna.HRMS.Models.State.Attendance;
 
 public class AttendanceState
 {
-    /* ================= VIEW ================= */
     public const string TABLE = "table";
     public const string CALENDAR = "calendar";
 
@@ -15,9 +14,15 @@ public class AttendanceState
     public int Year { get; set; }
     public int Month { get; set; }
 
-    /* ================= DATA ================= */
+    /* ================= ADMIN ================= */
+    public int SelectedEmployeeId { get; set; }
+    public DateTime? SelectedDate { get; set; }
+
+    /* ================= DATA (GROUPED) ================= */
     public List<MonthlyAttendanceViewModel> AttendanceList { get; set; } = new();
+
     public Dictionary<DateOnly, MonthlyAttendanceViewModel> AttendanceLookup { get; set; } = new();
+
     public List<AttendenceSummaryCard> SummaryCards { get; set; } = new();
 
     public TimeSpan TotalWorkingHours { get; set; }
@@ -32,17 +37,11 @@ public class AttendanceState
         if (parts.Length != 2)
             return;
 
-        if (!int.TryParse(parts[0], out var year))
-            return;
-
-        if (!int.TryParse(parts[1], out var month))
-            return;
-
-        // 🔥 HARD CLAMP
-        if (month < 1 || month > 12)
-            return;
-
-        Year = year;
-        Month = month;
+        if (int.TryParse(parts[0], out var y) &&
+            int.TryParse(parts[1], out var m))
+        {
+            Year = y;
+            Month = m;
+        }
     }
 }
