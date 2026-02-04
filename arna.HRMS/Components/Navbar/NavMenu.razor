@@ -22,12 +22,11 @@
             <i class="bi bi-calendar-check me-2"></i> Attendance
         </NavLink>
 
-        <NavLink href="/leaverequest" class="nav-link text-white">
-                <i class="bi bi-calendar-event me-2"></i> Leave
-        </NavLink>
-
         @if (IsAdmin() || IsSuperAdmin())
         {
+            <NavLink href="/leaveMaster" class="nav-link text-white">
+                <i class="bi bi-box-arrow-left"></i>LeaveMaster
+            </NavLink>
             <NavLink href="/department" class="nav-link text-white">
                 <i class="bi bi-building me-2"></i> Department
             </NavLink>
@@ -39,9 +38,11 @@
             <NavLink href="/user" class="nav-link text-white">
                 <i class="bi bi-person me-2"></i> Users
             </NavLink>
-
-            <NavLink href="/Leave" class="nav-link text-white">
-                <i class="bi bi-calendar-event me-2"></i> Leave
+        }
+        else
+        {
+            <NavLink href="/leaverequest" class="nav-link text-white">
+                <i class="bi bi-box-arrow-left"></i>Leave
             </NavLink>
         }
 

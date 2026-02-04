@@ -1,0 +1,93 @@
+﻿@page "/leaveMaster"
+
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels.Leave
+
+@inject NavigationManager NavigationManager
+@inject ILeaveService LeaveService
+@inject IJSRuntime JsRuntime
+@inject NotificationService NotificationService
+
+
+<FullPageLoader Visible="isLoading" />
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="fw-bold text-primary">Leave Masters</h3>
+
+        <AppButton cssclass="btn btn-success" Text="Add Leave" OnClick="@(() => NavigationManager.NavigateTo("/leaveMaster/create"))">
+            <i class="bi bi-plus-lg"></i>
+        </AppButton>
+    </div>
+
+    <AppTable TItem="LeaveMasterViewModel"
+              Items="leaveMasters"
+              Columns="TableSchemas.LeaveMasters"
+              OnEdit="EditLeaveMaster"
+              OnDelete="DeleteLeaveMaster" />
+
+</div>
+
+@code {
+    private List<LeaveMasterViewModel> leaveMasters = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLeaveMasters();
+    }
+
+    private async Task LoadLeaveMasters()
+    {
+        isLoading = true;
+
+        var result = await LeaveService.GetLeaveMasterAsync();
+
+        if (result.IsSuccess && result.Data != null)
+        {
+            leaveMasters = result.Data;
+        }
+        else if (!result.IsSuccess)
+        {
+            NotificationService.Error(result.Message ?? "Failed to load Leave Masters");
+            leaveMasters = new List<LeaveMasterViewModel>();
+        }
+        else
+        {
+            leaveMasters = new List<LeaveMasterViewModel>();
+        }
+        isLoading = false;
+    }
+
+    private void EditLeaveMaster(LeaveMasterViewModel model)
+    {
+        NavigationManager.NavigateTo($"/leaveMaster/edit/{model.Id}");
+    }
+
+    private async Task DeleteLeaveMaster(LeaveMasterViewModel model)
+    {
+        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete this leave Master?"
+        );
+
+        if (!isConfirmed)
+            return;
+
+        var result = await LeaveService.DeleteLeaveMasterAsync(model.Id);
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error(result.Message ?? "Unable to delete leave Master.");
+            return;
+        }
+
+        NotificationService.Success("Leave Master deleted successfully.");
+        await LoadLeaveMasters();
+    }
+}
