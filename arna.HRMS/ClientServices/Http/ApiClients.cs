@@ -223,7 +223,7 @@ public class ApiClients
             => _crud.Delete(id);
 
         public Task<ApiResult<bool>> ChangePassword(int id, string newPassword)
-            => _http.PostAsync<bool>($"{baseUrl}/{id}/changepassword", newPassword);
+            => _http.PostAsync<bool>($"{baseUrl}/{id}/change-password", newPassword);
     }
 
     // ===============================

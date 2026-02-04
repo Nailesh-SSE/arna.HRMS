@@ -67,7 +67,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("{id:int}/change-password")]
-    public async Task<IActionResult> ChangeUserPassword(int id, string newPassword)
+    public async Task<IActionResult> ChangeUserPassword(int id, [FromBody] string newPassword)
     {
         var result = await _userServices.ChangeUserPasswordAsync(id, newPassword);
 
