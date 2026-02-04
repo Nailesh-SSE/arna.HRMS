@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Models.ViewModels.Attendance;
+using arna.HRMS.Models.ViewModels.Leave;
 
 namespace arna.HRMS.Models.Common.Table;
 
@@ -71,6 +72,16 @@ public class TableSchemas
     {
         new() { Header = "Name", Value = r => r.Name },
         new() { Header = "Description", Value = r => r.Description }
+    };
+
+    // LEAVE TABLE
+    public static List<TableColumn<LeaveMasterViewModel>> LeaveMasters = new() 
+    {
+        new() { Header = "Name", Value = u => u.LeaveName },
+        new() { Header = "Days", Value = u => u.MaxPerYear },
+        new() { Header = "Description", Value = u => u.Description },
+        new() {Header = "IsPaid", Value = u => u.IsPaid},
+        StatusColumn<LeaveMasterViewModel>(u => u.IsActive)
     };
 
     // GENERIC STATUS COLUMN

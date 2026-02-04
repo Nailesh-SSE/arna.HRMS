@@ -28,6 +28,13 @@ public class LeaveController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("masters/{id:int}")]
+    public async Task<IActionResult> GetLeaveMastersById(int id)
+    {
+        var leave = await _leaveService.GetLeaveMasterByIdAsync(id);
+        return leave.Data == null ? NotFound("Leave Master not found") : Ok(leave);
+    }
+
     [HttpPost("masters")]
     public async Task<IActionResult> CreateLeaveMaster([FromBody] LeaveMasterDto dto)
     {

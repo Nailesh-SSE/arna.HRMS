@@ -1,0 +1,161 @@
+﻿@page "/leaveMaster/create"
+@page "/leaveMaster/edit/{Id:int}"
+
+@using arna.HRMS.ClientServices.Admin.Employee
+@using arna.HRMS.ClientServices.Admin.Role
+@using arna.HRMS.ClientServices.Admin.User
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Models.ViewModels.Leave
+
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+@inject ILeaveService LeaveService
+
+<div class="container py-4">
+    <FullPageLoader Visible="isLoading" />
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                @(IsEditMode ? "Edit Leave" : "Create Leave")
+            </h5>
+        </div>
+
+        <div class="card-body p-4">
+
+            @if (!isLoading)
+            {
+                <EditForm Model="leaveMaster" OnValidSubmit="HandleValidSubmit" autocomplete="off">
+                    <DataAnnotationsValidator />
+
+                    <div class="row g-4">
+                        <!-- Name -->
+                        <div class="col-md-6">
+                            <AppInput Label="LeaveName"
+                                      Value="@leaveMaster.LeaveName"
+                                      ValueChanged="v => leaveMaster.LeaveName = v"
+                                      ValidationExpression="@(() => leaveMaster.LeaveName)">
+                            </AppInput>
+                        </div>
+
+                        <!-- Days -->
+                        <div class="col-md-6">
+                            <AppNumberInput Label="MaxPerYear"
+                                            Value="@leaveMaster.MaxPerYear"
+                                            ValueChanged="v => leaveMaster.MaxPerYear = v"
+                                            ValidationExpression="@(() => leaveMaster.MaxPerYear)">
+                            </AppNumberInput>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="col-md-6">
+                            <AppInput Label="Description"
+                                      Value="@leaveMaster.Description"
+                                      ValueChanged="v => leaveMaster.Description = v"
+                                      ValidationExpression="@(() => leaveMaster.Description)">
+                            </AppInput>
+                        </div>
+
+                        <div class="col-md-6 mt-4">
+                            <AppCheckBox Label="IsPaid"
+                                         Value="@leaveMaster.IsPaid"
+                                         ValueChanged="@(v => leaveMaster.IsPaid = v)" />
+                        </div>
+
+                        <!-- Active (EDIT ONLY) -->
+                        @if (IsEditMode)
+                        {
+                            <div class="col-md-6 mt-4">
+                                <AppCheckBox Label="Active"
+                                             Value="@leaveMaster.IsActive"
+                                             ValueChanged="@(v => leaveMaster.IsActive = v)" />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-5 d-flex justify-content-end gap-3">
+                        <AppButton Text="Back"
+                                   ButtonClass="btn btn-outline-dark px-4"
+                                   OnClick="GoBack" />
+
+                        <AppButton Text="@(IsEditMode ? "Update" : "Save")"
+                                   Type="submit"
+                                   ButtonClass="btn btn-primary px-5" />
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+    private LeaveMasterViewModel leaveMaster = new();
+    private bool isLoading = true;
+    private bool IsEditMode => Id.HasValue;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        isLoading = true;
+
+        if (IsEditMode)
+        {
+            var result = await LeaveService.GetLeaveMasterByIdAsync(Id!.Value);
+
+            if (result.IsSuccess && result.Data != null)
+            {
+                leaveMaster = result.Data;
+            }
+            else
+            {
+                NotificationService.Error(result.Message ?? "Leave Master not found.");
+                NavigationManager.NavigateTo("/leaveMaster");
+            }
+        }
+        else
+        {
+            leaveMaster = new LeaveMasterViewModel();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (IsEditMode)
+        {
+            var result = await LeaveService.UpdateLeaveMasterAsync(Id!.Value, leaveMaster);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error(result.Message ?? "Unable to update leave Master.");
+                return;
+            }
+
+            NotificationService.Success("Leave Master updated successfully.");
+        }
+        else
+        {
+            var result = await LeaveService.CreateLeaveMasterAsync(leaveMaster);
+
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error(result.Message ?? "Unable to create leave Master.");
+                return;
+            }
+
+            NotificationService.Success("Leave Master created successfully.");
+        }
+
+        NavigationManager.NavigateTo("/leaveMaster");
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/leaveMaster");
+}
