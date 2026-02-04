@@ -93,7 +93,7 @@ public class LeaveController : ControllerBase
         if (id != dto.Id)
             return BadRequest("Invalid Id");
 
-        if (dto.Status != Status.Pending)
+        if (dto.StatusId != Status.Pending)
             return BadRequest("Only pending leave requests can be updated");
 
         var updated = await _leaveService.UpdateLeaveRequestAsync(dto);

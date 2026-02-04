@@ -391,10 +391,10 @@ public class LeaveServiceTests
         await _dbContext.SaveChangesAsync();
 
         _dbContext.AddRange(
-            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending },
-            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", Status = Status.Approved },
-            new LeaveRequest { EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", Status = Status.Rejected },
-            new LeaveRequest { EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", Status = Status.Pending }
+            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending },
+            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", StatusId = Status.Approved },
+            new LeaveRequest { EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", StatusId = Status.Rejected },
+            new LeaveRequest { EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", StatusId = Status.Pending }
         );
         await _dbContext.SaveChangesAsync();
 
@@ -412,10 +412,10 @@ public class LeaveServiceTests
         Assert.That(result.Data![1].Reason, Is.Not.Null);
         Assert.That(result.Data![2].Reason, Is.Not.Null);
         Assert.That(result.Data![3].Reason, Is.Not.Null);
-        Assert.That(result.Data![0].Status, Is.EqualTo(Status.Pending));
-        Assert.That(result.Data![1].Status, Is.EqualTo(Status.Rejected));
-        Assert.That(result.Data![2].Status, Is.EqualTo(Status.Approved));
-        Assert.That(result.Data![3].Status, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data![0].StatusId, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data![1].StatusId, Is.EqualTo(Status.Rejected));
+        Assert.That(result.Data![2].StatusId, Is.EqualTo(Status.Approved));
+        Assert.That(result.Data![3].StatusId, Is.EqualTo(Status.Pending));
         Assert.That(result.Data![0].LeaveTypeId, Is.GreaterThan(0));
         Assert.That(result.Data![1].LeaveTypeId, Is.GreaterThan(0));
         Assert.That(result.Data![2].LeaveTypeId, Is.GreaterThan(0));
@@ -492,10 +492,10 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.AddRange(
-            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending },
-            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", Status = Status.Approved },
-            new LeaveRequest { EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", Status = Status.Rejected },
-            new LeaveRequest { EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", Status = Status.Pending }
+            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending },
+            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", StatusId = Status.Approved },
+            new LeaveRequest { EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", StatusId = Status.Rejected },
+            new LeaveRequest { EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", StatusId = Status.Pending }
         );
 
         await _dbContext.SaveChangesAsync();
@@ -505,8 +505,8 @@ public class LeaveServiceTests
         Assert.That(result.Data!.Count, Is.EqualTo(2));
         Assert.That(result.Data[0].EmployeeId, Is.EqualTo(104));
         Assert.That(result.Data[1].EmployeeId, Is.EqualTo(101));
-        Assert.That(result.Data[0].Status, Is.EqualTo(Status.Pending));
-        Assert.That(result.Data[1].Status, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data[0].StatusId, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data[1].StatusId, Is.EqualTo(Status.Pending));
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data![0].StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(15).Date));
         Assert.That(result.Data![1].EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
@@ -558,9 +558,9 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.AddRange(
-            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending },
-            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(7), EndDate = DateTime.Now.AddDays(5), Reason = "Vacation", Status = Status.Approved },
-            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", Status = Status.Rejected }
+            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending },
+            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(7), EndDate = DateTime.Now.AddDays(5), Reason = "Vacation", StatusId = Status.Approved },
+            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", StatusId = Status.Rejected }
         );
 
         await _dbContext.SaveChangesAsync();
@@ -573,7 +573,7 @@ public class LeaveServiceTests
         Assert.That(result.Data.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(7).Date));
         Assert.That(result.Data.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(5).Date));
         Assert.That(result.Data.Reason, Is.EqualTo("Vacation"));
-        Assert.That(result.Data.Status, Is.EqualTo(Status.Approved));
+        Assert.That(result.Data.StatusId, Is.EqualTo(Status.Approved));
         Assert.That(result.IsSuccess, Is.True);
     }
 
@@ -622,10 +622,10 @@ public class LeaveServiceTests
         await _dbContext.SaveChangesAsync();
 
         _dbContext.AddRange(
-            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending },
-            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", Status = Status.Approved },
-            new LeaveRequest { EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", Status = Status.Rejected },
-            new LeaveRequest { EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", Status = Status.Pending }
+            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending },
+            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", StatusId = Status.Approved },
+            new LeaveRequest { EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", StatusId = Status.Rejected },
+            new LeaveRequest { EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", StatusId = Status.Pending }
         );
 
         await _dbContext.SaveChangesAsync();
@@ -636,7 +636,7 @@ public class LeaveServiceTests
         Assert.That(result.Data!.StartDate, Is.EqualTo(DateTime.MinValue));
         Assert.That(result.Data!.EndDate, Is.EqualTo(DateTime.MinValue));
         Assert.That(result.Data!.Reason, Is.Null);
-        Assert.That(result.Data!.Status, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data!.StatusId, Is.EqualTo(Status.Pending));
         Assert.That(result.IsSuccess, Is.True);
 
     }
@@ -699,7 +699,7 @@ public class LeaveServiceTests
             StartDate = DateTime.Now.AddDays(3),
             EndDate = DateTime.Now.AddDays(7),
             Reason = "Medical",
-            Status = Status.Pending
+            StatusId = Status.Pending
         };
 
         // -------------------------------
@@ -714,7 +714,7 @@ public class LeaveServiceTests
         Assert.That(result.Data!.EmployeeId, Is.EqualTo(101));
         Assert.That(result.Data.LeaveTypeId, Is.EqualTo(1));
         Assert.That(result.Data.Reason, Is.EqualTo("Medical"));
-        Assert.That(result.Data.Status, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data.StatusId, Is.EqualTo(Status.Pending));
         Assert.That(result.Data.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
         Assert.That(result.Data.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(7).Date));
 
@@ -723,14 +723,17 @@ public class LeaveServiceTests
     [Test]
     public async Task CreateLeaveRequest_WhenInsufficientLeaveBalance()
     {
+        // ---------------- ARRANGE ----------------
 
+        // 1️⃣ Festival holidays (service dependency)
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
-        .ReturnsAsync(
-            ServiceResult<List<FestivalHolidayDto>>
-                .Success(new List<FestivalHolidayDto>())
-        );
+            .Setup(f => f.GetFestivalHolidayAsync())
+            .ReturnsAsync(
+                ServiceResult<List<FestivalHolidayDto>>
+                    .Success(new List<FestivalHolidayDto>())
+            );
 
+        // 2️⃣ Employee
         _dbContext.Employees.Add(new Employee
         {
             Id = 101,
@@ -740,45 +743,55 @@ public class LeaveServiceTests
             Email = "john@a.com",
             PhoneNumber = "1111111111",
             Position = "Developer",
-            Salary = 50000,
-            DepartmentId = 1,
             HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-25)
+            IsActive = true,
+            IsDeleted = false
         });
 
-        _dbContext.SaveChanges();
+        // 3️⃣ Leave master (REQUIRED)
+        _dbContext.LeaveMasters.Add(new LeaveMaster
+        {
+            Id = 1,
+            LeaveName = "Sick Leave",
+            MaxPerYear = 10,
+            IsPaid = true,
+            IsActive = true,
+            IsDeleted = false
+        });
 
+        // 4️⃣ Employee leave balance (KEY DATA)
         _dbContext.EmployeeLeaveBalances.Add(new EmployeeLeaveBalance
         {
             EmployeeId = 101,
             LeaveMasterId = 1,
             TotalLeaves = 10,
             UsedLeaves = 9,
-            RemainingLeaves = 1
+            RemainingLeaves = 1 // 🔥 insufficient
         });
 
         await _dbContext.SaveChangesAsync();
 
+        // 5️⃣ Leave request DTO (needs > 1 day)
         var dto = new LeaveRequestDto
         {
             EmployeeId = 101,
             LeaveTypeId = 1,
             StartDate = DateTime.Now.AddDays(3),
-            EndDate = DateTime.Now.AddDays(7),
+            EndDate = DateTime.Now.AddDays(7), // 5 days
             Reason = "Medical",
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
 
-        // -------------------------------
-        // Act
-        // -------------------------------
+        // ---------------- ACT ----------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
 
+        // ---------------- ASSERT ----------------
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Insufficient leave balance"));
     }
+
 
     [Test]
     public async Task CreateLeaveRequest_WhenEmployeeNotFound()
@@ -795,7 +808,7 @@ public class LeaveServiceTests
             StartDate = DateTime.Now.AddDays(3),
             EndDate = DateTime.Now.AddDays(7),
             Reason = "Medical",
-            Status = Status.Pending
+            StatusId = Status.Pending
         };
         // -------------------------------
         // Act
@@ -857,11 +870,11 @@ public class LeaveServiceTests
         await _dbContext.SaveChangesAsync();
 
         _dbContext.AddRange(
-            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending },
-            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", Status = Status.Approved },
-            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", Status = Status.Rejected },
-            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", Status = Status.Pending },
-            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(20), EndDate = DateTime.Now.AddDays(22), Reason = "Conference", Status = Status.Approved }
+            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending },
+            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", StatusId = Status.Approved },
+            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", StatusId = Status.Rejected },
+            new LeaveRequest { EmployeeId = 101, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", StatusId = Status.Pending },
+            new LeaveRequest { EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(20), EndDate = DateTime.Now.AddDays(22), Reason = "Conference", StatusId = Status.Approved }
         );
 
         await _dbContext.SaveChangesAsync();
@@ -882,9 +895,9 @@ public class LeaveServiceTests
         Assert.That(result.Data![0].Id, Is.EqualTo(4));
         Assert.That(result.Data![1].Id, Is.EqualTo(2));
         Assert.That(result.Data![2].Id, Is.EqualTo(1));
-        Assert.That(result.Data![0].Status, Is.EqualTo(Status.Pending));
-        Assert.That(result.Data![1].Status, Is.EqualTo(Status.Approved));
-        Assert.That(result.Data![2].Status, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data![0].StatusId, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data![1].StatusId, Is.EqualTo(Status.Approved));
+        Assert.That(result.Data![2].StatusId, Is.EqualTo(Status.Pending));
 
     }
 
@@ -901,11 +914,11 @@ public class LeaveServiceTests
     public async Task DeleteLeaveRequestbyID_whenFound()
     {
         _dbContext.AddRange(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 2, EmployeeId = 105, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", Status = Status.Approved, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 3, EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", Status = Status.Rejected, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 4, EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", Status = Status.Pending, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 5, EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(20), EndDate = DateTime.Now.AddDays(22), Reason = "Conference", Status = Status.Approved, IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false },
+            new LeaveRequest { Id = 2, EmployeeId = 105, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", StatusId = Status.Approved, IsActive = true, IsDeleted = false },
+            new LeaveRequest { Id = 3, EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", StatusId = Status.Rejected, IsActive = true, IsDeleted = false },
+            new LeaveRequest { Id = 4, EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", StatusId = Status.Pending, IsActive = true, IsDeleted = false },
+            new LeaveRequest { Id = 5, EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(20), EndDate = DateTime.Now.AddDays(22), Reason = "Conference", StatusId = Status.Approved, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
 
@@ -922,8 +935,8 @@ public class LeaveServiceTests
     public async Task DeleteLeaveRequestbyID_whenNotFound()
     {
         _dbContext.AddRange(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 2, EmployeeId = 105, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", Status = Status.Approved, IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false },
+            new LeaveRequest { Id = 2, EmployeeId = 105, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", StatusId = Status.Approved, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
         var result = await _leaveService.DeleteLeaveRequestAsync(5);
@@ -941,7 +954,7 @@ public class LeaveServiceTests
                 .Success(new List<FestivalHolidayDto>())
         );
         _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
 
@@ -960,7 +973,7 @@ public class LeaveServiceTests
             StartDate = DateTime.Now.AddDays(2),
             EndDate = DateTime.Now.AddDays(4),
             Reason = "Medical Update",
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -983,7 +996,7 @@ public class LeaveServiceTests
             StartDate = DateTime.Now.AddDays(2),
             EndDate = DateTime.Now.AddDays(4),
             Reason = "Medical Update",
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -997,50 +1010,80 @@ public class LeaveServiceTests
     [Test]
     public async Task UpdateLeaveRequest_WhenInsufficientLeaveBalance()
     {
+        // -------- Festival Holidays --------
         _festivalHolidayServiceMock
-       .Setup(f => f.GetFestivalHolidayAsync())
-       .ReturnsAsync(
-           ServiceResult<List<FestivalHolidayDto>>
-               .Success(new List<FestivalHolidayDto>())
-       );
-        _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false }
-        );
-        await _dbContext.SaveChangesAsync();
+            .Setup(f => f.GetFestivalHolidayAsync())
+            .ReturnsAsync(
+                ServiceResult<List<FestivalHolidayDto>>
+                    .Success(new List<FestivalHolidayDto>())
+            );
+
+        // -------- Existing Leave Request --------
+        _dbContext.LeaveRequests.Add(new LeaveRequest
+        {
+            Id = 1,
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(1),
+            EndDate = DateTime.Now.AddDays(3),
+            Reason = "Medical",
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false
+        });
+
+        // -------- REQUIRED Leave Master (ID = 2) --------
+        _dbContext.LeaveMasters.Add(new LeaveMaster
+        {
+            Id = 2,
+            LeaveName = "Sick Leave",
+            MaxPerYear = 10,
+            IsPaid = true,
+            IsActive = true,
+            IsDeleted = false
+        });
+
+        // -------- REQUIRED Leave Balance --------
         _dbContext.EmployeeLeaveBalances.Add(new EmployeeLeaveBalance
         {
             EmployeeId = 101,
             LeaveMasterId = 2,
             TotalLeaves = 10,
             UsedLeaves = 9,
-            RemainingLeaves = 1,
-            Year = DateTime.Now.Year
+            RemainingLeaves = 1 // 🔥 insufficient
         });
+
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
+
+        // -------- Update DTO (needs > 1 day) --------
         var dto = new LeaveRequestDto
         {
             Id = 1,
             EmployeeId = 101,
             LeaveTypeId = 2,
             StartDate = DateTime.Now.AddDays(2),
-            EndDate = DateTime.Now.AddDays(6),
+            EndDate = DateTime.Now.AddDays(6), // ~5 days
             Reason = "Medical Update",
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
+
+        // -------- ACT --------
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
-        Assert.That(result.Data, Is.Null);
+
+        // -------- ASSERT --------
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Insufficient leave balance"));
     }
+
 
     [Test]
     public async Task UpdateLeaveRequest_WhenLeaveMasterNotFound()
     {
         _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
@@ -1052,7 +1095,7 @@ public class LeaveServiceTests
             StartDate = DateTime.Now.AddDays(2),
             EndDate = DateTime.Now.AddDays(4),
             Reason = "Medical Update",
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -1095,12 +1138,12 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
 
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Status, Is.EqualTo(Status.Pending));
+        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Pending));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Reason, Is.EqualTo("Medical"));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(1).Date));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
@@ -1110,7 +1153,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Status, Is.EqualTo(Status.Approved));
+        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Approved));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Reason, Is.EqualTo("Medical"));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(1).Date));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
@@ -1124,12 +1167,12 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequestStatus_WhenReject()
     {
         _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
 
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Status, Is.EqualTo(Status.Pending));
+        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Pending));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Reason, Is.EqualTo("Medical"));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(1).Date));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
@@ -1139,7 +1182,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Rejected, 99);
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Status, Is.EqualTo(Status.Rejected));
+        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Rejected));
     }
 
     [Test]
@@ -1154,12 +1197,12 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequestStatusCancel_WhenFound()
     {
         _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
 
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Status, Is.EqualTo(Status.Pending));
+        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Pending));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Reason, Is.EqualTo("Medical"));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(1).Date));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
@@ -1169,7 +1212,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Status, Is.EqualTo(Status.Cancelled));
+        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Cancelled));
     }
 
     [Test]
@@ -1184,7 +1227,7 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequestStatusCancel_WhenEmployeeIdMismatch()
     {
         _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending    , IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending    , IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
@@ -1211,8 +1254,8 @@ public class LeaveServiceTests
         Assert.That(result.Data[0].EmployeeId, Is.EqualTo(101));
         Assert.That(result.Data[0].LeaveMasterId, Is.EqualTo(1));
         Assert.That(result.Data[0].TotalLeaves, Is.EqualTo(10));
-        Assert.That(result.Data[0].UsedLeaves, Is.EqualTo(3));
-        Assert.That(result.Data[0].RemainingLeaves, Is.EqualTo(7));
+        Assert.That(result.Data[0].UsedLeaves, Is.EqualTo(2));
+        Assert.That(result.Data[0].RemainingLeaves, Is.EqualTo(8));
     }
 
     [Test]

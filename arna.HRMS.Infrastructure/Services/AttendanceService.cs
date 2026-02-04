@@ -256,7 +256,7 @@ public class AttendanceService : IAttendanceService
         var approvedLeaves = (await _leaveService.GetLeaveRequestAsync()).Data?
                 .Where(l =>
                     l.EmployeeId == employeeId &&
-                    l.Status == Status.Approved)
+                    l.StatusId == Status.Approved)
                 .SelectMany(l =>
                     Enumerable.Range(
                         0,
@@ -288,7 +288,7 @@ public class AttendanceService : IAttendanceService
                     ClockIn = null,
                     ClockOut = null,
                     TotalHours = TimeSpan.Zero,
-                    Status = isHoliday
+                    StatusId = isHoliday
                     ? AttendanceStatus.Holiday
                     : AttendanceStatus.Absent,
                     Notes = isHoliday

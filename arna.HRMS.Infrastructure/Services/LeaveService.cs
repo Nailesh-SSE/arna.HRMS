@@ -278,7 +278,7 @@ public class LeaveService : ILeaveService
                     ClockInTime = null,
                     ClockOutTime = null,
                     WorkingHours = TimeSpan.Zero,
-                    Status = AttendanceStatus.Leave,
+                    StatusId = AttendanceStatus.Leave,
                     Notes = leaveRequest.Reason,
                     Latitude = null,
                     Longitude = null
