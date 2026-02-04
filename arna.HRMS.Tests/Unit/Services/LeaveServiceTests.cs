@@ -723,14 +723,17 @@ public class LeaveServiceTests
     [Test]
     public async Task CreateLeaveRequest_WhenInsufficientLeaveBalance()
     {
+        // ---------------- ARRANGE ----------------
 
+        // 1️⃣ Festival holidays (service dependency)
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
-        .ReturnsAsync(
-            ServiceResult<List<FestivalHolidayDto>>
-                .Success(new List<FestivalHolidayDto>())
-        );
+            .Setup(f => f.GetFestivalHolidayAsync())
+            .ReturnsAsync(
+                ServiceResult<List<FestivalHolidayDto>>
+                    .Success(new List<FestivalHolidayDto>())
+            );
 
+        // 2️⃣ Employee
         _dbContext.Employees.Add(new Employee
         {
             Id = 101,
@@ -740,45 +743,55 @@ public class LeaveServiceTests
             Email = "john@a.com",
             PhoneNumber = "1111111111",
             Position = "Developer",
-            Salary = 50000,
-            DepartmentId = 1,
             HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-25)
+            IsActive = true,
+            IsDeleted = false
         });
 
-        _dbContext.SaveChanges();
+        // 3️⃣ Leave master (REQUIRED)
+        _dbContext.LeaveMasters.Add(new LeaveMaster
+        {
+            Id = 1,
+            LeaveName = "Sick Leave",
+            MaxPerYear = 10,
+            IsPaid = true,
+            IsActive = true,
+            IsDeleted = false
+        });
 
+        // 4️⃣ Employee leave balance (KEY DATA)
         _dbContext.EmployeeLeaveBalances.Add(new EmployeeLeaveBalance
         {
             EmployeeId = 101,
             LeaveMasterId = 1,
             TotalLeaves = 10,
             UsedLeaves = 9,
-            RemainingLeaves = 1
+            RemainingLeaves = 1 // 🔥 insufficient
         });
 
         await _dbContext.SaveChangesAsync();
 
+        // 5️⃣ Leave request DTO (needs > 1 day)
         var dto = new LeaveRequestDto
         {
             EmployeeId = 101,
             LeaveTypeId = 1,
             StartDate = DateTime.Now.AddDays(3),
-            EndDate = DateTime.Now.AddDays(7),
+            EndDate = DateTime.Now.AddDays(7), // 5 days
             Reason = "Medical",
             Status = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
 
-        // -------------------------------
-        // Act
-        // -------------------------------
+        // ---------------- ACT ----------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
 
+        // ---------------- ASSERT ----------------
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Insufficient leave balance"));
     }
+
 
     [Test]
     public async Task CreateLeaveRequest_WhenEmployeeNotFound()
@@ -997,44 +1010,74 @@ public class LeaveServiceTests
     [Test]
     public async Task UpdateLeaveRequest_WhenInsufficientLeaveBalance()
     {
+        // -------- Festival Holidays --------
         _festivalHolidayServiceMock
-       .Setup(f => f.GetFestivalHolidayAsync())
-       .ReturnsAsync(
-           ServiceResult<List<FestivalHolidayDto>>
-               .Success(new List<FestivalHolidayDto>())
-       );
-        _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", Status = Status.Pending, IsActive = true, IsDeleted = false }
-        );
-        await _dbContext.SaveChangesAsync();
+            .Setup(f => f.GetFestivalHolidayAsync())
+            .ReturnsAsync(
+                ServiceResult<List<FestivalHolidayDto>>
+                    .Success(new List<FestivalHolidayDto>())
+            );
+
+        // -------- Existing Leave Request --------
+        _dbContext.LeaveRequests.Add(new LeaveRequest
+        {
+            Id = 1,
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(1),
+            EndDate = DateTime.Now.AddDays(3),
+            Reason = "Medical",
+            Status = Status.Pending,
+            IsActive = true,
+            IsDeleted = false
+        });
+
+        // -------- REQUIRED Leave Master (ID = 2) --------
+        _dbContext.LeaveMasters.Add(new LeaveMaster
+        {
+            Id = 2,
+            LeaveName = "Sick Leave",
+            MaxPerYear = 10,
+            IsPaid = true,
+            IsActive = true,
+            IsDeleted = false
+        });
+
+        // -------- REQUIRED Leave Balance --------
         _dbContext.EmployeeLeaveBalances.Add(new EmployeeLeaveBalance
         {
             EmployeeId = 101,
             LeaveMasterId = 2,
             TotalLeaves = 10,
             UsedLeaves = 9,
-            RemainingLeaves = 1,
-            Year = DateTime.Now.Year
+            RemainingLeaves = 1 // 🔥 insufficient
         });
+
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
+
+        // -------- Update DTO (needs > 1 day) --------
         var dto = new LeaveRequestDto
         {
             Id = 1,
             EmployeeId = 101,
             LeaveTypeId = 2,
             StartDate = DateTime.Now.AddDays(2),
-            EndDate = DateTime.Now.AddDays(6),
+            EndDate = DateTime.Now.AddDays(6), // ~5 days
             Reason = "Medical Update",
             Status = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
+
+        // -------- ACT --------
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
-        Assert.That(result.Data, Is.Null);
+
+        // -------- ASSERT --------
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Insufficient leave balance"));
     }
+
 
     [Test]
     public async Task UpdateLeaveRequest_WhenLeaveMasterNotFound()
@@ -1211,8 +1254,8 @@ public class LeaveServiceTests
         Assert.That(result.Data[0].EmployeeId, Is.EqualTo(101));
         Assert.That(result.Data[0].LeaveMasterId, Is.EqualTo(1));
         Assert.That(result.Data[0].TotalLeaves, Is.EqualTo(10));
-        Assert.That(result.Data[0].UsedLeaves, Is.EqualTo(3));
-        Assert.That(result.Data[0].RemainingLeaves, Is.EqualTo(7));
+        Assert.That(result.Data[0].UsedLeaves, Is.EqualTo(2));
+        Assert.That(result.Data[0].RemainingLeaves, Is.EqualTo(8));
     }
 
     [Test]
