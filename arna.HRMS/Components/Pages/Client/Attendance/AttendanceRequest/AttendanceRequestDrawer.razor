@@ -36,7 +36,7 @@
                            Options="reason"
                            Value="@SelectedReason"
                            ValueChanged="@(v => OnValueChanged(v, "Reason"))"
-                           ValidationExpression="@(() => request.ReasonType)" />
+                           ValidationExpression="@(() => request.ReasonTypeId)" />
 
                 <!-- Dates -->
                 <div class="row mb-4">
@@ -62,7 +62,7 @@
                            Options="location"
                            Value="@SelectedLocation"
                            ValueChanged="@(v => OnValueChanged(v, "Location"))"
-                           ValidationExpression="@(() => request.Location)" />
+                           ValidationExpression="@(() => request.LocationId)" />
 
                 <!-- Clock In / Clock Out -->
                 <div class="row mb-4">
@@ -197,13 +197,13 @@
         {
             SelectedReason = value;
             if (Enum.TryParse<AttendanceReasonType>(value, out var r))
-                request.ReasonType = r;
+                request.ReasonTypeId = r;
         }
         else if (source == "Location")
         {
             SelectedLocation = value;
             if (Enum.TryParse<AttendanceLocation>(value, out var l))
-                request.Location = l;
+                request.LocationId = l;
         }
 
         StateHasChanged();

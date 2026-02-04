@@ -16,10 +16,10 @@ public class AttendanceRequestDto : BaseEntity
     public DateTime? ToDate { get; set; }
 
     [Required(ErrorMessage ="Reason is required.")]
-    public AttendanceReasonType? ReasonType { get; set; }
+    public AttendanceReasonType? ReasonTypeId { get; set; }
 
     [Required(ErrorMessage = "Select your Location")]
-    public AttendanceLocation? Location { get; set; }
+    public AttendanceLocation? LocationId { get; set; }
 
     [Required(ErrorMessage = "Select your Clock In time")]
     public DateTime? ClockIn { get; set; }
@@ -33,7 +33,7 @@ public class AttendanceRequestDto : BaseEntity
 
     [Required(ErrorMessage = "Message is required")]
     public string? Description { get; set; }
-    public Status Status { get; set; } = Status.Pending;
+    public Status StatusId { get; set; } = Status.Pending;
     public DateTime? ApprovedOn { get; set; }
     public int? ApprovedBy { get; set; }
     public string? ApprovedByName { get; set; }

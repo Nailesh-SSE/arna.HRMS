@@ -72,8 +72,8 @@ public class AttendanceRequestServiceTests
             EmployeeId = 1,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.ForgotToClockIn,
-            Location = AttendanceLocation.Office,
+            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+            LocationId = AttendanceLocation.Office,
             ClockIn = DateTime.Today.AddHours(9),
             ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
@@ -118,11 +118,11 @@ public class AttendanceRequestServiceTests
             EmployeeId = 1,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.LateClockIn,
-            Location = AttendanceLocation.Office,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
             IsActive = true,
             IsDeleted = false,
-            Status = Status.Pending
+            StatusId = Status.Pending
         });
 
         await _dbContext.SaveChangesAsync();
@@ -144,9 +144,9 @@ public class AttendanceRequestServiceTests
             EmployeeId = 2,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.WorkFromHome,
-            Location = AttendanceLocation.Remote,
-            Status = Status.Pending
+            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            LocationId = AttendanceLocation.Remote,
+            StatusId = Status.Pending
         };
 
         _dbContext.AttendanceRequest.Add(entity);
@@ -214,13 +214,13 @@ public class AttendanceRequestServiceTests
             EmployeeId = 1,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.ClientVisit,
-            Location = AttendanceLocation.ClientSite,
+            ReasonTypeId = AttendanceReasonType.ClientVisit,
+            LocationId = AttendanceLocation.ClientSite,
             ClockIn = DateTime.Today.AddHours(9),
             ClockOut = DateTime.Today.AddHours(17),
             TotalHours = TimeSpan.FromHours(8),
             BreakDuration = TimeSpan.FromHours(1),
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -239,7 +239,7 @@ public class AttendanceRequestServiceTests
 
         // ---------- ASSERT ----------
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(updated!.Status, Is.EqualTo(Status.Approved));
+        Assert.That(updated!.StatusId, Is.EqualTo(Status.Approved));
         Assert.That(updated.ApprovedBy, Is.EqualTo(99));
         Assert.That(updated.ApprovedOn, Is.Not.Null);
     }
@@ -287,13 +287,13 @@ public class AttendanceRequestServiceTests
             EmployeeId = 3,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.EarlyClockOut,
-            Location = AttendanceLocation.Office,
+            ReasonTypeId = AttendanceReasonType.EarlyClockOut,
+            LocationId = AttendanceLocation.Office,
             ClockIn = DateTime.Today.AddHours(9),
             ClockOut = DateTime.Today.AddHours(17),
             TotalHours = TimeSpan.FromHours(8),
             BreakDuration = TimeSpan.FromHours(1),
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -306,7 +306,7 @@ public class AttendanceRequestServiceTests
         var updated = await _dbContext.AttendanceRequest.FindAsync(request.Id);
 
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(updated!.Status, Is.EqualTo(Status.Rejected));
+        Assert.That(updated!.StatusId, Is.EqualTo(Status.Rejected));
     }
 
     [Test]
@@ -369,9 +369,9 @@ public class AttendanceRequestServiceTests
                 EmployeeId = 1,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.ForgotToClockIn,
-                Location = AttendanceLocation.Office,
-                Status = Status.Pending,
+                ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+                LocationId = AttendanceLocation.Office,
+                StatusId = Status.Pending,
                 IsActive = true,
                 IsDeleted = false
             },
@@ -380,9 +380,9 @@ public class AttendanceRequestServiceTests
                 EmployeeId = 2,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.LateClockIn,
-                Location = AttendanceLocation.Office,
-                Status = Status.Pending,
+                ReasonTypeId = AttendanceReasonType.LateClockIn,
+                LocationId = AttendanceLocation.Office,
+                StatusId = Status.Pending,
                 IsActive = true,
                 IsDeleted = false
             },
@@ -391,9 +391,9 @@ public class AttendanceRequestServiceTests
                 EmployeeId = 3,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.WorkFromHome,
-                Location = AttendanceLocation.Remote,
-                Status = Status.Approved,
+                ReasonTypeId = AttendanceReasonType.WorkFromHome,
+                LocationId = AttendanceLocation.Remote,
+                StatusId = Status.Approved,
                 IsActive = true,
                 IsDeleted = false
             }
@@ -405,7 +405,7 @@ public class AttendanceRequestServiceTests
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(2));
-        Assert.That(result.Data!.All(r => r.Status == Status.Pending), Is.True);
+        Assert.That(result.Data!.All(r => r.StatusId == Status.Pending), Is.True);
     }
 
     [Test]
@@ -469,54 +469,54 @@ public class AttendanceRequestServiceTests
                 EmployeeId = 1,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.ForgotToClockIn,
-                Location = AttendanceLocation.Office,
-                Status = Status.Pending
+                ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+                LocationId = AttendanceLocation.Office,
+                StatusId = Status.Pending
             },
             new AttendanceRequest
             {
                 EmployeeId = 2,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.LateClockIn,
-                Location = AttendanceLocation.Office,
-                Status = Status.Rejected
+                ReasonTypeId = AttendanceReasonType.LateClockIn,
+                LocationId = AttendanceLocation.Office,
+                StatusId = Status.Rejected
             },
             new AttendanceRequest
             {
                 EmployeeId = 2,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.WorkFromHome,
-                Location = AttendanceLocation.Remote,
-                Status = Status.Approved
+                ReasonTypeId = AttendanceReasonType.WorkFromHome,
+                LocationId = AttendanceLocation.Remote,
+                StatusId = Status.Approved
             },
             new AttendanceRequest
             {
                 EmployeeId = 2,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.EarlyClockOut,
-                Location = AttendanceLocation.Office,
-                Status = Status.Pending
+                ReasonTypeId = AttendanceReasonType.EarlyClockOut,
+                LocationId = AttendanceLocation.Office,
+                StatusId = Status.Pending
             },
             new AttendanceRequest
             {
                 EmployeeId = 3,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.ClientVisit,
-                Location = AttendanceLocation.ClientSite,
-                Status = Status.Pending
+                ReasonTypeId = AttendanceReasonType.ClientVisit,
+                LocationId = AttendanceLocation.ClientSite,
+                StatusId = Status.Pending
             },
             new AttendanceRequest
             {
                 EmployeeId = 2,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
-                ReasonType = AttendanceReasonType.ForgotToClockOut,
-                Location = AttendanceLocation.Office,
-                Status = Status.Cancelled
+                ReasonTypeId = AttendanceReasonType.ForgotToClockOut,
+                LocationId = AttendanceLocation.Office,
+                StatusId = Status.Cancelled
             }
         );
 
@@ -527,17 +527,17 @@ public class AttendanceRequestServiceTests
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(4));
         Assert.That(result.Data!.All(r => r.EmployeeId == 2), Is.True);
-        Assert.That(result.Data!.Count(r => r.Status == Status.Pending), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.Status == Status.Rejected), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.Status == Status.Approved), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.Status == Status.Cancelled), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.ReasonType == AttendanceReasonType.LateClockIn), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.ReasonType == AttendanceReasonType.WorkFromHome), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.ReasonType == AttendanceReasonType.ForgotToClockOut), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.ReasonType == AttendanceReasonType.EarlyClockOut), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.Location == AttendanceLocation.Office), Is.EqualTo(3));
-        Assert.That(result.Data!.Count(r => r.Location == AttendanceLocation.Remote), Is.EqualTo(1));
-        Assert.That(result.Data!.Count(r => r.Location == AttendanceLocation.ClientSite), Is.EqualTo(0));
+        Assert.That(result.Data!.Count(r => r.StatusId == Status.Pending), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.StatusId == Status.Rejected), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.StatusId == Status.Approved), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.StatusId == Status.Cancelled), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.ReasonTypeId == AttendanceReasonType.LateClockIn), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.ReasonTypeId == AttendanceReasonType.WorkFromHome), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.ReasonTypeId == AttendanceReasonType.ForgotToClockOut), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.ReasonTypeId == AttendanceReasonType.EarlyClockOut), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.LocationId == AttendanceLocation.Office), Is.EqualTo(3));
+        Assert.That(result.Data!.Count(r => r.LocationId == AttendanceLocation.Remote), Is.EqualTo(1));
+        Assert.That(result.Data!.Count(r => r.LocationId == AttendanceLocation.ClientSite), Is.EqualTo(0));
     }
 
     [Test]
@@ -567,13 +567,13 @@ public class AttendanceRequestServiceTests
             EmployeeId = 5,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.ForgotToClockIn,
-            Location = AttendanceLocation.Office,
+            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+            LocationId = AttendanceLocation.Office,
             ClockIn = DateTime.Today.AddHours(9),
             ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(2),
             Description = "Updated reason",
-            Status = Status.Pending,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -588,8 +588,8 @@ public class AttendanceRequestServiceTests
             EmployeeId = 5,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today.AddDays(1),
-            ReasonType = AttendanceReasonType.WorkFromHome,
-            Location = AttendanceLocation.Remote,
+            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            LocationId = AttendanceLocation.Remote,
             ClockIn = DateTime.Today.AddHours(10),
             ClockOut = DateTime.Today.AddHours(19),
             BreakDuration = TimeSpan.FromHours(1),
@@ -601,13 +601,13 @@ public class AttendanceRequestServiceTests
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(updated!.ToDate, Is.EqualTo(DateTime.Today.AddDays(1)));
-        Assert.That(updated.ReasonType, Is.EqualTo(AttendanceReasonType.WorkFromHome));
-        Assert.That(updated.Location, Is.EqualTo(AttendanceLocation.Remote));
+        Assert.That(updated.ReasonTypeId, Is.EqualTo(AttendanceReasonType.WorkFromHome));
+        Assert.That(updated.LocationId, Is.EqualTo(AttendanceLocation.Remote));
         Assert.That(updated.ClockIn, Is.EqualTo(DateTime.Today.AddHours(10)));
         Assert.That(updated.ClockOut, Is.EqualTo(DateTime.Today.AddHours(19)));
         Assert.That(updated.BreakDuration, Is.EqualTo(TimeSpan.FromHours(1)));
         Assert.That(updated.Description, Is.EqualTo("Updated reason"));
-        Assert.That(updated.Status, Is.EqualTo(Status.Pending));
+        Assert.That(updated.StatusId, Is.EqualTo(Status.Pending));
         Assert.That(updated.ApprovedBy, Is.Null);
         Assert.That(updated.ApprovedOn, Is.Null);
         Assert.That(updated.EmployeeId, Is.EqualTo(5));
@@ -643,9 +643,9 @@ public class AttendanceRequestServiceTests
             EmployeeId = 5,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.ForgotToClockIn,
-            Location = AttendanceLocation.Office,
-            Status = Status.Pending,
+            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+            LocationId = AttendanceLocation.Office,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -655,9 +655,9 @@ public class AttendanceRequestServiceTests
             EmployeeId = 5,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonType = AttendanceReasonType.LateClockIn,
-            Location = AttendanceLocation.Office,
-            Status = Status.Approved,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            StatusId = Status.Approved,
             IsActive = true,
             IsDeleted = false
         };
@@ -667,9 +667,9 @@ public class AttendanceRequestServiceTests
             EmployeeId = 5,
             FromDate = DateTime.Today.AddDays(4),
             ToDate = DateTime.Today.AddDays(5),
-            ReasonType = AttendanceReasonType.WorkFromHome,
-            Location = AttendanceLocation.Remote,
-            Status = Status.Pending,
+            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            LocationId = AttendanceLocation.Remote,
+            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
@@ -695,9 +695,9 @@ public class AttendanceRequestServiceTests
         var approvedAfter = await _dbContext.AttendanceRequest.FindAsync(approved.Id);
         var pendingAfter = await _dbContext.AttendanceRequest.FindAsync(pendingOther.Id);
 
-        Assert.That(cancelled!.Status, Is.EqualTo(Status.Cancelled));
-        Assert.That(approvedAfter!.Status, Is.EqualTo(Status.Approved));
-        Assert.That(pendingAfter!.Status, Is.EqualTo(Status.Pending));
+        Assert.That(cancelled!.StatusId, Is.EqualTo(Status.Cancelled));
+        Assert.That(approvedAfter!.StatusId, Is.EqualTo(Status.Approved));
+        Assert.That(pendingAfter!.StatusId, Is.EqualTo(Status.Pending));
         Assert.That(cancelled.EmployeeId, Is.EqualTo(5));
         Assert.That(pendingAfter.EmployeeId, Is.EqualTo(5));
         Assert.That(approvedAfter.EmployeeId, Is.EqualTo(5));

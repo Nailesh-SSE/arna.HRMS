@@ -10,7 +10,7 @@ public class AttendanceViewModel : CommonViewModel
     public DateTime Date { get; set; }
     public TimeSpan? ClockInTime { get; set; }
     public TimeSpan? ClockOutTime { get; set; }
-    public AttendanceStatuses Status { get; set; }
+    public AttendanceStatuses StatusId { get; set; }
 
     [Required(ErrorMessage = "Note is required")]
     public string Notes { get; set; }

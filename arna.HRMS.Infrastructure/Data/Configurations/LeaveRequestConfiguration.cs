@@ -20,9 +20,7 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
         builder.Property(lr => lr.ApprovalNotes)
             .HasMaxLength(500);
 
-        builder.Property(lr => lr.Status)
-            .HasConversion<string>()      
-            .HasMaxLength(20)
+        builder.Property(lr => lr.StatusId)
             .HasDefaultValue(Status.Pending)
             .IsRequired();
 

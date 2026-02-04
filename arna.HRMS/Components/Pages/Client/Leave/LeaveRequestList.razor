@@ -61,7 +61,7 @@
                         <!-- RIGHT (3) -->
                         <div class="col-12 col-md-3 text-md-end">
 
-                            @if (req.Status == Status.Pending)
+                            @if (req.StatusId == Status.Pending)
                             {
                                 <span class="badge bg-warning text-dark">
                                     Pending
@@ -75,15 +75,15 @@
                                 </AppButton>
 
                             }
-                            else if (req.Status == Status.Approved)
+                            else if (req.StatusId == Status.Approved)
                             {
                                 <span class="badge bg-success">Approved</span>
                             }
-                            else if (req.Status == Status.Rejected)
+                            else if (req.StatusId == Status.Rejected)
                             {
                                 <span class="badge bg-danger">Rejected</span>
                             }
-                            else if (req.Status == Status.Cancelled)
+                            else if (req.StatusId == Status.Cancelled)
                             {
                                 <span class="badge bg-secondary">Cancelled</span>
                             }

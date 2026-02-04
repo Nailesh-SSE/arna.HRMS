@@ -100,7 +100,7 @@ public class AttendanceServiceTests
                 EmployeeId = 1,
                 Employee = employee,
                 Date = new DateTime(2026, 1, 15),
-                Status = AttendanceStatus.Present,
+                StatusId = AttendanceStatus.Present,
                 IsActive = true,
                 IsDeleted = false,
                 Notes = "On time"
@@ -110,7 +110,7 @@ public class AttendanceServiceTests
                 EmployeeId = 1,
                 Employee = employee,
                 Date = new DateTime(2026, 1, 16),
-                Status = AttendanceStatus.Absent,
+                StatusId = AttendanceStatus.Absent,
                 IsActive = true,
                 IsDeleted = false,
                 Notes = "Absent"
@@ -134,7 +134,7 @@ public class AttendanceServiceTests
         {
             EmployeeId = 1,
             Date = DateTime.Today,
-            Status = AttendanceStatus.Present,
+            StatusId = AttendanceStatus.Present,
             Notes = "On time"
         };
 
@@ -198,7 +198,7 @@ public class AttendanceServiceTests
             Date = new DateTime(2026, 2, 2),
             ClockInTime = TimeSpan.FromHours(9),
             ClockOutTime = TimeSpan.FromHours(18),
-            Status = AttendanceStatus.Present,
+            StatusId = AttendanceStatus.Present,
             WorkingHours = TimeSpan.FromHours(9),
             Notes = "Present"
         };
@@ -271,7 +271,7 @@ public class AttendanceServiceTests
                 ClockIn = new DateTime(year, month, 5, 9, 0, 0),
                 ClockOut = new DateTime(year, month, 5, 18, 0, 0),
                 TotalHours = TimeSpan.FromHours(9),
-                Status = AttendanceStatus.Present,
+                StatusId = AttendanceStatus.Present,
                 Notes = "On time"
             },
             new Attendance
@@ -281,21 +281,21 @@ public class AttendanceServiceTests
                 ClockIn = new DateTime(year, month, 10, 9, 30, 0),
                 ClockOut = new DateTime(year, month, 10, 17, 30, 0),
                 TotalHours = TimeSpan.FromHours(8),
-                Status = AttendanceStatus.Present,
+                StatusId = AttendanceStatus.Present,
                 Notes = "Late arrival"
             },
             new Attendance
             {
                 EmployeeId = 999, // other employee
                 Date = new DateTime(year, month, 15),
-                Status = AttendanceStatus.Absent,
+                StatusId = AttendanceStatus.Absent,
                 Notes = "Not present"
             },
             new Attendance
             {
                 EmployeeId = 900, // other employee
                 Date = new DateTime(year, month, 15),
-                Status = AttendanceStatus.Late,
+                StatusId = AttendanceStatus.Late,
                 Notes = "Sick leave"
             }
         );

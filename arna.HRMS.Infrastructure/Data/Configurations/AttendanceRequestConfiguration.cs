@@ -17,14 +17,10 @@ public class AttendanceRequestConfiguration : IEntityTypeConfiguration<Attendanc
         builder.Property(ae => ae.ToDate)
        .IsRequired();
 
-        builder.Property(ae => ae.ReasonType)
-            .HasConversion<string>()
-            .HasMaxLength(60)
+        builder.Property(ae => ae.ReasonTypeId)
             .IsRequired();
 
-        builder.Property(ae => ae.Location)
-            .HasConversion<string>()
-            .HasMaxLength(50)
+        builder.Property(ae => ae.LocationId)
             .IsRequired();
 
         builder.Property(ae => ae.Description)
@@ -43,9 +39,7 @@ public class AttendanceRequestConfiguration : IEntityTypeConfiguration<Attendanc
         builder.Property(ae => ae.TotalHours)
             .HasColumnType("time");
 
-        builder.Property(ae => ae.Status)
-            .HasConversion<string>()
-            .HasMaxLength(20)
+        builder.Property(ae => ae.StatusId)
             .HasDefaultValue(Status.Pending)
             .IsRequired();
 
