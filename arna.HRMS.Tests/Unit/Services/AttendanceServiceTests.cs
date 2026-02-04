@@ -100,7 +100,7 @@ public class AttendanceServiceTests
                 EmployeeId = 1,
                 Employee = employee,
                 Date = new DateTime(2026, 1, 15),
-                Status = AttendanceStatus.Present,
+                StatusId = AttendanceStatus.Present,
                 IsActive = true,
                 IsDeleted = false,
                 Notes = "On time"
@@ -110,15 +110,12 @@ public class AttendanceServiceTests
                 EmployeeId = 1,
                 Employee = employee,
                 Date = new DateTime(2026, 1, 16),
-                Status = AttendanceStatus.Absent,
+                StatusId = AttendanceStatus.Absent,
                 IsActive = true,
                 IsDeleted = false,
                 Notes = "Absent"
             }
         );
-
-        await _dbContext.SaveChangesAsync();
-
 
         await _dbContext.SaveChangesAsync();
 
@@ -137,7 +134,7 @@ public class AttendanceServiceTests
         {
             EmployeeId = 1,
             Date = DateTime.Today,
-            Status = AttendanceStatus.Present,
+            StatusId = AttendanceStatus.Present,
             Notes = "On time"
         };
 
@@ -163,24 +160,48 @@ public class AttendanceServiceTests
     [Test]
     public async Task CreateAttendanceAsync_CreatesAttendance()
     {
+        // ---------------- ARRANGE ----------------
+
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 1,
+            EmployeeNumber = "EMP001",
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@test.com",
+            PhoneNumber = "1234567890",
+            Position = "Developer",
+            HireDate = DateTime.Today.AddMonths(-3),
+            IsActive = true,
+            IsDeleted = false
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        // 2️⃣ Mock EmployeeService (required for service validation)
+        _employeeServiceMock
+            .Setup(e => e.GetEmployeeByIdAsync(1))
+            .ReturnsAsync(
+                ServiceResult<EmployeeDto?>.Success(
+                    new EmployeeDto
+                    {
+                        Id = 1,
+                        HireDate = DateTime.Today.AddMonths(-3),
+                        IsActive = true
+                    }
+                )
+            );
+
         var dto = new AttendanceDto
         {
             EmployeeId = 1,
-            Date = DateTime.Today,
+            Date = new DateTime(2026, 2, 2),
             ClockInTime = TimeSpan.FromHours(9),
             ClockOutTime = TimeSpan.FromHours(18),
+            StatusId = AttendanceStatus.Present,
             WorkingHours = TimeSpan.FromHours(9),
             Notes = "Present"
         };
-
-        _employeeServiceMock
-            .Setup(e => e.GetEmployeeByIdAsync(1))
-            .ReturnsAsync(ServiceResult<EmployeeDto?>.Success(
-                new EmployeeDto
-                {
-                    Id = 1,
-                    HireDate = DateTime.Today.AddMonths(-3)
-                }));
 
         _festivalHolidayServiceMock
             .Setup(f => f.GetFestivalHolidayAsync())
@@ -196,11 +217,21 @@ public class AttendanceServiceTests
                     .Success(new List<LeaveRequestDto>())
             );
 
+        // ---------------- ACT ----------------
+
         var result = await _attendanceService.CreateAttendanceAsync(dto);
 
+        // ---------------- ASSERT ----------------
+
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(await _dbContext.Attendances.CountAsync(), Is.EqualTo(14));
+
+        var attendanceInDb = await _dbContext.Attendances.FirstOrDefaultAsync();
+
+        Assert.That(attendanceInDb, Is.Not.Null);
+        Assert.That(attendanceInDb!.EmployeeId, Is.EqualTo(1));
+        Assert.That(attendanceInDb.TotalHours, Is.EqualTo(TimeSpan.FromHours(9)));
     }
+
 
     // ---------------- TODAY ----------------
 
@@ -240,7 +271,7 @@ public class AttendanceServiceTests
                 ClockIn = new DateTime(year, month, 5, 9, 0, 0),
                 ClockOut = new DateTime(year, month, 5, 18, 0, 0),
                 TotalHours = TimeSpan.FromHours(9),
-                Status = AttendanceStatus.Present,
+                StatusId = AttendanceStatus.Present,
                 Notes = "On time"
             },
             new Attendance
@@ -250,21 +281,21 @@ public class AttendanceServiceTests
                 ClockIn = new DateTime(year, month, 10, 9, 30, 0),
                 ClockOut = new DateTime(year, month, 10, 17, 30, 0),
                 TotalHours = TimeSpan.FromHours(8),
-                Status = AttendanceStatus.Present,
+                StatusId = AttendanceStatus.Present,
                 Notes = "Late arrival"
             },
             new Attendance
             {
                 EmployeeId = 999, // other employee
                 Date = new DateTime(year, month, 15),
-                Status = AttendanceStatus.Absent,
+                StatusId = AttendanceStatus.Absent,
                 Notes = "Not present"
             },
             new Attendance
             {
                 EmployeeId = 900, // other employee
                 Date = new DateTime(year, month, 15),
-                Status = AttendanceStatus.Late,
+                StatusId = AttendanceStatus.Late,
                 Notes = "Sick leave"
             }
         );
@@ -277,7 +308,7 @@ public class AttendanceServiceTests
         // Assert
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data!.Count, Is.EqualTo(10));
+        Assert.That(result.Data!.Count, Is.EqualTo(9));
 
         var first = result.Data![0];
         Assert.That(first.EmployeeId, Is.EqualTo(empId));

@@ -22,7 +22,7 @@ public class AttendanceRequestRepository
     public async Task<List<AttendanceRequest>> GetPandingAttendanceRequestes()
     {
         return await _baseRepository.Query()
-            .Where(ar => ar.Status == Status.Pending && ar.IsActive && !ar.IsDeleted)
+            .Where(ar => ar.StatusId == Status.Pending && ar.IsActive && !ar.IsDeleted)
             .Include(d => d.Employee)
             .OrderByDescending(d => d.Id)
             .ToListAsync();
@@ -64,10 +64,10 @@ public class AttendanceRequestRepository
         if (Request == null)
             return false;
 
-        if (Request.Status != Status.Pending)
+        if (Request.StatusId != Status.Pending)
             return false;
 
-        Request.Status = status;
+        Request.StatusId = status;
         Request.ApprovedBy = approvedBy;
         Request.ApprovedOn = DateTime.Now;
         Request.UpdatedOn = DateTime.Now;
@@ -82,9 +82,9 @@ public class AttendanceRequestRepository
             .FirstOrDefaultAsync(ar => ar.Id == id && ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted);
         if (attendanceRequest == null)
             return false;
-        if (attendanceRequest.Status != Status.Pending)
+        if (attendanceRequest.StatusId != Status.Pending)
             return false;
-        attendanceRequest.Status = Status.Cancelled;
+        attendanceRequest.StatusId = Status.Cancelled;
         attendanceRequest.UpdatedOn = DateTime.Now;
         await _baseRepository.UpdateAsync(attendanceRequest);
 

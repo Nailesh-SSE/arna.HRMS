@@ -10,7 +10,7 @@ public class Attendance : BaseEntity
     public DateTime? ClockIn { get; set; }
     public DateTime? ClockOut { get; set; }
     public TimeSpan? TotalHours { get; set; }
-    public AttendanceStatus Status { get; set; }
+    public AttendanceStatus StatusId { get; set; }
     public string Notes { get; set; }
     public Double? Latitude { get; set; }
     public Double? Longitude { get; set; }

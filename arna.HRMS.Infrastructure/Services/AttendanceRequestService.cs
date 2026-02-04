@@ -203,7 +203,7 @@ public class AttendanceRequestService : IAttendanceRequestService
             ClockInTime = clockIn,
             ClockOutTime = clockOut,
             WorkingHours = totalHours,
-            Status = AttendanceStatus.Present,
+            StatusId = AttendanceStatus.Present,
             Notes = req.Description,
             Latitude = latitude,
             Longitude = longitude

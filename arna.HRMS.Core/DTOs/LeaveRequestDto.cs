@@ -18,7 +18,7 @@ public class LeaveRequestDto : BaseEntity
 
     public string Reason { get; set; }
 
-    public Status Status { get; set; } = Status.Pending;
+    public Status StatusId { get; set; } = Status.Pending;
 
     public int? ApprovedBy { get; set; }
     public string? ApprovedByName { get; set; }

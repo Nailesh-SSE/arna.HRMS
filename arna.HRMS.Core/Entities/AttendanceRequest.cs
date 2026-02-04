@@ -8,14 +8,14 @@ public class AttendanceRequest : BaseEntity
     public int EmployeeId { get; set; }
     public DateTime FromDate { get; set; }
     public DateTime ToDate { get; set; }
-    public AttendanceReasonType ReasonType { get; set; } 
-    public AttendanceLocation Location { get; set; }
+    public AttendanceReasonType ReasonTypeId { get; set; } 
+    public AttendanceLocation LocationId { get; set; }
     public string? Description { get; set; }
     public DateTime? ClockIn { get; set; }
     public DateTime? ClockOut { get; set; }
     public TimeSpan? BreakDuration { get; set; }
     public TimeSpan TotalHours { get; set; }
-    public Status? Status { get; set; }
+    public Status? StatusId { get; set; }
     public DateTime? ApprovedOn { get; set; }
     public int? ApprovedBy { get; set; }
     public Employee Employee { get; set; }

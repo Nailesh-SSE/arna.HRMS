@@ -9,7 +9,7 @@ public class AttendanceDto : BaseEntity
     public DateTime Date { get; set; }
     public TimeSpan? ClockInTime { get; set; }
     public TimeSpan? ClockOutTime { get; set; }
-    public AttendanceStatus Status { get; set; }
+    public AttendanceStatus StatusId { get; set; }
     public string Notes { get; set; }
     public Double? Latitude { get; set; }
     public Double? Longitude { get; set; }

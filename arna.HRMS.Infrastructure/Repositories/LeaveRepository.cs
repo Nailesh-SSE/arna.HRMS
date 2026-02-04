@@ -76,13 +76,20 @@ public class LeaveRepository
             .ToListAsync();
     }
 
-    public async Task<List<LeaveRequest>> GetPendingLeaveRequest()
+    public async Task<List<LeaveRequest>> GetLeaveRequestsByStatusAsync(Status status)
     {
-        return await _leaveRequestRepo.Query()
-            .Include(lr => lr.Employee)
-            .Where(x => x.Status == Status.Pending && x.IsActive && !x.IsDeleted)
-            .OrderByDescending(o => o.Id)
-            .ToListAsync();
+        if (status == null)
+        {
+            return await GetLeaveRequestAsync();
+        }
+        else
+        {
+            return await _leaveRequestRepo.Query()
+                .Include(lr => lr.Employee)
+                .Where(x => x.StatusId == status && x.IsActive && !x.IsDeleted)
+                .OrderByDescending(o => o.Id)
+                .ToListAsync();        }
+            
     }
 
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(int id)
@@ -98,7 +105,7 @@ public class LeaveRepository
         return await _leaveRequestRepo.Query()
             .Include(e => e.Employee)
             .Include(e => e.LeaveType)
-            .Where(e => e.EmployeeId == employeeId && e.IsActive && !e.IsDeleted && e.Status != Status.Cancelled)
+            .Where(e => e.EmployeeId == employeeId && e.IsActive && !e.IsDeleted && e.StatusId != Status.Cancelled)
             .OrderByDescending(o => o.Id)
             .ToListAsync();
     }
@@ -117,7 +124,7 @@ public class LeaveRepository
     {
         var LeaveRequest = await _leaveRequestRepo.GetByIdAsync(id);
 
-        if (LeaveRequest == null || LeaveRequest.Status == Status.Pending)
+        if (LeaveRequest == null || LeaveRequest.StatusId == Status.Pending)
             return false;
 
         LeaveRequest.IsActive = false;
@@ -133,7 +140,7 @@ public class LeaveRepository
             .Include(lr => lr.LeaveType)
             .Where(lr =>
                 lr.EmployeeId == employeeId &&
-                lr.Status == Status.Approved &&
+                lr.StatusId == Status.Approved &&
                 lr.IsActive &&
                 !lr.IsDeleted)
             .GroupBy(lr => lr.LeaveType.LeaveName)
@@ -156,10 +163,10 @@ public class LeaveRepository
         if (leaveRequest == null)
             return false;
 
-        if (leaveRequest.Status != Status.Pending)
+        if (leaveRequest.StatusId != Status.Pending)
             return false;
 
-        leaveRequest.Status = status;
+        leaveRequest.StatusId = status;
         leaveRequest.ApprovedBy = approvedBy;
         leaveRequest.ApprovedDate = DateTime.Now;
         leaveRequest.UpdatedOn = DateTime.Now;
@@ -174,9 +181,9 @@ public class LeaveRepository
             .FirstOrDefaultAsync(ar => ar.Id == id && ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted);
         if (attendanceRequest == null)
             return false;
-        if (attendanceRequest.Status != Status.Pending)
+        if (attendanceRequest.StatusId != Status.Pending)
             return false;
-        attendanceRequest.Status = Status.Cancelled;
+        attendanceRequest.StatusId = Status.Cancelled;
         attendanceRequest.UpdatedOn = DateTime.Now;
         await _leaveRequestRepo.UpdateAsync(attendanceRequest);
 
@@ -211,7 +218,7 @@ public class LeaveRepository
     {
         var leaveBalance = await _leaveBalanceRepo.GetByIdAsync(id);
 
-        if (leaveBalance == null)
+        if (leaveBalance == null || (leaveBalance.IsActive==false && leaveBalance.IsDeleted==true))
             return false;
 
         leaveBalance.IsActive = false;

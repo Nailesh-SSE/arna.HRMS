@@ -16,10 +16,10 @@ public class AttendanceRequestViewModel : CommonViewModel
     public DateTime? ToDate { get; set; }
 
     [Required(ErrorMessage = "Reason is required.")]
-    public AttendanceReasonType? ReasonType { get; set; }
+    public AttendanceReasonType? ReasonTypeId { get; set; }
 
     [Required(ErrorMessage = "Select your Location")]
-    public AttendanceLocation? Location { get; set; }
+    public AttendanceLocation? LocationId { get; set; }
 
     [Required(ErrorMessage = "Select your Clock In time")]
     public DateTime? ClockIn { get; set; }

@@ -106,7 +106,7 @@ public class AttendanceRepository
             var breakSeconds = Math.Max(0, totalSeconds - workingSeconds);
 
             var statuses = dailyRecords?
-                .Select(x => x.Status)
+                .Select(x => x.StatusId)
                 .Distinct()
                 .ToList() ?? new List<AttendanceStatus>();
 
@@ -171,7 +171,7 @@ public class AttendanceRepository
     public async Task<DateTime?> GetLastAttendanceDateAsync(int employeeId)
     {
         return await _baseRepository.Query()
-            .Where(x => x.EmployeeId == employeeId && x.Status == AttendanceStatus.Present)
+            .Where(x => x.EmployeeId == employeeId && x.StatusId == AttendanceStatus.Present)
             .OrderByDescending(x => x.Date)
             .Select(x => (DateTime?)x.Date.Date)
             .FirstOrDefaultAsync();

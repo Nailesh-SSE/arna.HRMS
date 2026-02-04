@@ -93,7 +93,7 @@ public class LeaveController : ControllerBase
         if (id != dto.Id)
             return BadRequest("Invalid Id");
 
-        if (dto.Status != Status.Pending)
+        if (dto.StatusId != Status.Pending)
             return BadRequest("Only pending leave requests can be updated");
 
         var updated = await _leaveService.UpdateLeaveRequestAsync(dto);
@@ -107,11 +107,11 @@ public class LeaveController : ControllerBase
         return deleted.Data ? Ok() : NotFound("Leave request not found");
     }
 
-    [HttpGet("requests/pending")]
+    [HttpGet("requests/{status}")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> GetPendingLeaveRequests()
+    public async Task<IActionResult> GetLeaveRequestsByStatus(Status status)
     {
-        var result = await _leaveService.GetPendingLeaveRequest();
+        var result = await _leaveService.GetByStatusAsync(status);
         return Ok(result);
     }
 
