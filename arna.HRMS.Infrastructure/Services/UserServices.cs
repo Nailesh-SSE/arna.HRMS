@@ -73,6 +73,15 @@ public class UserServices : IUserServices
         if (dto.Id <= 0)
             return ServiceResult<UserDto>.Fail("Invalid User ID");
 
+        if (string.IsNullOrWhiteSpace(dto.Username) || dto.Username == null)
+            return ServiceResult<UserDto>.Fail("Username is required");
+
+        if (string.IsNullOrWhiteSpace(dto.Email) || dto.Email == null)
+            return ServiceResult<UserDto>.Fail("Email is required");
+
+        if (await _userRepository.UserExistsAsync(dto.Email))
+            return ServiceResult<UserDto>.Fail("Email already exists");
+
         var user = _mapper.Map<User>(dto);
         var updated = await _userRepository.UpdateUserAsync(user);
         var resultDto = _mapper.Map<UserDto>(updated);
@@ -82,7 +91,8 @@ public class UserServices : IUserServices
 
     public async Task<ServiceResult<bool>> DeleteUserAsync(int id)
     {
-        if (id <= 0)
+        var userResult = await GetUserByIdAsync(id);
+        if (!userResult.IsSuccess)
             return ServiceResult<bool>.Fail("Invalid User ID");
 
         var deleted = await _userRepository.DeleteUserAsync(id);
@@ -94,7 +104,8 @@ public class UserServices : IUserServices
 
     public async Task<ServiceResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
     {
-        if (id <= 0)
+        var userResult = await GetUserByIdAsync(id);
+        if (!userResult.IsSuccess)
             return ServiceResult<bool>.Fail("Invalid User ID");
 
         if (string.IsNullOrWhiteSpace(newPassword))

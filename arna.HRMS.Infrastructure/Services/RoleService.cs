@@ -78,8 +78,10 @@ public class RoleService : IRoleService
         if (dto == null)
             return ServiceResult<RoleDto>.Fail("Invalid request");
 
-        if (dto.Id <= 0)
-            return ServiceResult<RoleDto>.Fail("Invalid Role ID");
+        var Data = await GetRoleByIdAsync(dto.Id);
+        if (!Data.IsSuccess)
+            return ServiceResult<RoleDto>.Fail("Failed to update role");
+
 
         if (string.IsNullOrWhiteSpace(dto.Name))
             return ServiceResult<RoleDto>.Fail("Role name is required");
@@ -87,8 +89,8 @@ public class RoleService : IRoleService
         var role = _mapper.Map<Role>(dto);
 
         var result = await _roleRepository.UpdateRoleAsync(role);
-        if (result == null)
-            return ServiceResult<RoleDto>.Fail("Failed to update role");
+            if (result == null)
+                return ServiceResult<RoleDto>.Fail("Failed to update role");
 
         var updatedRole = _mapper.Map<RoleDto>(result);
 

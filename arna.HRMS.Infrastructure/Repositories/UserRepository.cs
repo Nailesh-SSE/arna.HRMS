@@ -28,7 +28,7 @@ public class UserRepository
         return await _baseRepository.Query()
             .Include(x => x.Employee)
             .Include(x => x.Role)
-            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
+            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
     }
 
     public Task<User> CreateUserAsync(User user)
