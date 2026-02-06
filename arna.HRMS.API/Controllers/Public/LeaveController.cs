@@ -35,15 +35,18 @@ public class LeaveController : ControllerBase
         return leave.Data == null ? NotFound("Leave Master not found") : Ok(leave);
     }
 
+    [HttpGet("masters/by-name")]
+    public async Task<IActionResult> GetLeaveMastersByName([FromQuery] string leaveName)
+    {
+        var leave = await _leaveService.LeaveExistsAsync(leaveName);
+        return leave.Data == null ? NotFound("Leave Master not found") : Ok(leave);
+    }
+
     [HttpPost("masters")]
     public async Task<IActionResult> CreateLeaveMaster([FromBody] LeaveMasterDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
-        var result = await _leaveService.LeaveExistsAsync(dto.LeaveName);
-        if (result.Data)
-            return Conflict("Leave already exists");
 
         var created = await _leaveService.CreateLeaveMasterAsync(dto);
         return Ok(created);
@@ -129,8 +132,16 @@ public class LeaveController : ControllerBase
         if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status");
 
-        int approvedBy =
-            int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        var employeeIdClaim = User.Claims
+            .FirstOrDefault(c => c.Type == "EmployeeId")
+            ?.Value;
+
+        if (string.IsNullOrWhiteSpace(employeeIdClaim))
+            return Unauthorized("EmployeeId claim missing");
+
+        if (!int.TryParse(employeeIdClaim, out var approvedBy))
+            return Unauthorized("Invalid EmployeeId claim");
+
 
         var result = await _leaveService.UpdateStatusLeaveAsync(leaveRequestId, status, approvedBy);
 

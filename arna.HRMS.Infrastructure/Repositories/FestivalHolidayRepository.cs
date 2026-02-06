@@ -20,7 +20,7 @@ public class FestivalHolidayRepository
             .OrderByDescending(x => x.Id).ToListAsync();
     }
 
-    public async Task<FestivalHoliday?> GetByIdAsync(int id)
+    public async Task<FestivalHoliday?> GetFestivalHolidayByIdAsync(int id)
     {
         return await _baseRepository.Query()
             .FirstOrDefaultAsync(h => h.Id == id && h.IsActive && !h.IsDeleted); 
@@ -44,7 +44,7 @@ public class FestivalHolidayRepository
 
     public async Task<bool> DeleteFestivalHolidayAsync(int id)
     {
-        var festivalHoliday = await GetByIdAsync(id);
+        var festivalHoliday = await GetFestivalHolidayByIdAsync(id);
 
         if (festivalHoliday == null)
             return false;
@@ -55,5 +55,11 @@ public class FestivalHolidayRepository
 
         await _baseRepository.UpdateAsync(festivalHoliday);
         return true;
+    }
+
+    public async Task<FestivalHoliday?> GetByNameAsync(string name)
+    {
+        return await _baseRepository.Query()
+            .FirstOrDefaultAsync(h => h.FestivalName.ToLower().Trim() == name.ToLower().Trim() && h.IsActive && !h.IsDeleted);
     }
 }

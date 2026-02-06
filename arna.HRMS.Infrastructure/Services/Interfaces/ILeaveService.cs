@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Core.Common.ServiceResult;
 using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 
 namespace arna.HRMS.Infrastructure.Services.Interfaces;
@@ -12,7 +13,7 @@ public interface ILeaveService
     Task<ServiceResult<LeaveMasterDto>> GetLeaveMasterByIdAsync(int id);
     Task<ServiceResult<bool>> DeleteLeaveMasterAsync(int id);
     Task<ServiceResult<LeaveMasterDto>> UpdateLeaveMasterAsync(LeaveMasterDto leaveMasterDto);
-    Task<ServiceResult<bool>> LeaveExistsAsync(string Name);
+    Task<ServiceResult<List<LeaveMaster>>> LeaveExistsAsync(string Name);
 
     //Leave Request Methods
     Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestAsync();

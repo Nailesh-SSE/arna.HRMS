@@ -209,7 +209,6 @@ public class RoleServiceTest
         Assert.That(role.Description, Is.EqualTo("Old Description"));
 
         _dbContext.ChangeTracker.Clear();
-
         var updatedRoleDto = new RoleDto
         {
             Id = role.Id,

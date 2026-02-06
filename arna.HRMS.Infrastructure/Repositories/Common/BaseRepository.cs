@@ -35,10 +35,22 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class, IBaseEntity
 
     public async Task<T> UpdateAsync(T entity)
     {
-        _dbSet.Update(entity);
+        var trackedEntity = _context.ChangeTracker
+            .Entries<T>()
+            .FirstOrDefault(e => e.Entity.Id == entity.Id);
+
+        if (trackedEntity != null)
+        {
+            trackedEntity.State = EntityState.Detached;
+        }
+
+        _dbSet.Attach(entity);
+        _context.Entry(entity).State = EntityState.Modified;
+
         await _context.SaveChangesAsync();
         return entity;
     }
+
 
     public async Task<bool> DeleteAsync(int id)
     {

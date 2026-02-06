@@ -5,6 +5,7 @@ using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using AutoMapper;
+using System.Collections.Generic;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -32,12 +33,41 @@ public class LeaveService : ILeaveService
     }
     public async Task<ServiceResult<LeaveMasterDto>> GetLeaveMasterByIdAsync(int id)
     {
+        if (id <= 0)
+            return ServiceResult<LeaveMasterDto>.Fail("Invalid ID");
+
         var leave = await _leaveRepository.GetLeaveMasterByIdAsync(id);
+        if (leave == null)
+            return ServiceResult<LeaveMasterDto>.Success(null, "leave not found");
+
         var data = leave == null ? new LeaveMasterDto() : _mapper.Map<LeaveMasterDto>(leave);
         return ServiceResult<LeaveMasterDto>.Success(data);
     }
+
     public async Task<ServiceResult<LeaveMasterDto>> CreateLeaveMasterAsync(LeaveMasterDto LeaveMasterDto)
     {
+        if (LeaveMasterDto == null)
+            return ServiceResult<LeaveMasterDto>.Fail("Data not Found");
+        
+        if (string.IsNullOrWhiteSpace(LeaveMasterDto.LeaveName))
+            return ServiceResult<LeaveMasterDto>.Fail("Leave name is required");
+
+        if (LeaveMasterDto.MaxPerYear <= 0)
+            return ServiceResult<LeaveMasterDto>.Fail("number of days is required");
+
+        var existingLeaves = await _leaveRepository.LeaveExistsAsync(LeaveMasterDto.LeaveName);
+        var duplicate = existingLeaves.Any(x =>
+            x != null &&
+            x.IsPaid == LeaveMasterDto.IsPaid
+        );
+
+        if (duplicate)
+        {
+            return ServiceResult<LeaveMasterDto>.Fail(
+                $"Leave '{LeaveMasterDto.LeaveName}' with IsPaid = {LeaveMasterDto.IsPaid} already exists"
+            );
+        }
+
         var leave = _mapper.Map<LeaveMaster>(LeaveMasterDto);
         var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leave);
         var Data = _mapper.Map<LeaveMasterDto>(createdLeaveMaster);
@@ -45,8 +75,16 @@ public class LeaveService : ILeaveService
     }
     public async Task<ServiceResult<bool>> DeleteLeaveMasterAsync(int id)
     {
+        var exist = await GetLeaveMasterByIdAsync(id);
+        if(exist == null)
+        {
+            return ServiceResult<bool>.Fail("Leave Master not found");
+        }
+
         var Data = await _leaveRepository.DeleteLeaveMasterAsync(id);
-        return ServiceResult<bool>.Success(Data);
+        return Data
+            ?ServiceResult<bool>.Success(Data)
+            :ServiceResult<bool>.Fail("Leave Master not found"); ;
     }
 
     public async Task<ServiceResult<LeaveMasterDto>> UpdateLeaveMasterAsync(LeaveMasterDto LeaveMasterDto)
@@ -64,10 +102,10 @@ public class LeaveService : ILeaveService
         var Data = _mapper.Map<LeaveMasterDto>(updatedLeaveMaster);
         return ServiceResult<LeaveMasterDto>.Success(Data);
     }
-    public async Task<ServiceResult<bool>> LeaveExistsAsync(string Name)
+    public async Task<ServiceResult<List<LeaveMaster>>> LeaveExistsAsync(string Name)
     {
         var Data = await _leaveRepository.LeaveExistsAsync(Name);
-        return ServiceResult<bool>.Success(Data);
+        return ServiceResult<List<LeaveMaster>>.Success(Data);
     }
 
     //Leave Request Methods
@@ -193,13 +231,13 @@ public class LeaveService : ILeaveService
 
     public async Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status, int approvedBy)
     {
-        var updated = await _leaveRepository
-            .UpdateLeaveStatusAsync(leaveRequestId, status, approvedBy);
-        if(leaveRequestId <= 0)
+        if (leaveRequestId <= 0)
         {
             return ServiceResult<bool>.Fail("Invalid Leave Request Id");
         }
 
+        var updated = await _leaveRepository.UpdateLeaveStatusAsync(leaveRequestId, status, approvedBy);
+        
         if (status == Status.Approved)
         {
             if (!updated || status != Status.Approved)
@@ -345,6 +383,10 @@ public class LeaveService : ILeaveService
         if(LeaveBalanceDto == null || LeaveBalanceDto.Id <=0 || LeaveBalanceDto.EmployeeId<=0)
         {
             return ServiceResult<EmployeeLeaveBalanceDto>.Fail("Invalid Leave Balance Data");
+        }
+        if(LeaveBalanceDto.TotalLeaves < 0 || LeaveBalanceDto.UsedLeaves < 0 || LeaveBalanceDto.RemainingLeaves < 0)
+        {
+            return ServiceResult<EmployeeLeaveBalanceDto>.Fail("Leave counts cannot be negative");
         }
         var leave = _mapper.Map<EmployeeLeaveBalance>(LeaveBalanceDto);
         var updatedLeaveBalance = await _leaveRepository.UpdateLeaveBalanceAsync(leave);

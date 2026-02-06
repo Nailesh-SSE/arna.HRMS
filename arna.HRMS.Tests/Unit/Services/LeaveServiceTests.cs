@@ -13,9 +13,9 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
 
+
 namespace arna.HRMS.Tests.Unit.Services;
 
-[TestFixture]
 public class LeaveServiceTests
 {
     private ApplicationDbContext _dbContext = null!;
@@ -70,7 +70,15 @@ public class LeaveServiceTests
     }
 
     [Test]
-    public async Task GetAllLeaveMaster()
+    public async Task GetLeaveMasterAsync_WhenDbEmpty()
+    {
+        var result = await _leaveService.GetLeaveMasterAsync();
+        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.Data!.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task GetLeaveMasterAsync_whenFounc()
     {
         _dbContext.AddRange(
             new LeaveMaster { LeaveName = "Sick Leave", Description = "Sick Leave Description", MaxPerYear = 10, IsPaid = true },
@@ -91,6 +99,7 @@ public class LeaveServiceTests
         Assert.That(result.Data[3].MaxPerYear, Is.EqualTo(15));
         Assert.That(result.Data[4].Description, Is.EqualTo("Casual Leave Description"));
         Assert.That(result.Data[2].Id, Is.EqualTo(4));
+        Assert.That(result.Data[1].IsPaid, Is.True);
         Assert.That(result.IsSuccess, Is.True);
     }
 
@@ -120,11 +129,97 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         var result = await _leaveService.GetLeaveMasterByIdAsync(5);
-        Assert.That(result.Data!.LeaveName, Is.Null);
-        Assert.That(result.Data!.Description, Is.Null);
-        Assert.That(result.Data!.MaxPerYear, Is.EqualTo(0));
-        Assert.That(result.Data!.IsPaid, Is.EqualTo(true));
         Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("leave not found"));
+    }
+
+    [Test]
+    public async Task GetLeaveMasterById_whenDeleted()
+    {
+        _dbContext.AddRange(
+            new LeaveMaster { Id = 1, LeaveName = "Sick Leave", Description = "Sick Leave Description", MaxPerYear = 10, IsPaid = true },
+            new LeaveMaster { Id = 2, LeaveName = "Casual Leave", Description = "Casual Leave Description", MaxPerYear = 8, IsPaid = true }
+        );
+        await _dbContext.SaveChangesAsync();
+
+        await _leaveService.DeleteLeaveMasterAsync(2);
+
+        var result = await _leaveService.GetLeaveMasterByIdAsync(2);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("leave not found"));
+    }
+
+    [Test]
+    public async Task GetLeaveMasterById_WnenNullorNegative()
+    {
+        var result = await _leaveService.GetLeaveMasterByIdAsync(-1);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid ID"));
+
+        var result2 = await _leaveService.GetLeaveMasterByIdAsync(0);
+        Assert.That(result2.IsSuccess, Is.False);
+        Assert.That(result2.Message, Is.EqualTo("Invalid ID"));
+    }
+
+    [Test]
+    public async Task CreateLeaveMaster_WhenLeaveNameAlreadyExists()
+    {
+        _dbContext.AddRange(
+            new LeaveMaster { Id = 1, LeaveName = "Sick Leave", Description = "Sick Leave Description", MaxPerYear = 10, IsPaid = true },
+            new LeaveMaster { Id = 2, LeaveName = "Casual Leave", Description = "Casual Leave Description", MaxPerYear = 8, IsPaid = true }
+        );
+        await _dbContext.SaveChangesAsync();
+        var newLeaveMaster = new LeaveMasterDto
+        {
+            LeaveName = "sick leave",
+            Description = "Duplicate Sick Leave Description",
+            MaxPerYear = 12,
+            IsPaid = true
+        };
+
+        var result = await _leaveService.CreateLeaveMasterAsync(newLeaveMaster);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo($"Leave '{newLeaveMaster.LeaveName}' with IsPaid = {newLeaveMaster.IsPaid} already exists"));
+    }
+
+    [Test]
+    public async Task CreateLeaveMaster_WhenNameIsMissing()
+    {
+        var newLeaveMaster = new LeaveMasterDto
+        {
+            Description = "Duplicate Sick Leave Description",
+            MaxPerYear = 12,
+            IsPaid = true
+        };
+
+        var result = await _leaveService.CreateLeaveMasterAsync(newLeaveMaster);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Leave name is required"));
+    }
+
+    [Test]
+    public async Task CreateLeaveMaster_WhenMessingMaxPerYear()
+    {
+        var newLeaveMaster = new LeaveMasterDto
+        {
+            LeaveName = "leaveTest",
+            Description = "Sick Leave Description",
+            IsPaid = true
+        };
+
+        var result = await _leaveService.CreateLeaveMasterAsync(newLeaveMaster);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("number of days is required"));
+    }
+
+    [Test]
+    public async Task CreateLeaveMaster_WhenNullInput()
+    {
+        var result = await _leaveService.CreateLeaveMasterAsync(null!);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Data not Found"));
     }
 
     [Test]
@@ -146,24 +241,6 @@ public class LeaveServiceTests
         Assert.That(result.IsSuccess, Is.True);
     }
 
-
-
-    [Test]
-    public async Task CreateLeaveMaster_WhenNameIsNullOrWhitespace()
-    {
-        var newLeaveMaster = new LeaveMasterDto
-        {
-            Description = "No Name Leave Description",
-            MaxPerYear = 5
-        };
-
-        Assert.ThrowsAsync<DbUpdateException>(async () =>
-        {
-            await _leaveService.CreateLeaveMasterAsync(newLeaveMaster);
-        });
-
-    }
-
     [Test]
     public async Task LeaveExistsAsync_WhenExists()
     {
@@ -175,7 +252,7 @@ public class LeaveServiceTests
         var result = await _leaveService.LeaveExistsAsync("sick leave");
 
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.True);
+        Assert.That(result.Data[0].LeaveName, Is.EqualTo("Sick Leave"));
     }
 
     [Test]
@@ -188,7 +265,7 @@ public class LeaveServiceTests
         await _dbContext.SaveChangesAsync();
         var result = await _leaveService.LeaveExistsAsync("Maternity Leave");
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.False);
+        Assert.That(result.Data, Is.Empty);
     }
 
     [Test]
@@ -196,7 +273,7 @@ public class LeaveServiceTests
     {
         var result = await _leaveService.LeaveExistsAsync("   ");
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.False);
+        Assert.That(result.Data, Is.Empty);
     }
 
     [Test]
@@ -238,6 +315,12 @@ public class LeaveServiceTests
         var result = await _leaveService.DeleteLeaveMasterAsync(5);
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.False);
+    }
+
+    [Test]
+    public async Task DeleteLeaveMaster_WhenNullOrWhiteSpace()
+    {
+        var result = await _leaveService.DeleteLeaveMasterAsync(5);
     }
 
     [Test]
@@ -512,7 +595,7 @@ public class LeaveServiceTests
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data![0].StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(15).Date));
         Assert.That(result.Data![1].EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
-        Assert.That(result.Data![0].Reason, Is.EqualTo("Family Function")); 
+        Assert.That(result.Data![0].Reason, Is.EqualTo("Family Function"));
         Assert.That(result.Data![1].Reason, Is.EqualTo("Medical"));
         Assert.That(result.Data![0].LeaveTypeId, Is.EqualTo(2));
         Assert.That(result.Data![1].LeaveTypeId, Is.EqualTo(1));
@@ -642,6 +725,8 @@ public class LeaveServiceTests
         Assert.That(result.IsSuccess, Is.True);
 
     }
+
+
 
     [Test]
     public async Task CreateLeaveRequest_WhenSuccess()
@@ -915,23 +1000,65 @@ public class LeaveServiceTests
     [Test]
     public async Task DeleteLeaveRequestbyID_whenFound()
     {
-        _dbContext.AddRange(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 2, EmployeeId = 105, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(5), EndDate = DateTime.Now.AddDays(7), Reason = "Vacation", StatusId = Status.Approved, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 3, EmployeeId = 103, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(10), EndDate = DateTime.Now.AddDays(12), Reason = "Flu", StatusId = Status.Rejected, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 4, EmployeeId = 104, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(15), EndDate = DateTime.Now.AddDays(18), Reason = "Family Function", StatusId = Status.Pending, IsActive = true, IsDeleted = false },
-            new LeaveRequest { Id = 5, EmployeeId = 102, LeaveTypeId = 2, StartDate = DateTime.Now.AddDays(20), EndDate = DateTime.Now.AddDays(22), Reason = "Conference", StatusId = Status.Approved, IsActive = true, IsDeleted = false }
-        );
+        // -------------------------
+        // Arrange
+        // -------------------------
+
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 103,
+            EmployeeNumber = "EMP103",
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@a.com",
+            PhoneNumber = "9999999999",
+            Position = "Dev",
+            Salary = 50000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25)
+        });
+
+        _dbContext.LeaveMasters.Add(new LeaveMaster
+        {
+            Id = 1,
+            LeaveName = "Sick Leave",
+            MaxPerYear = 10,
+            IsPaid = true,
+            IsActive = true,
+            IsDeleted = false
+        });
+
+        _dbContext.LeaveRequests.Add(new LeaveRequest
+        {
+            Id = 3,
+            EmployeeId = 103,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(10),
+            EndDate = DateTime.Now.AddDays(12),
+            Reason = "Flu",
+            StatusId = Status.Approved, // ✅ must be Approved
+            IsActive = true,
+            IsDeleted = false
+        });
+
         await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
 
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(3))!.IsActive, Is.True);
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(3))!.IsDeleted, Is.False);
-
+        // -------------------------
+        // Act
+        // -------------------------
         var result = await _leaveService.DeleteLeaveRequestAsync(3);
+
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(3))!.IsDeleted, Is.True);
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(3))!.IsActive, Is.False);
+        Assert.That(result.Data, Is.True);
+
+        var deleted = await _dbContext.LeaveRequests.FindAsync(3);
+        Assert.That(deleted, Is.Not.Null);
+        Assert.That(deleted!.IsDeleted, Is.True);
+        Assert.That(deleted.IsActive, Is.False);
     }
+
 
     [Test]
     public async Task DeleteLeaveRequestbyID_whenNotFound()
@@ -1155,24 +1282,46 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Approved));
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Reason, Is.EqualTo("Medical"));
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(1).Date));
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.LeaveTypeId, Is.EqualTo(1));
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EmployeeId, Is.EqualTo(101));
-        Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Id, Is.EqualTo(1));
 
+        var leaveRequest = await _dbContext.LeaveRequests.FindAsync(1);
+        Assert.That(leaveRequest, Is.Not.Null);
+        Assert.That(leaveRequest!.StatusId, Is.EqualTo(Status.Approved));
+        Assert.That(leaveRequest.Reason, Is.EqualTo("Medical"));
+        Assert.That(leaveRequest.StartDate.Date, Is.EqualTo(DateTime.Now.AddDays(1).Date));
+        Assert.That(leaveRequest.EndDate.Date, Is.EqualTo(DateTime.Now.AddDays(3).Date));
+        Assert.That(leaveRequest.LeaveTypeId, Is.EqualTo(1));
+        Assert.That(leaveRequest.EmployeeId, Is.EqualTo(101));
+        Assert.That(leaveRequest.Id, Is.EqualTo(1));
     }
 
     [Test]
     public async Task UpdateLeaveRequestStatus_WhenReject()
     {
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 101,
+            EmployeeNumber = "EMP101",
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@a.com",
+            PhoneNumber = "9999999999",
+            Position = "Dev",
+            Salary = 50000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25)
+        });
+
+        await _dbContext.SaveChangesAsync();
+        _dbContext.AddRange(
+            new LeaveMaster { Id = 1, LeaveName = "Sick Leave", Description = "Sick Leave Description", MaxPerYear = 10, IsPaid = true }
+        );
+        await _dbContext.SaveChangesAsync();
         _dbContext.Add(
             new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
-        _dbContext.ChangeTracker.Clear();
+
 
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Pending));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Reason, Is.EqualTo("Medical"));
@@ -1181,6 +1330,8 @@ public class LeaveServiceTests
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.LeaveTypeId, Is.EqualTo(1));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EmployeeId, Is.EqualTo(101));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Id, Is.EqualTo(1));
+
+        _dbContext.ChangeTracker.Clear();
 
         var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Rejected, 99);
         Assert.That(result.IsSuccess, Is.True);
@@ -1229,7 +1380,7 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequestStatusCancel_WhenEmployeeIdMismatch()
     {
         _dbContext.Add(
-            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending    , IsActive = true, IsDeleted = false }
+            new LeaveRequest { Id = 1, EmployeeId = 101, LeaveTypeId = 1, StartDate = DateTime.Now.AddDays(1), EndDate = DateTime.Now.AddDays(3), Reason = "Medical", StatusId = Status.Pending, IsActive = true, IsDeleted = false }
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
@@ -1256,8 +1407,8 @@ public class LeaveServiceTests
         Assert.That(result.Data[0].EmployeeId, Is.EqualTo(101));
         Assert.That(result.Data[0].LeaveMasterId, Is.EqualTo(1));
         Assert.That(result.Data[0].TotalLeaves, Is.EqualTo(10));
-        Assert.That(result.Data[0].UsedLeaves, Is.EqualTo(2));
-        Assert.That(result.Data[0].RemainingLeaves, Is.EqualTo(8));
+        Assert.That(result.Data[0].UsedLeaves, Is.EqualTo(1));
+        Assert.That(result.Data[0].RemainingLeaves, Is.EqualTo(9));
     }
 
     [Test]
@@ -1290,8 +1441,8 @@ public class LeaveServiceTests
         Assert.That(result.Data, Is.True);
 
         var deletedBalance = await _dbContext.EmployeeLeaveBalances.FindAsync(balance.Id);
-       
-        Assert.That(deletedBalance.IsActive, Is.EqualTo(false));
+        Assert.That(deletedBalance, Is.Not.Null);
+        Assert.That(deletedBalance!.IsActive, Is.EqualTo(false));
         Assert.That(deletedBalance.IsDeleted, Is.EqualTo(true));
     }
 
@@ -1338,7 +1489,7 @@ public class LeaveServiceTests
 
 
         var leaveRequest = await _dbContext.EmployeeLeaveBalances.FindAsync(1);
-       
+
         Assert.That(leaveRequest.Id, Is.EqualTo(1));
         Assert.That(leaveRequest.EmployeeId, Is.EqualTo(101));
         Assert.That(leaveRequest.TotalLeaves, Is.EqualTo(10));
@@ -1390,5 +1541,41 @@ public class LeaveServiceTests
         Assert.That(result.Data, Is.Null);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid Leave Balance Data"));
+    }
+
+    [Test]
+    public async Task UpdateLeaveBalance_whenInvalidDto()
+    {
+        var dto = new EmployeeLeaveBalanceDto
+        {
+            Id = 1,
+            EmployeeId = 0, // Invalid EmployeeId
+            LeaveMasterId = 2,
+            TotalLeaves = 10,
+            RemainingLeaves = 4,
+            UsedLeaves = 6
+        };
+        var result = await _leaveService.UpdateLeaveBalanceAsync(dto);
+        Assert.That(result.Data, Is.Null);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Leave Balance Data"));
+    }
+
+    [Test]
+    public async Task UpdateLeaveBalance_whenNegativeValues()
+    {
+        var dto = new EmployeeLeaveBalanceDto
+        {
+            Id = 1,
+            EmployeeId = 101,
+            LeaveMasterId = 2,
+            TotalLeaves = -10, // Negative value
+            RemainingLeaves = 4,
+            UsedLeaves = 6
+        };
+        var result = await _leaveService.UpdateLeaveBalanceAsync(dto);
+        Assert.That(result.Data, Is.Null);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Leave counts cannot be negative"));
     }
 }

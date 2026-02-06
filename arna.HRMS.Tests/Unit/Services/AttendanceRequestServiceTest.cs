@@ -139,6 +139,25 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task GetAttendanceRequestByIdAsync_WhenFound_ReturnsDto()
     {
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 2,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@test.com",
+            PhoneNumber = "9999999999",
+            IsActive = true,
+            IsDeleted = false,
+            HireDate = DateTime.Today.AddYears(-1),
+            DateOfBirth = DateTime.Today.AddYears(-25),
+            Position = "Developer",
+            Salary = 50000,
+            DepartmentId = 1,
+            EmployeeNumber = "EMP001"
+        });
+
+        await _dbContext.SaveChangesAsync();
+
         var entity = new AttendanceRequest
         {
             EmployeeId = 2,
@@ -266,7 +285,7 @@ public class AttendanceRequestServiceTests
         // ---------- SEED EMPLOYEE ----------
         _dbContext.Employees.Add(new Employee
         {
-            Id = 1,
+            Id = 3,
             FirstName = "John",
             LastName = "Doe",
             Email = "john@test.com",
