@@ -122,8 +122,16 @@ public class LeaveController : ControllerBase
         if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status");
 
-        int approvedBy =
-            int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        var employeeIdClaim = User.Claims
+    .FirstOrDefault(c => c.Type == "EmployeeId")
+    ?.Value;
+
+        if (string.IsNullOrWhiteSpace(employeeIdClaim))
+            return Unauthorized("EmployeeId claim missing");
+
+        if (!int.TryParse(employeeIdClaim, out var approvedBy))
+            return Unauthorized("Invalid EmployeeId claim");
+
 
         var result = await _leaveService.UpdateStatusLeaveAsync(leaveRequestId, status, approvedBy);
 

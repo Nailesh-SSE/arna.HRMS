@@ -24,6 +24,17 @@ public class FestivalHolidayController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetFestivalHolidayById(int id)
+    {
+        var result = await _holidayService.GetFestivalHolidayByIdAsync(id);
+        if (!result.IsSuccess)
+            return BadRequest(result.Message);
+        if (result.Data == null)
+            return NotFound("Festival holiday not found");
+        return Ok(result);
+    }
+
     [HttpGet("monthly")]
     public async Task<IActionResult> GetHolidaysByMonth([FromQuery] int year, [FromQuery] int month)
     {
@@ -67,6 +78,15 @@ public class FestivalHolidayController : ControllerBase
         if (!result.IsSuccess)
             return NotFound(result.Message);
 
+        return Ok(result);
+    }
+
+    [HttpGet("by-name")]
+    public async Task<IActionResult> CheckFestivalHolidayName([FromQuery] string name)
+    {
+        var result = await _holidayService.GetFestivalHolidayByNameAsync(name);
+        if (!result.IsSuccess)
+            return BadRequest(result.Message);
         return Ok(result);
     }
 }

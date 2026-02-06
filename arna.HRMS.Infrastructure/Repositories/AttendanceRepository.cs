@@ -10,12 +10,17 @@ public class AttendanceRepository
 {
     private readonly IBaseRepository<Attendance> _baseRepository;
     private readonly FestivalHolidayRepository _festivalHolidayRepository;
-
+    private IBaseRepository<Attendance> @object;
 
     public AttendanceRepository(IBaseRepository<Attendance> baseRepository, FestivalHolidayRepository festivalHolidayRepository)
     {
         _baseRepository = baseRepository;
         _festivalHolidayRepository = festivalHolidayRepository;
+    }
+
+    public AttendanceRepository(IBaseRepository<Attendance> @object)
+    {
+        this.@object = @object;
     }
 
     public async Task<List<Attendance>> GetAttendenceAsync()

@@ -48,4 +48,20 @@ public class FestivalHolidayRepository
         await _baseRepository.UpdateAsync(festivalHoliday);
         return true;
     }
+
+    public async Task<FestivalHoliday?> GetByIdAsync(int id)
+    {
+        var data =await _baseRepository.GetByIdAsync(id);
+
+        if (data == null || !data.IsActive || data.IsDeleted)
+            return null;
+        return data;
+    }
+
+
+    public async Task<FestivalHoliday?> GetByNameAsync(string name)
+    {
+        return await _baseRepository.Query()
+            .FirstOrDefaultAsync(h => h.FestivalName.ToLower().Trim() == name.ToLower().Trim() && h.IsActive && !h.IsDeleted);
+    }
 }

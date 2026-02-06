@@ -32,14 +32,22 @@ public class LeaveRepository
         return await _leaveMasterRepo.Query()
             .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
     }
+
+    public async Task<List<LeaveMaster?>> GetLeaveMasterByNameAsync(string name)
+    {
+        name = name?.Trim().ToLower() ?? string.Empty;
+        return await _leaveMasterRepo.Query()
+            .Where(x => x.LeaveName.ToLower() == name && x.IsActive && !x.IsDeleted).ToListAsync();
+    }
+
     public Task<LeaveMaster> CreateLeaveMasterAsync(LeaveMaster leaveMaster)
     {
         return _leaveMasterRepo.AddAsync(leaveMaster);
     }
 
-    public Task<LeaveMaster> UpdateLeaveMasterAsync(LeaveMaster leaveMaster)
+    public async Task<LeaveMaster> UpdateLeaveMasterAsync(LeaveMaster leaveMaster)
     {
-        return _leaveMasterRepo.UpdateAsync(leaveMaster);
+        return await _leaveMasterRepo.UpdateAsync(leaveMaster);
     }
 
     public async Task<bool> DeleteLeaveMasterAsync(int id)
@@ -87,6 +95,7 @@ public class LeaveRepository
 
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(int id)
     {
+
         return await _leaveRequestRepo.Query()
             .Include(e => e.Employee)
             .Include(e => e.LeaveType)
