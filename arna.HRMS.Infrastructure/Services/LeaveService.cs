@@ -237,7 +237,7 @@ public class LeaveService : ILeaveService
         }
 
         var updated = await _leaveRepository.UpdateLeaveStatusAsync(leaveRequestId, status, approvedBy);
-        
+
         if (status == Status.Approved)
         {
             if (!updated || status != Status.Approved)
