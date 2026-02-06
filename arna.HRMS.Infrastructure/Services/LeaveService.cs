@@ -32,12 +32,40 @@ public class LeaveService : ILeaveService
     }
     public async Task<ServiceResult<LeaveMasterDto>> GetLeaveMasterByIdAsync(int id)
     {
+        if (id <= 0)
+            return ServiceResult<LeaveMasterDto>.Fail("Invalid ID");
+
         var leave = await _leaveRepository.GetLeaveMasterByIdAsync(id);
+        if (leave == null)
+            return ServiceResult<LeaveMasterDto>.Success(null, "leave not found");
+
         var data = leave == null ? new LeaveMasterDto() : _mapper.Map<LeaveMasterDto>(leave);
         return ServiceResult<LeaveMasterDto>.Success(data);
     }
     public async Task<ServiceResult<LeaveMasterDto>> CreateLeaveMasterAsync(LeaveMasterDto LeaveMasterDto)
     {
+        if (LeaveMasterDto == null)
+            return ServiceResult<LeaveMasterDto>.Fail("Data not Found");
+        
+        if (string.IsNullOrWhiteSpace(LeaveMasterDto.LeaveName))
+            return ServiceResult<LeaveMasterDto>.Fail("Leave name is required");
+
+        if (LeaveMasterDto.MaxPerYear <= 0)
+            return ServiceResult<LeaveMasterDto>.Fail("number of days is required");
+
+        var existingLeaves = await _leaveRepository.GetLeaveMasterByNameAsync(LeaveMasterDto.LeaveName);
+        var duplicate = existingLeaves.Any(x =>
+            x != null &&
+            x.IsPaid == LeaveMasterDto.IsPaid
+        );
+
+        if (duplicate)
+        {
+            return ServiceResult<LeaveMasterDto>.Fail(
+                $"Leave '{LeaveMasterDto.LeaveName}' with IsPaid = {LeaveMasterDto.IsPaid} already exists"
+            );
+        }
+
         var leave = _mapper.Map<LeaveMaster>(LeaveMasterDto);
         var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leave);
         var Data = _mapper.Map<LeaveMasterDto>(createdLeaveMaster);
@@ -193,12 +221,12 @@ public class LeaveService : ILeaveService
 
     public async Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status, int approvedBy)
     {
-        var updated = await _leaveRepository
-            .UpdateLeaveStatusAsync(leaveRequestId, status, approvedBy);
-        if(leaveRequestId <= 0)
+        if (leaveRequestId <= 0)
         {
             return ServiceResult<bool>.Fail("Invalid Leave Request Id");
         }
+
+        var updated = await _leaveRepository.UpdateLeaveStatusAsync(leaveRequestId, status, approvedBy);
 
         if (status == Status.Approved)
         {
@@ -342,10 +370,6 @@ public class LeaveService : ILeaveService
 
     public async Task<ServiceResult<EmployeeLeaveBalanceDto>> UpdateLeaveBalanceAsync(EmployeeLeaveBalanceDto LeaveBalanceDto)
     {
-        if(LeaveBalanceDto == null || LeaveBalanceDto.Id <=0 || LeaveBalanceDto.EmployeeId<=0)
-        {
-            return ServiceResult<EmployeeLeaveBalanceDto>.Fail("Invalid Leave Balance Data");
-        }
         var leave = _mapper.Map<EmployeeLeaveBalance>(LeaveBalanceDto);
         var updatedLeaveBalance = await _leaveRepository.UpdateLeaveBalanceAsync(leave);
         var Data = _mapper.Map<EmployeeLeaveBalanceDto>(updatedLeaveBalance);
