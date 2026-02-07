@@ -25,7 +25,7 @@ public class AttendanceRequestService : IAttendanceRequestService
 
     public AttendanceRequestService(ApiClients api)
     {
-        _attendanceRequest = api.AttendanceRequest;
+        _attendanceRequest = api.AttendanceRequests;
     }
 
     public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync() =>

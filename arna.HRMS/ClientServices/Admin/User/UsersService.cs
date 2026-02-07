@@ -23,21 +23,21 @@ public class UsersService : IUsersService
         _userApi = api.Users;
     }
 
-    public async Task<ApiResult<List<UserViewModel>>> GetUsersAsync()
-        => await _userApi.GetAll();
+    public Task<ApiResult<List<UserViewModel>>> GetUsersAsync() =>
+        _userApi.GetAll();
 
-    public async Task<ApiResult<UserViewModel>> GetUserByIdAsync(int id)
-        => await _userApi.GetById(id);
+    public Task<ApiResult<UserViewModel>> GetUserByIdAsync(int id) =>
+        _userApi.GetById(id);
 
-    public async Task<ApiResult<UserViewModel>> CreateUserAsync(UserViewModel model)
-        => await _userApi.Create(model);
+    public Task<ApiResult<UserViewModel>> CreateUserAsync(UserViewModel model) =>
+        _userApi.Create(model);
 
-    public async Task<ApiResult<bool>> UpdateUserAsync(int id, UserViewModel model)
-        => await _userApi.Update(id, model);
+    public Task<ApiResult<bool>> UpdateUserAsync(int id, UserViewModel model) =>
+        _userApi.Update(id, model);
 
-    public async Task<ApiResult<bool>> DeleteUserAsync(int id)
-        => await _userApi.Delete(id);
+    public Task<ApiResult<bool>> DeleteUserAsync(int id) =>
+        _userApi.Delete(id);
 
-    public async Task<ApiResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
-        => await _userApi.ChangePassword(id, newPassword);
+    public Task<ApiResult<bool>> ChangeUserPasswordAsync(int id, string newPassword) =>
+        _userApi.ChangePassword(id, newPassword);
 }

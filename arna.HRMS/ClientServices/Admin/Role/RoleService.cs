@@ -19,21 +19,21 @@ public class RoleService : IRoleService
 
     public RoleService(ApiClients apiClients)
     {
-        _roleApi = apiClients.Role;
+        _roleApi = apiClients.Roles;
     }
 
-    public async Task<ApiResult<List<RoleViewModel>>> GetRolesAsync()
-        => await _roleApi.GetAll();
+    public Task<ApiResult<List<RoleViewModel>>> GetRolesAsync()
+        => _roleApi.GetAll();
 
-    public async Task<ApiResult<RoleViewModel>> GetRoleByIdAsync(int id)
-        => await _roleApi.GetById(id);
+    public Task<ApiResult<RoleViewModel>> GetRoleByIdAsync(int id)
+        => _roleApi.GetById(id);
 
-    public async Task<ApiResult<RoleViewModel>> CreateRoleAsync(RoleViewModel model)
-        => await _roleApi.Create(model);
+    public Task<ApiResult<RoleViewModel>> CreateRoleAsync(RoleViewModel model)
+        => _roleApi.Create(model);
 
-    public async Task<ApiResult<bool>> UpdateRoleAsync(int id, RoleViewModel model)
-        => await _roleApi.Update(id, model);
+    public Task<ApiResult<bool>> UpdateRoleAsync(int id, RoleViewModel model)
+        => _roleApi.Update(id, model);
 
-    public async Task<ApiResult<bool>> DeleteRoleAsync(int id)
-        => await _roleApi.Delete(id);
+    public Task<ApiResult<bool>> DeleteRoleAsync(int id)
+        => _roleApi.Delete(id);
 }
