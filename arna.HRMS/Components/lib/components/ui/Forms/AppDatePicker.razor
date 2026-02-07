@@ -67,6 +67,7 @@
         else
             await ValueChanged.InvokeAsync(null);
 
-        EditContext?.NotifyFieldChanged(_fieldIdentifier);
+        if (ValidationExpression != null)
+            EditContext?.NotifyFieldChanged(_fieldIdentifier);
     }
 }

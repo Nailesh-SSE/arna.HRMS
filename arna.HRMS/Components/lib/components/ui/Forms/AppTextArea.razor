@@ -69,7 +69,8 @@
         {
             await ValueChanged.InvokeAsync(e.Value?.ToString());
 
-            EditContext?.NotifyFieldChanged(_fieldIdentifier);
+            if (ValidationExpression != null)
+                EditContext?.NotifyFieldChanged(_fieldIdentifier);
         }
     }
 }

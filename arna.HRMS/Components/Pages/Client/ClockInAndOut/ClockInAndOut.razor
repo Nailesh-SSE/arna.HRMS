@@ -12,7 +12,7 @@
 
 <div class="d-flex align-items-center gap-2">
 
-    @if (!IsAdmin() && !IsSuperAdmin())
+    @if (IsEmployee())
     {
         <span class="clock-pill">
             <span class="status-dot"></span>

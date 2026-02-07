@@ -30,23 +30,23 @@
                     </td>
 
                     <td class="fw-semibold text-primary">
-                        @(emp.ClockIn?.ToString(@"hh\:mm") ?? "--")
+                        @(emp.ClockIn?.ToString(@"hh\:mm\:ss") ?? "--")
                     </td>
 
                     <td class="fw-semibold text-primary">
-                        @(emp.ClockOut?.ToString(@"hh\:mm") ?? "--")
+                        @(emp.ClockOut?.ToString(@"hh\:mm\:ss") ?? "--")
                     </td>   
 
                     <td>
-                        @emp.BreakDuration.ToString(@"hh\:mm")
+                        @emp.BreakDuration.ToString(@"hh\:mm\:ss")
                     </td>
 
                     <td>
-                        @emp.WorkingHours.ToString(@"hh\:mm")
+                        @emp.WorkingHours.ToString(@"hh\:mm\:ss")
                     </td>
 
                     <td class="fw-bold">
-                        @emp.TotalHours.ToString(@"hh\:mm")
+                        @emp.TotalHours.ToString(@"hh\:mm\:ss")
                     </td>
 
                     <td>

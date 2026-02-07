@@ -1,19 +1,30 @@
 ﻿@page "/attendance"
 
+@using arna.HRMS.ClientServices.Admin.Employee
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Client.Attendance
+@using arna.HRMS.ClientServices.Client.AttendanceRequest
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Client.Attendance.AttendanceRequest
 @using arna.HRMS.Components.Pages.Client.Attendance.MonthYearAndToggle
 @using arna.HRMS.Components.Pages.Client.Attendance.Summary
 @using arna.HRMS.Components.Pages.Client.Attendance.TableAndCalendar
 @using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Helper.Attendance
+@using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.State.Attendance
+@using arna.HRMS.Models.ViewModels.Attendance
+@using System.Linq
 
-@inject IAttendanceService AttendanceService
-@inject AttendanceState State
 @inherits AuthenticatedLayoutBase
+@inject AttendanceState State
+@inject NotificationService NotificationService
+@inject IAttendanceService AttendanceService
+@inject IAttendanceRequestService AttendanceRequestService
+@inject IJSRuntime JsRuntime
+@inject IEmployeeService EmployeeService
 
 <FullPageLoader Visible="@isLoading" />
 
@@ -26,11 +37,14 @@
             <div class="d-flex align-items-center position-relative">
                 <h2 class="mb-0">Attendance Overview</h2>
 
-                <div class="ms-auto">
-                    <AppButton Text="Request"
-                               ButtonClass="btn btn-dark px-5"
-                               OnClick="OpenDrawer" />
-                </div>
+                @if (IsEmployee())
+                {
+                    <div class="ms-auto">
+                        <AppButton Text="Request"
+                                   ButtonClass="btn btn-dark px-5"
+                                   OnClick="OpenDrawer" />
+                    </div>
+                }
             </div>
 
             <p class="text-muted mt-2">
@@ -55,20 +69,55 @@
 
         <!-- ================= MONTH + VIEW TOGGLE ================= -->
         <div class="select-month-view-toggle">
-            <SelectMonthAndYear Year="@State.Year"
-                                Month="@State.Month"
-                                OnChange="OnMonthSelected" />
 
-            @if (IsAdmin() || IsSuperAdmin())
+            @* ================= TABLE VIEW → SHOW ALL ================= *@
+            @if (State.ViewMode == AttendanceState.TABLE)
             {
-                <AttendanceDateFilter Year="@State.Year"
-                                      Month="@State.Month"
-                                      SelectedDate="@State.SelectedDate"
-                                      DateChanged="OnDateSelected" />
+                <SelectMonthAndYear Year="@State.Year"
+                                    Month="@State.Month"
+                                    OnChange="OnMonthSelected" />
+
+                @if (IsAdmin() || IsSuperAdmin())
+                {
+                    <AttendanceDateFilter Year="@State.Year"
+                                          Month="@State.Month"
+                                          SelectedDate="@State.SelectedDate"
+                                          DateChanged="OnDateSelected" />
+
+                    <EmployeePicker Employees="Employees"
+                                    SelectedValue="@GetEmployeeValue()"
+                                    OnChanged="OnEmployeeChanged"
+                                    OnNameChanged="OnEmployeeNameChanged" />
+                }
             }
 
+            @* ================= CALENDAR VIEW → MONTH ONLY ================= *@
+            @if (State.ViewMode == AttendanceState.CALENDAR)
+            {
+                <SelectMonthAndYear Year="@State.Year"
+                                    Month="@State.Month"
+                                    OnChange="OnMonthSelected" />
+            }
+
+            @* ================= REQUEST VIEW → EMPLOYEE ONLY ================= *@
+            @if (State.ViewMode == AttendanceState.REQUEST)
+            {
+                @if (IsAdmin() || IsSuperAdmin())
+                {
+                    <EmployeePicker Employees="Employees"
+                                    SelectedValue="@GetEmployeeValue()"
+                                    OnChanged="OnEmployeeChanged"
+                                    OnNameChanged="OnEmployeeNameChanged" />
+
+                    <StatusPicker SelectedValue="@State.SelectedStatus?.ToString()"
+                                  OnChanged="OnStatusChanged" />
+                }
+            }
+
+            @* ================= VIEW TOGGLE (ALWAYS SHOW) ================= *@
             <AttendanceViewToggle ActiveView="@State.ViewMode"
                                   OnChange="SetView" />
+
         </div>
 
         <!-- ================= ADMIN vs EMPLOYEE VIEW ================= -->
@@ -87,6 +136,15 @@
             }
         }
 
+        <!-- ================= ATTANDANCE REQUEST LIST VIEW ================= -->
+        @if (State.ViewMode == AttendanceState.REQUEST)
+        {
+            <AttendanceRequestList Requests="State.AttendanceRequestList"
+                                   EditClicked="EditRequest"
+                                   DeleteClicked="DeleteRequest"
+                                   AdminAction="HandleAdminAction" />
+        }
+
         <!-- ================= CALENDAR VIEW ================= -->
         @if (State.ViewMode == AttendanceState.CALENDAR)
         {
@@ -97,45 +155,72 @@
     }
 
     <!-- ================= REQUEST DRAWER ================= -->
-    <AttendanceRequestDrawer IsOpen="@isDrawerOpen"
-                             IsOpenChanged="@(v => isDrawerOpen = v)"
-                             Title="Attendance Request" />
+    @if (IsEmployee())
+    {
+        <AttendanceRequestDrawer IsOpen="@isDrawerOpen"
+                                 IsOpenChanged="OnDrawerOpenChanged"
+                                 Title="Attendance Request"
+                                 EditModel="EditModel" />
+    }
 </div>
 
 @code {
     private bool isLoading = true;
-    private bool hasLoaded;
     private bool isDrawerOpen;
-    public DateTime? SelectedDate { get; set; }
+    public AttendanceRequestViewModel EditModel { get; set; } = new AttendanceRequestViewModel();
+    private List<SelectOption> Employees = new();
 
-    private void OpenDrawer()
-        => isDrawerOpen = true;
+    private void OpenDrawer() => isDrawerOpen = true;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private bool IsPrivileged() => IsAdmin() || IsSuperAdmin();
+
+    private int SafeYear => State?.Year > 0 ? State.Year : DateTime.Today.Year;
+    private int SafeMonth => State?.Month >= 1 && State.Month <= 12 ? State.Month : DateTime.Today.Month;
+
+    private void EnsureSelectedMonth()
     {
-        if (!firstRender || hasLoaded)
+        if (State == null)
             return;
 
-        hasLoaded = true;
-
-        try
+        if (string.IsNullOrWhiteSpace(State.SelectedMonth) || State.Year <= 0 || State.Month <= 0)
         {
-            if (!IsAuthentication())
-                return;
-
-            if (string.IsNullOrWhiteSpace(State.SelectedMonth))
+            var now = DateTime.Today;
+            State.Year = now.Year;
+            State.Month = now.Month;
+            State.SelectedMonth = $"{now.Year}-{now.Month:D2}";
+        }
+        else
+        {
+            try
+            {
+                State.ParseMonth();
+            }
+            catch
             {
                 var now = DateTime.Today;
                 State.Year = now.Year;
                 State.Month = now.Month;
                 State.SelectedMonth = $"{now.Year}-{now.Month:D2}";
             }
-            else
-            {
-                State.ParseMonth();
-            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+
+            if (!IsAuthentication())
+                return;
+
+            EnsureSelectedMonth();
 
             await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService?.Error(ex.Message ?? "Operation Failed.");
         }
         finally
         {
@@ -146,53 +231,172 @@
 
     private async Task OnMonthSelected((int year, int month) value)
     {
+        if (value.year <= 0 || value.month < 1 || value.month > 12)
+            return;
+
         State.Year = value.year;
         State.Month = value.month;
         State.SelectedMonth = $"{value.year}-{value.month:D2}";
         State.SelectedDate = null;
+        State.SelectedEmployeeId = null;
+        State.SelectedEmployeeName = null;
         await LoadData();
     }
 
     private async Task LoadData()
     {
-        int empId;
+        if (AttendanceService == null || State == null)
+            return;
 
-        if (IsAdmin() || IsSuperAdmin())
+        int? empId;
+
+        try
         {
-            empId = State.SelectedEmployeeId;
+            if (IsPrivileged())
+            {
+                empId = State.SelectedEmployeeId;
+            }
+            else
+            {
+                var id = GetEmployeeId();
+                if (id == 0)
+                    return;
+                empId = id;
+            }
+
+            var attendanceResult = await AttendanceService.GetAttendanceByMonthAsync(State.Year, State.Month, empId, State.SelectedDate);
+            State.AttendanceList = attendanceResult ?? new List<MonthlyAttendanceViewModel>(); 
+
+            if (State.AttendanceList != null)
+            {
+                State.AttendanceLookup = State.AttendanceList
+                    .GroupBy(x => x.Date)
+                    .ToDictionary(g => g.Key, g => g.First());
+            }
+            else
+            {
+                State.AttendanceLookup = new();
+            }
+
+            try
+            {
+                var employeesFlatten = State.AttendanceList?.SelectMany(d => d.Employees ?? Enumerable.Empty<dynamic>()) ?? Enumerable.Empty<dynamic>();
+                State.TotalWorkingHours = employeesFlatten.Aggregate(TimeSpan.Zero, (total, emp) => total + (emp?.TotalHours ?? TimeSpan.Zero));
+            }
+            catch
+            {
+                State.TotalWorkingHours = TimeSpan.Zero;
+            }
+
+            try
+            {
+                State.SummaryCards = AttendanceSummaryBuilder.Build(State.AttendanceList ?? new());
+            }
+            catch
+            {
+                State.SummaryCards = new();
+            }
+
+            await LoadEmployees();
+            await LoadAttendanceRequests(empId, State.SelectedStatus);
         }
-        else
+        catch (Exception ex)
         {
-            empId = GetEmployeeId();
-            if (empId == 0)
-                return;
+            NotificationService?.Error(ex.Message ?? "Unable to load attendance data.");
         }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
 
-        // 🔥 LOAD GROUPED DATA
-        State.AttendanceList =
-            await AttendanceService.GetAttendanceByMonthAsync(
-                State.Year,
-                State.Month,
-                empId,
-                State.SelectedDate
-            );
+    private async Task LoadEmployees()
+    {
+        if (EmployeeService == null)
+            return;
 
-        // 🔥 LOOKUP FOR CALENDAR
-        State.AttendanceLookup =
-            State.AttendanceList.ToDictionary(x => x.Date);
+        try
+        {
+            var result = await EmployeeService.GetEmployeesAsync();
+            if (result != null && result.IsSuccess && result.Data != null)
+            {
+                Employees = result.Data.Select(e => new SelectOption
+                {
+                    Value = e.Id.ToString(),
+                    Text = e.FullName
+                }).ToList();
+            }
+            else
+            {
+                Employees = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Employees = new();
+            NotificationService?.Error(ex.Message ?? "Unable to load employees.");
+        }
+    }
 
-        // 🔥 TOTAL WORKING HOURS (CORRECT FOR GROUPED MODEL)
-        State.TotalWorkingHours =
-            State.AttendanceList
-                .SelectMany(d => d.Employees)
-                .Aggregate(
-                    TimeSpan.Zero,
-                    (total, emp) => total + emp.TotalHours
-                );
+    private async Task LoadAttendanceRequests(int? empId, Status? status)
+    {
+        if (AttendanceRequestService == null)
+            return;
 
-        // 🔥 SUMMARY
-        State.SummaryCards =
-            AttendanceSummaryBuilder.Build(State.AttendanceList);
+        try
+        {
+            if (IsPrivileged())
+            {
+                if (empId.HasValue && empId.Value > 0 && status.HasValue)
+                {
+                    var result = await AttendanceRequestService.GetAllAsync(empId.Value, status.Value);
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+                else if (empId.HasValue && empId.Value > 0)
+                {
+                    var result = await AttendanceRequestService.GetAllAsync(empId.Value);
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+                else if (status.HasValue)
+                {
+                    var result = await AttendanceRequestService.GetAllAsync(status.Value);
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+                else
+                {
+                    var result = await AttendanceRequestService.GetAllAsync();
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+            }
+            else
+            {
+                if (empId.HasValue && empId.Value > 0 && status.HasValue)
+                {
+                    var result = await AttendanceRequestService.GetAllAsync(empId.Value, status.Value);
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+                else if (empId.HasValue && empId.Value > 0)
+                {
+                    var result = await AttendanceRequestService.GetAllAsync(empId.Value);
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+                else if (status.HasValue)
+                {
+                    var result = await AttendanceRequestService.GetAllAsync(status.Value);
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+                else
+                {
+                    var result = await AttendanceRequestService.GetAllAsync();
+                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            State.AttendanceRequestList = new();
+            NotificationService?.Error(ex.Message ?? "Unable to load attendance requests.");
+        }
     }
 
     private async Task OnDateSelected(DateTime? date)
@@ -204,20 +408,184 @@
             State.Year = date.Value.Year;
             State.Month = date.Value.Month;
             State.SelectedMonth = $"{State.Year}-{State.Month:D2}";
+            State.SelectedEmployeeId = null;
+            State.SelectedEmployeeName = null;
         }
 
         await LoadData();
     }
 
-    private string MinDate =>
-    new DateTime(State.Year, State.Month, 1).ToString("yyyy-MM-dd");
+    private async Task OnEmployeeChanged(string? value)
+    {
+        if (int.TryParse(value, out var employeeId) && employeeId > 0)
+        {
+            State.SelectedEmployeeId = employeeId;
+        }
+        else
+        {
+            State.SelectedEmployeeId = null;
+        }
 
-    private string MaxDate =>
-        new DateTime(State.Year, State.Month, 1)
-            .AddMonths(1)
-            .AddDays(-1)
-            .ToString("yyyy-MM-dd");
+        State.SelectedEmployeeName = null;
+        await LoadData();
+    }
+
+    private async Task OnEmployeeNameChanged(string? name)
+    {
+        State.SelectedEmployeeName = name;
+        State.SelectedStatus = null;
+        await LoadData();
+    }
+
+    private async Task OnStatusChanged(string? value)
+    {
+        if (Enum.TryParse<Status>(value, out var status))
+            State.SelectedStatus = status;
+        else
+            State.SelectedStatus = null;
+
+        await LoadData();
+    }
+
+    private async Task OnDrawerOpenChanged(bool isOpen)
+    {
+        isDrawerOpen = isOpen;
+        if (!isOpen)
+        {
+            await LoadData();
+        }
+    }
+
+    private string GetEmployeeValue() => (State?.SelectedEmployeeId.HasValue == true && State.SelectedEmployeeId.Value > 0)
+            ? State.SelectedEmployeeId.Value.ToString() : "0";
+
+    private string MinDate
+    {
+        get
+        {
+            try
+            {
+                return new DateTime(SafeYear, SafeMonth, 1).ToString("yyyy-MM-dd");
+            }
+            catch
+            {
+                return DateTime.Today.ToString("yyyy-MM-dd");
+            }
+        }
+    }
+
+    private string MaxDate
+    {
+        get
+        {
+            try
+            {
+                return new DateTime(SafeYear, SafeMonth, 1)
+                    .AddMonths(1)
+                    .AddDays(-1)
+                    .ToString("yyyy-MM-dd");
+            }
+            catch
+            {
+                return DateTime.Today.ToString("yyyy-MM-dd");
+            }
+        }
+    }
 
     private void SetView(string mode)
-        => State.ViewMode = mode;
+    {
+        if (string.IsNullOrWhiteSpace(mode))
+            return;
+
+        State.ViewMode = mode;
+    }
+
+    private void EditRequest(AttendanceRequestViewModel req)
+    {
+        if (req == null)
+            return;
+
+        isDrawerOpen = true;
+        EditModel = req;
+    }
+
+    private async Task DeleteRequest(AttendanceRequestViewModel req)
+    {
+        if (req == null || AttendanceRequestService == null)
+            return;
+
+        bool isConfirmed = false;
+        try
+        {
+            isConfirmed = await JsRuntime.InvokeAsync<bool>(
+                "confirm",
+                "Are you sure you want to delete this attendance request?"
+            );
+        }
+        catch
+        {
+            NotificationService?.Error("Unable to confirm delete action.");
+            return;
+        }
+
+        if (!isConfirmed)
+            return;
+
+        try
+        {
+            var result = await AttendanceRequestService.DeleteAttendanceRequestAsync(req.Id);
+
+            if (result == null || !result.IsSuccess)
+            {
+                NotificationService?.Error(result?.Message ?? "Unable to delete attendance request.");
+                return;
+            }
+
+            NotificationService?.Success("Attendance Request deleted successfully.");
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService?.Error(ex.Message ?? "Error deleting attendance request.");
+        }
+    }
+
+    private async Task HandleAdminAction((AttendanceRequestViewModel request, bool IsApproved) data)
+    {
+        var request = data.request;
+        if (request == null || AttendanceRequestService == null)
+            return;
+
+        try
+        {
+            if (data.IsApproved)
+            {
+                var result = await AttendanceRequestService.UpdateRequestStatus(request.Id, Status.Approved);
+                if (result == null || !result.IsSuccess)
+                {
+                    NotificationService?.Error(result?.Message ?? "Unable to approve attendance request.");
+                    return;
+                }
+
+                NotificationService?.Success("Attendance Request approved successfully.");
+            }
+            else
+            {
+                var result = await AttendanceRequestService.UpdateRequestStatus(request.Id, Status.Rejected);
+                if (result == null || !result.IsSuccess)
+                {
+                    NotificationService?.Error(result?.Message ?? "Unable to reject attendance request.");
+                    return;
+                }
+
+                NotificationService?.Success("Attendance Request rejected successfully.");
+            }
+
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            NotificationService?.Error(ex.Message ?? "Error processing admin action.");
+        }
+    }
 }

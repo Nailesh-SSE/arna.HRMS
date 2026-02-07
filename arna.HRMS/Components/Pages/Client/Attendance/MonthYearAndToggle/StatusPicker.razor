@@ -1,0 +1,67 @@
+﻿@using arna.HRMS.Models.Enums
+@using arna.HRMS.Components.lib.components.ui.Model
+
+<div class="status-wrapper">
+    <div class="status-display" @onclick="Toggle">
+        <span class="status-text">@DisplayText</span>
+        <span class="status-arrow @(IsOpen ? "open" : "")"></span>
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="status-backdrop" @onclick="Close"></div>
+
+        <div class="status-panel">
+            <div class="status-list">
+
+                <button type="button"
+                        class="status-item @(SelectedValue == null ? "active" : "")"
+                        @onclick='() => Select(null)'>
+                    Select Status
+                </button>
+
+                @foreach (var status in FilteredStatuses)
+                {
+                    <button type="button"
+                            class="status-item @(status.Value == SelectedValue ? "active" : "")"
+                            @onclick="() => Select(status.Value)">
+                        @status.Text
+                    </button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter] public string? SelectedValue { get; set; }
+    [Parameter] public EventCallback<string?> OnChanged { get; set; }
+
+    private bool IsOpen;
+
+    private List<SelectOption> StatusOptions =>
+        Enum.GetValues(typeof(Status))
+            .Cast<Status>()
+            .Select(s => new SelectOption
+            {
+                Value = s.ToString(),
+                Text = s.ToString()
+            })
+            .ToList();
+
+    private IEnumerable<SelectOption> FilteredStatuses => StatusOptions;
+
+    private string DisplayText =>
+        StatusOptions.FirstOrDefault(s => s.Value == SelectedValue)?.Text
+        ?? "Select Status";
+
+    private void Toggle() => IsOpen = !IsOpen;
+    private void Close() => IsOpen = false;
+
+    private async Task Select(string? value)
+    {
+        IsOpen = false;
+        await OnChanged.InvokeAsync(value);
+    }
+}

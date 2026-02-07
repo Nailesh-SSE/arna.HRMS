@@ -24,12 +24,12 @@ public class AttendanceRequestService : IAttendanceRequestService
         _attendanceService = attendanceService;
     }
 
-    public async Task<ServiceResult<List<AttendanceRequestDto>>> GetAttendanceRequestAsync()
+    public async Task<ServiceResult<List<AttendanceRequestDto>>> GetAttendanceRequests(int? employeeId, Status? status)
     {
-        var attendanceRequests = await _attendanceRequestRepository.GetAttendanceRequestAsync();
+        var attendanceRequests = await _attendanceRequestRepository.GetAttendanceRequests(employeeId, status);
         var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
 
-        return ServiceResult<List<AttendanceRequestDto>>.Success(list);
+        return ServiceResult<List<AttendanceRequestDto>>.Success(list); 
     }
 
     public async Task<ServiceResult<List<AttendanceRequestDto>>> GetPendingAttendanceRequestesAsync()
@@ -51,16 +51,6 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         var dto = _mapper.Map<AttendanceRequestDto>(attendance);
         return ServiceResult<AttendanceRequestDto?>.Success(dto);
-    }
-
-    public async Task<ServiceResult<List<AttendanceRequestDto>>> GetAttendanceRequestsByEmployeeAsync(int employeeId)
-    {
-        if (employeeId <= 0)
-            return ServiceResult<List<AttendanceRequestDto>>.Fail("Invalid Employee ID");
-        var attendanceRequests =
-            await _attendanceRequestRepository.GetAttendanceRequestsByEmployee(employeeId);
-        var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
-        return ServiceResult<List<AttendanceRequestDto>>.Success(list);
     }
 
     public async Task<ServiceResult<AttendanceRequestDto>> CreateAttendanceRequestAsync(AttendanceRequestDto attendanceRequestDto)
@@ -94,6 +84,15 @@ public class AttendanceRequestService : IAttendanceRequestService
         var resultDto = _mapper.Map<AttendanceRequestDto>(updated);
 
         return ServiceResult<AttendanceRequestDto>.Success(resultDto, "Request updated successfully");
+    }
+
+    public async Task<ServiceResult<bool>> DeleteAttendanceRequestAsync(int id)
+    {
+        if (id <= 0)
+            return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");
+
+        var deleted = await _attendanceRequestRepository.DeleteAttendanceRequestAsync(id);
+        return ServiceResult<bool>.Success(deleted, "Attendance request deleted successfully");
     }
 
     public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id, Status status, int approvedBy)

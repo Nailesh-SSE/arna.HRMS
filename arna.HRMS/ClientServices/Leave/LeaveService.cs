@@ -82,7 +82,8 @@ public class LeaveService : ILeaveService
         => await _leaveApi.GetLeaveRequestByEmployee(employeeid);
 
     public async Task<ApiResult<bool>> UpadteLeaverequestStatusCancle(int leaveRequestId, int employeeid)
-        => await _leaveApi.UpadteLeaverequestStatusCancle(leaveRequestId, employeeid);
+        => await _leaveApi.CancelLeaveRequest(leaveRequestId, employeeid);
+
     //Leave Balance Methods
     public async Task<ApiResult<List<EmployeeLeaveBalanceViewModel>>> GetLeaveBalanceAsync()
         => await _leaveApi.GetLeaveBalanceAsync();
@@ -93,7 +94,7 @@ public class LeaveService : ILeaveService
     public async Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceViewModel leaveBalanceViewModel)
         => await _leaveApi.UpdateLeaveBalanceAsync(id, leaveBalanceViewModel);
 
-    public async Task<ApiResult<List<EmployeeLeaveBalanceViewModel?>?>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
+    public async Task<ApiResult<List<EmployeeLeaveBalanceViewModel?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
         => await _leaveApi.GetLeaveBalanceByEmployeeIdAsync(employeeId);
 
 }

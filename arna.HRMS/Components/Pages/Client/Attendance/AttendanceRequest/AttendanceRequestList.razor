@@ -1,0 +1,130 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Models.ViewModels.Attendance
+@inherits AuthenticatedLayoutBase
+
+<div class="request-container">
+
+    @if (Requests == null || !Requests.Any())
+    {
+        <div class="empty-state">
+            No attendance requests found
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var req in Requests)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+
+                    <div class="request-card">
+
+                        <!-- HEADER -->
+                        <div class="request-header">
+
+                            <strong>
+                                @(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Unknown" : req.EmployeeName)
+                            </strong>
+
+                            <div class="request-actions">
+
+                                <span class="badge @req.StatusId.ToString().ToLower()">
+                                    @req.StatusId
+                                </span>
+
+                                <!-- EMPLOYEE ACTIONS -->
+                                @if (IsEmployee())
+                                {
+                                    @if(req.IsApproved)
+                                    {
+                                        <button class="icon-btn edit"
+                                                title="Edit"
+                                                @onclick="() => EditClicked.InvokeAsync(req)">
+                                            ✏️
+                                        </button>
+
+                                        <button class="icon-btn delete"
+                                                title="Delete"
+                                                @onclick="() => DeleteClicked.InvokeAsync(req)">
+                                            🗑️
+                                        </button>
+                                    }
+                                }
+
+                                <!-- ADMIN ACTIONS -->
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <button class="icon-btn approve"
+                                            title="Approve"
+                                            disabled="@req.IsApproved"
+                                            @onclick="() => AdminAction.InvokeAsync((req, true))">
+                                        ✅
+                                    </button>
+
+                                    <button class="icon-btn reject"
+                                            title="Reject"
+                                            @onclick="() => AdminAction.InvokeAsync((req, false))">
+                                        ❌
+                                    </button>
+                                }
+
+                            </div>
+                        </div>
+
+                        <!-- DATES -->
+                        <div class="request-dates">
+                            📅 @req.FromDate?.ToString("dd MMM yyyy") →
+                            @req.ToDate?.ToString("dd MMM yyyy")
+                        </div>
+
+                        <!-- INFO -->
+                        <div class="request-info">
+                            <div><b>Reason:</b> @req.ReasonTypeId</div>
+                            <div><b>Location:</b> @req.LocationId</div>
+                        </div>
+
+                        <!-- TIME -->
+                        <div class="time-box">
+                            <div>
+                                <small>Clock In</small>
+                                <strong>@req.ClockIn?.ToString("hh:mm tt")</strong>
+                            </div>
+
+                            <div>
+                                <small>Clock Out</small>
+                                <strong>@req.ClockOut?.ToString("hh:mm tt")</strong>
+                            </div>
+
+                            <div>
+                                <small>Break</small>
+                                <strong>@(req.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")</strong>
+                            </div>
+
+                            <div>
+                                <small>Total</small>
+                                <strong>@req.TotalHours.ToString(@"hh\:mm")</strong>
+                            </div>
+                        </div>
+
+                        <!-- MESSAGE -->
+                        <div class="description">
+                            @req.Description
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    [Parameter] public List<AttendanceRequestViewModel> Requests { get; set; } = new();
+
+    [Parameter] public EventCallback<AttendanceRequestViewModel> EditClicked { get; set; }
+    [Parameter] public EventCallback<AttendanceRequestViewModel> DeleteClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<(AttendanceRequestViewModel Request, bool IsApproved)> AdminAction { get; set; } 
+}

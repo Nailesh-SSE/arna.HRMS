@@ -14,12 +14,24 @@ public class AttendanceRequestRepository
         _baseRepository = baseRepository;
     }
 
-    public async Task<List<AttendanceRequest>> GetAttendanceRequestAsync()
+    public async Task<List<AttendanceRequest>> GetAttendanceRequests(int? employeeId, Status? status)
     {
-        return await _baseRepository.Query()
-            .Include(d => d.Employee)
-            .Where(x => x.IsActive && !x.IsDeleted)
-            .OrderByDescending(x => x.Id).ToListAsync();
+        var query = _baseRepository.Query().Where(ar => ar.IsActive && !ar.IsDeleted); 
+
+        if (employeeId.HasValue)
+        {
+            query = query.Where(ar => ar.EmployeeId == employeeId.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(ar => ar.StatusId == status.Value);
+        }
+         
+        return await query
+            .Include(ar => ar.Employee)
+            .OrderByDescending(ar => ar.Id)
+            .ToListAsync();
     }
 
     public async Task<List<AttendanceRequest>> GetPandingAttendanceRequestes()
@@ -38,15 +50,6 @@ public class AttendanceRequestRepository
                 .FirstOrDefaultAsync(x=> x.Id == id && x.IsActive && !x.IsDeleted);
     }
 
-    public async Task<List<AttendanceRequest>> GetAttendanceRequestsByEmployee(int employeeId)
-    {
-        return await _baseRepository.Query()
-            .Where(ar => ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted)
-            .Include(d => d.Employee)
-            .OrderByDescending(d => d.Id)
-            .ToListAsync();
-    }
-
     public Task<AttendanceRequest> CreateAttendanceRequestAsync(AttendanceRequest attendance)
     {
         return _baseRepository.AddAsync(attendance);
@@ -57,14 +60,24 @@ public class AttendanceRequestRepository
         return _baseRepository.UpdateAsync(attendanceRequest);
     }
 
+    public async Task<bool> DeleteAttendanceRequestAsync(int id)
+    {
+        var request = await GetAttendanceRequestByIdAsync(id);
+        if (request == null)
+            return false;
+
+        request.IsActive = false;
+        request.IsDeleted = true;
+        request.UpdatedOn = DateTime.Now;
+        await _baseRepository.UpdateAsync(request);
+        return true;
+    }
+
     public async Task<bool> UpdateAttendanceRequestStatusAsync(int attendanceRequestId, Status status, int approvedBy)
     {
         var request = await GetAttendanceRequestByIdAsync(attendanceRequestId);
 
         if (request == null)
-            return false;
-
-        if (request.StatusId != Status.Pending)
             return false;
 
         request.StatusId = status;

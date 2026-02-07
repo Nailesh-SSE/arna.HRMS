@@ -1,17 +1,23 @@
 ﻿.picker-wrapper {
     position: relative;
-    margin-left: 10px;
+    font-family: Inter, system-ui, sans-serif;
+    margin-right: 10px;
 }
 
 .picker-card {
     background: white;
-    padding: 8px 16px;
-    border-radius: 20px;
+    padding: 10px 18px;
+    border-radius: 22px;
     min-width: 220px;
     position: relative;
     box-shadow: 0 6px 20px rgba(0,0,0,.08);
     cursor: pointer;
+    transition: all .25s ease;
 }
+
+    .picker-card:hover {
+        box-shadow: 0 10px 28px rgba(0,0,0,.12);
+    }
 
 .picker-label {
     font-size: 12px;
@@ -25,10 +31,13 @@
     align-items: center;
     font-size: 16px;
     margin-top: 4px;
+    font-weight: 600;
+    color: #0f172a;
 }
 
 .calendar-icon {
     font-size: 18px;
+    opacity: .7;
 }
 
 .picker-popup {
@@ -36,11 +45,12 @@
     top: 110%;
     left: 0;
     background: white;
-    padding: 14px;
-    border-radius: 18px;
+    padding: 16px;
+    border-radius: 20px;
     box-shadow: 0 20px 40px rgba(0,0,0,.15);
     width: 300px;
     z-index: 60;
+    animation: fadeIn .15s ease-out;
 }
 
 .picker-overlay {
@@ -59,10 +69,12 @@
 .day-btn {
     border: none;
     background: transparent;
-    padding: 8px;
-    border-radius: 10px;
+    padding: 10px 0;
+    border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
+    color: #334155;
+    transition: all .18s ease;
 }
 
     .day-btn:hover {
@@ -70,6 +82,19 @@
     }
 
     .day-btn.active {
-        background: #2563eb;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
         color: white;
+        box-shadow: 0 6px 14px rgba(37,99,235,.35);
     }
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

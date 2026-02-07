@@ -69,28 +69,28 @@
                                             </div>
 
                                             <!-- metrics -->
-                                            <div class="bg-light rounded-3 p-2 small d-flex justify-content-between">
+                                            <div class="bg-light rounded-3 p-2 small metrics-grid">
 
                                                 <div>
                                                     <div class="text-muted">Shift</div>
-                                                    @(emp.ClockIn?.ToString(@"hh\:mm") ?? "--")
+                                                    @(emp.ClockIn?.ToString(@"hh\:mm\:ss") ?? "--")
                                                     -
-                                                    @(emp.ClockOut?.ToString(@"hh\:mm") ?? "--")
+                                                    @(emp.ClockOut?.ToString(@"hh\:mm\:ss") ?? "--")
                                                 </div>
 
                                                 <div>
                                                     <div class="text-muted">Work</div>
-                                                    @emp.WorkingHours.ToString(@"hh\:mm")
+                                                    @emp.WorkingHours.ToString(@"hh\:mm\:ss")
                                                 </div>
 
                                                 <div>
                                                     <div class="text-muted">Break</div>
-                                                    @emp.BreakDuration.ToString(@"hh\:mm")
+                                                    @emp.BreakDuration.ToString(@"hh\:mm\:ss")
                                                 </div>
 
                                                 <div>
                                                     <div class="text-muted">Total</div>
-                                                    @emp.TotalHours.ToString(@"hh\:mm")
+                                                    @emp.TotalHours.ToString(@"hh\:mm\:ss")
                                                 </div>
 
                                             </div>

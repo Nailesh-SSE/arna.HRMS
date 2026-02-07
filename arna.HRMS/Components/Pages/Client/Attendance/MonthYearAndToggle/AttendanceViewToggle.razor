@@ -10,6 +10,12 @@
             title="Calendar View">
         📅
     </button>
+
+    <button class="icon-btn @(ActiveView == RequestsView ? "active" : "")"
+            @onclick="() => OnChange.InvokeAsync(RequestsView)"
+            title="Requests">
+        📋
+    </button>
 </div>
 
 @code {
@@ -25,4 +31,5 @@
 
     private const string TableView = "table";
     private const string CalendarView = "calendar";
+    private const string RequestsView = "requests";
 }

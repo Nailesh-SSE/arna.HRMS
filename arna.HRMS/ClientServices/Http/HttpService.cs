@@ -20,6 +20,14 @@ public class HttpService
         PropertyNameCaseInsensitive = true
     };
 
+    static HttpService()
+    {
+        _jsonOptions.Converters.Add(new TimeSpanJsonConverter());
+        _jsonOptions.Converters.Add(new NullableTimeSpanJsonConverter());
+        _jsonOptions.Converters.Add(new DateOnlyJsonConverter());
+        _jsonOptions.Converters.Add(new NullableDateOnlyJsonConverter());
+    }
+
     public HttpService(HttpClient http, CustomAuthStateProvider authProvider)
     {
         _http = http;
@@ -130,30 +138,138 @@ public class HttpService
 
         try
         {
-            var serviceResult = JsonSerializer.Deserialize<ServiceResult<T>>(raw, _jsonOptions);
+            var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, _jsonOptions);
 
-            if (serviceResult == null)
+            if (wrapper == null)
                 return ApiResult<T>.Fail("Invalid response from server.", statusCode);
 
-            if (!serviceResult.IsSuccess)
-                return ApiResult<T>.Fail(serviceResult.Message ?? "Request failed.", statusCode);
+            if (!wrapper.IsSuccess)
+                return ApiResult<T>.Fail(wrapper.Message ?? "Request failed.", statusCode);
 
-            if (typeof(T) == typeof(bool) && serviceResult.Data == null)
+            if (typeof(T) == typeof(bool) && (wrapper.Data.ValueKind == JsonValueKind.Null || wrapper.Data.ValueKind == JsonValueKind.Undefined))
                 return ApiResult<T>.Success((T)(object)true, statusCode);
 
-            return ApiResult<T>.Success(serviceResult.Data!, statusCode);
-        }
-        catch
-        {
+            if (wrapper.Data.ValueKind == JsonValueKind.Null || wrapper.Data.ValueKind == JsonValueKind.Undefined)
+                return ApiResult<T>.Success(default!, statusCode);
+
             try
             {
-                var data = JsonSerializer.Deserialize<T>(raw, _jsonOptions);
+                var data = JsonSerializer.Deserialize<T>(wrapper.Data.GetRawText(), _jsonOptions);
                 return ApiResult<T>.Success(data!, statusCode);
             }
-            catch
+            catch (Exception)
             {
                 return ApiResult<T>.Fail($"Invalid JSON response: {raw}", statusCode);
             }
+        }
+        catch (Exception ex)
+        {
+            return ApiResult<T>.Fail(ex.Message, statusCode);
+        }
+    }
+
+    // ===== Converters =====
+    private sealed class TimeSpanJsonConverter : System.Text.Json.Serialization.JsonConverter<TimeSpan>
+    {
+        public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == System.Text.Json.JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                if (TimeSpan.TryParse(s, out var ts))
+                    return ts;
+            }
+
+            if (reader.TokenType == System.Text.Json.JsonTokenType.Number)
+            {
+                var seconds = reader.GetDouble();
+                return TimeSpan.FromSeconds(seconds);
+            }
+
+            throw new System.Text.Json.JsonException("Unable to parse TimeSpan");
+        }
+
+        public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToString());
+        }
+    }
+
+    private sealed class NullableTimeSpanJsonConverter : System.Text.Json.Serialization.JsonConverter<TimeSpan?>
+    {
+        public override TimeSpan? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == System.Text.Json.JsonTokenType.Null)
+                return null;
+
+            if (reader.TokenType == System.Text.Json.JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                if (TimeSpan.TryParse(s, out var ts))
+                    return ts;
+            }
+
+            if (reader.TokenType == System.Text.Json.JsonTokenType.Number)
+            {
+                var seconds = reader.GetDouble();
+                return TimeSpan.FromSeconds(seconds);
+            }
+
+            throw new System.Text.Json.JsonException("Unable to parse TimeSpan");
+        }
+
+        public override void Write(Utf8JsonWriter writer, TimeSpan? value, JsonSerializerOptions options)
+        {
+            if (value.HasValue)
+                writer.WriteStringValue(value.Value.ToString());
+            else
+                writer.WriteNullValue();
+        }
+    }
+
+    private sealed class DateOnlyJsonConverter : System.Text.Json.Serialization.JsonConverter<DateOnly>
+    {
+        public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == System.Text.Json.JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                if (DateOnly.TryParse(s, out var d))
+                    return d;
+            }
+
+            throw new System.Text.Json.JsonException("Unable to parse DateOnly");
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToString("yyyy-MM-dd"));
+        }
+    }
+
+    private sealed class NullableDateOnlyJsonConverter : System.Text.Json.Serialization.JsonConverter<DateOnly?>
+    {
+        public override DateOnly? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == System.Text.Json.JsonTokenType.Null)
+                return null;
+
+            if (reader.TokenType == System.Text.Json.JsonTokenType.String)
+            {
+                var s = reader.GetString();
+                if (DateOnly.TryParse(s, out var d))
+                    return d;
+            }
+
+            throw new System.Text.Json.JsonException("Unable to parse DateOnly");
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateOnly? value, JsonSerializerOptions options)
+        {
+            if (value.HasValue)
+                writer.WriteStringValue(value.Value.ToString("yyyy-MM-dd"));
+            else
+                writer.WriteNullValue();
         }
     }
 

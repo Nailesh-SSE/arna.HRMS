@@ -33,6 +33,9 @@ public class AttendanceRequestViewModel : CommonViewModel
 
     [Required(ErrorMessage = "Message is required")]
     public string? Description { get; set; }
+    public Status StatusId { get; set; } = Status.Pending;
+    public DateTime? ApprovedOn { get; set; }
+    public int? ApprovedBy { get; set; }
+    public string? ApprovedByName { get; set; }
     public bool IsApproved { get; set; } = false;
-    public DateTime? ApprovedBy { get; set; }
 }
