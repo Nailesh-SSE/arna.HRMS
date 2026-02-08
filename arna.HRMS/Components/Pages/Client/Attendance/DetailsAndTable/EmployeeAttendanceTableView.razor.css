@@ -1,57 +1,25 @@
-﻿.attendance-table-wrapper {
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 6px 18px rgba(0,0,0,.06);
+﻿.custom-table{
+    border-radius: 15px;
 }
 
-.custom-table{
-    z-index: 0 !important;
+.custom-table-head {
+    box-shadow: 0 4px 6px -3px rgba(0,0,0,.15);
+    z-index: 5;
 }
 
-.attendance-table {
-    background: white;
+.table-row-hover {
+    transition: background .15s ease;
 }
 
-    .attendance-table thead th {
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: .04em;
-        color: #64748b;
-        border-bottom: 1px solid #e5e7eb;
+    .table-row-hover:hover {
+        background: #f8fafc;
     }
 
-    .attendance-table tbody tr {
-        transition: all .15s ease;
-    }
-
-        .attendance-table tbody tr:hover {
-            background: #f8fafc;
-            transform: scale(1.002);
-        }
-
-    .attendance-table td {
-        padding: 14px 12px;
-        border-color: #f1f5f9;
-    }
-
-.status-pill {
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    display: inline-block;
-}
-
-/* override bootstrap badge look into soft pills */
+/* soft pills */
 
 .badge.bg-success {
     background: #dcfce7 !important;
     color: #166534;
-}
-
-.badge.bg-info {
-    background: #e0f2fe !important;
-    color: #075985;
 }
 
 .badge.bg-warning {

@@ -2,11 +2,11 @@
 @using arna.HRMS.Models.ViewModels.Attendance
 @inherits AuthenticatedLayoutBase
 
-<div class="request-container">
+<div class="container-fluid py-3">
 
     @if (Requests == null || !Requests.Any())
     {
-        <div class="empty-state">
+        <div class="text-center text-muted py-5">
             No attendance requests found
         </div>
     }
@@ -15,99 +15,78 @@
         <div class="row g-3">
             @foreach (var req in Requests)
             {
-                <div class="col-12 col-md-6 col-lg-4">
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
+                    <div class="bg-white shadow-sm p-3 h-100 d-flex flex-column rounded-4">
 
-                    <div class="request-card">
-
-                        <!-- HEADER -->
-                        <div class="request-header">
-
-                            <strong>
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <strong class="text-truncate">
                                 @(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Unknown" : req.EmployeeName)
                             </strong>
 
-                            <div class="request-actions">
-
-                                <span class="badge @req.StatusId.ToString().ToLower()">
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                <span class="badge @(req.StatusId.ToString().ToLower() == "pending"
+                                    ? "bg-warning text-dark"
+                                    : req.StatusId.ToString().ToLower() == "approved"
+                                        ? "bg-success"
+                                        : req.StatusId.ToString().ToLower() == "rejected"
+                                            ? "bg-danger"
+                                            : "bg-secondary")">
                                     @req.StatusId
                                 </span>
 
-                                <!-- EMPLOYEE ACTIONS -->
-                                @if (IsEmployee())
+                                @if (IsEmployee() && !req.IsApproved)
                                 {
-                                    @if(req.IsApproved)
-                                    {
-                                        <button class="icon-btn edit"
-                                                title="Edit"
-                                                @onclick="() => EditClicked.InvokeAsync(req)">
-                                            ✏️
-                                        </button>
-
-                                        <button class="icon-btn delete"
-                                                title="Delete"
-                                                @onclick="() => DeleteClicked.InvokeAsync(req)">
-                                            🗑️
-                                        </button>
-                                    }
+                                    <button class="btn btn-sm btn-outline-success">✏️</button>
+                                    <button class="btn btn-sm btn-outline-danger">🗑️</button>
                                 }
 
-                                <!-- ADMIN ACTIONS -->
                                 @if (IsAdmin() || IsSuperAdmin())
                                 {
-                                    <button class="icon-btn approve"
-                                            title="Approve"
-                                            disabled="@req.IsApproved"
-                                            @onclick="() => AdminAction.InvokeAsync((req, true))">
+                                    <button class="btn btn-sm btn-outline-success" disabled="@req.IsApproved">
                                         ✅
                                     </button>
-
-                                    <button class="icon-btn reject"
-                                            title="Reject"
-                                            @onclick="() => AdminAction.InvokeAsync((req, false))">
-                                        ❌
-                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger">❌</button>
                                 }
-
                             </div>
                         </div>
 
-                        <!-- DATES -->
-                        <div class="request-dates">
+                        <div class="small text-primary mt-1">
                             📅 @req.FromDate?.ToString("dd MMM yyyy") →
                             @req.ToDate?.ToString("dd MMM yyyy")
                         </div>
 
-                        <!-- INFO -->
-                        <div class="request-info">
-                            <div><b>Reason:</b> @req.ReasonTypeId</div>
-                            <div><b>Location:</b> @req.LocationId</div>
+                        <div class="d-flex justify-content-between small mt-2 flex-wrap gap-2">
+                            <span><strong>Reason:</strong> @req.ReasonTypeId</span>
+                            <span><strong>Location:</strong> @req.LocationId</span>
                         </div>
 
-                        <!-- TIME -->
-                        <div class="time-box">
-                            <div>
-                                <small>Clock In</small>
-                                <strong>@req.ClockIn?.ToString("hh:mm tt")</strong>
-                            </div>
+                        <div class="bg-light rounded-3 p-2 mt-3">
+                            <div class="row text-center small g-2">
 
-                            <div>
-                                <small>Clock Out</small>
-                                <strong>@req.ClockOut?.ToString("hh:mm tt")</strong>
-                            </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Clock In</div>
+                                    <strong>@req.ClockIn?.ToString("hh:mm tt")</strong>
+                                </div>
 
-                            <div>
-                                <small>Break</small>
-                                <strong>@(req.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")</strong>
-                            </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Clock Out</div>
+                                    <strong>@req.ClockOut?.ToString("hh:mm tt")</strong>
+                                </div>
 
-                            <div>
-                                <small>Total</small>
-                                <strong>@req.TotalHours.ToString(@"hh\:mm")</strong>
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Break</div>
+                                    <strong>@(req.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")</strong>
+                                </div>
+
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Total</div>
+                                    <strong>@req.TotalHours.ToString(@"hh\:mm")</strong>
+                                </div>
+
                             </div>
                         </div>
 
-                        <!-- MESSAGE -->
-                        <div class="description">
+                        <div class="small text-secondary mt-3 flex-grow-1">
                             @req.Description
                         </div>
 
@@ -116,7 +95,6 @@
             }
         </div>
     }
-
 </div>
 
 @code {
@@ -126,5 +104,5 @@
     [Parameter] public EventCallback<AttendanceRequestViewModel> DeleteClicked { get; set; }
 
     [Parameter]
-    public EventCallback<(AttendanceRequestViewModel Request, bool IsApproved)> AdminAction { get; set; } 
+    public EventCallback<(AttendanceRequestViewModel Request, bool IsApproved)> AdminAction { get; set; }
 }

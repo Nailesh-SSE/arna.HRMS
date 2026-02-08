@@ -1,6 +1,6 @@
 ﻿.timeline-line {
     position: absolute;
-    left: 26px;
+    left: 12px;
     top: 0;
     bottom: 0;
     width: 2px;
@@ -8,38 +8,20 @@
 }
 
 .timeline-date {
-    left: -44px;
-    top: 0;
+    left: -34px;
 }
 
-.date-box {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 6px 10px;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,.04);
-}
-
-    .date-box.today {
-        background: #6366f1;
-        color: white;
-    }
-
-.content-box{
-    padding: 0 20px;
+.custom-date{
+    border-radius: 10px;
 }
 
 .avatar {
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 10px;
-    background: #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    color: #6366f1;
 }
 
 .status-dot {
@@ -49,87 +31,85 @@
     position: absolute;
     bottom: -2px;
     right: -2px;
-    border: 2px solid white;
+    border: 2px solid #fff;
 }
 
-.employee-box{
+.hover-card {
+    transition: .2s ease;
+    border-radius: 15px;
+    border: 1px solid #f7f7f7;
+}
+
+    .hover-card:hover {
+        box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.08);
+        border-color: #f7f7f7;
+    }
+
+.custom-content{
+    padding: 0px 24px;
+    padding-left: 2rem !important;
+}
+
+.custom-card{
+    padding: 4px;
     border-radius: 15px;
 }
 
-.bg-status-present {
-    background: #22c55e;
+.custom-card-header {
+    border-radius: 15px;
 }
 
-.text-status-present {
-    color: #16a34a;
-    font-weight: 600;
+/* status colors */
+.bg-status-present {
+    background: #22c55e;
 }
 
 .bg-status-leave {
     background: #f59e0b;
 }
 
-.text-status-leave {
-    color: #d97706;
-    font-weight: 600;
-}
-
 .bg-status-late {
     background: #ef4444;
-}
-
-.text-status-late {
-    color: #dc2626;
-    font-weight: 600;
 }
 
 .bg-status-absent {
     background: #f87171;
 }
 
-.text-status-absent {
-    color: #b91c1c;
-    font-weight: 600;
-}
-
 .bg-status-holiday {
     background: #38bdf8;
-}
-
-.text-status-holiday {
-    color: #0369a1;
-    font-weight: 600;
 }
 
 .bg-status-halfday {
     background: #a78bfa;
 }
 
+.text-status-present {
+    color: #16a34a;
+    font-weight: 600
+}
+
+.text-status-leave {
+    color: #d97706;
+    font-weight: 600
+}
+
+.text-status-late {
+    color: #dc2626;
+    font-weight: 600
+}
+
+.text-status-absent {
+    color: #b91c1c;
+    font-weight: 600
+}
+
+.text-status-holiday {
+    color: #0369a1;
+    font-weight: 600
+}
+
 .text-status-halfday {
     color: #5b21b6;
-    font-weight: 600;
+    font-weight: 600
 }
-
-.hover-card:hover {
-    border-color: #6366f1;
-    box-shadow: 0 6px 18px rgba(0,0,0,.08);
-}
-
-.metrics-grid {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 12px 16px;
-}
-
-    .metrics-grid > div {
-        display: flex;
-        flex-direction: column;
-        font-weight: 600;
-    }
-
-    .metrics-grid .text-muted {
-        font-size: 11px;
-        margin-bottom: 2px;
-    }
-
-
