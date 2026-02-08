@@ -185,9 +185,9 @@ public sealed class ApiClients
         }
 
         public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll() => Filter(null, null);
-        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(int empId) => Filter(empId, null);
-        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(Status status) => Filter(null, status);
-        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(int empId, Status status) => Filter(empId, status);
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(int? empId) => Filter(empId, null);
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(Status? status) => Filter(null, status);
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(int? empId, Status? status) => Filter(empId, status);
 
         public Task<ApiResult<bool>> Update(AttendanceRequestViewModel dto) =>
             ToBool(UpdateRaw(dto.Id, dto), "Unable to update request.");

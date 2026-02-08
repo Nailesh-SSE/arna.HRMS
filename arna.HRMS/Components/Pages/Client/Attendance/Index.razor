@@ -17,7 +17,6 @@
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Attendance
-@using System.Linq
 
 @inherits AuthenticatedLayoutBase
 @inject AttendanceState State
@@ -244,62 +243,24 @@
         await LoadData();
     }
 
+    // ================= LOAD DATA =================
     private async Task LoadData()
     {
         if (AttendanceService == null || State == null)
             return;
 
-        int? empId;
-
         try
         {
-            if (IsLegend())
-            {
-                empId = State.SelectedEmployeeId;
-            }
-            else
-            {
-                var id = GetEmployeeId();
-                if (id == 0)
-                    return;
-                empId = id;
-            }
+            var empId = LoadEmployeeId();
 
-            var attendanceResult = await AttendanceService.GetAttendanceByMonthAsync(State.Year, State.Month, empId, State.SelectedDate);
-            State.AttendanceList = attendanceResult ?? new List<MonthlyAttendanceViewModel>(); 
-
-            if (State.AttendanceList != null)
-            {
-                State.AttendanceLookup = State.AttendanceList
-                    .GroupBy(x => x.Date)
-                    .ToDictionary(g => g.Key, g => g.First());
-            }
-            else
-            {
-                State.AttendanceLookup = new();
-            }
-
-            try
-            {
-                var employeesFlatten = State.AttendanceList?.SelectMany(d => d.Employees ?? Enumerable.Empty<dynamic>()) ?? Enumerable.Empty<dynamic>();
-                State.TotalWorkingHours = employeesFlatten.Aggregate(TimeSpan.Zero, (total, emp) => total + (emp?.TotalHours ?? TimeSpan.Zero));
-            }
-            catch
-            {
-                State.TotalWorkingHours = TimeSpan.Zero;
-            }
-
-            try
-            {
-                State.SummaryCards = AttendanceSummaryBuilder.Build(State.AttendanceList ?? new());
-            }
-            catch
-            {
-                State.SummaryCards = new();
-            }
+            await LoadAttendanceAsync(empId);
+            BuildAttendanceLookup();
+            CalculateTotalHours();
 
             await LoadEmployees();
             await LoadAttendanceRequests(empId, State.SelectedStatus);
+
+            BuildSummary();
         }
         catch (Exception ex)
         {
@@ -311,34 +272,78 @@
         }
     }
 
-    private async Task LoadEmployees()
+    // ================= Load EmployeeId =================
+    private int? LoadEmployeeId()
     {
-        if (EmployeeService == null)
-            return;
-
-        try
+        if (IsLegend())
         {
-            var result = await EmployeeService.GetEmployeesAsync();
-            if (result != null && result.IsSuccess && result.Data != null)
-            {
-                Employees = result.Data.Select(e => new SelectOption
-                {
-                    Value = e.Id.ToString(),
-                    Text = e.FullName
-                }).ToList();
-            }
-            else
-            {
-                Employees = new();
-            }
+            return State.SelectedEmployeeId;
         }
-        catch (Exception ex)
+        else
         {
-            Employees = new();
-            NotificationService?.Error(ex.Message ?? "Unable to load employees.");
+            var id = GetEmployeeId();
+            if (id == 0)
+                return null;
+            return id;
         }
     }
 
+    // ================= Load Attendance =================
+    private async Task LoadAttendanceAsync(int? empId)
+    {
+        var result = await AttendanceService.GetAttendanceByMonthAsync(
+            State.Year,
+            State.Month,
+            empId,
+            State.SelectedDate);
+
+        State.AttendanceList = result ?? new();
+    }
+
+    // ================= Build Attendance Lookup =================
+    private void BuildAttendanceLookup()
+    {
+        State.AttendanceLookup = State.AttendanceList?
+            .GroupBy(x => x.Date)
+            .ToDictionary(g => g.Key, g => g.First())
+            ?? new();
+    }
+    
+    // ================= Calculate Total Hours =================
+    private void CalculateTotalHours()
+    {
+        try
+        {
+            var employees = State.AttendanceList
+                .SelectMany(d => d.Employees ?? Enumerable.Empty<dynamic>());
+
+            State.TotalWorkingHours = employees.Aggregate(
+                TimeSpan.Zero,
+                (total, emp) => total + (emp?.TotalHours ?? TimeSpan.Zero));
+        }
+        catch
+        {
+            State.TotalWorkingHours = TimeSpan.Zero;
+        }
+    }
+
+    // ================= Build Summary =================
+    private void BuildSummary()
+    {
+        try
+        {
+            if (State.ViewMode == AttendanceState.REQUEST)
+                State.SummaryCards = AttendanceSummaryBuilder.Build(State.AttendanceRequestList);
+            else
+                State.SummaryCards = AttendanceSummaryBuilder.Build(State.AttendanceList);
+        }
+        catch
+        {
+            State.SummaryCards = new();
+        }
+    }
+
+    // ================= Load Attendance Requests =================
     private async Task LoadAttendanceRequests(int? empId, Status? status)
     {
         if (AttendanceRequestService == null)
@@ -346,51 +351,25 @@
 
         try
         {
-            if (IsLegend())
+            if (empId.HasValue && empId > 0 && status.HasValue)
             {
-                if (empId.HasValue && empId.Value > 0 && status.HasValue)
-                {
-                    var result = await AttendanceRequestService.GetAllAsync(empId.Value, status.Value);
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
-                else if (empId.HasValue && empId.Value > 0)
-                {
-                    var result = await AttendanceRequestService.GetAllAsync(empId.Value);
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
-                else if (status.HasValue)
-                {
-                    var result = await AttendanceRequestService.GetAllAsync(status.Value);
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
-                else
-                {
-                    var result = await AttendanceRequestService.GetAllAsync();
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
+                var result = await AttendanceRequestService.GetAllAsync(empId, status.Value);
+                State.AttendanceRequestList = result?.IsSuccess == true ? result.Data ?? new() : new();
+            }
+            else if (empId.HasValue && empId > 0)
+            {
+                var result = await AttendanceRequestService.GetAllAsync(empId);
+                State.AttendanceRequestList = result?.IsSuccess == true ? result.Data ?? new() : new();
+            }
+            else if (status.HasValue)
+            {
+                var result = await AttendanceRequestService.GetAllAsync(status.Value);
+                State.AttendanceRequestList = result?.IsSuccess == true ? result.Data ?? new() : new();
             }
             else
             {
-                if (empId.HasValue && empId.Value > 0 && status.HasValue)
-                {
-                    var result = await AttendanceRequestService.GetAllAsync(empId.Value, status.Value);
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
-                else if (empId.HasValue && empId.Value > 0)
-                {
-                    var result = await AttendanceRequestService.GetAllAsync(empId.Value);
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
-                else if (status.HasValue)
-                {
-                    var result = await AttendanceRequestService.GetAllAsync(status.Value);
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
-                else
-                {
-                    var result = await AttendanceRequestService.GetAllAsync();
-                    State.AttendanceRequestList = result != null && result.IsSuccess && result.Data != null ? result.Data : new();
-                }
+                var result = await AttendanceRequestService.GetAllAsync();
+                State.AttendanceRequestList = result?.IsSuccess == true ? result.Data ?? new() : new();
             }
         }
         catch (Exception ex)
@@ -400,6 +379,32 @@
         }
     }
 
+    // ================= Load Employees =================
+    private async Task LoadEmployees()
+    {
+        if (EmployeeService == null)
+            return;
+
+        try
+        {
+            var result = await EmployeeService.GetEmployeesAsync();
+
+            Employees = result?.IsSuccess == true && result.Data != null
+                ? result.Data.Select(e => new SelectOption
+                {
+                    Value = e.Id.ToString(),
+                    Text = e.FullName
+                }).ToList()
+                : new();
+        }
+        catch (Exception ex)
+        {
+            Employees = new();
+            NotificationService?.Error(ex.Message ?? "Unable to load employees.");
+        }
+    }
+
+    // ================= On Changed =================
     private async Task OnDateSelected(DateTime? date)
     {
         State.SelectedDate = date;
@@ -493,12 +498,13 @@
         }
     }
 
-    private void SetView(string mode)
+    private async Task SetView(string mode)
     {
         if (string.IsNullOrWhiteSpace(mode))
             return;
 
         State.ViewMode = mode;
+        await LoadData();
     }
 
     private void EditRequest(AttendanceRequestViewModel req)

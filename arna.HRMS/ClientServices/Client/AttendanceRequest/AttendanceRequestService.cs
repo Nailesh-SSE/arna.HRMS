@@ -8,9 +8,9 @@ namespace arna.HRMS.ClientServices.Client.AttendanceRequest;
 public interface IAttendanceRequestService
 {
     Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync();
-    Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int empId);
-    Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(Status status);
-    Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int empId, Status status);
+    Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int? empId);
+    Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(Status? status);
+    Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int? empId, Status? status);
 
     Task<ApiResult<AttendanceRequestViewModel>> GetAttendanceRequestByIdAsync(int id);
     Task<ApiResult<AttendanceRequestViewModel>> CreateAttendanceRequestAsync(AttendanceRequestViewModel model);
@@ -31,13 +31,13 @@ public class AttendanceRequestService : IAttendanceRequestService
     public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync() =>
         _attendanceRequest.GetAll();
 
-    public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int empId) =>
+    public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int? empId) =>
         _attendanceRequest.GetAll(empId);
 
-    public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(Status status) =>
+    public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(Status? status) =>
         _attendanceRequest.GetAll(status);
 
-    public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int empId, Status status) =>
+    public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAllAsync(int? empId, Status? status) =>
         _attendanceRequest.GetAll(empId, status);
 
     public Task<ApiResult<AttendanceRequestViewModel>> GetAttendanceRequestByIdAsync(int id) =>
