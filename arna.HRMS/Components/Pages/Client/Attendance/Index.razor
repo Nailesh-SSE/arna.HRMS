@@ -7,9 +7,10 @@
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Client.Attendance.AttendanceRequest
+@using arna.HRMS.Components.Pages.Client.Attendance.Calendar
+@using arna.HRMS.Components.Pages.Client.Attendance.DetailsAndTable
 @using arna.HRMS.Components.Pages.Client.Attendance.MonthYearAndToggle
 @using arna.HRMS.Components.Pages.Client.Attendance.Summary
-@using arna.HRMS.Components.Pages.Client.Attendance.TableAndCalendar
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Helper.Attendance
@@ -172,7 +173,7 @@
 
     private void OpenDrawer() => isDrawerOpen = true;
 
-    private bool IsPrivileged() => IsAdmin() || IsSuperAdmin();
+    private bool IsLegend() => IsAdmin() || IsSuperAdmin();
 
     private int SafeYear => State?.Year > 0 ? State.Year : DateTime.Today.Year;
     private int SafeMonth => State?.Month >= 1 && State.Month <= 12 ? State.Month : DateTime.Today.Month;
@@ -252,7 +253,7 @@
 
         try
         {
-            if (IsPrivileged())
+            if (IsLegend())
             {
                 empId = State.SelectedEmployeeId;
             }
@@ -345,7 +346,7 @@
 
         try
         {
-            if (IsPrivileged())
+            if (IsLegend())
             {
                 if (empId.HasValue && empId.Value > 0 && status.HasValue)
                 {
