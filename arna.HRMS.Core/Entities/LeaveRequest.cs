@@ -9,7 +9,7 @@ public class LeaveRequest : BaseEntity
     public int LeaveTypeId { get; set; }
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    public int TotalDays { get; set; }
+    public int LeaveDays { get; set; }
     public string Reason { get; set; }
     public Status? StatusId { get; set; }
     public int? ApprovedBy { get; set; }
@@ -19,5 +19,5 @@ public class LeaveRequest : BaseEntity
     // Navigation Properties
     public Employee Employee { get; set; }
     public Employee ApprovedByEmployee { get; set; }
-    public LeaveMaster LeaveType { get; set; }
+    public LeaveType LeaveType { get; set; }
 }

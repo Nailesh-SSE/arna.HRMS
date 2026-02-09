@@ -7,17 +7,16 @@ namespace arna.HRMS.Infrastructure.Services.Interfaces;
 
 public interface ILeaveService
 {
-    //Leave Master Methods
-    Task<ServiceResult<List<LeaveMasterDto>>> GetLeaveMasterAsync();
-    Task<ServiceResult<LeaveMasterDto>> CreateLeaveMasterAsync(LeaveMasterDto leaveMasterDto);
-    Task<ServiceResult<LeaveMasterDto>> GetLeaveMasterByIdAsync(int id);
-    Task<ServiceResult<bool>> DeleteLeaveMasterAsync(int id);
-    Task<ServiceResult<LeaveMasterDto>> UpdateLeaveMasterAsync(LeaveMasterDto leaveMasterDto);
-    Task<ServiceResult<List<LeaveMaster>>> LeaveExistsAsync(string Name);
+    //Leave Type Methods
+    Task<ServiceResult<List<LeaveTypeDto>>> GetLeaveTypeAsync();
+    Task<ServiceResult<LeaveTypeDto>> CreateLeaveTypeAsync(LeaveTypeDto leaveTypeDto);
+    Task<ServiceResult<LeaveTypeDto>> GetLeaveTypeByIdAsync(int id);
+    Task<ServiceResult<bool>> DeleteLeaveTypeAsync(int id);
+    Task<ServiceResult<LeaveTypeDto>> UpdateLeaveTypeAsync(LeaveTypeDto leaveTypeDto);
 
     //Leave Request Methods
     Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestAsync();
-    Task<ServiceResult<List<LeaveRequestDto>>> GetByStatusAsync(Status status);
+    Task<ServiceResult<List<LeaveRequestDto>>> GetByFilterAsync(Status? status, int? employeeId);
     Task<ServiceResult<LeaveRequestDto>> GetLeaveRequestByIdAsync(int Id);
     Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestByEmployeeIdAsync(int employeeId);
     Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
@@ -25,10 +24,4 @@ public interface ILeaveService
     Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto leaveRequestDto);
     Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status, int approvedBy);
     Task<ServiceResult<bool>> UpdateLeaveRequestStatusCancelAsync(int id, int employeeId);
-
-    //Leave Balance Methods
-    Task<ServiceResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync();
-    Task<ServiceResult<bool>> DeleteLeaveBalanceAsync(int id);
-    Task<ServiceResult<EmployeeLeaveBalanceDto>> UpdateLeaveBalanceAsync(EmployeeLeaveBalanceDto leaveBalanceDto);
-    Task<ServiceResult<List<EmployeeLeaveBalanceDto?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId);
 }

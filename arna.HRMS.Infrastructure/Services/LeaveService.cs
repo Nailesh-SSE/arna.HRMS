@@ -24,88 +24,79 @@ public class LeaveService : ILeaveService
         _attendanceService = attendanceService;
     }
 
-    //Leave Master Methods
-    public async Task<ServiceResult<List<LeaveMasterDto>>> GetLeaveMasterAsync()
+    //Leave Type Methods
+    public async Task<ServiceResult<List<LeaveTypeDto>>> GetLeaveTypeAsync()
     {
-        var leave = await _leaveRepository.GetLeaveMasterAsync();
-        var list = _mapper.Map<List<LeaveMasterDto>>(leave);
-        return ServiceResult<List<LeaveMasterDto>>.Success(list);
+        var leave = await _leaveRepository.GetLeaveTypeAsync();
+        var list = _mapper.Map<List<LeaveTypeDto>>(leave);
+        return ServiceResult<List<LeaveTypeDto>>.Success(list);
     }
-    public async Task<ServiceResult<LeaveMasterDto>> GetLeaveMasterByIdAsync(int id)
+    public async Task<ServiceResult<LeaveTypeDto>> GetLeaveTypeByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<LeaveMasterDto>.Fail("Invalid ID");
+            return ServiceResult<LeaveTypeDto>.Fail("Invalid ID");
 
-        var leave = await _leaveRepository.GetLeaveMasterByIdAsync(id);
+        var leave = await _leaveRepository.GetLeaveTypeByIdAsync(id);
         if (leave == null)
-            return ServiceResult<LeaveMasterDto>.Success(null, "leave not found");
+            return ServiceResult<LeaveTypeDto>.Success(null, "leave not found");
 
-        var data = leave == null ? new LeaveMasterDto() : _mapper.Map<LeaveMasterDto>(leave);
-        return ServiceResult<LeaveMasterDto>.Success(data);
+        var data = leave == null ? new LeaveTypeDto() : _mapper.Map<LeaveTypeDto>(leave);
+        return ServiceResult<LeaveTypeDto>.Success(data);
     }
 
-    public async Task<ServiceResult<LeaveMasterDto>> CreateLeaveMasterAsync(LeaveMasterDto LeaveMasterDto)
+    public async Task<ServiceResult<LeaveTypeDto>> CreateLeaveTypeAsync(LeaveTypeDto LeaveTypeDto)
     {
-        if (LeaveMasterDto == null)
-            return ServiceResult<LeaveMasterDto>.Fail("Data not Found");
+        if (LeaveTypeDto == null)
+            return ServiceResult<LeaveTypeDto>.Fail("Data not Found");
         
-        if (string.IsNullOrWhiteSpace(LeaveMasterDto.LeaveName))
-            return ServiceResult<LeaveMasterDto>.Fail("Leave name is required");
+        if (string.IsNullOrWhiteSpace(nameof(LeaveTypeDto.LeaveName)))
+            return ServiceResult<LeaveTypeDto>.Fail("Leave name is required");
 
-        if (LeaveMasterDto.MaxPerYear <= 0)
-            return ServiceResult<LeaveMasterDto>.Fail("number of days is required");
+        if (LeaveTypeDto.MaxPerYear <= 0)
+            return ServiceResult<LeaveTypeDto>.Fail("number of days is required");
 
-        var existingLeaves = await _leaveRepository.LeaveExistsAsync(LeaveMasterDto.LeaveName);
-        var duplicate = existingLeaves.Any(x =>
-            x != null &&
-            x.IsPaid == LeaveMasterDto.IsPaid
-        );
-
-        if (duplicate)
+        var existingLeaves = await _leaveRepository.LeaveExistsAsync(LeaveTypeDto.LeaveName);
+        
+        if (existingLeaves)
         {
-            return ServiceResult<LeaveMasterDto>.Fail(
-                $"Leave '{LeaveMasterDto.LeaveName}' with IsPaid = {LeaveMasterDto.IsPaid} already exists"
+            return ServiceResult<LeaveTypeDto>.Fail(
+                $"Leave '{LeaveTypeDto.LeaveName}' already exists"
             );
         }
 
-        var leave = _mapper.Map<LeaveMaster>(LeaveMasterDto);
-        var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leave);
-        var Data = _mapper.Map<LeaveMasterDto>(createdLeaveMaster);
-        return ServiceResult<LeaveMasterDto>.Success(Data);
+        var leave = _mapper.Map<LeaveType>(LeaveTypeDto);
+        var createdLeaveType = await _leaveRepository.CreateLeaveTypeAsync(leave);
+        var Data = _mapper.Map<LeaveTypeDto>(createdLeaveType);
+        return ServiceResult<LeaveTypeDto>.Success(Data);
     }
-    public async Task<ServiceResult<bool>> DeleteLeaveMasterAsync(int id)
+    public async Task<ServiceResult<bool>> DeleteLeaveTypeAsync(int id)
     {
-        var exist = await GetLeaveMasterByIdAsync(id);
+        var exist = await GetLeaveTypeByIdAsync(id);
         if(exist == null)
         {
-            return ServiceResult<bool>.Fail("Leave Master not found");
+            return ServiceResult<bool>.Fail("Leave Type not found");
         }
 
-        var Data = await _leaveRepository.DeleteLeaveMasterAsync(id);
+        var Data = await _leaveRepository.DeleteLeaveTypeAsync(id);
         return Data
             ?ServiceResult<bool>.Success(Data)
-            :ServiceResult<bool>.Fail("Leave Master not found"); ;
+            :ServiceResult<bool>.Fail("Leave Type not found"); ;
     }
 
-    public async Task<ServiceResult<LeaveMasterDto>> UpdateLeaveMasterAsync(LeaveMasterDto LeaveMasterDto)
+    public async Task<ServiceResult<LeaveTypeDto>> UpdateLeaveTypeAsync(LeaveTypeDto LeaveTypeDto)
     {
-        var leave = _mapper.Map<LeaveMaster>(LeaveMasterDto);
-        var updatedLeaveMaster = await _leaveRepository.UpdateLeaveMasterAsync(leave);
-        if (updatedLeaveMaster == null)
+        var leave = _mapper.Map<LeaveType>(LeaveTypeDto);
+        var updatedLeaveType = await _leaveRepository.UpdateLeaveTypeAsync(leave);
+        if (updatedLeaveType == null)
         {
-            return ServiceResult<LeaveMasterDto>.Fail("Leave Master not found");
+            return ServiceResult<LeaveTypeDto>.Fail("Leave Type not found");
         }
-        if (updatedLeaveMaster.Id == 0 || updatedLeaveMaster.LeaveName == " " || updatedLeaveMaster.LeaveName == null)
+        if (updatedLeaveType.Id == 0 || updatedLeaveType.LeaveNameId == 0)
         {
-            return ServiceResult<LeaveMasterDto>.Fail("Failed to update Leave Master");
+            return ServiceResult<LeaveTypeDto>.Fail("Failed to update Leave Type");
         }
-        var Data = _mapper.Map<LeaveMasterDto>(updatedLeaveMaster);
-        return ServiceResult<LeaveMasterDto>.Success(Data);
-    }
-    public async Task<ServiceResult<List<LeaveMaster>>> LeaveExistsAsync(string Name)
-    {
-        var Data = await _leaveRepository.LeaveExistsAsync(Name);
-        return ServiceResult<List<LeaveMaster>>.Success(Data);
+        var Data = _mapper.Map<LeaveTypeDto>(updatedLeaveType);
+        return ServiceResult<LeaveTypeDto>.Success(Data);
     }
 
     //Leave Request Methods
@@ -116,9 +107,9 @@ public class LeaveService : ILeaveService
         return ServiceResult<List<LeaveRequestDto>>.Success(list);
     }
 
-    public async Task<ServiceResult<List<LeaveRequestDto>>> GetByStatusAsync(Status status)
+    public async Task<ServiceResult<List<LeaveRequestDto>>> GetByFilterAsync(Status? status, int? employeeId)
     {
-        var leave = await _leaveRepository.GetLeaveRequestsByStatusAsync(status);
+        var leave = await _leaveRepository.GetLeaveRequestsByFilterAsync(status, employeeId);
         var list = _mapper.Map<List<LeaveRequestDto>>(leave);
         return ServiceResult<List<LeaveRequestDto>>.Success(list);
     }
@@ -148,7 +139,6 @@ public class LeaveService : ILeaveService
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Employee Id");
         }
                
-        var balance = await _leaveRepository.GetLeaveBalanceByEmployeeAsync(LeaveRequestDto.EmployeeId);
         var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
                 .Data?
                 .Select(f => f.Date.Date)
@@ -160,22 +150,13 @@ public class LeaveService : ILeaveService
                 LeaveRequestDto.EndDate,
                 festivalDates);
 
-            var hasInsufficientBalance = balance.Any(w =>
-             w.LeaveMasterId == LeaveRequestDto.LeaveTypeId &&
-             w.RemainingLeaves < actualLeaveDays
-             );
 
-            if (hasInsufficientBalance)
-            {
-                return ServiceResult<LeaveRequestDto>
-                    .Fail("Insufficient leave balance");
-            }
-
-            var leave = _mapper.Map<LeaveRequest>(LeaveRequestDto);
-            var createdLeaveRequest = await _leaveRepository.CreateLeaveRequestAsync(leave);
-            var Data = _mapper.Map<LeaveRequestDto>(createdLeaveRequest);
-            return ServiceResult<LeaveRequestDto>.Success(Data);
-        }
+        LeaveRequestDto.LeaveDays= actualLeaveDays;
+        var leave = _mapper.Map<LeaveRequest>(LeaveRequestDto);
+        var createdLeaveRequest = await _leaveRepository.CreateLeaveRequestAsync(leave);
+        var Data = _mapper.Map<LeaveRequestDto>(createdLeaveRequest);
+        return ServiceResult<LeaveRequestDto>.Success(Data);
+    }
     public async Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id)
     {
         var Data = await _leaveRepository.DeleteLeaveRequestAsync(id);
@@ -201,7 +182,6 @@ public class LeaveService : ILeaveService
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Leave Type Id");
         }
 
-        var balance = await _leaveRepository.GetLeaveBalanceByEmployeeAsync(LeaveRequestDto.EmployeeId);
         var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
                 .Data?
                 .Select(f => f.Date.Date)
@@ -213,16 +193,8 @@ public class LeaveService : ILeaveService
             LeaveRequestDto.EndDate,
             festivalDates);
 
-        var hasInsufficientBalance = balance.Any(w =>
-         w.LeaveMasterId == LeaveRequestDto.LeaveTypeId &&
-         w.RemainingLeaves < actualLeaveDays
-         );
+        LeaveRequestDto.LeaveDays= actualLeaveDays;
 
-        if (hasInsufficientBalance)
-        {
-            return ServiceResult<LeaveRequestDto>
-                .Fail("Insufficient leave balance");
-        }
         var Festival = _mapper.Map<LeaveRequest>(LeaveRequestDto);
         var updatedLeaveRequest = await _leaveRepository.UpdateLeaveRequestAsync(Festival);
         var Data = _mapper.Map<LeaveRequestDto>(updatedLeaveRequest);
@@ -248,53 +220,11 @@ public class LeaveService : ILeaveService
             if (leaveRequest == null)
                 return ServiceResult<bool>.Fail("Failed to find Leave Request");
 
-            var latestBalance = await _leaveRepository
-                .GetLatestByEmployeeAndLeaveTypeAsync(
-                    leaveRequest.EmployeeId,
-                    leaveRequest.LeaveTypeId);
-
-            if (latestBalance == null)
-            {
-                var leaveMaster = await _leaveRepository.GetLeaveMasterByIdAsync(leaveRequest.LeaveTypeId);
-                latestBalance = new EmployeeLeaveBalance
-                {
-                    EmployeeId = leaveRequest.EmployeeId,
-                    LeaveMasterId = leaveRequest.LeaveTypeId,
-                    TotalLeaves = leaveMaster.MaxPerYear,
-                    UsedLeaves = 0,
-                    RemainingLeaves = leaveMaster.MaxPerYear,
-                    Year = DateTime.Now.Year,
-                };
-            }
-
             var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
                 .Data?
                 .Select(f => f.Date.Date)
                 .ToHashSet()
                 ?? new HashSet<DateTime>();
-
-            int actualLeaveDays = CalculateActualLeaveDays(
-                leaveRequest.StartDate,
-                leaveRequest.EndDate,
-                festivalDates);
-
-            var newUsedLeaves = latestBalance.UsedLeaves + actualLeaveDays;
-            var newRemainingLeaves = latestBalance.TotalLeaves - newUsedLeaves;
-
-
-            var newBalance = new EmployeeLeaveBalance
-            {
-                EmployeeId = leaveRequest.EmployeeId,
-                LeaveMasterId = leaveRequest.LeaveTypeId,
-                TotalLeaves = latestBalance.TotalLeaves,
-                UsedLeaves = newUsedLeaves,
-                RemainingLeaves = newRemainingLeaves,
-                IsActive = true,
-                IsDeleted = false,
-                CreatedOn = DateTime.Now
-            };
-
-            await _leaveRepository.CreateLeaveBalanceAsync(newBalance);
 
             var leaveDates = Enumerable
                 .Range(0, (leaveRequest.EndDate.Date - leaveRequest.StartDate.Date).Days + 1)
@@ -356,52 +286,4 @@ public class LeaveService : ILeaveService
         return ServiceResult<bool>.Success(updated);
     }
 
-    //Leave Balance Methods
-    public async Task<ServiceResult<List<EmployeeLeaveBalanceDto>>> GetLeaveBalanceAsync()
-    {
-        var holiday = await _leaveRepository.GetLeaveBalanceAsync();
-        var Data = _mapper.Map<List<EmployeeLeaveBalanceDto>>(holiday);
-        return ServiceResult<List<EmployeeLeaveBalanceDto>>.Success(Data);
-    }
-
-    public async Task<ServiceResult<bool>> DeleteLeaveBalanceAsync(int id)
-    {
-        if(id <= 0 )
-        {
-            return ServiceResult<bool>.Fail("Invalid Leave Balance Id");
-        }
-        var Data = await _leaveRepository.DeleteLeaveBalanceAsync(id);
-        if(Data == false)
-        {
-            return ServiceResult<bool>.Fail("Leave Balance not found");
-        }
-        return ServiceResult<bool>.Success(Data);
-    }
-
-    public async Task<ServiceResult<EmployeeLeaveBalanceDto>> UpdateLeaveBalanceAsync(EmployeeLeaveBalanceDto LeaveBalanceDto)
-    {
-        if(LeaveBalanceDto == null || LeaveBalanceDto.Id <=0 || LeaveBalanceDto.EmployeeId<=0)
-        {
-            return ServiceResult<EmployeeLeaveBalanceDto>.Fail("Invalid Leave Balance Data");
-        }
-        if(LeaveBalanceDto.TotalLeaves < 0 || LeaveBalanceDto.UsedLeaves < 0 || LeaveBalanceDto.RemainingLeaves < 0)
-        {
-            return ServiceResult<EmployeeLeaveBalanceDto>.Fail("Leave counts cannot be negative");
-        }
-        var leave = _mapper.Map<EmployeeLeaveBalance>(LeaveBalanceDto);
-        var updatedLeaveBalance = await _leaveRepository.UpdateLeaveBalanceAsync(leave);
-        var Data = _mapper.Map<EmployeeLeaveBalanceDto>(updatedLeaveBalance);
-        return ServiceResult<EmployeeLeaveBalanceDto>.Success(Data);
-    }
-
-    public async Task<ServiceResult<List<EmployeeLeaveBalanceDto?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
-    {
-        if(employeeId <= 0)
-        {
-            return ServiceResult<List<EmployeeLeaveBalanceDto?>>.Fail("Invalid Employee Id");
-        }
-        var leaveBalance = await _leaveRepository.GetLeaveBalanceByEmployeeAsync(employeeId);
-        var Data = _mapper.Map<List<EmployeeLeaveBalanceDto?>>(leaveBalance);
-        return ServiceResult<List<EmployeeLeaveBalanceDto?>>.Success(Data);
-    }
 }

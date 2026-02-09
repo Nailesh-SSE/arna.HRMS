@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Mapping;
@@ -8,54 +9,54 @@ public class LeaveProfile : Profile
 {
     public LeaveProfile()
     {
-        //Leave Master
-        CreateMap<LeaveMasterDto, LeaveMaster>().ReverseMap();
+        // ============================
+        // LeaveType ↔ LeaveTypeDto
+        // ============================
 
-        //Leave Request
-        // DTO → Entity
-        CreateMap<LeaveRequestDto, LeaveRequest>()
-            .ForMember(d => d.ApprovedBy,
-                o => o.MapFrom(s =>
-                    s.ApprovedBy.HasValue && s.ApprovedBy.Value > 0
-                        ? s.ApprovedBy
-                        : null))
+        CreateMap<LeaveTypeDto, LeaveType>()
+            .ForMember(
+                dest => dest.LeaveNameId,
+                opt => opt.MapFrom(src => (int)src.LeaveName)
+            );
 
-            .ForMember(d => d.ApprovalNotes,
-                o => o.MapFrom(s =>
-                    string.IsNullOrWhiteSpace(s.ApprovalNotes)
-                        ? null
-                        : s.ApprovalNotes))
+        CreateMap<LeaveType, LeaveTypeDto>()
+            .ForMember(
+                dest => dest.LeaveName,
+                opt => opt.MapFrom(src => (LeaveName)src.LeaveNameId)
+            );
 
-            .ForMember(d => d.ApprovedDate,
-                o => o.MapFrom(s =>
-                    s.ApprovedDate.HasValue
-                        ? s.ApprovedDate
-                        : null));
+        // ============================
+        // LeaveRequest ↔ LeaveRequestDto
+        // ============================
 
-        // Entity → DTO
         CreateMap<LeaveRequest, LeaveRequestDto>()
-            .ForMember(d => d.LeaveTypeName,
-                o => o.MapFrom(s => s.LeaveType != null
-                    ? s.LeaveType.LeaveName
-                    : null))
-            .ForMember(d => d.EmployeeName,
-                o => o.MapFrom(s => s.Employee != null
-                    ? $"{s.Employee.FirstName} {s.Employee.LastName}"
-                    : null))
-            .ForMember(d => d.ApprovedByName,
-                o => o.MapFrom(s => s.ApprovedByEmployee != null
-                    ? $"{s.ApprovedByEmployee.FirstName} {s.ApprovedByEmployee.LastName}"
-                    : null))
-            .ForMember(d => d.EmployeeNumber,
-                o => o.MapFrom(s => s.Employee != null
-                    ? s.Employee.EmployeeNumber
-                    : null));
-        
-        //Leave Balance
-        CreateMap<EmployeeLeaveBalanceDto, EmployeeLeaveBalance>();
+            .ForMember(
+                dest => dest.EmployeeName,
+                opt => opt.MapFrom(src =>
+                    src.Employee != null
+                        ? $"{src.Employee.FirstName} {src.Employee.LastName}"
+                        : null)
+            )
+            .ForMember(
+                dest => dest.ApprovedByName,
+                opt => opt.MapFrom(src =>
+                    src.ApprovedByEmployee != null
+                        ? $"{src.ApprovedByEmployee.FirstName} {src.ApprovedByEmployee.LastName}"
+                        : null)
+            )
+            .ForMember(
+                dest => dest.LeaveTypeName,
+                opt => opt.MapFrom(src =>
+                    src.LeaveType != null
+                        ? ((LeaveName)src.LeaveType.LeaveNameId).ToString()
+                        : null)
+            );
 
-        CreateMap<EmployeeLeaveBalance, EmployeeLeaveBalanceDto>()
-            .ForMember(dest => dest.LeaveMasterName, 
-            opt => opt.MapFrom(src => src.LeaveMaster != null ? $"{src.LeaveMaster.LeaveName}" : ""));
+        CreateMap<LeaveRequestDto, LeaveRequest>()
+            .ForMember(
+                dest => dest.LeaveTypeId,
+                opt => opt.MapFrom(src => src.LeaveTypeId)
+            );
+
     }
 }

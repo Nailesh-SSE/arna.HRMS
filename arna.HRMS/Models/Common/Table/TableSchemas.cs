@@ -48,13 +48,26 @@ public class TableSchemas
     };
 
     // LEAVE TABLE
-    public static List<TableColumn<LeaveMasterViewModel>> LeaveMasters = new() 
+    public static List<TableColumn<LeaveTypeViewModel>> LeaveTypes = new() 
     {
-        new() { Header = "Name", Value = u => u.LeaveName },
+        new() { Header = "Name", Value = u => u.LeaveNameId },
         new() { Header = "Days", Value = u => u.MaxPerYear },
         new() { Header = "Description", Value = u => u.Description },
         new() {Header = "IsPaid", Value = u => u.IsPaid},
-        StatusColumn<LeaveMasterViewModel>(u => u.IsActive)
+        StatusColumn<LeaveTypeViewModel>(u => u.IsActive)
+    };
+
+    public static List<TableColumn<LeaveRequestViewModel>> LeaveRequest = new()
+    {
+        new() { Header = "EmployeeNumber", Value = u => u.EmployeeNumber },
+        new() { Header = "EmployeeName", Value = u => u.EmployeeName },
+        new() { Header = "LeaveTypeId", Value = u => u.LeaveTypeId },
+        new() { Header = "Reason", Value = u => u.Reason },
+        new() { Header = "TotalDays", Value = u => u.TotalDays },
+        new() { Header = "Status", Value = u => u.StatusId },
+        new() { Header = "ApprovedBy", Value = u => u.ApprovedBy },
+        new() { Header = "StartDate", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
+        new() { Header = "EndDate", Value = u => u.EndDate.Date.ToString("yyyy/MM/dd") },
     };
 
     public static List<TableColumn<LeaveRequestViewModel>> LeaveRequest = new()

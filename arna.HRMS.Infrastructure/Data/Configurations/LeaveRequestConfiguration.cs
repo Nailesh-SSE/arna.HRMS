@@ -11,7 +11,7 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
     {
         builder.HasKey(lr => lr.Id);
 
-        builder.Property(lr => lr.TotalDays)
+        builder.Property(lr => lr.LeaveDays)
             .IsRequired();
 
         builder.Property(lr => lr.Reason)

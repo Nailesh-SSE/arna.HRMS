@@ -7,63 +7,59 @@ namespace arna.HRMS.Infrastructure.Repositories;
 
 public class LeaveRepository
 {
-    private readonly IBaseRepository<LeaveMaster> _leaveMasterRepo;
+    private readonly IBaseRepository<LeaveType> _leaveTypeRepo;
     private readonly IBaseRepository<LeaveRequest> _leaveRequestRepo;
-    private readonly IBaseRepository<EmployeeLeaveBalance> _leaveBalanceRepo;
 
 
-    public LeaveRepository(IBaseRepository<LeaveMaster> leaveMasterRepo, IBaseRepository<LeaveRequest> leaveRequestRepo, IBaseRepository<EmployeeLeaveBalance> leaveBalanceRepo)
+    public LeaveRepository(IBaseRepository<LeaveType> leaveTypeRepo, IBaseRepository<LeaveRequest> leaveRequestRepo)
     {
-        _leaveMasterRepo = leaveMasterRepo;
+        _leaveTypeRepo = leaveTypeRepo;
         _leaveRequestRepo = leaveRequestRepo;
-        _leaveBalanceRepo = leaveBalanceRepo;
     }
 
-    //Leave Master related methods can be added here as needed
-    public async Task<List<LeaveMaster>> GetLeaveMasterAsync()
+    //Leave Type related methods can be added here as needed
+    public async Task<List<LeaveType>> GetLeaveTypeAsync()
     {
-        return await _leaveMasterRepo.Query()
+        return await _leaveTypeRepo.Query()
             .Where(x => x.IsActive && !x.IsDeleted)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
 
-    public async Task<LeaveMaster?> GetLeaveMasterByIdAsync(int id)
+    public async Task<LeaveType?> GetLeaveTypeByIdAsync(int id)
     {
-        return await _leaveMasterRepo.Query()
+        return await _leaveTypeRepo.Query()
             .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
     }
 
-   public async Task<List<LeaveMaster>> LeaveExistsAsync(string Name)
+   public async Task<bool> LeaveExistsAsync(LeaveName Name)
     {
-        Name = Name?.Trim().ToLower() ?? string.Empty;
-
-        return await _leaveMasterRepo.Query()
-            .Where(x => x.LeaveName.ToLower() == Name && x.IsActive && !x.IsDeleted).ToListAsync();
+        return await _leaveTypeRepo.Query()
+            .AnyAsync(x => x.LeaveNameId == Name && x.IsActive && !x.IsDeleted);
     }
 
-    public Task<LeaveMaster> CreateLeaveMasterAsync(LeaveMaster leaveMaster)
+    public Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType)
     {
-        return _leaveMasterRepo.AddAsync(leaveMaster);
+        return _leaveTypeRepo.AddAsync(leaveType);
     }
 
-    public async Task<LeaveMaster> UpdateLeaveMasterAsync(LeaveMaster leaveMaster)
+    public async Task<LeaveType> UpdateLeaveTypeAsync(LeaveType leaveType)
     {
-        return await _leaveMasterRepo.UpdateAsync(leaveMaster);
+        return await _leaveTypeRepo.UpdateAsync(leaveType);
     }
 
-    public async Task<bool> DeleteLeaveMasterAsync(int id)
+    public async Task<bool> DeleteLeaveTypeAsync(int id)
     {
-        var leaveMaster = await GetLeaveMasterByIdAsync(id);
+        var leaveType = await GetLeaveTypeByIdAsync(id);
 
-        if (leaveMaster == null)
+        if (leaveType == null)
             return false;
 
-        leaveMaster.IsActive = false;
-        leaveMaster.IsDeleted = true;
-        leaveMaster.UpdatedOn = DateTime.Now;
+        leaveType.IsActive = false;
+        leaveType.IsDeleted = true;
+        leaveType.UpdatedOn = DateTime.Now;
 
-        await _leaveMasterRepo.UpdateAsync(leaveMaster);
+        await _leaveTypeRepo.UpdateAsync(leaveType);
         return true;
     }
 
@@ -79,17 +75,33 @@ public class LeaveRepository
             .ToListAsync();
     }
 
-    public async Task<List<LeaveRequest>> GetLeaveRequestsByStatusAsync(Status status)
+    public async Task<List<LeaveRequest>> GetLeaveRequestsByFilterAsync(Status? status, int? employeeId)
     {
-        if (status == null)
+        if (status == null && employeeId == null)
         {
             return await GetLeaveRequestAsync();
+        }
+        else if (status == null && employeeId != null)
+        {
+            return await _leaveRequestRepo.Query()
+                .Include(lr => lr.Employee)
+                .Where(x => x.EmployeeId == employeeId && x.IsActive && !x.IsDeleted)
+                .OrderByDescending(o => o.Id)
+                .ToListAsync();
+        }
+        else if (status != null && employeeId == null)
+        {
+            return await _leaveRequestRepo.Query()
+                .Include(lr => lr.Employee)
+                .Where(x => x.StatusId == status && x.IsActive && !x.IsDeleted)
+                .OrderByDescending(o => o.Id)
+                .ToListAsync();
         }
         else
         {
             return await _leaveRequestRepo.Query()
                 .Include(lr => lr.Employee)
-                .Where(x => x.StatusId == status && x.IsActive && !x.IsDeleted)
+                .Where(x => x.StatusId == status && x.EmployeeId == employeeId && x.IsActive && !x.IsDeleted)
                 .OrderByDescending(o => o.Id)
                 .ToListAsync();
         }
@@ -138,23 +150,6 @@ public class LeaveRepository
         await _leaveRequestRepo.UpdateAsync(LeaveRequest);
         return true;
     }
-    public async Task<Dictionary<string, int>> GetUsedLeavesByTypeAsync(int employeeId)
-    {
-        return await _leaveRequestRepo.Query()
-            .Include(lr => lr.LeaveType)
-            .Where(lr =>
-                lr.EmployeeId == employeeId &&
-                lr.StatusId == Status.Approved &&
-                lr.IsActive &&
-                !lr.IsDeleted)
-            .GroupBy(lr => lr.LeaveType.LeaveName)
-            .Select(g => new
-            {
-                LeaveName = g.Key,
-                UsedDays = g.Sum(x => x.TotalDays)
-            })
-            .ToDictionaryAsync(x => x.LeaveName, x => x.UsedDays);
-    }
 
     public async Task<bool> UpdateLeaveStatusAsync(int leaveRequestId, Status status, int approvedBy)
     {
@@ -191,66 +186,5 @@ public class LeaveRepository
         await _leaveRequestRepo.UpdateAsync(attendanceRequest);
 
         return true;
-    }
-
-    //Leave Balance related methods can be added here as needed
-    public async Task<List<EmployeeLeaveBalance>> GetLeaveBalanceAsync()
-    {
-        return await _leaveBalanceRepo.Query()
-            .Where(elb => elb.IsActive && !elb.IsDeleted)
-            .OrderByDescending(elb => elb.Id)
-            .ToListAsync();
-    }
-
-    public async Task<EmployeeLeaveBalance?> GetEmployeeLeaveBalanceByIdAsync(int id)
-    {
-        return await _leaveBalanceRepo.Query()
-            .Include(x => x.LeaveMaster)
-            .FirstOrDefaultAsync(elb => elb.Id == id && elb.IsActive && !elb.IsDeleted); 
-    }
-
-    public async Task<List<EmployeeLeaveBalance>> GetLeaveBalanceByEmployeeAsync(int id)
-    {
-        return await _leaveBalanceRepo.Query()
-            .Include(x => x.LeaveMaster)
-            .Where(elb => elb.EmployeeId == id && elb.IsActive && !elb.IsDeleted)
-            .OrderByDescending(elb => elb.Id)
-            .ToListAsync();
-
-    }
-    public Task<EmployeeLeaveBalance> CreateLeaveBalanceAsync(EmployeeLeaveBalance leaveBalance)
-    {
-        return _leaveBalanceRepo.AddAsync(leaveBalance);
-    }
-
-    public Task<EmployeeLeaveBalance> UpdateLeaveBalanceAsync(EmployeeLeaveBalance leaveBalance)
-    {
-        return _leaveBalanceRepo.UpdateAsync(leaveBalance);
-    }
-
-    public async Task<bool> DeleteLeaveBalanceAsync(int id)
-    {
-        var leaveBalance = await GetEmployeeLeaveBalanceByIdAsync(id);
-
-        if (leaveBalance == null)
-            return false;
-
-        leaveBalance.IsActive = false;
-        leaveBalance.IsDeleted = true;
-        leaveBalance.UpdatedOn = DateTime.Now;
-
-        await _leaveBalanceRepo.UpdateAsync(leaveBalance);
-        return true;
-    }
-    public async Task<EmployeeLeaveBalance?> GetLatestByEmployeeAndLeaveTypeAsync(int employeeId, int leaveMasterId)
-    {
-        return await _leaveBalanceRepo.Query()
-            .Where(x =>
-                x.EmployeeId == employeeId &&
-                x.LeaveMasterId == leaveMasterId &&
-                x.IsActive &&
-                !x.IsDeleted)
-            .OrderByDescending(x => x.Id)
-            .FirstOrDefaultAsync();
     }
 }

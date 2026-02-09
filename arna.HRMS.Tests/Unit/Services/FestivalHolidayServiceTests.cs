@@ -53,6 +53,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -62,6 +63,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test2 Holiday",
                 Description = "Test2 Description",
                 Date = new DateTime(2024, 1, 1),
+                DayOfWeek = new DateTime(2024, 1, 1).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -71,6 +73,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test3 Holiday",
                 Description = "Test3 Description",
                 Date = new DateTime(2024, 11, 28),
+                DayOfWeek = new DateTime(2024, 11, 28).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -110,6 +113,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -159,6 +163,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -168,6 +173,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test2 Holiday",
                 Description = "Test2 Description",
                 Date = new DateTime(2024, 1, 1),
+                DayOfWeek = new DateTime(2024, 1, 1).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -177,6 +183,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test3 Holiday",
                 Description = "Test3 Description",
                 Date = new DateTime(2024, 11, 28),
+                DayOfWeek = new DateTime(2024, 11, 28).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -201,6 +208,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -210,6 +218,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test2 Holiday",
                 Description = "Test2 Description",
                 Date = new DateTime(2024, 1, 1),
+                DayOfWeek = new DateTime(2024, 1, 1).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -219,6 +228,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test3 Holiday",
                 Description = "Test3 Description",
                 Date = new DateTime(2024, 11, 28),
+                DayOfWeek = new DateTime(2024, 11, 28).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -228,6 +238,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test4 Holiday",
                 Description = "Test4 Description",
                 Date = new DateTime(2024, 12, 31),
+                DayOfWeek = new DateTime(2024, 12, 31).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -254,6 +265,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek= new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -263,6 +275,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test2 Holiday",
                 Description = "Test2 Description",
                 Date = new DateTime(2024, 1, 1),
+                DayOfWeek = new DateTime(2024, 1, 1).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -284,6 +297,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -293,6 +307,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test2 Holiday",
                 Description = "Test2 Description",
                 Date = new DateTime(2024, 1, 1),
+                DayOfWeek = new DateTime(2024, 1, 1).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -314,6 +329,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -323,6 +339,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test2 Holiday",
                 Description = "Test2 Description",
                 Date = new DateTime(2024, 1, 1),
+                DayOfWeek = new DateTime(2024, 1, 1).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -344,6 +361,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test1 Holiday",
                 Description = "Test Description",
                 Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             },
@@ -353,6 +371,7 @@ public class FestivalHolidayServiceTests
                 FestivalName = "Test2 Holiday",
                 Description = "Test2 Description",
                 Date = new DateTime(2024, 1, 1),
+                DayOfWeek = new DateTime(2024, 1, 1).DayOfWeek.ToString(),
                 IsActive = true,
                 IsDeleted = false
             }
@@ -499,6 +518,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Old Festival",
             Description = "Old Description",
             Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -554,6 +574,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Existing Festival",
             Description = "First Holiday",
             Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -562,6 +583,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Another Festival",
             Description = "Second Holiday",
             Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -592,6 +614,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Future Festival",
             Description = "Future Description",
             Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -619,6 +642,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Nameless Festival",
             Description = "Nameless Description",
             Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -645,6 +669,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Dateless Festival",
             Description = "Dateless Description",
             Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -671,6 +696,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Delete Test Holiday",
             Description = "To be deleted",
             Date = new DateTime(2024, 8, 15),
+            DayOfWeek = new DateTime(2024, 8, 15).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -704,6 +730,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Already Deleted Holiday",
             Description = "Already deleted",
             Date = new DateTime(2024, 8, 15),
+            DayOfWeek = new DateTime(2024, 8, 15).DayOfWeek.ToString(),
             IsActive = false,
             IsDeleted = true
         };
@@ -731,6 +758,7 @@ public class FestivalHolidayServiceTests
             FestivalName = "Unique Holiday",
             Description = "Unique Description",
             Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };

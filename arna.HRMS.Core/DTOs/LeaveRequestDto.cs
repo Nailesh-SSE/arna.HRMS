@@ -15,7 +15,7 @@ public class LeaveRequestDto : BaseEntity
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
 
-    public int TotalDays { get; set; }
+    public int LeaveDays { get; set; }
 
     public string Reason { get; set; }
 

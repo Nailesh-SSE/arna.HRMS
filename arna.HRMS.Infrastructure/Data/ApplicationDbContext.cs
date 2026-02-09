@@ -20,8 +20,7 @@ namespace arna.HRMS.Infrastructure.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<AttendanceRequest> AttendanceRequest { get; set; } 
         public DbSet<FestivalHoliday> FestivalHoliday { get; set; }
-        public DbSet<LeaveMaster> LeaveMasters { get; set; }
-        public DbSet<EmployeeLeaveBalance> EmployeeLeaveBalances { get; set; }
+        public DbSet<LeaveType> LeaveTypes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -36,8 +35,7 @@ namespace arna.HRMS.Infrastructure.Data
             builder.ApplyConfiguration(new UserConfiguration());
             builder.ApplyConfiguration(new AttendanceRequestConfiguration());
             builder.ApplyConfiguration(new FestivalHolidayConfiguration()); 
-            builder.ApplyConfiguration(new LeaveMasterConfiguration());
-            builder.ApplyConfiguration(new EmployeeLeaveBalanceConfiguration());
+            builder.ApplyConfiguration(new LeaveTypeConfiguration());
 
             // ===== Roles =====
             builder.Entity<Role>().HasData(
