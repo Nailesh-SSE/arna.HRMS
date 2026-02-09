@@ -4,16 +4,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace arna.HRMS.Infrastructure.Data.Configurations;
 
-public class LeaveMasterConfiguration : IEntityTypeConfiguration<LeaveMaster>
+public class LeaveTypeConfiguration : IEntityTypeConfiguration<LeaveType>
 {
-    public void Configure(EntityTypeBuilder<LeaveMaster> builder)
+    public void Configure(EntityTypeBuilder<LeaveType> builder)
     {
         builder.HasKey(lm => lm.Id);
 
-        builder.Property(lm => lm.LeaveName)
-            .IsRequired()
-            .HasMaxLength(100);
-        builder.HasIndex(lm => lm.LeaveName)
+        builder.Property(lm => lm.LeaveNameId)
+            .IsRequired();
+
+        builder.HasIndex(lm => lm.LeaveNameId)
             .IsUnique();
 
         builder.Property(lm => lm.Description)

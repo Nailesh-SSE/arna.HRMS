@@ -30,5 +30,4 @@ public class Employee : BaseEntity
     public ICollection<AttendanceRequest> AttendanceRequest { get; set; }
     public ICollection<AttendanceRequest> AttendanceRequestsApproved { get; set; }
     public ICollection<LeaveRequest> ApprovedLeaveRequests { get; set; }
-    public ICollection<EmployeeLeaveBalance> EmployeeLeaveBalance { get; set; }
 }

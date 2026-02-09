@@ -48,13 +48,13 @@ public class TableSchemas
     };
 
     // LEAVE TABLE
-    public static List<TableColumn<LeaveMasterViewModel>> LeaveMasters = new() 
+    public static List<TableColumn<LeaveTypeViewModel>> LeaveTypes = new() 
     {
-        new() { Header = "Name", Value = u => u.LeaveName },
+        new() { Header = "Name", Value = u => u.LeaveNameId },
         new() { Header = "Days", Value = u => u.MaxPerYear },
         new() { Header = "Description", Value = u => u.Description },
         new() {Header = "IsPaid", Value = u => u.IsPaid},
-        StatusColumn<LeaveMasterViewModel>(u => u.IsActive)
+        StatusColumn<LeaveTypeViewModel>(u => u.IsActive)
     };
 
     // GENERIC STATUS COLUMN

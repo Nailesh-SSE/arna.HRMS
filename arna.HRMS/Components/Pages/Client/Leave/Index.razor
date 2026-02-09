@@ -37,7 +37,7 @@
             </button>
         </div>
 
-        <LeaveSummaries Summaries="summaries" LeaveMasters="leaveMasters" />
+        <LeaveSummaries Summaries="summaries" LeaveTypes="leaveTypes" />
 
         <LeaveRequestList Requests="requests"
                            OnCancel="handleCancelRequest"
@@ -48,7 +48,6 @@
                       ShowModalChanged="OnModalChanged"
                       Model="leave"
                       LeaveOptions="leaveOptions"
-                      Summaries="summaries"
                       EditContext="editContext"
                       IsFormValid="isFormValid"
                       IsSubmitting="isSubmitting"
@@ -73,9 +72,8 @@
     private int editingId = 0;
 
     private List<LeaveRequestViewModel> requests = new();
-    private List<EmployeeLeaveBalanceViewModel> summaries = new();
     private List<SelectOption> leaveOptions = new();
-    private List<LeaveMasterViewModel> leaveMasters = new();
+    private List<LeaveTypeViewModel> leaveTypes = new();
 
 
     protected override async Task OnInitializedAsync()
@@ -84,8 +82,8 @@
 
         InitializeForm(GetEmployeeId());
 
-        await LoadLeaveMasters();
-        await Task.WhenAll(LoadBalances(), LoadRequests());
+        await LoadLeaveTypes();
+        await Task.WhenAll( LoadRequests());
 
         isLoading = false;
     }
@@ -145,7 +143,6 @@
             {
                 NotificationService.Success("Leave updated successfully.");
                 await LoadRequests();
-                await LoadBalances();
                 showModal = false;
                 ResetForm();
             }
@@ -162,7 +159,6 @@
         {
             NotificationService.Success("Leave submitted successfully.");
             await LoadRequests();
-            await LoadBalances();
             showModal = false;
             ResetForm();
         }
@@ -171,28 +167,28 @@
     }
 
 
-    private async Task LoadLeaveMasters()
+    private async Task LoadLeaveTypes()
     {
-        var result = await LeaveService.GetLeaveMasterAsync();
+        var result = await LeaveService.GetLeaveTypeAsync();
 
         if (result?.IsSuccess == true && result.Data != null)
-            leaveMasters = result.Data;
+            leaveTypes = result.Data;
     }
 
-    private async Task LoadBalances()
-    {
-        var result = await LeaveService.GetLeaveBalanceByEmployeeIdAsync(leave.EmployeeId);
+    // private async Task LoadBalances()
+    // {
+    //     var result = await LeaveService.GetLeaveBalanceByEmployeeIdAsync(leave.EmployeeId);
 
-        if (result?.IsSuccess == true && result.Data != null)
-        {
-            summaries = result.Data
-                .GroupBy(x => x.LeaveMasterId)
-                .Select(g => g.OrderByDescending(b => b.Id).First())
-                .ToList();
-        }
+    //     if (result?.IsSuccess == true && result.Data != null)
+    //     {
+    //         summaries = result.Data
+    //             .GroupBy(x => x.LeaveTypeId)
+    //             .Select(g => g.OrderByDescending(b => b.Id).First())
+    //             .ToList();
+    //     }
 
-        BuildLeaveOptions();
-    }
+    //     BuildLeaveOptions();
+    // }
 
     private async Task LoadRequests()
     {
@@ -232,21 +228,21 @@
         return isValid;
     }
 
-    private void BuildLeaveOptions()
-    {
-        leaveOptions = leaveMasters.Select(master =>
-        {
-            var balance = summaries.FirstOrDefault(x => x.LeaveMasterId == master.Id);
-            var remaining = balance?.RemainingLeaves ?? 0;
+    // private void BuildLeaveOptions()
+    // {
+    //     leaveOptions = leaveTypes.Select(Type =>
+    //     {
+    //         var balance = summaries.FirstOrDefault(x => x.LeaveTypeId == Type.Id);
+    //         var remaining = balance?.RemainingLeaves ?? 0;
 
-            return new SelectOption
-            {
-                Value = master.Id.ToString(),
-                Text = $"{master.LeaveName} ({remaining} left)",
-                IsDisabled = remaining == 0
-            };
-        }).ToList();
-    }
+    //         return new SelectOption
+    //         {
+    //             Value = Type.Id.ToString(),
+    //             Text = $"{Type.LeaveName} ({remaining} left)",
+    //             IsDisabled = remaining == 0
+    //         };
+    //     }).ToList();
+    // }
 
     private LeaveRequestViewModel Clone(LeaveRequestViewModel x)
         => new()
@@ -326,7 +322,6 @@
         if (result?.IsSuccess == true)
         {
             await LoadRequests();
-            await LoadBalances();
             NotificationService.Success("Cancelled successfully.");
         }
     }

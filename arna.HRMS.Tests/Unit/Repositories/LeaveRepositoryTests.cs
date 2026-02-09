@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
@@ -22,288 +23,215 @@ public class LeaveRepositoryTests
 
         _dbContext = new ApplicationDbContext(options);
 
-        var baseRepositoryLM = new BaseRepository<LeaveMaster>(_dbContext);
+        var baseRepositoryLM = new BaseRepository<LeaveType>(_dbContext);
         var baseRepositoryLR = new BaseRepository<LeaveRequest>(_dbContext);
-        var baseRepositoryELB = new BaseRepository<EmployeeLeaveBalance>(_dbContext);
 
-        _leaveRepository = new LeaveRepository(baseRepositoryLM, baseRepositoryLR, baseRepositoryELB);
+        _leaveRepository = new LeaveRepository(baseRepositoryLM, baseRepositoryLR);
     }
 
-    //leave master tests
+    //leave Type tests
 
     [Test]
-    public async Task GetAllLeaveMastersAsync_ShouldReturnAllActiveLeaveMasters()
+    public async Task GetAllLeaveTypesAsync_ShouldReturnAllActiveLeaveTypes()
     {
         // Arrange
-        var leaveMaster1 = new LeaveMaster
+        var leaveType1 = new LeaveType
         {
-            LeaveName = "Casual Leave",
+            LeaveNameId = LeaveName.CasualLeave,
             Description = "Casual leave",
             MaxPerYear = 7
         };
-        var leaveMaster2 = new LeaveMaster
+        var leaveType2 = new LeaveType
         {
-            LeaveName = "Bereavement Leave",
+            LeaveNameId = LeaveName.MaternityLeave,
             Description = "Bereavement leave",
             MaxPerYear = 5
         };
-        await _leaveRepository.CreateLeaveMasterAsync(leaveMaster1);
-        await _leaveRepository.CreateLeaveMasterAsync(leaveMaster2);
+        await _leaveRepository.CreateLeaveTypeAsync(leaveType1);
+        await _leaveRepository.CreateLeaveTypeAsync(leaveType2);
         // Act
-        var leaveMasters = await _leaveRepository.GetLeaveMasterAsync();
+        var leaveTypes = await _leaveRepository.GetLeaveTypeAsync();
         // Assert
-        Assert.That(leaveMasters.Count, Is.EqualTo(2));
-        Assert.That(leaveMasters.Any(lm => lm.LeaveName == "Casual Leave"), Is.True);
-        Assert.That(leaveMasters.Any(lm => lm.LeaveName == "Bereavement Leave"), Is.True);
-        Assert.That(leaveMasters.All(lm => lm.IsActive && !lm.IsDeleted), Is.True);
-        Assert.That(leaveMasters.OrderByDescending(lm => lm.Id).SequenceEqual(leaveMasters), Is.True);
-        Assert.That(leaveMasters[0].Id, Is.GreaterThan(leaveMasters[1].Id));
+        Assert.That(leaveTypes.Count, Is.EqualTo(2));
+        Assert.That(leaveTypes.Any(lm => lm.LeaveNameId == LeaveName.CasualLeave), Is.True);
+        Assert.That(leaveTypes.Any(lm => lm.LeaveNameId == LeaveName.MaternityLeave), Is.True);
+        Assert.That(leaveTypes.All(lm => lm.IsActive && !lm.IsDeleted), Is.True);
+        Assert.That(leaveTypes.OrderByDescending(lm => lm.Id).SequenceEqual(leaveTypes), Is.True);
+        Assert.That(leaveTypes[0].Id, Is.GreaterThan(leaveTypes[1].Id));
     }
 
     [Test]
-    public async Task GetAllLeaveMastersAsync_WhenEmpty_ShouldReturnEmptyList()
+    public async Task GetAllLeaveTypesAsync_WhenEmpty_ShouldReturnEmptyList()
     {
         // Act
-        var leaveMasters = await _leaveRepository.GetLeaveMasterAsync();
+        var leaveTypes = await _leaveRepository.GetLeaveTypeAsync();
         // Assert
-        Assert.That(leaveMasters, Is.Not.Null);
-        Assert.That(leaveMasters, Is.Empty);
+        Assert.That(leaveTypes, Is.Not.Null);
+        Assert.That(leaveTypes, Is.Empty);
     }
 
     [Test]
-    public async Task CreateLeaveMasterAsync_WhenNullInput()
+    public async Task CreateLeaveTypeAsync_WhenNullInput()
     {
-        LeaveMaster? newHoliday = null;
+        LeaveType? newHoliday = null;
         // Act & Assert
         Assert.ThrowsAsync<ArgumentNullException>(async () =>
         {
-            await _leaveRepository.CreateLeaveMasterAsync(newHoliday!);
+            await _leaveRepository.CreateLeaveTypeAsync(newHoliday!);
         });
     }
 
     [Test]
-    public async Task CreateLeaveMasterAsync_ShouldAddLeaveMaster()
+    public async Task CreateLeaveTypeAsync_ShouldAddLeaveType()
     {
         // Arrange
-        var leaveMaster = new LeaveMaster
+        var leaveType = new LeaveType
         {
-            LeaveName = "Annual Leave",
+            LeaveNameId = LeaveName.AnnualLeave,
             Description = "Annual paid leave",
             MaxPerYear = 15
         };
         // Act
-        var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
-        var fetchedLeaveMaster = await _leaveRepository.GetLeaveMasterByIdAsync(createdLeaveMaster.Id);
+        var createdLeaveType = await _leaveRepository.CreateLeaveTypeAsync(leaveType);
+        var fetchedLeaveType = await _leaveRepository.GetLeaveTypeByIdAsync(createdLeaveType.Id);
         // Assert
-        Assert.That(fetchedLeaveMaster, Is.Not.Null);
-        Assert.That(fetchedLeaveMaster!.LeaveName, Is.EqualTo("Annual Leave"));
-        Assert.That(fetchedLeaveMaster!.Description, Is.EqualTo("Annual paid leave"));
-        Assert.That(fetchedLeaveMaster.MaxPerYear, Is.EqualTo(15));
-        Assert.That(fetchedLeaveMaster.IsActive, Is.True);
+        Assert.That(fetchedLeaveType, Is.Not.Null);
+        Assert.That(fetchedLeaveType!.LeaveNameId, Is.EqualTo(LeaveName.AnnualLeave));
+        Assert.That(fetchedLeaveType!.Description, Is.EqualTo("Annual paid leave"));
+        Assert.That(fetchedLeaveType.MaxPerYear, Is.EqualTo(15));
+        Assert.That(fetchedLeaveType.IsActive, Is.True);
     }
 
     [Test]
-    public async Task DeleteLeaveMasterAsync_ShouldMarkLeaveMasterAsDeleted()
+    public async Task DeleteLeaveTypeAsync_ShouldMarkLeaveTypeAsDeleted()
     {
         // Arrange
-        var leaveMaster = new LeaveMaster
+        var leaveType = new LeaveType
         {
-            LeaveName = "Sick Leave",
+            LeaveNameId = LeaveName.AnnualLeave,
             Description = "Sick leave",
             MaxPerYear = 10
         };
-        var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
+        var createdLeaveType = await _leaveRepository.CreateLeaveTypeAsync(leaveType);
         // Act
-        var deleteResult = await _leaveRepository.DeleteLeaveMasterAsync(createdLeaveMaster.Id);
+        var deleteResult = await _leaveRepository.DeleteLeaveTypeAsync(createdLeaveType.Id);
 
         //Assert
         Assert.That(deleteResult, Is.True);
-        Assert.That((await _leaveRepository.GetLeaveMasterByIdAsync(createdLeaveMaster.Id)), Is.Null);
+        Assert.That((await _leaveRepository.GetLeaveTypeByIdAsync(createdLeaveType.Id)), Is.Null);
     }
 
     [Test]
-    public async Task DeleteLeaveMasterAsync_WhenNotFound()
+    public async Task DeleteLeaveTypeAsync_WhenNotFound()
     {
-        var deleteResult = await _leaveRepository.DeleteLeaveMasterAsync(999);
+        var deleteResult = await _leaveRepository.DeleteLeaveTypeAsync(999);
         Assert.That(deleteResult, Is.False);
     }
 
     [Test]
-    public async Task DeleteLeaveMasterAsync_WhenIdIsNullOrZero()
+    public async Task DeleteLeaveTypeAsync_WhenIdIsNullOrZero()
     {
-        var deleteResult = await _leaveRepository.DeleteLeaveMasterAsync(0);
+        var deleteResult = await _leaveRepository.DeleteLeaveTypeAsync(0);
 
         Assert.That(deleteResult, Is.False);
-        Assert.That(await _leaveRepository.GetLeaveMasterAsync(), Is.Empty);
+        Assert.That(await _leaveRepository.GetLeaveTypeAsync(), Is.Empty);
 
-        var deleteResultNegative = await _leaveRepository.DeleteLeaveMasterAsync(-5);
+        var deleteResultNegative = await _leaveRepository.DeleteLeaveTypeAsync(-5);
 
         Assert.That(deleteResultNegative, Is.False);
-        Assert.That(await _leaveRepository.GetLeaveMasterAsync(), Is.Empty);
+        Assert.That(await _leaveRepository.GetLeaveTypeAsync(), Is.Empty);
 
     }
 
     [Test]
-    public async Task GetLeaveMasterByIdAsync_ShouldReturnLeaveMasterIfExists()
+    public async Task GetLeaveTypeByIdAsync_ShouldReturnLeaveTypeIfExists()
     {
         // Arrange
-        var leaveMaster = new LeaveMaster
+        var leaveType = new LeaveType
         {
-            LeaveName = "Paternity Leave",
+            LeaveNameId = LeaveName.PaternityLeave,
             Description = "Paternity leave",
             MaxPerYear = 14
         };
-        var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
+        var createdLeaveType = await _leaveRepository.CreateLeaveTypeAsync(leaveType);
         // Act
-        var fetchedLeaveMaster = await _leaveRepository.GetLeaveMasterByIdAsync(createdLeaveMaster.Id);
+        var fetchedLeaveType = await _leaveRepository.GetLeaveTypeByIdAsync(createdLeaveType.Id);
         // Assert
-        Assert.That(fetchedLeaveMaster, Is.Not.Null);
-        Assert.That(fetchedLeaveMaster!.LeaveName, Is.EqualTo("Paternity Leave"));
-        Assert.That(fetchedLeaveMaster!.Description, Is.EqualTo("Paternity leave"));
-        Assert.That(fetchedLeaveMaster.MaxPerYear, Is.EqualTo(14));
+        Assert.That(fetchedLeaveType, Is.Not.Null);
+        Assert.That(fetchedLeaveType!.LeaveNameId, Is.EqualTo(LeaveName.PaternityLeave));
+        Assert.That(fetchedLeaveType!.Description, Is.EqualTo("Paternity leave"));
+        Assert.That(fetchedLeaveType.MaxPerYear, Is.EqualTo(14));
     }
 
     [Test]
-    public async Task GetLeaveMasterByIdAsync_ShouldReturnNullIfNotExistsOrNegativeOrZero()
+    public async Task GetLeaveTypeByIdAsync_ShouldReturnNullIfNotExistsOrNegativeOrZero()
     {
         // Act
-        var fetchedLeaveMaster = await _leaveRepository.GetLeaveMasterByIdAsync(999);
+        var fetchedLeaveType = await _leaveRepository.GetLeaveTypeByIdAsync(999);
         // Assert
-        Assert.That(fetchedLeaveMaster, Is.Null);
+        Assert.That(fetchedLeaveType, Is.Null);
 
-        var fetchedLeaveMasterZero = await _leaveRepository.GetLeaveMasterByIdAsync(0);
-        Assert.That(fetchedLeaveMasterZero, Is.Null);
+        var fetchedLeaveTypeZero = await _leaveRepository.GetLeaveTypeByIdAsync(0);
+        Assert.That(fetchedLeaveTypeZero, Is.Null);
 
-        var fetchedLeaveMasterNegative = await _leaveRepository.GetLeaveMasterByIdAsync(-10);
-        Assert.That(fetchedLeaveMasterNegative, Is.Null);
+        var fetchedLeaveTypeNegative = await _leaveRepository.GetLeaveTypeByIdAsync(-10);
+        Assert.That(fetchedLeaveTypeNegative, Is.Null);
     }
 
     [Test]
     public async Task LeaveExistsAsync_ShouldReturnTrueIfLeaveExists()
     {
         // Arrange
-        var leaveMaster = new LeaveMaster
+        var leaveType = new LeaveType
         {
-            LeaveName = "Maternity Leave",
+            LeaveNameId = LeaveName.PaternityLeave,
             Description = "Maternity leave",
             MaxPerYear = 90
         };
-        await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
+        await _leaveRepository.CreateLeaveTypeAsync(leaveType);
         // Act
-        var exists = await _leaveRepository.LeaveExistsAsync("Maternity Leave");
+        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.PaternityLeave);
         // Assert
-        Assert.That(exists[0].LeaveName, Is.EqualTo("Maternity Leave"));
+        Assert.That(exists, Is.EqualTo(true));
     }
 
     [Test]
-    public async Task LeaveExistsAsync_ShouldReturnFalseIfLeaveDoesNotExistOrInvalidName()
-    {
-        // Act
-        var exists = await _leaveRepository.LeaveExistsAsync("NonExistent Leave");
-        // Assert
-        Assert.That(exists, Is.Empty);
-
-        var existsEmpty = await _leaveRepository.LeaveExistsAsync(string.Empty);
-        Assert.That(existsEmpty, Is.Empty);
-
-        var existsWhitespace = await _leaveRepository.LeaveExistsAsync("   ");
-        Assert.That(existsWhitespace, Is.Empty);
-
-        var existsNull = await _leaveRepository.LeaveExistsAsync(null!);
-        Assert.That(existsNull, Is.Empty);
-    }
-
-    [Test]
-    public async Task LeaveExistsAsync_ShouldBeCaseInsensitiveAndTrimmed()
+    public async Task UpdateLeaveTypeAsync_ShouldUpdateLeaveTypeDetails()
     {
         // Arrange
-        var leaveMaster = new LeaveMaster
+        var leaveType = new LeaveType
         {
-            LeaveName = "Sabbatical Leave",
-            Description = "Sabbatical leave",
-            MaxPerYear = 180
-        };
-        await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
-        // Act
-        var existsDifferentCase = await _leaveRepository.LeaveExistsAsync("sabbatical leave");
-        var existsWithWhitespace = await _leaveRepository.LeaveExistsAsync("  Sabbatical Leave  ");
-        // Assert
-        Assert.That(existsDifferentCase[0].LeaveName, Is.EqualTo("Sabbatical Leave"));
-        Assert.That(existsWithWhitespace[0].LeaveName, Is.EqualTo("Sabbatical Leave"));
-    }
-
-    [Test]
-    public async Task LeaveExistsAsync_WhenLeaveIsDeleted_ShouldReturnFalse()
-    {
-        // Arrange
-        var leaveMaster = new LeaveMaster
-        {
-            LeaveName = "Temporary Leave",
-            Description = "Temporary leave",
-            MaxPerYear = 20
-        };
-        var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
-        await _leaveRepository.DeleteLeaveMasterAsync(createdLeaveMaster.Id);
-        // Act
-        var exists = await _leaveRepository.LeaveExistsAsync("Temporary Leave");
-        // Assert
-        Assert.That(exists, Is.Empty);
-    }
-
-    [Test]
-    public async Task LeaveExistsAsync_WhenCaseInsencitiveCheck()
-    {
-        // Arrange
-        var leaveMaster = new LeaveMaster
-        {
-            LeaveName = "Compassionate Leave",
-            Description = "Compassionate leave",
-            MaxPerYear = 10
-        };
-        await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
-        // Act
-        var exists = await _leaveRepository.LeaveExistsAsync("compassionate LEAVE");
-        // Assert
-        Assert.That(exists[0].LeaveName, Is.EqualTo("Compassionate Leave"));
-    }
-
-    [Test]
-    public async Task UpdateLeaveMasterAsync_ShouldUpdateLeaveMasterDetails()
-    {
-        // Arrange
-        var leaveMaster = new LeaveMaster
-        {
-            LeaveName = "Study Leave",
-            Description = "Study leave",
+            LeaveNameId = LeaveName.SickLeave,
+            Description = "Sick leave",
             MaxPerYear = 30
         };
-        var createdLeaveMaster = await _leaveRepository.CreateLeaveMasterAsync(leaveMaster);
+        var createdLeaveType = await _leaveRepository.CreateLeaveTypeAsync(leaveType);
         // Act
-        createdLeaveMaster.Description = "Updated study leave description";
-        createdLeaveMaster.MaxPerYear = 45;
-        var updatedLeaveMaster = await _leaveRepository.UpdateLeaveMasterAsync(createdLeaveMaster);
-        var fetchedLeaveMaster = await _leaveRepository.GetLeaveMasterByIdAsync(updatedLeaveMaster.Id);
+        createdLeaveType.Description = "Updated study leave description";
+        createdLeaveType.MaxPerYear = 45;
+        var updatedLeaveType = await _leaveRepository.UpdateLeaveTypeAsync(createdLeaveType);
+        var fetchedLeaveType = await _leaveRepository.GetLeaveTypeByIdAsync(updatedLeaveType.Id);
         // Assert
-        Assert.That(fetchedLeaveMaster, Is.Not.Null);
-        Assert.That(fetchedLeaveMaster!.Description, Is.EqualTo("Updated study leave description"));
-        Assert.That(fetchedLeaveMaster.MaxPerYear, Is.EqualTo(45));
+        Assert.That(fetchedLeaveType, Is.Not.Null);
+        Assert.That(fetchedLeaveType!.Description, Is.EqualTo("Updated study leave description"));
+        Assert.That(fetchedLeaveType.MaxPerYear, Is.EqualTo(45));
     }
 
     [Test]
-    public async Task UpdateLeaveMasterAsync_WhenLeaveMasterDoesNotExist_ShouldThrowException()
+    public async Task UpdateLeaveTypeAsync_WhenLeaveTypeDoesNotExist_ShouldThrowException()
     {
         // Arrange
-        var leaveMaster = new LeaveMaster
+        var leaveType = new LeaveType
         {
             Id = 999, // Non-existent ID
-            LeaveName = "NonExistent Leave",
+            LeaveNameId = LeaveName.SickLeave,
             Description = "This leave does not exist",
             MaxPerYear = 10
         };
         // Act & Assert
         Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () =>
         {
-            await _leaveRepository.UpdateLeaveMasterAsync(leaveMaster);
+            await _leaveRepository.UpdateLeaveTypeAsync(leaveType);
         });
     }
 

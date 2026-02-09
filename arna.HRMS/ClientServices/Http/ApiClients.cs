@@ -260,33 +260,30 @@ public class ApiClients
     public sealed class LeaveApi
     {
         private const string baseUrl = "api/leave";
-        private readonly CrudExecutor<LeaveMasterViewModel> _crudLeaveMaster;
+        private readonly CrudExecutor<LeaveTypeViewModel> _crudLeaveType;
         private readonly CrudExecutor<LeaveRequestViewModel> _crudLeaveRequest;
-        private readonly CrudExecutor<EmployeeLeaveBalanceViewModel> _crudLeaveBalance;
         private readonly HttpService _http;
 
         public LeaveApi(HttpService http)
         {
             _http = http;
-            _crudLeaveMaster = new CrudExecutor<LeaveMasterViewModel>(http, $"{baseUrl}/masters");
+            _crudLeaveType = new CrudExecutor<LeaveTypeViewModel>(http, $"{baseUrl}/Types");
             _crudLeaveRequest = new CrudExecutor<LeaveRequestViewModel>(http, $"{baseUrl}/requests");
-            _crudLeaveBalance = new CrudExecutor<EmployeeLeaveBalanceViewModel>(http, $"{baseUrl}/balances");
-
         }
 
-        // Leave Master Methods
-        public Task<ApiResult<List<LeaveMasterViewModel>>> GetAllLeaveMaster()
-            => _crudLeaveMaster.GetAll();
+        // Leave Type Methods
+        public Task<ApiResult<List<LeaveTypeViewModel>>> GetAllLeaveType()
+            => _crudLeaveType.GetAll();
 
-        public Task<ApiResult<LeaveMasterViewModel>> GetLeaveMasterById(int id)
-            => _crudLeaveMaster.GetById(id);
+        public Task<ApiResult<LeaveTypeViewModel>> GetLeaveTypeById(int id)
+            => _crudLeaveType.GetById(id);
 
-        public Task<ApiResult<LeaveMasterViewModel>> CreateLeaveMaster(LeaveMasterViewModel dto)
-            => _crudLeaveMaster.Create(dto);
+        public Task<ApiResult<LeaveTypeViewModel>> CreateLeaveType(LeaveTypeViewModel dto)
+            => _crudLeaveType.Create(dto);
 
-        public async Task<ApiResult<bool>> UpdateLeaveMasterAsync(int id, LeaveMasterViewModel dto)
+        public async Task<ApiResult<bool>> UpdateLeaveTypeAsync(int id, LeaveTypeViewModel dto)
         {
-            var updateResult = await _crudLeaveMaster.UpdateReturnDto(id, dto);
+            var updateResult = await _crudLeaveType.UpdateReturnDto(id, dto);
 
             if (!updateResult.IsSuccess)
                 return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update.", updateResult.StatusCode);
@@ -294,8 +291,8 @@ public class ApiClients
             return ApiResult<bool>.Success(true, updateResult.StatusCode);
         }
 
-        public Task<ApiResult<bool>> DeleteLeaveMasterAsync(int id)
-            => _crudLeaveMaster.Delete(id);
+        public Task<ApiResult<bool>> DeleteLeaveTypeAsync(int id)
+            => _crudLeaveType.Delete(id);
 
         // Leave Request Methods
         public Task<ApiResult<List<LeaveRequestViewModel>>> GetAllLeaveRequest()
@@ -323,32 +320,14 @@ public class ApiClients
         public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status)
             => _http.PostAsync<bool>($"{baseUrl}/requests/status/{leaveRequestId}?status={status}", new { });
 
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetRequestByStatusAsync(Status status)
-            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/{status}");
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetRequestByFilterAsync(Status? status, int? empId)
+            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/filter?status={status}&empId={empId}");
 
         public Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByEmployee(int employeeid)
             => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/employee/{employeeid}");
 
         public Task<ApiResult<bool>> UpadteLeaverequestStatusCancle(int leaveRequestId, int employeeid)
             => _http.PostAsync<bool>($"{baseUrl}/requests/cancel/{leaveRequestId}?employeeid={employeeid}", new { });
-
-        // Leave Balance Methods
-        public Task<ApiResult<List<EmployeeLeaveBalanceViewModel>>> GetLeaveBalanceAsync()
-            => _crudLeaveBalance.GetAll();
-
-        public async Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceViewModel dto)
-        {
-            var updateResult = await _crudLeaveBalance.UpdateReturnDto(id, dto);
-            if (!updateResult.IsSuccess)
-                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update.", updateResult.StatusCode);
-            return ApiResult<bool>.Success(true, updateResult.StatusCode);
-        }
-
-        public Task<ApiResult<bool>> DeleteLeaveBalanceAsync(int id)
-            => _crudLeaveBalance.Delete(id);
-
-        public Task<ApiResult<List<EmployeeLeaveBalanceViewModel?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId)
-            => _http.GetAsync<List<EmployeeLeaveBalanceViewModel?>>($"{baseUrl}/balances/employee/{employeeId}");
 
     }
 

@@ -1,4 +1,4 @@
-﻿@page "/leaveMaster"
+﻿@page "/leaveType"
 
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Leave
@@ -18,76 +18,76 @@
 <div class="container mt-4">
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-primary">Leave Masters</h3>
+        <h3 class="fw-bold text-primary">Leave Types</h3>
 
-        <AppButton cssclass="btn btn-success" Text="Add Leave" OnClick="@(() => NavigationManager.NavigateTo("/leaveMaster/create"))">
+        <AppButton cssclass="btn btn-success" Text="Add Leave" OnClick="@(() => NavigationManager.NavigateTo("/leaveType/create"))">
             <i class="bi bi-plus-lg"></i>
         </AppButton>
     </div>
 
-    <AppTable TItem="LeaveMasterViewModel"
-              Items="leaveMasters"
-              Columns="TableSchemas.LeaveMasters"
-              OnEdit="EditLeaveMaster"
-              OnDelete="DeleteLeaveMaster" />
+    <AppTable TItem="LeaveTypeViewModel"
+              Items="leaveTypes"
+              Columns="TableSchemas.LeaveTypes"
+              OnEdit="EditLeaveType"
+              OnDelete="DeleteLeaveType" />
 
 </div>
 
 @code {
-    private List<LeaveMasterViewModel> leaveMasters = new();
+    private List<LeaveTypeViewModel> leaveTypes = new();
     private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadLeaveMasters();
+        await LoadLeaveTypes();
     }
 
-    private async Task LoadLeaveMasters()
+    private async Task LoadLeaveTypes()
     {
         isLoading = true;
 
-        var result = await LeaveService.GetLeaveMasterAsync();
+        var result = await LeaveService.GetLeaveTypeAsync();
 
         if (result.IsSuccess && result.Data != null)
         {
-            leaveMasters = result.Data;
+            leaveTypes = result.Data;
         }
         else if (!result.IsSuccess)
         {
-            NotificationService.Error(result.Message ?? "Failed to load Leave Masters");
-            leaveMasters = new List<LeaveMasterViewModel>();
+            NotificationService.Error(result.Message ?? "Failed to load Leave Types");
+            leaveTypes = new List<LeaveTypeViewModel>();
         }
         else
         {
-            leaveMasters = new List<LeaveMasterViewModel>();
+            leaveTypes = new List<LeaveTypeViewModel>();
         }
         isLoading = false;
     }
 
-    private void EditLeaveMaster(LeaveMasterViewModel model)
+    private void EditLeaveType(LeaveTypeViewModel model)
     {
-        NavigationManager.NavigateTo($"/leaveMaster/edit/{model.Id}");
+        NavigationManager.NavigateTo($"/leaveType/edit/{model.Id}");
     }
 
-    private async Task DeleteLeaveMaster(LeaveMasterViewModel model)
+    private async Task DeleteLeaveType(LeaveTypeViewModel model)
     {
         bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm",
-            "Are you sure you want to delete this leave Master?"
+            "Are you sure you want to delete this leave Type?"
         );
 
         if (!isConfirmed)
             return;
 
-        var result = await LeaveService.DeleteLeaveMasterAsync(model.Id);
+        var result = await LeaveService.DeleteLeaveTypeAsync(model.Id);
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error(result.Message ?? "Unable to delete leave Master.");
+            NotificationService.Error(result.Message ?? "Unable to delete leave Type.");
             return;
         }
 
-        NotificationService.Success("Leave Master deleted successfully.");
-        await LoadLeaveMasters();
+        NotificationService.Success("Leave Type deleted successfully.");
+        await LoadLeaveTypes();
     }
 }

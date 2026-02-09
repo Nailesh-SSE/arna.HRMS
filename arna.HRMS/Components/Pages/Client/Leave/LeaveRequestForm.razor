@@ -88,8 +88,7 @@
     [Parameter] public EventCallback<bool> ShowModalChanged { get; set; }
     [Parameter] public LeaveRequestViewModel Model { get; set; } = new();
     [Parameter] public List<SelectOption> LeaveOptions { get; set; } = new();
-    [Parameter] public List<LeaveMasterViewModel> LeaveMasters { get; set; } = new();
-    [Parameter] public List<EmployeeLeaveBalanceViewModel> Summaries { get; set; } = new();
+    [Parameter] public List<LeaveTypeViewModel> LeaveMasters { get; set; } = new();
     [Parameter] public EditContext EditContext { get; set; } = null!;
     [Parameter] public bool IsFormValid { get; set; }
     [Parameter] public bool IsSubmitting { get; set; }
