@@ -14,87 +14,92 @@
     }
     else
     {
-        @foreach (var req in Requests)
-        {
-            <div class="card shadow-sm mb-3 border-start request-card">
+        <div class="requests-scroll">
+            @foreach (var req in Requests)
+            {
+                <div class="card shadow-sm mb-3 border-start request-card">
 
-                <div class="card-body py-3">
+                    <div class="card-body py-3">
 
-                    <div class="row align-items-center g-3">
+                        <div class="row align-items-center g-3">
 
-                        <!-- LEFT (3) -->
-                        <div class="col-12 col-md-3 d-flex align-items-center gap-3">
+                            <!-- LEFT (3) -->
+                            <div class="col-12 col-md-4 d-flex align-items-center gap-3">
 
-                            <div class="avatar">
-                                @GetInitials(req.EmployeeName)
+                                <div class="avatar">
+                                    @GetInitials(req.EmployeeName)
+                                </div>
+
+                                <div>
+                                    <div class="d-flex justify-content-around">
+                                        <div class="fw-semibold me-2">@req.EmployeeName</div>
+                                        <span class="badge text-dark small me-2">
+                                            @req.TotalDays days
+                                        </span>
+                                        <span class="badge text-dark small">
+                                            @req.LeaveTypeName
+                                        </span>
+                                    </div>
+
+                                    <div class="small text-muted">
+                                        @req.StartDate.ToString("MMM dd") -
+                                        @req.EndDate.ToString("MMM dd, yyyy")
+                                    </div>
+
+
+                                </div>
                             </div>
 
-                            <div>
-                                <div class="d-flex justify-content-around">
-                                    <div class="fw-semibold me-2">@req.EmployeeName</div>
-                                    <span class="badge text-dark small">
-                                        @req.TotalDays days
+
+                            <!-- CENTER (6) -->
+                            <div class="col-12 col-md-5">
+
+                                <div class="reason-box text-truncate-2"
+                                     title="@req.Reason">
+                                    @req.Reason
+                                </div>
+
+                            </div>
+
+
+                            <!-- RIGHT (3) -->
+                            <div class="col-12 col-md-3 text-md-end">
+
+                                @if (req.StatusId == Status.Pending)
+                                {
+                                    <span class="badge bg-warning text-dark">
+                                        Pending
                                     </span>
-                                </div>
+                                    <AppButton class="btn btn-sm btn-outline-dark ms-md-2 mt-2 mt-md-0"
+                                               OnClick="@(async () => await OnEdit.InvokeAsync(req.Id))">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </AppButton>
+                                    <AppButton class="btn btn-sm btn-outline-danger ms-md-2 mt-2 mt-md-0" OnClick="@(async () => await OnCancel.InvokeAsync(req.Id))">
+                                        <i class="bi bi-x-octagon-fill"></i>
+                                    </AppButton>
 
-                                <div class="small text-muted">
-                                    @req.StartDate.ToString("MMM dd") -
-                                    @req.EndDate.ToString("MMM dd, yyyy")
-                                </div>
-
+                                }
+                                else if (req.StatusId == Status.Approved)
+                                {
+                                    <span class="badge bg-success">Approved</span>
+                                }
+                                else if (req.StatusId == Status.Rejected)
+                                {
+                                    <span class="badge bg-danger">Rejected</span>
+                                }
+                                else if (req.StatusId == Status.Cancelled)
+                                {
+                                    <span class="badge bg-secondary">Cancelled</span>
+                                }
 
                             </div>
-                        </div>
-
-
-                        <!-- CENTER (6) -->
-                        <div class="col-12 col-md-6">
-
-                            <div class="reason-box text-truncate-2"
-                                 title="@req.Reason">
-                                @req.Reason
-                            </div>
-
-                        </div>
-
-
-                        <!-- RIGHT (3) -->
-                        <div class="col-12 col-md-3 text-md-end">
-
-                            @if (req.StatusId == Status.Pending)
-                            {
-                                <span class="badge bg-warning text-dark">
-                                    Pending
-                                </span>
-                                <AppButton class="btn btn-sm btn-outline-dark ms-md-2 mt-2 mt-md-0"
-                                           OnClick="@(async () => await OnEdit.InvokeAsync(req.Id))">
-                                    <i class="bi bi-pencil-square"></i>
-                                </AppButton>
-                                <AppButton class="btn btn-sm btn-outline-danger ms-md-2 mt-2 mt-md-0" OnClick="@(async () => await OnCancel.InvokeAsync(req.Id))">
-                                    <i class="bi bi-x-octagon-fill"></i>
-                                </AppButton>
-
-                            }
-                            else if (req.StatusId == Status.Approved)
-                            {
-                                <span class="badge bg-success">Approved</span>
-                            }
-                            else if (req.StatusId == Status.Rejected)
-                            {
-                                <span class="badge bg-danger">Rejected</span>
-                            }
-                            else if (req.StatusId == Status.Cancelled)
-                            {
-                                <span class="badge bg-secondary">Cancelled</span>
-                            }
 
                         </div>
 
                     </div>
-
                 </div>
-            </div>
-        }
+            }
+        </div>
     }
 </div>
 
@@ -112,6 +117,8 @@
     public EventCallback<int>
         OnEdit
     { get; set; }
+
+    [Parameter] public List<LeaveMasterViewModel>? LeaveMasters { get; set; } = new();
 
     private string GetInitials(string? fullName)
     {

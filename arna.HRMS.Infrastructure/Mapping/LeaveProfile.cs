@@ -45,6 +45,10 @@ public class LeaveProfile : Profile
             .ForMember(d => d.ApprovedByName,
                 o => o.MapFrom(s => s.ApprovedByEmployee != null
                     ? $"{s.ApprovedByEmployee.FirstName} {s.ApprovedByEmployee.LastName}"
+                    : null))
+            .ForMember(d => d.EmployeeNumber,
+                o => o.MapFrom(s => s.Employee != null
+                    ? s.Employee.EmployeeNumber
                     : null));
         
         //Leave Balance

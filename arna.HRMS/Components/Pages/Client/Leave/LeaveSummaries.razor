@@ -1,18 +1,17 @@
 @using arna.HRMS.Models.ViewModels.Leave
-@using arna.HRMS.Models.Enums
 
 <div class="summary-section">
+
     <h3 class="summary-title">Your Leave Balance</h3>
-    @if (Summaries == null || Summaries.Count == 0)
+
+    @if (displaySummaries.Count == 0)
     {
-        <div class="empty-state">
-            <p>No leave balance data available</p>
-        </div>
+        <div class="text-muted">No leave configuration found.</div>
     }
     else
     {
         <div class="summary-grid">
-            @foreach (var s in Summaries)
+            @foreach (var s in displaySummaries)
             {
                 <div class="summary-card @(s.RemainingLeaves == 0 ? "exhausted" : "")">
                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -45,17 +44,38 @@
     [Parameter] public List<EmployeeLeaveBalanceViewModel> Summaries { get; set; } = new();
     [Parameter] public List<LeaveMasterViewModel>? LeaveMasters { get; set; } = new();
 
+    private List<EmployeeLeaveBalanceViewModel> displaySummaries = new();
+
+    protected override void OnParametersSet()
+    {
+        displaySummaries = (Summaries?.Any() == true)
+            ? Summaries
+            : BuildDefaultSummaries();
+    }
+
+    private List<EmployeeLeaveBalanceViewModel> BuildDefaultSummaries()
+    {
+        if (LeaveMasters == null || !LeaveMasters.Any())
+            return new();
+
+        return LeaveMasters.Select(m => new EmployeeLeaveBalanceViewModel
+        {
+            LeaveMasterId = m.Id,
+            LeaveMasterName = m.LeaveName,
+            TotalLeaves = m.MaxPerYear,
+            UsedLeaves = 0,
+            RemainingLeaves = m.MaxPerYear
+        }).ToList();
+    }
+
     private int GetPercent(EmployeeLeaveBalanceViewModel s)
         => s.TotalLeaves == 0 ? 0 : (int)((s.UsedLeaves * 100.0) / s.TotalLeaves);
 
     private string GetProgressColorClass(EmployeeLeaveBalanceViewModel s)
-    {
-        var percent = GetPercent(s);
-        return percent switch
+        => GetPercent(s) switch
         {
             >= 80 => "progress-critical",
             >= 60 => "progress-warning",
             _ => "progress-healthy"
         };
-    }
 }

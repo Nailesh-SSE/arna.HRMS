@@ -53,6 +53,7 @@
                       IsFormValid="isFormValid"
                       IsSubmitting="isSubmitting"
                       IsEditMode="isEditMode"
+                      IsDateDisabled="IsDateBlocked"
                       OnValidSubmit="HandleSubmit" />
 }
 
@@ -178,18 +179,34 @@
         if (result?.IsSuccess == true && result.Data != null)
             leaveMasters = result.Data;
     }
-
     private async Task LoadBalances()
     {
         var result = await LeaveService.GetLeaveBalanceByEmployeeIdAsync(leave.EmployeeId);
 
-        if (result?.IsSuccess == true && result.Data != null)
+        var balanceData = result?.IsSuccess == true && result.Data != null
+            ? result.Data
+            : new List<EmployeeLeaveBalanceViewModel>();
+
+
+        // 🔥 ALWAYS build summaries from masters
+        summaries = leaveMasters.Select(master =>
         {
-            summaries = result.Data
-                .GroupBy(x => x.LeaveMasterId)
-                .Select(g => g.OrderByDescending(b => b.Id).First())
-                .ToList();
-        }
+            var balance = balanceData
+                .FirstOrDefault(x => x.LeaveMasterId == master.Id);
+
+            var used = balance?.UsedLeaves ?? 0;
+            var total = master.MaxPerYear;
+
+            return new EmployeeLeaveBalanceViewModel
+            {
+                LeaveMasterId = master.Id,
+                LeaveMasterName = master.LeaveName,
+                TotalLeaves = total,
+                UsedLeaves = used,
+                RemainingLeaves = total - used
+            };
+        }).ToList();
+
 
         BuildLeaveOptions();
     }
@@ -202,51 +219,56 @@
             requests = result.Data;
     }
 
-    private bool ValidateAvailability()
-    {
-        if (editContext == null || messageStore == null)
-            return true;
 
-        messageStore.Clear();
-        bool isValid = true;
-
-        if (leave.LeaveTypeId == 0)
+        // In your main page, add this validation method
+        private bool ValidateAvailability()
         {
-            messageStore.Add(
-                new FieldIdentifier(leave, nameof(leave.LeaveTypeId)),
-                "Please select leave type.");
+            if (editContext == null || messageStore == null)
+                return true;
 
-            isValid = false;
+            messageStore.Clear();
+            bool isValid = true;
+
+            // Check if any date in the range is blocked
+            if (leave.StartDate != default && leave.EndDate != default)
+            {
+                var currentDate = leave.StartDate.Date;
+                while (currentDate <= leave.EndDate.Date)
+                {
+                    if (IsDateBlocked(currentDate))
+                    {
+                        messageStore.Add(
+                            new FieldIdentifier(leave, nameof(leave.StartDate)),
+                            $"Date {currentDate:MMM dd, yyyy} is already booked for leave.");
+                        isValid = false;
+                        break;
+                    }
+                    currentDate = currentDate.AddDays(1);
+                }
+            }
+
+            // ... rest of your validation ...
+
+            editContext.NotifyValidationStateChanged();
+            return isValid;
         }
 
-        if (leave.TotalDays <= 0)
-        {
-            messageStore.Add(
-                new FieldIdentifier(leave, nameof(leave.TotalDays)),
-                "Total days must be at least 1.");
-
-            isValid = false;
-        }
-
-        editContext.NotifyValidationStateChanged();
-        return isValid;
-    }
 
     private void BuildLeaveOptions()
-    {
-        leaveOptions = leaveMasters.Select(master =>
         {
-            var balance = summaries.FirstOrDefault(x => x.LeaveMasterId == master.Id);
-            var remaining = balance?.RemainingLeaves ?? 0;
+    leaveOptions = leaveMasters.Select(master =>
+    {
+        var balance = summaries.FirstOrDefault(x => x.LeaveMasterId == master.Id);
+        var remaining = balance?.RemainingLeaves ?? 0;
 
-            return new SelectOption
-            {
-                Value = master.Id.ToString(),
-                Text = $"{master.LeaveName} ({remaining} left)",
-                IsDisabled = remaining == 0
-            };
-        }).ToList();
-    }
+        return new SelectOption
+                {
+                    Value = master.Id.ToString(),
+                    Text = $"{master.LeaveName} ({remaining} left)",
+                    IsDisabled = remaining == 0
+                };
+    }).ToList();
+        }
 
     private LeaveRequestViewModel Clone(LeaveRequestViewModel x)
         => new()
@@ -330,4 +352,28 @@
             NotificationService.Success("Cancelled successfully.");
         }
     }
+
+    private bool IsDateBlocked(DateTime date)
+    {
+        var blockedRequests = requests
+            .Where(r => r.EmployeeId == leave.EmployeeId
+                    && (r.StatusId == Status.Pending || r.StatusId == Status.Approved))
+            .ToList();
+
+        if (isEditMode && editingId > 0)
+        {
+            blockedRequests = blockedRequests.Where(r => r.Id != editingId).ToList();
+        }
+
+        foreach (var request in blockedRequests)
+        {
+            if (date >= request.StartDate.Date && date <= request.EndDate.Date)
+            {
+                return true; 
+            }
+        }
+
+        return false; 
+    }
+
 }
