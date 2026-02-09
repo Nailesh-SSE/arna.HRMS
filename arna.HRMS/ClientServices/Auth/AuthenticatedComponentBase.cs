@@ -88,6 +88,8 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
 
     protected bool IsAdmin() => GetUserRole() == Models.Enums.UserRole.Admin.ToString();
 
+    protected bool IsEmployee() => GetUserRole() == Models.Enums.UserRole.Employee.ToString();
+
     public void Dispose()
     {
         AuthProvider.AuthenticationStateChanged -= OnAuthStateChanged;

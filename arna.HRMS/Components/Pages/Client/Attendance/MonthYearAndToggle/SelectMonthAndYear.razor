@@ -6,7 +6,11 @@
 
     @if (IsOpen)
     {
-        <div class="myp-panel">
+        <!-- outside click layer -->
+        <div class="myp-overlay" @onclick="Toggle"></div>
+
+        <!-- popup -->
+        <div class="myp-panel" @onclick:stopPropagation="true">
 
             <div class="myp-header">
                 <button type="button" class="nav-btn" @onclick="PrevYear">‹</button>
@@ -30,7 +34,6 @@
         </div>
     }
 </div>
-
 
 @code {
     [Parameter] public int Year { get; set; }
@@ -57,9 +60,9 @@
     }
 
     private string DisplayText =>
-     SelectedMonth is >= 1 and <= 12 && CurrentYear > 0
-         ? $"{MonthNames[SelectedMonth - 1]} {CurrentYear}"
-         : "Select Month";
+        SelectedMonth is >= 1 and <= 12 && CurrentYear > 0
+            ? $"{MonthNames[SelectedMonth - 1]} {CurrentYear}"
+            : "Select Month";
 
     private void Toggle() => IsOpen = !IsOpen;
     private void PrevYear() => CurrentYear--;
@@ -72,11 +75,8 @@
 
         SelectedMonth = month;
 
-        // Notify parent first
         await OnChange.InvokeAsync((CurrentYear, month));
 
-        // Then close the dropdown
         IsOpen = false;
     }
-
 }

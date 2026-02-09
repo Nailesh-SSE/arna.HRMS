@@ -3,7 +3,6 @@ using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace arna.HRMS.API.Controllers.Public;
 
@@ -20,9 +19,13 @@ public class AttendanceRequestController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAttendanceRequest()
+    public async Task<IActionResult> GetAttendanceRequests([FromQuery] int? employeeId, [FromQuery] Status? status)
     {
-        var result = await _attendanceRequestService.GetAttendanceRequestAsync();
+        var result = await _attendanceRequestService.GetAttendanceRequests(employeeId, status);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Message); 
+
         return Ok(result);
     }
 
@@ -49,10 +52,10 @@ public class AttendanceRequestController : ControllerBase
     }
 
     [HttpPost("{id:int}")]
-    public async Task<IActionResult> UpdateEmployee(int id, [FromBody] AttendanceRequestDto dto)
+    public async Task<IActionResult> UpdateAttendanceRequest(int id, [FromBody] AttendanceRequestDto dto)
     {
         dto.Id = id;
-        var result = await _attendanceRequestService.UpdateAttendanceRequestAsync(dto);
+        var result = await _attendanceRequestService.UpdateAttendanceRequestAsync(dto); 
 
         if (!result.IsSuccess)
             return BadRequest(result.Message);
@@ -60,11 +63,14 @@ public class AttendanceRequestController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet("employee/{employeeId:int}")]
-    public async Task<IActionResult> GetAttendanceRequestsByEmployee(int employeeId)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteAttendanceRequest(int id)
     {
-        
-        var result = await _attendanceRequestService.GetAttendanceRequestsByEmployeeAsync(employeeId);
+        var result = await _attendanceRequestService.DeleteAttendanceRequestAsync(id);  
+
+        if (!result.IsSuccess)
+            return NotFound(result.Message);
+
         return Ok(result);
     }
 
@@ -92,15 +98,19 @@ public class AttendanceRequestController : ControllerBase
         if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status");
 
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var approvedBy))
-            return Unauthorized("Invalid user claim");
+        var employeeIdClaim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
+
+        if (string.IsNullOrWhiteSpace(employeeIdClaim))
+            return Unauthorized("EmployeeId claim missing");
+
+        if (!int.TryParse(employeeIdClaim, out var approvedBy))
+            return Unauthorized("Invalid EmployeeId claim");
 
         var result = await _attendanceRequestService.UpdateAttendanceRequestStatusAsync(id, status, approvedBy);
 
         if (!result.IsSuccess)
             return BadRequest(result.Message);
 
-        return Ok($"Leave {status} successfully");
+        return Ok(result);
     }
 }

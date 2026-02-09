@@ -1,0 +1,155 @@
+﻿@using arna.HRMS.Models.ViewModels.Attendance
+
+<div class="container py-4">
+
+    <div class="position-relative ps-4">
+
+        <!-- timeline line -->
+        <div class="timeline-line"></div>
+
+        @foreach (var day in Attendance)
+        {
+            var loggedEmployees = day.Employees.Count(e => e.ClockIn.HasValue || e.ClockOut.HasValue);
+
+            <div class="row mb-4 position-relative">
+
+                <!-- DATE -->
+                <div class="col-auto position-absolute timeline-date">
+
+                    <div class="border text-center px-2 py-1 shadow-sm custom-date
+                            @(day.Date == DateOnly.FromDateTime(DateTime.Today) ? "bg-primary text-white" : "bg-white")">
+
+                        <div class="fw-bold">@day.Date.Day</div>
+                        <small>@day.Date.ToString("MMM")</small>
+
+                    </div>
+                </div>
+
+                <!-- CONTENT -->
+                <div class="col custom-content">
+
+                    <div class="card border-0 shadow-sm custom-card">
+
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center custom-card-header">
+
+                            <div>
+                                <strong>@day.Date.ToString("dddd")</strong><br />
+                                <span class="badge bg-primary-subtle text-primary">
+                                    @loggedEmployees Active
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <div class="row g-3">
+
+                                @foreach (var emp in day.Employees)
+                                {
+                                    var productivity = emp.TotalHours.TotalHours <= 0 ? 0
+                                        : Math.Min((emp.TotalHours.TotalHours / 8.0) * 100, 100);
+
+                                    <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
+
+                                        <div class="p-3 h-100 hover-card">
+
+                                            <!-- profile -->
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+
+                                                <div class="avatar bg-light text-primary fw-bold position-relative">
+                                                    @emp.EmployeeName?[0]
+                                                    <span class="status-dot @GetStatusColor(emp.Status)"></span>
+                                                </div>
+
+                                                <div>
+                                                    <strong>@emp.EmployeeName</strong><br />
+                                                    <small class="@GetStatusTextClass(emp.Status)">
+                                                        @emp.Status
+                                                    </small>
+                                                </div>
+
+                                            </div>
+
+                                            <!-- metrics -->
+                                            <div class="bg-light rounded-3 p-2 small">
+
+                                                <div class="row g-2 text-center">
+
+                                                    <!-- Shift -->
+                                                    <div class="col-6">
+                                                        <div class="text-muted small">Shift</div>
+                                                        <strong>
+                                                            @(emp.ClockIn?.ToString(@"hh\:mm\:ss") ?? "00:00:00")
+                                                            -
+                                                            @(emp.ClockOut?.ToString(@"hh\:mm\:ss") ?? "00:00:00")
+                                                        </strong>
+                                                    </div>
+
+                                                    <!-- Work -->
+                                                    <div class="col-6">
+                                                        <div class="text-muted small">Work</div>
+                                                        <strong>@emp.WorkingHours.ToString(@"hh\:mm\:ss")</strong>
+                                                    </div>
+
+                                                    <!-- Break -->
+                                                    <div class="col-6">
+                                                        <div class="text-muted small">Break</div>
+                                                        <strong>@emp.BreakDuration.ToString(@"hh\:mm\:ss")</strong>
+                                                    </div>
+
+                                                    <!-- Total -->
+                                                    <div class="col-6">
+                                                        <div class="text-muted small">Total</div>
+                                                        <strong>@emp.TotalHours.ToString(@"hh\:mm\:ss")</strong>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+
+                                            <!-- productivity -->
+                                            <div class="progress mt-2" style="height:4px">
+                                                <div class="progress-bar bg-primary" style="width:@($"{productivity}%")"></div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                }
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<MonthlyAttendanceViewModel> Attendance { get; set; } = new();
+
+    private string GetStatusColor(string? status) => status switch
+    {
+        "Present" => "bg-status-present",
+        "Leave" => "bg-status-leave",
+        "Late" => "bg-status-late",
+        "Absent" => "bg-status-absent",
+        "Holiday" => "bg-status-holiday",
+        "HalfDay" => "bg-status-halfday",
+        _ => "bg-secondary"
+    };
+
+    private string GetStatusTextClass(string? status) => status switch
+    {
+        "Present" => "text-status-present",
+        "Leave" => "text-status-leave",
+        "Late" => "text-status-late",
+        "Absent" => "text-status-absent",
+        "Holiday" => "text-status-holiday",
+        "HalfDay" => "text-status-halfday",
+        _ => "text-secondary"
+    };
+}

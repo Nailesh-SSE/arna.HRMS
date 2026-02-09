@@ -1,11 +1,11 @@
 ﻿@using arna.HRMS.Models.ViewModels.Attendance
 
-<div class="table-responsive attendance-table-wrapper">
+<div class="table-responsive shadow-sm bg-white custom-table">
 
-    <table class="table align-middle table-hover attendance-table">
+    <table class="table align-middle mb-0">
 
-        <thead class="table-light sticky-top custom-table">
-            <tr>
+        <thead class="table-light sticky-top custom-table-head">
+            <tr class="text-uppercase small text-secondary fw-semibold">
                 <th>Date</th>
                 <th>Clock In</th>
                 <th>Clock Out</th>
@@ -16,50 +16,45 @@
             </tr>
         </thead>
 
-        <tbody>
+        <tbody class="table-group-divider">
+
             @foreach (var day in Attendance)
             {
                 var emp = day.Employees.FirstOrDefault();
                 if (emp == null) continue;
 
-                <tr>
+                <tr class="table-row-hover">
 
                     <td>
                         <div class="fw-semibold">@day.Date.ToString("dd MMM yyyy")</div>
                         <small class="text-muted">@day.Day</small>
                     </td>
 
-                    <td class="fw-semibold text-primary">
-                        @(emp.ClockIn?.ToString(@"hh\:mm") ?? "--")
+                    <td class="text-primary fw-medium">
+                        @(emp.ClockIn?.ToString(@"hh\:mm\:ss") ?? "--")
                     </td>
 
-                    <td class="fw-semibold text-primary">
-                        @(emp.ClockOut?.ToString(@"hh\:mm") ?? "--")
-                    </td>   
+                    <td class="text-primary fw-medium">
+                        @(emp.ClockOut?.ToString(@"hh\:mm\:ss") ?? "--")
+                    </td>
+
+                    <td>@emp.BreakDuration.ToString(@"hh\:mm\:ss")</td>
+
+                    <td>@emp.WorkingHours.ToString(@"hh\:mm\:ss")</td>
+
+                    <td class="fw-bold">@emp.TotalHours.ToString(@"hh\:mm\:ss")</td>
 
                     <td>
-                        @emp.BreakDuration.ToString(@"hh\:mm")
-                    </td>
-
-                    <td>
-                        @emp.WorkingHours.ToString(@"hh\:mm")
-                    </td>
-
-                    <td class="fw-bold">
-                        @emp.TotalHours.ToString(@"hh\:mm")
-                    </td>
-
-                    <td>
-                        <span class="status-pill @GetStatusClass(emp.Status)">
+                        <span class="badge rounded-pill px-3 py-1 @GetStatusClass(emp.Status)">
                             @(emp.Status ?? "—")
                         </span>
                     </td>
 
                 </tr>
             }
+
         </tbody>
     </table>
-
 </div>
 
 

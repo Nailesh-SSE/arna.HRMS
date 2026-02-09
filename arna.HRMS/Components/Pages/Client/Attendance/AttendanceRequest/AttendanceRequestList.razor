@@ -1,0 +1,108 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Models.ViewModels.Attendance
+@inherits AuthenticatedLayoutBase
+
+<div class="container-fluid py-3">
+
+    @if (Requests == null || !Requests.Any())
+    {
+        <div class="text-center text-muted py-5">
+            No attendance requests found
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var req in Requests)
+            {
+                <div class="col-12 col-sm-6 col-lg-4 col-xl-4">
+                    <div class="bg-white shadow-sm p-3 h-100 d-flex flex-column custom-request-box">
+
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                            <strong class="text-truncate">
+                                @(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Unknown" : req.EmployeeName)
+                            </strong>
+
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                <span class="badge @(req.StatusId.ToString().ToLower() == "pending"
+                                    ? "bg-warning text-dark"
+                                    : req.StatusId.ToString().ToLower() == "approved"
+                                        ? "bg-success"
+                                        : req.StatusId.ToString().ToLower() == "rejected"
+                                            ? "bg-danger"
+                                            : "bg-secondary")">
+                                    @req.StatusId
+                                </span>
+
+                                @if (IsEmployee() && !req.IsApproved)
+                                {
+                                    <button class="btn btn-sm btn-outline-success">✏️</button>
+                                    <button class="btn btn-sm btn-outline-danger">🗑️</button>
+                                }
+
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <button class="btn btn-sm btn-outline-success" disabled="@req.IsApproved">
+                                        ✅
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger">❌</button>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="small text-primary mt-1">
+                            📅 @req.FromDate?.ToString("dd MMM yyyy") →
+                            @req.ToDate?.ToString("dd MMM yyyy")
+                        </div>
+
+                        <div class="d-flex justify-content-between small mt-2 flex-wrap gap-2">
+                            <span><strong>Reason:</strong> @req.ReasonTypeId</span>
+                            <span><strong>Location:</strong> @req.LocationId</span>
+                        </div>
+
+                        <div class="bg-light rounded-3 p-2 mt-3">
+                            <div class="row text-center small g-2">
+
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Clock In</div>
+                                    <strong>@req.ClockIn?.ToString("hh:mm tt")</strong>
+                                </div>
+
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Clock Out</div>
+                                    <strong>@req.ClockOut?.ToString("hh:mm tt")</strong>
+                                </div>
+
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Break</div>
+                                    <strong>@(req.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")</strong>
+                                </div>
+
+                                <div class="col-6 col-md-3">
+                                    <div class="text-muted">Total</div>
+                                    <strong>@req.TotalHours.ToString(@"hh\:mm")</strong>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="small text-secondary mt-3 flex-grow-1">
+                            @req.Description
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<AttendanceRequestViewModel> Requests { get; set; } = new();
+
+    [Parameter] public EventCallback<AttendanceRequestViewModel> EditClicked { get; set; }
+    [Parameter] public EventCallback<AttendanceRequestViewModel> DeleteClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<(AttendanceRequestViewModel Request, bool IsApproved)> AdminAction { get; set; }
+}

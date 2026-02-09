@@ -59,15 +59,25 @@
                         {
                             <td class="text-center">
                                 <div class="d-inline-flex gap-2">
-                                    <AppButton ButtonClass="btn btn-primary"
-                                               onclick="() => OnEdit.InvokeAsync(item)">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </AppButton>
 
-                                    <AppButton ButtonClass="btn btn-danger"
-                                               onclick="() => OnDelete.InvokeAsync(item)">
-                                        <i class="bi bi-trash"></i>
-                                    </AppButton>
+                                    @if (ActionTemplate != null)
+                                    {
+                                        @ActionTemplate(item)
+                                    }
+                                    else
+                                    {
+                                        <!-- DEFAULT EDIT / DELETE -->
+                                        <AppButton ButtonClass="btn btn-sm btn-primary"
+                                                   OnClick="() => OnEdit.InvokeAsync(item)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </AppButton>
+
+                                        <AppButton ButtonClass="btn btn-sm btn-danger"
+                                                   OnClick="() => OnDelete.InvokeAsync(item)">
+                                            <i class="bi bi-trash"></i>
+                                        </AppButton>
+                                    }
+
                                 </div>
                             </td>
                         }
@@ -86,6 +96,9 @@
     [Parameter] public EventCallback<TItem> OnDelete { get; set; }
 
     [Parameter] public bool ShowActions { get; set; } = true;
+
+    // ⭐ NEW
+    [Parameter] public RenderFragment<TItem>? ActionTemplate { get; set; }
 
     private int GetColSpan() => Columns.Count + (ShowActions ? 1 : 0);
 }

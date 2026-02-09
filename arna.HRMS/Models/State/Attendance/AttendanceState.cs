@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Models.ViewModels.Attendance;
+﻿using arna.HRMS.Models.Enums;
+using arna.HRMS.Models.ViewModels.Attendance;
 
 namespace arna.HRMS.Models.State.Attendance;
 
@@ -6,6 +7,7 @@ public class AttendanceState
 {
     public const string TABLE = "table";
     public const string CALENDAR = "calendar";
+    public const string REQUEST = "requests"; 
 
     public string ViewMode { get; set; } = TABLE;
 
@@ -15,8 +17,10 @@ public class AttendanceState
     public int Month { get; set; }
 
     /* ================= ADMIN ================= */
-    public int SelectedEmployeeId { get; set; }
     public DateTime? SelectedDate { get; set; }
+    public int? SelectedEmployeeId { get; set; }
+    public string? SelectedEmployeeName { get; set; } = string.Empty;
+    public Status? SelectedStatus { get; set; }
 
     /* ================= DATA (GROUPED) ================= */
     public List<MonthlyAttendanceViewModel> AttendanceList { get; set; } = new();
@@ -26,6 +30,8 @@ public class AttendanceState
     public List<AttendenceSummaryCard> SummaryCards { get; set; } = new();
 
     public TimeSpan TotalWorkingHours { get; set; }
+
+    public List<AttendanceRequestViewModel> AttendanceRequestList { get; set; } = new(); 
 
     /* ================= HELPERS ================= */
     public void ParseMonth()

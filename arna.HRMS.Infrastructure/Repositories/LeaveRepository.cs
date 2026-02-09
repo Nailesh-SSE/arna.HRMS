@@ -158,7 +158,11 @@ public class LeaveRepository
         if (leaveRequest == null)
             return false;
 
-        if (leaveRequest.StatusId != Status.Pending)
+        bool canUpdateStatus = leaveRequest.StatusId == Status.Pending ||
+                              (leaveRequest.StatusId == Status.Approved && status == Status.Rejected) ||
+                              (leaveRequest.StatusId == Status.Rejected && status == Status.Approved);
+
+        if (!canUpdateStatus)
             return false;
 
         leaveRequest.StatusId = status;
@@ -169,7 +173,6 @@ public class LeaveRepository
         await _leaveRequestRepo.UpdateAsync(leaveRequest);
         return true;
     }
-
     public async Task<bool> UpdateLeaveRequestStatusCancel(int id, int employeeId)
     {
         var attendanceRequest = await _leaveRequestRepo.Query()

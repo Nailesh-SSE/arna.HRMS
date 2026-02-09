@@ -1,0 +1,38 @@
+﻿.custom-table{
+    border-radius: 15px;
+}
+
+.custom-table-head {
+    box-shadow: 0 4px 6px -3px rgba(0,0,0,.15);
+    z-index: 5;
+}
+
+.table-row-hover {
+    transition: background .15s ease;
+}
+
+    .table-row-hover:hover {
+        background: #f8fafc;
+    }
+
+/* soft pills */
+
+.badge.bg-success {
+    background: #dcfce7 !important;
+    color: #166534;
+}
+
+.badge.bg-warning {
+    background: #fef3c7 !important;
+    color: #92400e;
+}
+
+.badge.bg-primary {
+    background: #e0e7ff !important;
+    color: #3730a3;
+}
+
+.badge.bg-secondary {
+    background: #f1f5f9 !important;
+    color: #475569;
+}

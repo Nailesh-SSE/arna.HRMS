@@ -37,7 +37,7 @@
             </button>
         </div>
 
-        <LeaveSummaries Summaries="summaries" LeaveTypes="leaveTypes" />
+       @*  <LeaveSummaries Summaries="summaries" LeaveTypes="leaveTypes" /> *@
 
         <LeaveRequestList Requests="requests"
                            OnCancel="handleCancelRequest"
@@ -52,6 +52,7 @@
                       IsFormValid="isFormValid"
                       IsSubmitting="isSubmitting"
                       IsEditMode="isEditMode"
+                      IsDateDisabled="IsDateBlocked"
                       OnValidSubmit="HandleSubmit" />
 }
 
@@ -198,35 +199,39 @@
             requests = result.Data;
     }
 
-    private bool ValidateAvailability()
-    {
-        if (editContext == null || messageStore == null)
-            return true;
 
-        messageStore.Clear();
-        bool isValid = true;
-
-        if (leave.LeaveTypeId == 0)
+        // In your main page, add this validation method
+        private bool ValidateAvailability()
         {
-            messageStore.Add(
-                new FieldIdentifier(leave, nameof(leave.LeaveTypeId)),
-                "Please select leave type.");
+            if (editContext == null || messageStore == null)
+                return true;
 
-            isValid = false;
+            messageStore.Clear();
+            bool isValid = true;
+
+            // Check if any date in the range is blocked
+            if (leave.StartDate != default && leave.EndDate != default)
+            {
+                var currentDate = leave.StartDate.Date;
+                while (currentDate <= leave.EndDate.Date)
+                {
+                    if (IsDateBlocked(currentDate))
+                    {
+                        messageStore.Add(
+                            new FieldIdentifier(leave, nameof(leave.StartDate)),
+                            $"Date {currentDate:MMM dd, yyyy} is already booked for leave.");
+                        isValid = false;
+                        break;
+                    }
+                    currentDate = currentDate.AddDays(1);
+                }
+            }
+
+            // ... rest of your validation ...
+
+            editContext.NotifyValidationStateChanged();
+            return isValid;
         }
-
-        if (leave.TotalDays <= 0)
-        {
-            messageStore.Add(
-                new FieldIdentifier(leave, nameof(leave.TotalDays)),
-                "Total days must be at least 1.");
-
-            isValid = false;
-        }
-
-        editContext.NotifyValidationStateChanged();
-        return isValid;
-    }
 
     // private void BuildLeaveOptions()
     // {
@@ -325,4 +330,28 @@
             NotificationService.Success("Cancelled successfully.");
         }
     }
+
+    private bool IsDateBlocked(DateTime date)
+    {
+        var blockedRequests = requests
+            .Where(r => r.EmployeeId == leave.EmployeeId
+                    && (r.StatusId == Status.Pending || r.StatusId == Status.Approved))
+            .ToList();
+
+        if (isEditMode && editingId > 0)
+        {
+            blockedRequests = blockedRequests.Where(r => r.Id != editingId).ToList();
+        }
+
+        foreach (var request in blockedRequests)
+        {
+            if (date >= request.StartDate.Date && date <= request.EndDate.Date)
+            {
+                return true; 
+            }
+        }
+
+        return false; 
+    }
+
 }

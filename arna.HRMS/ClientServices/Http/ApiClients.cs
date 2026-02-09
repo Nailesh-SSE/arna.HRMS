@@ -8,362 +8,244 @@ using Microsoft.AspNetCore.Identity.Data;
 
 namespace arna.HRMS.ClientServices.Http;
 
-public class ApiClients
+public sealed class ApiClients
 {
+    // ===================== AUTH & ACCESS =====================
+
     public AuthApi Auth { get; }
+    public UserApi Users { get; }
+    public RoleApi Roles { get; }
+
+    // ===================== CORE HR =====================
+
     public EmployeeApi Employees { get; }
     public DepartmentApi Departments { get; }
+
+    // ===================== ATTENDANCE =====================
+
     public AttendanceApi Attendance { get; }
-    public UserApi Users { get; }
-    public AttendanceRequestApi AttendanceRequest { get; }
+    public AttendanceRequestApi AttendanceRequests { get; }
+
+    // ===================== LEAVE =====================
+
     public LeaveApi Leave { get; }
-    public RoleApi Role { get; }
 
     public ApiClients(HttpService http)
     {
         http.SetApiClients(this);
-        Auth = new AuthApi(http);
-        Employees = new EmployeeApi(http);
-        Departments = new DepartmentApi(http);
-        Attendance = new AttendanceApi(http);
-        Users = new UserApi(http);
-        AttendanceRequest = new AttendanceRequestApi(http);
-        Leave = new LeaveApi(http);
-        Role = new RoleApi(http);
+
+        Auth = new(http);
+        Users = new(http);
+        Roles = new(http);
+
+        Employees = new(http);
+        Departments = new(http);
+
+        Attendance = new(http);
+        AttendanceRequests = new(http);
+
+        Leave = new(http);
     }
 
-    // =========================
-    // GENERIC CRUD EXECUTOR
-    // =========================
-    private sealed class CrudExecutor<T>
-    {
-        private readonly HttpService _http;
-        private readonly string _baseUrl;
+    // ===================== SHARED CRUD CORE =====================
 
-        public CrudExecutor(HttpService http, string baseUrl)
+    public abstract class BaseCrudApi<T>
+    {
+        protected readonly HttpService Http;
+        protected readonly string Url;
+
+        protected BaseCrudApi(HttpService http, string url)
         {
-            _http = http;
-            _baseUrl = baseUrl;
+            Http = http;
+            Url = url;
         }
 
-        public Task<ApiResult<List<T>>> GetAll()
-            => _http.GetAsync<List<T>>(_baseUrl);
+        public Task<ApiResult<List<T>>> GetAll() =>
+            Http.GetAsync<List<T>>(Url);
 
-        public Task<ApiResult<T>> GetById(int id)
-            => _http.GetAsync<T>($"{_baseUrl}/{id}");
+        public Task<ApiResult<T>> GetById(int id) =>
+            Http.GetAsync<T>($"{Url}/{id}");
 
-        public Task<ApiResult<T>> Create(T dto)
-            => _http.PostAsync<T>(_baseUrl, dto);
+        public Task<ApiResult<T>> Create(T dto) =>
+            Http.PostAsync<T>(Url, dto);
 
-        public Task<ApiResult<T>> UpdateReturnDto(int id, T dto)
-            => _http.PostAsync<T>($"{_baseUrl}/{id}", dto);
+        public Task<ApiResult<bool>> Delete(int id) =>
+            Http.DeleteAsync<bool>($"{Url}/{id}");
 
-        public Task<ApiResult<bool>> Delete(int id)
-            => _http.DeleteAsync<bool>($"{_baseUrl}/{id}");
+        protected Task<ApiResult<T>> UpdateRaw(int id, T dto) =>
+            Http.PostAsync<T>($"{Url}/{id}", dto);
     }
 
-    // =========================
-    // AUTH API
-    // =========================
+    protected static async Task<ApiResult<bool>> ToBool<T>(
+        Task<ApiResult<T>> task,
+        string error)
+    {
+        var result = await task;
+
+        return result.IsSuccess
+            ? ApiResult<bool>.Success(true, result.StatusCode)
+            : ApiResult<bool>.Fail(result.Message ?? error, result.StatusCode);
+    }
+
+    // ===================== AUTH =====================
+
     public sealed class AuthApi
     {
-        private const string baseUrl = "api/auth";
+        private const string Url = "api/auth";
         private readonly HttpService _http;
 
-        public AuthApi(HttpService http)
-        {
-            _http = http;
-        }
+        public AuthApi(HttpService http) => _http = http;
 
-        public Task<ApiResult<AuthResponse>> Login(LoginRequest request)
-            => _http.PostAsync<AuthResponse>($"{baseUrl}/login", request);
+        public Task<ApiResult<AuthResponse>> Login(LoginRequest req) =>
+            _http.PostAsync<AuthResponse>($"{Url}/login", req);
 
-        public Task<ApiResult<AuthResponse>> RefreshToken(RefreshTokenViewModel request)
-            => _http.PostAsync<AuthResponse>($"{baseUrl}/refresh", request);
+        public Task<ApiResult<AuthResponse>> RefreshToken(RefreshTokenViewModel req) =>
+            _http.PostAsync<AuthResponse>($"{Url}/refresh", req);
 
-        public Task<ApiResult<bool>> Logout()
-            => _http.PostAsync<bool>($"{baseUrl}/logout", new { });
+        public Task<ApiResult<bool>> Logout() =>
+            _http.PostAsync<bool>($"{Url}/logout", new { });
     }
 
-    // =========================
-    // EMPLOYEE API
-    // =========================
-    public sealed class EmployeeApi
+    // ===================== USER =====================
+
+    public sealed class UserApi : BaseCrudApi<UserViewModel>
     {
-        private const string baseUrl = "api/employees";
-        private readonly CrudExecutor<EmployeeViewModel> _crud;
+        public UserApi(HttpService http) : base(http, "api/users") { }
 
-        public EmployeeApi(HttpService http)
-        {
-            _crud = new CrudExecutor<EmployeeViewModel>(http, baseUrl);
-        }
+        public Task<ApiResult<bool>> Update(int id, UserViewModel dto) =>
+            ToBool(UpdateRaw(id, dto), "Unable to update user.");
 
-        public Task<ApiResult<List<EmployeeViewModel>>> GetAll()
-            => _crud.GetAll();
-
-        public Task<ApiResult<EmployeeViewModel>> GetById(int id)
-            => _crud.GetById(id);
-
-        public Task<ApiResult<EmployeeViewModel>> Create(EmployeeViewModel dto)
-            => _crud.Create(dto);
-
-        public async Task<ApiResult<bool>> Update(int id, EmployeeViewModel dto)
-        {
-            var updateResult = await _crud.UpdateReturnDto(id, dto);
-
-            if (!updateResult.IsSuccess)
-                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update employee.", updateResult.StatusCode);
-
-            return ApiResult<bool>.Success(true, updateResult.StatusCode);
-        }
-
-        public Task<ApiResult<bool>> Delete(int id)
-            => _crud.Delete(id);
+        public Task<ApiResult<bool>> ChangePassword(int id, string newPassword) =>
+            Http.PostAsync<bool>($"{Url}/{id}/change-password", newPassword);
     }
 
-    // =========================
-    // DEPARTMENT API
-    // =========================
-    public sealed class DepartmentApi
+    // ===================== ROLE =====================
+
+    public sealed class RoleApi : BaseCrudApi<RoleViewModel>
     {
-        private const string baseUrl = "api/department";
-        private readonly CrudExecutor<DepartmentViewModel> _crud;
+        public RoleApi(HttpService http) : base(http, "api/role") { }
 
-        public DepartmentApi(HttpService http)
-        {
-            _crud = new CrudExecutor<DepartmentViewModel>(http, baseUrl);
-        }
-
-        public Task<ApiResult<List<DepartmentViewModel>>> GetAll()
-            => _crud.GetAll();
-
-        public Task<ApiResult<DepartmentViewModel>> GetById(int id)
-            => _crud.GetById(id);
-
-        public Task<ApiResult<DepartmentViewModel>> Create(DepartmentViewModel dto)
-            => _crud.Create(dto);
-
-        public async Task<ApiResult<bool>> Update(int id, DepartmentViewModel dto)
-        {
-            var updateResult = await _crud.UpdateReturnDto(id, dto);
-
-            if (!updateResult.IsSuccess)
-                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update department.", updateResult.StatusCode);
-
-            return ApiResult<bool>.Success(true, updateResult.StatusCode);
-        }
-
-        public Task<ApiResult<bool>> Delete(int id)
-            => _crud.Delete(id);
+        public Task<ApiResult<bool>> Update(int id, RoleViewModel dto) =>
+            ToBool(UpdateRaw(id, dto), "Unable to update role.");
     }
 
-    // =========================
-    // ATTENDANCE API (CUSTOM)
-    // =========================
-    public sealed class AttendanceApi
+    // ===================== EMPLOYEE =====================
+
+    public sealed class EmployeeApi : BaseCrudApi<EmployeeViewModel>
     {
-        private const string baseUrl = "api/attendance";
-        private readonly CrudExecutor<AttendanceViewModel> _crud;
-        private readonly HttpService _http;
+        public EmployeeApi(HttpService http) : base(http, "api/employees") { }
 
-        public AttendanceApi(HttpService http)
-        {
-            _http = http;
-            _crud = new CrudExecutor<AttendanceViewModel>(http, baseUrl);
-        }
-
-        public Task<ApiResult<AttendanceViewModel>> GetById(int id)
-            => _crud.GetById(id);
-
-        public Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetByMonth(int year, int month, int empId, DateTime? date)
-            => _http.GetAsync<List<MonthlyAttendanceViewModel>>($"{baseUrl}/monthly-attendance?year={year}&month={month}&empId={empId}&date={date?.ToString("yyyy-MM-dd")}");
-
-        public Task<ApiResult<AttendanceViewModel>> Create(AttendanceViewModel dto)
-            => _crud.Create(dto);
-
-        public Task<ApiResult<AttendanceViewModel>> GetClockStatus(int employeeId)
-            => _http.GetAsync<AttendanceViewModel>($"{baseUrl}/clockStatus/{employeeId}");
+        public Task<ApiResult<bool>> Update(int id, EmployeeViewModel dto) =>
+            ToBool(UpdateRaw(id, dto), "Unable to update employee.");
     }
 
-    // =========================
-    // USER API (CUSTOM)
-    // =========================
-    public sealed class UserApi
+    // ===================== DEPARTMENT =====================
+
+    public sealed class DepartmentApi : BaseCrudApi<DepartmentViewModel>
     {
-        private const string baseUrl = "api/users";
-        private readonly CrudExecutor<UserViewModel> _crud;
-        private readonly HttpService _http;
+        public DepartmentApi(HttpService http) : base(http, "api/department") { }
 
-        public UserApi(HttpService http)
-        {
-            _http = http;
-            _crud = new CrudExecutor<UserViewModel>(http, baseUrl);
-        }
-
-        public Task<ApiResult<List<UserViewModel>>> GetAll()
-            => _crud.GetAll();
-
-        public Task<ApiResult<UserViewModel>> GetById(int id)
-            => _crud.GetById(id);
-
-        public Task<ApiResult<UserViewModel>> Create(UserViewModel dto)
-            => _crud.Create(dto);
-
-        public async Task<ApiResult<bool>> Update(int id, UserViewModel dto)
-        {
-            var updateResult = await _crud.UpdateReturnDto(id, dto);
-
-            if (!updateResult.IsSuccess)
-                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update user.", updateResult.StatusCode);
-
-            return ApiResult<bool>.Success(true, updateResult.StatusCode);
-        }
-
-        public Task<ApiResult<bool>> Delete(int id)
-            => _crud.Delete(id);
-
-        public Task<ApiResult<bool>> ChangePassword(int id, string newPassword)
-            => _http.PostAsync<bool>($"{baseUrl}/{id}/change-password", newPassword);
+        public Task<ApiResult<bool>> Update(int id, DepartmentViewModel dto) =>
+            ToBool(UpdateRaw(id, dto), "Unable to update department.");
     }
 
-    // ===============================
-    // ATTENDANCEREQUEST API (CUSTOM)
-    // ===============================
-    public sealed class AttendanceRequestApi
-    {
-        private const string baseUrl = "api/attendanceRequest";
-        private readonly CrudExecutor<AttendanceRequestViewModel> _crud;
-        private readonly HttpService _http;
+    // ===================== ATTENDANCE =====================
 
+    public sealed class AttendanceApi : BaseCrudApi<AttendanceViewModel>
+    {
+        public AttendanceApi(HttpService http) : base(http, "api/attendance") { }
+
+        public Task<ApiResult<AttendanceViewModel>> GetClockStatus(int employeeId) =>
+            Http.GetAsync<AttendanceViewModel>($"{Url}/clockStatus/{employeeId}");
+
+        public Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetByMonth(
+            int year, int month, int? empId, DateTime? date) =>
+            Http.GetAsync<List<MonthlyAttendanceViewModel>>(
+                $"{Url}/monthly-attendance?year={year}&month={month}&empId={empId}&date={date:yyyy-MM-dd}");
+    }
+
+    // ===================== ATTENDANCE REQUEST =====================
+
+    public sealed class AttendanceRequestApi : BaseCrudApi<AttendanceRequestViewModel>
+    {
         public AttendanceRequestApi(HttpService http)
+            : base(http, "api/attendanceRequest") { }
+
+        private Task<ApiResult<List<AttendanceRequestViewModel>>> Filter(
+            int? empId, Status? status)
         {
-            _http = http;
-            _crud = new CrudExecutor<AttendanceRequestViewModel>(http, baseUrl);
+            var query = new List<string>();
+
+            if (empId.HasValue) query.Add($"employeeId={empId}");
+            if (status.HasValue) query.Add($"status={status}");
+
+            var qs = query.Any() ? "?" + string.Join("&", query) : "";
+
+            return Http.GetAsync<List<AttendanceRequestViewModel>>($"{Url}{qs}");
         }
 
-        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll()
-            => _crud.GetAll();
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll() => Filter(null, null);
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(int? empId) => Filter(empId, null);
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(Status? status) => Filter(null, status);
+        public Task<ApiResult<List<AttendanceRequestViewModel>>> GetAll(int? empId, Status? status) => Filter(empId, status);
 
-        public Task<ApiResult<AttendanceRequestViewModel>> GetById(int id)
-            => _crud.GetById(id);
+        public Task<ApiResult<bool>> Update(AttendanceRequestViewModel dto) =>
+            ToBool(UpdateRaw(dto.Id, dto), "Unable to update request.");
 
-        public Task<ApiResult<AttendanceRequestViewModel>> Create(AttendanceRequestViewModel dto)
-            => _crud.Create(dto);
-
-        public Task<ApiResult<AttendanceRequestViewModel>> ApproveRequest(int id)
-            => _http.GetAsync<AttendanceRequestViewModel>($"{baseUrl}/status/{id}");
+        public Task<ApiResult<bool>> UpdateRequestStatus(int id, Status status) =>
+            Http.PostAsync<bool>($"{Url}/status/{id}?status={status}", new { });
     }
 
-    // ===============================
-    // Leave API (CUSTOM)
-    // ===============================
+    // ===================== LEAVE =====================
+
     public sealed class LeaveApi
     {
-        private const string baseUrl = "api/leave";
-        private readonly CrudExecutor<LeaveTypeViewModel> _crudLeaveType;
-        private readonly CrudExecutor<LeaveRequestViewModel> _crudLeaveRequest;
+        private const string Url = "api/leave";
         private readonly HttpService _http;
+
+        private readonly Crud<LeaveTypeViewModel> _Types;
+        private readonly Crud<LeaveRequestViewModel> _requests;
+
+        private sealed class Crud<T> : BaseCrudApi<T>
+        {
+            public Crud(HttpService http, string url) : base(http, url) { }
+
+            public Task<ApiResult<bool>> UpdateBool(int id, T dto, string error) =>
+                ToBool(UpdateRaw(id, dto), error);
+        }
 
         public LeaveApi(HttpService http)
         {
             _http = http;
-            _crudLeaveType = new CrudExecutor<LeaveTypeViewModel>(http, $"{baseUrl}/Types");
-            _crudLeaveRequest = new CrudExecutor<LeaveRequestViewModel>(http, $"{baseUrl}/requests");
+            _Types = new(http, $"{Url}/Types");
+            _requests = new(http, $"{Url}/requests");
         }
 
-        // Leave Type Methods
-        public Task<ApiResult<List<LeaveTypeViewModel>>> GetAllLeaveType()
-            => _crudLeaveType.GetAll();
+        public Task<ApiResult<List<LeaveTypeViewModel>>> GetAllLeaveType() => _Types.GetAll();
+        public Task<ApiResult<LeaveTypeViewModel>> GetLeaveTypeById(int id) => _Types.GetById(id);
+        public Task<ApiResult<LeaveTypeViewModel>> CreateLeaveType(LeaveTypeViewModel dto) => _Types.Create(dto);
+        public Task<ApiResult<bool>> UpdateLeaveTypeAsync(int id, LeaveTypeViewModel dto) =>
+            _Types.UpdateBool(id, dto, "Unable to update leave Type.");
+        public Task<ApiResult<bool>> DeleteLeaveTypeAsync(int id) => _Types.Delete(id);
 
-        public Task<ApiResult<LeaveTypeViewModel>> GetLeaveTypeById(int id)
-            => _crudLeaveType.GetById(id);
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetAllLeaveRequest() => _requests.GetAll();
+        public Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestById(int id) => _requests.GetById(id);
+        public Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequest(LeaveRequestViewModel dto) => _requests.Create(dto);
+        public Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestViewModel dto) =>
+            _requests.UpdateBool(id, dto, "Unable to update leave request.");
+        public Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id) => _requests.Delete(id);
 
-        public Task<ApiResult<LeaveTypeViewModel>> CreateLeaveType(LeaveTypeViewModel dto)
-            => _crudLeaveType.Create(dto);
+        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status) =>
+            _http.PostAsync<bool>($"{Url}/requests/status/{leaveRequestId}?status={status}", new { });
 
-        public async Task<ApiResult<bool>> UpdateLeaveTypeAsync(int id, LeaveTypeViewModel dto)
-        {
-            var updateResult = await _crudLeaveType.UpdateReturnDto(id, dto);
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetRequestByFilterAsync(Status? status, int? empId) =>
+            _http.GetAsync<List<LeaveRequestViewModel>>($"{Url}/requests/filter?status={status}&empId={empId}");
 
-            if (!updateResult.IsSuccess)
-                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update.", updateResult.StatusCode);
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByEmployee(int employeeId) =>
+            _http.GetAsync<List<LeaveRequestViewModel>>($"{Url}/requests/employee/{employeeId}");
 
-            return ApiResult<bool>.Success(true, updateResult.StatusCode);
-        }
+        public Task<ApiResult<bool>> CancelLeaveRequest(int leaveRequestId, int employeeId) =>
+            _http.PostAsync<bool>($"{Url}/requests/cancel/{leaveRequestId}?employeeid={employeeId}", new { });
 
-        public Task<ApiResult<bool>> DeleteLeaveTypeAsync(int id)
-            => _crudLeaveType.Delete(id);
-
-        // Leave Request Methods
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetAllLeaveRequest()
-            => _crudLeaveRequest.GetAll();
-
-        public Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestById(int id)
-            => _crudLeaveRequest.GetById(id);
-
-        public Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequest(LeaveRequestViewModel dto)
-            => _crudLeaveRequest.Create(dto);
-
-        public async Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestViewModel dto)
-        {
-            var updateResult = await _crudLeaveRequest.UpdateReturnDto(id, dto);
-
-            if (!updateResult.IsSuccess)
-                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update.", updateResult.StatusCode);
-
-            return ApiResult<bool>.Success(true, updateResult.StatusCode);
-        }
-
-        public Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id)
-            => _crudLeaveRequest.Delete(id);
-
-        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status)
-            => _http.PostAsync<bool>($"{baseUrl}/requests/status/{leaveRequestId}?status={status}", new { });
-
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetRequestByFilterAsync(Status? status, int? empId)
-            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/filter?status={status}&empId={empId}");
-
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByEmployee(int employeeid)
-            => _http.GetAsync<List<LeaveRequestViewModel>>($"{baseUrl}/requests/employee/{employeeid}");
-
-        public Task<ApiResult<bool>> UpadteLeaverequestStatusCancle(int leaveRequestId, int employeeid)
-            => _http.PostAsync<bool>($"{baseUrl}/requests/cancel/{leaveRequestId}?employeeid={employeeid}", new { });
-
-    }
-
-    // =========================
-    // ROLE API (CUSTOM)
-    // =========================
-    public sealed class RoleApi
-    {
-        private const string baseUrl = "api/role";
-        private readonly CrudExecutor<RoleViewModel> _crud; 
-
-        public RoleApi(HttpService http)
-        {
-            _crud = new CrudExecutor<RoleViewModel>(http, baseUrl);
-        }
-
-        public Task<ApiResult<List<RoleViewModel>>> GetAll()
-            => _crud.GetAll();
-
-        public Task<ApiResult<RoleViewModel>> GetById(int id)
-            => _crud.GetById(id);
-
-        public Task<ApiResult<RoleViewModel>> Create(RoleViewModel dto)
-            => _crud.Create(dto);
-
-        public async Task<ApiResult<bool>> Update(int id, RoleViewModel dto)
-        {
-            var updateResult = await _crud.UpdateReturnDto(id, dto);
-
-            if (!updateResult.IsSuccess)
-                return ApiResult<bool>.Fail(updateResult.Message ?? "Unable to update user.", updateResult.StatusCode);
-
-            return ApiResult<bool>.Success(true, updateResult.StatusCode);
-        }
-
-        public Task<ApiResult<bool>> Delete(int id)
-            => _crud.Delete(id);
     }
 }

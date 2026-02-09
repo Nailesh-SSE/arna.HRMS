@@ -34,13 +34,15 @@
                                 <AppDatePicker Label="Start Date *"
                                                Value="@Model.StartDate"
                                                ValueChanged="OnFromChanged"
-                                               ValidationExpression="() => Model.StartDate" />
+                                               ValidationExpression="() => Model.StartDate"
+                                               IsDateDisabled="IsDateDisabled" />
                             </div>
                             <div class="col-md-6">
                                 <AppDatePicker Label="End Date *"
                                                Value="@Model.EndDate"
                                                ValueChanged="OnToChanged"
-                                               ValidationExpression="() => Model.EndDate" />
+                                               ValidationExpression="() => Model.EndDate"
+                                               IsDateDisabled="IsDateDisabled" />
                             </div>
                         </div>
 
@@ -94,6 +96,7 @@
     [Parameter] public bool IsSubmitting { get; set; }
     [Parameter] public bool IsEditMode { get; set; }
     [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public Func<DateTime, bool>? IsDateDisabled { get; set; }
 
     private async Task OnCloseModal()
     {

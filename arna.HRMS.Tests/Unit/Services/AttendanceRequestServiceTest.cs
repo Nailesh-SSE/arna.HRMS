@@ -127,7 +127,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequestAsync();
+        var result = await _service.GetAttendanceRequests(null, null);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
@@ -418,7 +418,7 @@ public class AttendanceRequestServiceTests
             }
         );
         await _dbContext.SaveChangesAsync();
-        var result2 = await _service.GetAttendanceRequestAsync();
+        var result2 = await _service.GetAttendanceRequests(null, null);
         var count = result2.Data!.Count;
         var result = await _service.GetPendingAttendanceRequestesAsync();
 
@@ -541,7 +541,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequestsByEmployeeAsync(2);
+        var result = await _service.GetAttendanceRequests(2, Status.Pending);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(4));

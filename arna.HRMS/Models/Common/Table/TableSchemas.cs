@@ -57,6 +57,19 @@ public class TableSchemas
         StatusColumn<LeaveTypeViewModel>(u => u.IsActive)
     };
 
+    public static List<TableColumn<LeaveRequestViewModel>> LeaveRequest = new()
+    {
+        new() { Header = "EmployeeNumber", Value = u => u.EmployeeNumber },
+        new() { Header = "EmployeeName", Value = u => u.EmployeeName },
+        new() { Header = "LeaveTypeId", Value = u => u.LeaveTypeId },
+        new() { Header = "Reason", Value = u => u.Reason },
+        new() { Header = "TotalDays", Value = u => u.TotalDays },
+        new() { Header = "Status", Value = u => u.StatusId },
+        new() { Header = "ApprovedBy", Value = u => u.ApprovedBy },
+        new() { Header = "StartDate", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
+        new() { Header = "EndDate", Value = u => u.EndDate.Date.ToString("yyyy/MM/dd") },
+    };
+
     // GENERIC STATUS COLUMN
     private static TableColumn<T> StatusColumn<T>(Func<T, bool> isActiveSelector)
     {
