@@ -49,18 +49,18 @@ public class LeaveService : ILeaveService
         if (LeaveTypeDto == null)
             return ServiceResult<LeaveTypeDto>.Fail("Data not Found");
         
-        if (string.IsNullOrWhiteSpace(nameof(LeaveTypeDto.LeaveName)))
+        if (string.IsNullOrWhiteSpace(nameof(LeaveTypeDto.LeaveNameId)))
             return ServiceResult<LeaveTypeDto>.Fail("Leave name is required");
 
         if (LeaveTypeDto.MaxPerYear <= 0)
             return ServiceResult<LeaveTypeDto>.Fail("number of days is required");
 
-        var existingLeaves = await _leaveRepository.LeaveExistsAsync(LeaveTypeDto.LeaveName);
+        var existingLeaves = await _leaveRepository.LeaveExistsAsync(LeaveTypeDto.LeaveNameId);
         
         if (existingLeaves)
         {
             return ServiceResult<LeaveTypeDto>.Fail(
-                $"Leave '{LeaveTypeDto.LeaveName}' already exists"
+                $"Leave '{LeaveTypeDto.LeaveNameId}' already exists"
             );
         }
 

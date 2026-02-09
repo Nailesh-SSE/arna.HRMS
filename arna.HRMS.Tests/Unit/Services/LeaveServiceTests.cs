@@ -93,7 +93,7 @@ public class LeaveServiceTests
         var result = await _leaveService.GetLeaveTypeAsync();
 
         Assert.That(result.Data!.Count, Is.EqualTo(6));
-        Assert.That(result.Data[5].LeaveName, Is.EqualTo(LeaveName.SickLeave));
+        Assert.That(result.Data[5].LeaveNameId, Is.EqualTo(LeaveName.SickLeave));
         Assert.That(result.Data[0].IsPaid, Is.False);
         Assert.That(result.Data[3].MaxPerYear, Is.EqualTo(15));
         Assert.That(result.Data[4].Description, Is.EqualTo("Casual Leave Description"));
@@ -112,7 +112,7 @@ public class LeaveServiceTests
         await _dbContext.SaveChangesAsync();
         var result = await _leaveService.GetLeaveTypeByIdAsync(2);
         Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data!.LeaveName, Is.EqualTo(LeaveName.CasualLeave));
+        Assert.That(result.Data!.LeaveNameId, Is.EqualTo(LeaveName.CasualLeave));
         Assert.That(result.Data.MaxPerYear, Is.EqualTo(8));
         Assert.That(result.Data.IsPaid, Is.True);
         Assert.That(result.IsSuccess, Is.True);
@@ -170,7 +170,7 @@ public class LeaveServiceTests
         await _dbContext.SaveChangesAsync();
         var newLeaveType = new LeaveTypeDto
         {
-            LeaveName = LeaveName.SickLeave,
+            LeaveNameId = LeaveName.SickLeave,
             Description = "Duplicate Sick Leave Description",
             MaxPerYear = 12,
             IsPaid = true
@@ -179,7 +179,7 @@ public class LeaveServiceTests
         var result = await _leaveService.CreateLeaveTypeAsync(newLeaveType);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo($"Leave '{newLeaveType.LeaveName}' already exists"));
+        Assert.That(result.Message, Is.EqualTo($"Leave '{newLeaveType.LeaveNameId}' already exists"));
     }
 
     [Test]
@@ -202,7 +202,7 @@ public class LeaveServiceTests
     {
         var newLeaveType = new LeaveTypeDto
         {
-            LeaveName = LeaveName.SickLeave,
+            LeaveNameId = LeaveName.SickLeave,
             Description = "Sick Leave Description",
             IsPaid = true
         };
@@ -225,14 +225,14 @@ public class LeaveServiceTests
     {
         var newLeaveType = new LeaveTypeDto
         {
-            LeaveName = LeaveName.PaternityLeave,
+            LeaveNameId = LeaveName.PaternityLeave,
             Description = "Paternity Leave Description",
             MaxPerYear = 15
         };
         var result = await _leaveService.CreateLeaveTypeAsync(newLeaveType);
         Assert.That(result.Data, Is.Not.Null);
         Assert.That(result.Data!.Id, Is.GreaterThan(0));
-        Assert.That(result.Data.LeaveName, Is.EqualTo(LeaveName.PaternityLeave));
+        Assert.That(result.Data.LeaveNameId, Is.EqualTo(LeaveName.PaternityLeave));
         Assert.That(result.Data.MaxPerYear, Is.EqualTo(15));
         Assert.That(result.Data.IsPaid, Is.True);
         Assert.That(result.Data!.Description, Is.EqualTo("Paternity Leave Description"));
@@ -306,7 +306,7 @@ public class LeaveServiceTests
         var updatedLeaveType = new LeaveTypeDto
         {
             Id = 2,
-            LeaveName = LeaveName.PaternityLeave,
+            LeaveNameId = LeaveName.PaternityLeave,
             Description = "Updated Description",
             MaxPerYear = 12,
             IsPaid = false
@@ -314,7 +314,7 @@ public class LeaveServiceTests
         var result = await _leaveService.UpdateLeaveTypeAsync(updatedLeaveType);
         Assert.That(result.Data, Is.Not.Null);
         Assert.That(result.Data!.Id, Is.EqualTo(2));
-        Assert.That(result.Data.LeaveName, Is.EqualTo(LeaveName.PaternityLeave));
+        Assert.That(result.Data.LeaveNameId, Is.EqualTo(LeaveName.PaternityLeave));
         Assert.That(result.Data.Description, Is.EqualTo("Updated Description"));
         Assert.That(result.Data.MaxPerYear, Is.EqualTo(12));
         Assert.That(result.Data.IsPaid, Is.False);
@@ -335,7 +335,7 @@ public class LeaveServiceTests
         var updatedLeaveType = new LeaveTypeDto
         {
             Id = 5,
-            LeaveName = LeaveName.PaternityLeave,
+            LeaveNameId = LeaveName.PaternityLeave,
             Description = "Updated Description",
             MaxPerYear = 12,
             IsPaid = false

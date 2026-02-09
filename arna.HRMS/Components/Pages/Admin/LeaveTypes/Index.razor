@@ -17,356 +17,281 @@
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
 
-
-
 <FullPageLoader Visible="isLoading" />
-
-
 
 <div class="container mt-4">
 
+    <!-- HEADER -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
 
+            <div>
+                <h4 class="fw-bold text-primary mb-0">
+                    <i class="bi bi-briefcase-fill me-2"></i>
+                    LeaveTypes
+                </h4>
 
-   <!-- HEADER -->
-   <div class="card shadow-sm border-0 mb-4">
-       <div class="card-body d-flex justify-content-between align-items-center">
+                <small class="text-muted">
+                    @(showLeaveRequests
+                                        ? "View employee leave requests"
+                                        : "Manage leave types and policies")
+                </small>
+            </div>
 
+            <div class="d-flex gap-2">
 
+                @if (!showLeaveRequests)
+                {
+                    <AppButton ButtonClass="btn btn-primary px-3"
+                               Text="Add Leave"
+                               OnClick="OpenCreateModal">
+                        <i class="bi bi-plus-circle me-1"></i>
+                    </AppButton>
 
-           <div>
-               <h4 class="fw-bold text-primary mb-0">
-                   <i class="bi bi-briefcase-fill me-2"></i>
-                   LeaveTypes
-               </h4>
+                    <AppButton ButtonClass="btn btn-outline-dark px-3"
+                               Text="View Requests"
+                               OnClick="ShowLeaveRequests">
+                        <i class="bi bi-eye me-1"></i>
+                    </AppButton>
+                }
+                else
+                {
+                    <AppButton ButtonClass="btn btn-outline-secondary px-3"
+                               Text="Back"
+                               OnClick="ShowLeaveTypes">
+                        <i class="bi bi-arrow-left me-1"></i>
+                    </AppButton>
+                }
 
+            </div>
+        </div>
+    </div>
 
+    <!-- CREATE/EDIT MODAL -->
+    <LeaveTypes ShowModal="showModal"
+                   EditId="editId"
+                   OnClose="CloseModal"
+                   OnSaved="OnLeaveTypeSaved" />
 
-               <small class="text-muted">
-                   @(showLeaveRequests
-                                       ? "View employee leave requests"
-                                       : "Manage leave types and policies")
-               </small>
-           </div>
+    <!-- TABLE SWITCH -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
 
+            @if (!showLeaveRequests)
+            {
+                <!-- LEAVE TYPE TABLE -->
+                <AppTable TItem="LeaveTypeViewModel"
+                          Items="leaveTypes"
+                          Columns="TableSchemas.LeaveTypes"
+                          OnEdit="EditLeaveType"
+                          OnDelete="DeleteLeaveType" />
+            }
+            else
+            {
+                <!-- LEAVE REQUEST TABLE -->
+                <AppTable TItem="LeaveRequestViewModel"
+                          Items="leaveRequests"
+                          Columns="TableSchemas.LeaveRequest">
 
+                    <ActionTemplate Context="req">
+                        @if (req.StatusId != Status.Cancelled)
+                        {
+                            <AppButton ButtonClass="@GetApproveButtonClass(req)"
+                                       OnClick="() => UpdateLeaveStatus(req, Status.Approved)">
+                                <i class="bi bi-check-circle"></i>
+                            </AppButton>
 
-           <div class="d-flex gap-2">
+                            <AppButton ButtonClass="@GetRejectButtonClass(req)"
+                                       OnClick="() => UpdateLeaveStatus(req, Status.Rejected)">
+                                <i class="bi bi-x-circle"></i>
+                            </AppButton>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Cancelled</span>
+                        }
+                    </ActionTemplate>
 
+                </AppTable>
+            }
 
-
-               @if (!showLeaveRequests)
-               {
-                   <AppButton ButtonClass="btn btn-primary px-3"
-                              Text="Add Leave"
-                              OnClick="@(() => NavigationManager.NavigateTo("/leaveTypes/create"))">
-                       <i class="bi bi-plus-circle me-1"></i>
-                   </AppButton>
-
-
-
-                   <AppButton ButtonClass="btn btn-outline-dark px-3"
-                              Text="View Requests"
-                              OnClick="ShowLeaveRequests">
-                       <i class="bi bi-eye me-1"></i>
-                   </AppButton>
-               }
-               else
-               {
-                   <AppButton ButtonClass="btn btn-outline-secondary px-3"
-                              Text="Back"
-                              OnClick="ShowLeaveTypes">
-                       <i class="bi bi-arrow-left me-1"></i>
-                   </AppButton>
-               }
-
-
-
-           </div>
-       </div>
-   </div>
-
-
-
-   <!-- TABLE SWITCH -->
-   <div class="card shadow-sm border-0">
-       <div class="card-body">
-
-
-
-           @if (!showLeaveRequests)
-           {
-               <!-- LEAVE Type TABLE -->
-               <AppTable TItem="LeaveTypeViewModel"
-                         Items="leaveTypes"
-                         Columns="TableSchemas.LeaveTypes"
-                         OnEdit="EditLeaveType"
-                         OnDelete="DeleteLeaveType" />
-           }
-           else
-           {
-               <!-- LEAVE REQUEST TABLE -->
-               <AppTable TItem="LeaveRequestViewModel"
-                         Items="leaveRequests"
-                         Columns="TableSchemas.LeaveRequest">
-
-
-
-                   <ActionTemplate Context="req">
-                       @if (req.StatusId != Status.Cancelled)
-                       {
-                           <AppButton ButtonClass="@GetApproveButtonClass(req)"
-                                      OnClick="() => UpdateLeaveStatus(req, Status.Approved)">
-                               <i class="bi bi-check-circle"></i>
-                           </AppButton>
-
-
-
-                           <AppButton ButtonClass="@GetRejectButtonClass(req)"
-                                      OnClick="() => UpdateLeaveStatus(req, Status.Rejected)">
-                               <i class="bi bi-x-circle"></i>
-                           </AppButton>
-                       }
-                       else
-                       {
-                           <span class="badge bg-secondary">Cancelled</span>
-                       }
-                   </ActionTemplate>
-
-
-
-               </AppTable>
-
-
-
-           }
-
-
-
-       </div>
-   </div>
-
-
+        </div>
+    </div>
 
 </div>
 
-
-
 @code {
 
-
-
-   private bool showLeaveRequests = false;
-   private bool isLoading = true;
-
-
-
-   private List<LeaveTypeViewModel> leaveTypes = new();
-   private List<LeaveRequestViewModel> leaveRequests = new();
-
-
-
-   protected override async Task OnInitializedAsync()
-   {
-       await LoadLeaveTypes();
-   }
-
-
-
-   private async Task LoadLeaveTypes()
-   {
-       isLoading = true;
-
-       var result = await LeaveService.GetLeaveTypeAsync();
-
-
-
-       if (result.IsSuccess && result.Data != null)
-       {
-           leaveTypes = result.Data;
-       }
-       else
-       {
-           leaveTypes.Clear();
-           NotificationService.Error(result.Message ?? "Failed to load Leave Types");
-       }
-
-
-
-       isLoading = false;
-   }
-
-
-
-   private async Task UpdateLeaveStatus(LeaveRequestViewModel req, Status newStatus)
-   {
-       // Don't allow status change for cancelled requests
-       if (req.StatusId == Status.Cancelled)
-       {
-           NotificationService.Warning("Cannot modify a cancelled leave request.");
-           return;
-       }
-
-
-
-       string action = newStatus == Status.Approved ? "approve" : "reject";
-       string currentStatusText = req.StatusId == Status.Pending ? "pending" :
-                                  req.StatusId == Status.Approved ? "approved" : "rejected";
-
-
-
-       bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
-           "confirm",
-           $"Are you sure you want to {action} this {currentStatusText} leave request?"
-       );
-
-
-
-       if (!isConfirmed)
-           return;
-
-
-
-       isLoading = true;
-
-
-
-       var result = await LeaveService.UpdateStatusLeaveAsync(
-           req.Id,
-           newStatus
-       );
-
-
-
-       if (!result.IsSuccess)
-       {
-           NotificationService.Error(
-               result.Message ?? "Failed to update leave status"
-           );
-           isLoading = false;
-           return;
-       }
-
-
-
-       // Update UI immediately
-       req.StatusId = newStatus;
-       req.ApprovedDate = DateTime.Now;
-
-
-
-       NotificationService.Success(
-           newStatus == Status.Approved
-               ? "Leave approved successfully"
-               : "Leave rejected successfully"
-       );
-
-
-
-       isLoading = false;
-   }
-
-
-
-   private string GetApproveButtonClass(LeaveRequestViewModel req)
-   {
-       return req.StatusId == Status.Approved
-           ? "btn btn-sm btn-success"
-           : "btn btn-sm btn-outline-success";
-   }
-
-
-
-   private string GetRejectButtonClass(LeaveRequestViewModel req)
-   {
-       return req.StatusId == Status.Rejected
-           ? "btn btn-sm btn-danger"
-           : "btn btn-sm btn-outline-danger";
-   }
-
-
-
-   private async Task LoadLeaveRequests()
-   {
-       isLoading = true;
-
-
-
-       var result = await LeaveService.GetLeaveRequestAsync();
-
-
-
-       if (result.IsSuccess && result.Data != null)
-       {
-           leaveRequests = result.Data;
-       }
-       else
-       {
-           leaveRequests.Clear();
-           NotificationService.Error(result.Message ?? "Unable to load leave requests");
-       }
-
-
-
-       isLoading = false;
-   }
-
-
-
-   private async Task ShowLeaveRequests()
-   {
-       showLeaveRequests = true;
-
-
-
-       if (leaveRequests.Count == 0)
-       {
-           await LoadLeaveRequests();
-       }
-   }
-
-
-
-   private void ShowLeaveTypes()
-   {
-       showLeaveRequests = false;
-   }
-
-
-
-   private void EditLeaveType(LeaveTypeViewModel model)
-   {
-       NavigationManager.NavigateTo($"/leaveType/edit/{model.Id}");
-   }
-
-
-
-   private async Task DeleteLeaveType(LeaveTypeViewModel model)
-   {
-       bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
-           "confirm",
-           "Are you sure you want to delete this leave Type?"
-       );
-
-
-
-       if (!isConfirmed)
-           return;
-
-
-
-       var result = await LeaveService.DeleteLeaveTypeAsync(model.Id);
-
-
-
-       if (!result.IsSuccess)
-       {
-           NotificationService.Error(result.Message ?? "Unable to delete leave Type.");
-           return;
-       }
-
-
-
-       NotificationService.Success("Leave Type deleted successfully.");
-       await LoadLeaveTypes();
-   }
-} 
+    private bool showLeaveRequests = false;
+    private bool isLoading = true;
+    private bool showModal = false;
+    private int? editId = null;
+
+    private List<LeaveTypeViewModel> leaveTypes = new();
+    private List<LeaveRequestViewModel> leaveRequests = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLeaveTypes();
+    }
+
+    // ── Modal Handlers ──────────────────────────────────
+
+    private void OpenCreateModal()
+    {
+        editId = null;          
+        showModal = true;
+    }
+
+    private void EditLeaveType(LeaveTypeViewModel model)
+    {
+        editId = model.Id;      
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        editId = null;
+    }
+
+    private async Task OnLeaveTypeSaved()
+    {
+        CloseModal();
+        await LoadLeaveTypes();
+    }
+
+    // ── Data Loading ────────────────────────────────────
+
+    private async Task LoadLeaveTypes()
+    {
+        isLoading = true;
+
+        var result = await LeaveService.GetLeaveTypeAsync();
+
+        if (result.IsSuccess && result.Data != null)
+        {
+            leaveTypes = result.Data;
+        }
+        else
+        {
+            leaveTypes.Clear();
+            NotificationService.Error(result.Message ?? "Failed to load Leave Types");
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadLeaveRequests()
+    {
+        isLoading = true;
+
+        var result = await LeaveService.GetLeaveRequestAsync();
+
+        if (result.IsSuccess && result.Data != null)
+        {
+            leaveRequests = result.Data;
+        }
+        else
+        {
+            leaveRequests.Clear();
+            NotificationService.Error(result.Message ?? "Unable to load leave requests");
+        }
+
+        isLoading = false;
+    }
+
+    // ── View Toggle ─────────────────────────────────────
+
+    private async Task ShowLeaveRequests()
+    {
+        showLeaveRequests = true;
+
+        if (leaveRequests.Count == 0)
+        {
+            await LoadLeaveRequests();
+        }
+    }
+
+    private void ShowLeaveTypes()
+    {
+        showLeaveRequests = false;
+    }
+
+    // ── Leave Status ────────────────────────────────────
+
+    private async Task UpdateLeaveStatus(LeaveRequestViewModel req, Status newStatus)
+    {
+        if (req.StatusId == Status.Cancelled)
+        {
+            NotificationService.Warning("Cannot modify a cancelled leave request.");
+            return;
+        }
+
+        string action = newStatus == Status.Approved ? "approve" : "reject";
+        string currentStatusText = req.StatusId == Status.Pending ? "pending" :
+                                   req.StatusId == Status.Approved ? "approved" : "rejected";
+
+        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            $"Are you sure you want to {action} this {currentStatusText} leave request?"
+        );
+
+        if (!isConfirmed) return;
+
+        isLoading = true;
+
+        var result = await LeaveService.UpdateStatusLeaveAsync(req.Id, newStatus);
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error(result.Message ?? "Failed to update leave status");
+            isLoading = false;
+            return;
+        }
+
+        req.StatusId = newStatus;
+        req.ApprovedDate = DateTime.Now;
+
+        NotificationService.Success(
+            newStatus == Status.Approved
+                ? "Leave approved successfully"
+                : "Leave rejected successfully"
+        );
+
+        isLoading = false;
+    }
+
+    private string GetApproveButtonClass(LeaveRequestViewModel req)
+        => req.StatusId == Status.Approved
+            ? "btn btn-sm btn-success"
+            : "btn btn-sm btn-outline-success";
+
+    private string GetRejectButtonClass(LeaveRequestViewModel req)
+        => req.StatusId == Status.Rejected
+            ? "btn btn-sm btn-danger"
+            : "btn btn-sm btn-outline-danger";
+
+    // ── Delete ──────────────────────────────────────────
+
+    private async Task DeleteLeaveType(LeaveTypeViewModel model)
+    {
+        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to delete this leave Type?"
+        );
+
+        if (!isConfirmed) return;
+
+        var result = await LeaveService.DeleteLeaveTypeAsync(model.Id);
+
+        if (!result.IsSuccess)
+        {
+            NotificationService.Error(result.Message ?? "Unable to delete leave Type.");
+            return;
+        }
+
+        NotificationService.Success("Leave Type deleted successfully.");
+        await LoadLeaveTypes();
+    }
+}

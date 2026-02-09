@@ -7,7 +7,7 @@ namespace arna.HRMS.Core.DTOs;
 public class LeaveTypeDto : BaseEntity
 {
     [Required(ErrorMessage ="Leave Name is required")]
-    public LeaveName LeaveName { get; set; }
+    public LeaveName LeaveNameId { get; set; }
     public string? Description { get; set; }
     [Required(ErrorMessage = "Leave days is required")]
     public int MaxPerYear { get; set; }

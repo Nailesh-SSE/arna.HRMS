@@ -142,10 +142,4 @@
 
     private void CalculateDays()
         => Model.TotalDays = (Model.EndDate - Model.StartDate).Days + 1;
-
-    private async Task Close()
-   => await ShowModalChanged.InvokeAsync(false);
-
-    private async Task Submit()
-        => await OnValidSubmit.InvokeAsync();
 }
