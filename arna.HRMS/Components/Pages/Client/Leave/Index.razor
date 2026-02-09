@@ -37,7 +37,7 @@
             </button>
         </div>
 
-        <LeaveSummaries Summaries="summaries" LeaveMasters="leaveMasters" />
+       @*  <LeaveSummaries Summaries="summaries" LeaveTypes="leaveTypes" /> *@
 
         <LeaveRequestList Requests="requests"
                            OnCancel="handleCancelRequest"
@@ -48,11 +48,11 @@
                       ShowModalChanged="OnModalChanged"
                       Model="leave"
                       LeaveOptions="leaveOptions"
-                      Summaries="summaries"
                       EditContext="editContext"
                       IsFormValid="isFormValid"
                       IsSubmitting="isSubmitting"
                       IsEditMode="isEditMode"
+                      IsDateDisabled="IsDateBlocked"
                       OnValidSubmit="HandleSubmit" />
 }
 
@@ -73,9 +73,8 @@
     private int editingId = 0;
 
     private List<LeaveRequestViewModel> requests = new();
-    private List<EmployeeLeaveBalanceViewModel> summaries = new();
     private List<SelectOption> leaveOptions = new();
-    private List<LeaveMasterViewModel> leaveMasters = new();
+    private List<LeaveTypeViewModel> leaveTypes = new();
 
 
     protected override async Task OnInitializedAsync()
@@ -84,8 +83,8 @@
 
         InitializeForm(GetEmployeeId());
 
-        await LoadLeaveMasters();
-        await Task.WhenAll(LoadBalances(), LoadRequests());
+        await LoadLeaveTypes();
+        await Task.WhenAll( LoadRequests());
 
         isLoading = false;
     }
@@ -145,7 +144,6 @@
             {
                 NotificationService.Success("Leave updated successfully.");
                 await LoadRequests();
-                await LoadBalances();
                 showModal = false;
                 ResetForm();
             }
@@ -162,7 +160,6 @@
         {
             NotificationService.Success("Leave submitted successfully.");
             await LoadRequests();
-            await LoadBalances();
             showModal = false;
             ResetForm();
         }
@@ -171,28 +168,28 @@
     }
 
 
-    private async Task LoadLeaveMasters()
+    private async Task LoadLeaveTypes()
     {
-        var result = await LeaveService.GetLeaveMasterAsync();
+        var result = await LeaveService.GetLeaveTypeAsync();
 
         if (result?.IsSuccess == true && result.Data != null)
-            leaveMasters = result.Data;
+            leaveTypes = result.Data;
     }
 
-    private async Task LoadBalances()
-    {
-        var result = await LeaveService.GetLeaveBalanceByEmployeeIdAsync(leave.EmployeeId);
+    // private async Task LoadBalances()
+    // {
+    //     var result = await LeaveService.GetLeaveBalanceByEmployeeIdAsync(leave.EmployeeId);
 
-        if (result?.IsSuccess == true && result.Data != null)
-        {
-            summaries = result.Data
-                .GroupBy(x => x.LeaveMasterId)
-                .Select(g => g.OrderByDescending(b => b.Id).First())
-                .ToList();
-        }
+    //     if (result?.IsSuccess == true && result.Data != null)
+    //     {
+    //         summaries = result.Data
+    //             .GroupBy(x => x.LeaveTypeId)
+    //             .Select(g => g.OrderByDescending(b => b.Id).First())
+    //             .ToList();
+    //     }
 
-        BuildLeaveOptions();
-    }
+    //     BuildLeaveOptions();
+    // }
 
     private async Task LoadRequests()
     {
@@ -202,51 +199,55 @@
             requests = result.Data;
     }
 
-    private bool ValidateAvailability()
-    {
-        if (editContext == null || messageStore == null)
-            return true;
 
-        messageStore.Clear();
-        bool isValid = true;
-
-        if (leave.LeaveTypeId == 0)
+        // In your main page, add this validation method
+        private bool ValidateAvailability()
         {
-            messageStore.Add(
-                new FieldIdentifier(leave, nameof(leave.LeaveTypeId)),
-                "Please select leave type.");
+            if (editContext == null || messageStore == null)
+                return true;
 
-            isValid = false;
-        }
+            messageStore.Clear();
+            bool isValid = true;
 
-        if (leave.TotalDays <= 0)
-        {
-            messageStore.Add(
-                new FieldIdentifier(leave, nameof(leave.TotalDays)),
-                "Total days must be at least 1.");
-
-            isValid = false;
-        }
-
-        editContext.NotifyValidationStateChanged();
-        return isValid;
-    }
-
-    private void BuildLeaveOptions()
-    {
-        leaveOptions = leaveMasters.Select(master =>
-        {
-            var balance = summaries.FirstOrDefault(x => x.LeaveMasterId == master.Id);
-            var remaining = balance?.RemainingLeaves ?? 0;
-
-            return new SelectOption
+            // Check if any date in the range is blocked
+            if (leave.StartDate != default && leave.EndDate != default)
             {
-                Value = master.Id.ToString(),
-                Text = $"{master.LeaveName} ({remaining} left)",
-                IsDisabled = remaining == 0
-            };
-        }).ToList();
-    }
+                var currentDate = leave.StartDate.Date;
+                while (currentDate <= leave.EndDate.Date)
+                {
+                    if (IsDateBlocked(currentDate))
+                    {
+                        messageStore.Add(
+                            new FieldIdentifier(leave, nameof(leave.StartDate)),
+                            $"Date {currentDate:MMM dd, yyyy} is already booked for leave.");
+                        isValid = false;
+                        break;
+                    }
+                    currentDate = currentDate.AddDays(1);
+                }
+            }
+
+            // ... rest of your validation ...
+
+            editContext.NotifyValidationStateChanged();
+            return isValid;
+        }
+
+    // private void BuildLeaveOptions()
+    // {
+    //     leaveOptions = leaveTypes.Select(Type =>
+    //     {
+    //         var balance = summaries.FirstOrDefault(x => x.LeaveTypeId == Type.Id);
+    //         var remaining = balance?.RemainingLeaves ?? 0;
+
+    //         return new SelectOption
+    //         {
+    //             Value = Type.Id.ToString(),
+    //             Text = $"{Type.LeaveName} ({remaining} left)",
+    //             IsDisabled = remaining == 0
+    //         };
+    //     }).ToList();
+    // }
 
     private LeaveRequestViewModel Clone(LeaveRequestViewModel x)
         => new()
@@ -326,8 +327,31 @@
         if (result?.IsSuccess == true)
         {
             await LoadRequests();
-            await LoadBalances();
             NotificationService.Success("Cancelled successfully.");
         }
     }
+
+    private bool IsDateBlocked(DateTime date)
+    {
+        var blockedRequests = requests
+            .Where(r => r.EmployeeId == leave.EmployeeId
+                    && (r.StatusId == Status.Pending || r.StatusId == Status.Approved))
+            .ToList();
+
+        if (isEditMode && editingId > 0)
+        {
+            blockedRequests = blockedRequests.Where(r => r.Id != editingId).ToList();
+        }
+
+        foreach (var request in blockedRequests)
+        {
+            if (date >= request.StartDate.Date && date <= request.EndDate.Date)
+            {
+                return true; 
+            }
+        }
+
+        return false; 
+    }
+
 }

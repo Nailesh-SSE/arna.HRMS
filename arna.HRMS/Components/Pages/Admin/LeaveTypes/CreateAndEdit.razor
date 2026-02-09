@@ -1,5 +1,5 @@
-﻿@page "/leaveMaster/create"
-@page "/leaveMaster/edit/{Id:int}"
+﻿@page "/leaveTypes/create"
+@page "/leaveTypes/edit/{Id:int}"
 
 @using arna.HRMS.ClientServices.Admin.Employee
 @using arna.HRMS.ClientServices.Admin.Role
@@ -32,41 +32,41 @@
 
             @if (!isLoading)
             {
-                <EditForm Model="leaveMaster" OnValidSubmit="HandleValidSubmit" autocomplete="off">
+                <EditForm Model="leaveType" OnValidSubmit="HandleValidSubmit" autocomplete="off">
                     <DataAnnotationsValidator />
 
                     <div class="row g-4">
                         <!-- Name -->
                         <div class="col-md-6">
                             <AppInput Label="LeaveName"
-                                      Value="@leaveMaster.LeaveName"
-                                      ValueChanged="v => leaveMaster.LeaveName = v"
-                                      ValidationExpression="@(() => leaveMaster.LeaveName)">
+                                      Value="@nameof(leaveType.LeaveNameId)"
+                                      ValueChanged="v => leaveType.LeaveNameId = Enum.TryParse<LeaveName>(v, out var parsed) ? parsed : leaveType.LeaveNameId"
+                                      ValidationExpression="@(() => leaveType.LeaveNameId)">
                             </AppInput>
                         </div>
 
                         <!-- Days -->
                         <div class="col-md-6">
                             <AppNumberInput Label="MaxPerYear"
-                                            Value="@leaveMaster.MaxPerYear"
-                                            ValueChanged="v => leaveMaster.MaxPerYear = v"
-                                            ValidationExpression="@(() => leaveMaster.MaxPerYear)">
+                                            Value="@leaveType.MaxPerYear"
+                                            ValueChanged="v => leaveType.MaxPerYear = v"
+                                            ValidationExpression="@(() => leaveType.MaxPerYear)">
                             </AppNumberInput>
                         </div>
 
                         <!-- Description -->
                         <div class="col-md-6">
                             <AppInput Label="Description"
-                                      Value="@leaveMaster.Description"
-                                      ValueChanged="v => leaveMaster.Description = v"
-                                      ValidationExpression="@(() => leaveMaster.Description)">
+                                      Value="@leaveType.Description"
+                                      ValueChanged="v => leaveType.Description = v"
+                                      ValidationExpression="@(() => leaveType.Description)">
                             </AppInput>
                         </div>
 
                         <div class="col-md-6 mt-4">
                             <AppCheckBox Label="IsPaid"
-                                         Value="@leaveMaster.IsPaid"
-                                         ValueChanged="@(v => leaveMaster.IsPaid = v)" />
+                                         Value="@leaveType.IsPaid"
+                                         ValueChanged="@(v => leaveType.IsPaid = v)" />
                         </div>
 
                         <!-- Active (EDIT ONLY) -->
@@ -74,8 +74,8 @@
                         {
                             <div class="col-md-6 mt-4">
                                 <AppCheckBox Label="Active"
-                                             Value="@leaveMaster.IsActive"
-                                             ValueChanged="@(v => leaveMaster.IsActive = v)" />
+                                             Value="@leaveType.IsActive"
+                                             ValueChanged="@(v => leaveType.IsActive = v)" />
                             </div>
                         }
                     </div>
@@ -97,7 +97,7 @@
 
 @code {
     [Parameter] public int? Id { get; set; }
-    private LeaveMasterViewModel leaveMaster = new();
+    private LeaveTypeViewModel leaveType = new();
     private bool isLoading = true;
     private bool IsEditMode => Id.HasValue;
 
@@ -107,21 +107,21 @@
 
         if (IsEditMode)
         {
-            var result = await LeaveService.GetLeaveMasterByIdAsync(Id!.Value);
+            var result = await LeaveService.GetLeaveTypeByIdAsync(Id!.Value);
 
             if (result.IsSuccess && result.Data != null)
             {
-                leaveMaster = result.Data;
+                leaveType = result.Data;
             }
             else
             {
-                NotificationService.Error(result.Message ?? "Leave Master not found.");
-                NavigationManager.NavigateTo("/leaveMaster");
+                NotificationService.Error(result.Message ?? "Leave Type not found.");
+                NavigationManager.NavigateTo("/leaveType");
             }
         }
         else
         {
-            leaveMaster = new LeaveMasterViewModel();
+            leaveType = new LeaveTypeViewModel();
         }
 
         isLoading = false;
@@ -131,31 +131,31 @@
     {
         if (IsEditMode)
         {
-            var result = await LeaveService.UpdateLeaveMasterAsync(Id!.Value, leaveMaster);
+            var result = await LeaveService.UpdateLeaveTypeAsync(Id!.Value, leaveType);
 
             if (!result.IsSuccess)
             {
-                NotificationService.Error(result.Message ?? "Unable to update leave Master.");
+                NotificationService.Error(result.Message ?? "Unable to update leave Type.");
                 return;
             }
 
-            NotificationService.Success("Leave Master updated successfully.");
+            NotificationService.Success("Leave Type updated successfully.");
         }
         else
         {
-            var result = await LeaveService.CreateLeaveMasterAsync(leaveMaster);
+            var result = await LeaveService.CreateLeaveTypeAsync(leaveType);
 
             if (!result.IsSuccess)
             {
-                NotificationService.Error(result.Message ?? "Unable to create leave Master.");
+                NotificationService.Error(result.Message ?? "Unable to create leave Type.");
                 return;
             }
 
-            NotificationService.Success("Leave Master created successfully.");
+            NotificationService.Success("Leave Type created successfully.");
         }
 
-        NavigationManager.NavigateTo("/leaveMaster");
+        NavigationManager.NavigateTo("/leaveType");
     }
 
-    private void GoBack() => NavigationManager.NavigateTo("/leaveMaster");
+    private void GoBack() => NavigationManager.NavigateTo("/leaveTypes");
 }

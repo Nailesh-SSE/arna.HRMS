@@ -8,6 +8,7 @@ public class LeaveRequestViewModel : CommonViewModel
 {
     public int EmployeeId { get; set; }
     public string? EmployeeName { get; set; }
+    public string? EmployeeNumber { get; set; }
 
     public int LeaveTypeId { get; set; }
     public string? LeaveTypeName { get; set; }

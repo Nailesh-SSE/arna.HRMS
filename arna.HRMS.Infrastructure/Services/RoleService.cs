@@ -82,9 +82,11 @@ public class RoleService : IRoleService
         if (!Data.IsSuccess)
             return ServiceResult<RoleDto>.Fail("Failed to update role");
 
-
         if (string.IsNullOrWhiteSpace(dto.Name))
             return ServiceResult<RoleDto>.Fail("Role name is required");
+
+        if (await _roleRepository.RoleExistsAsync(dto.Name))
+            return ServiceResult<RoleDto>.Fail("Role name already exists");
 
         var role = _mapper.Map<Role>(dto);
 

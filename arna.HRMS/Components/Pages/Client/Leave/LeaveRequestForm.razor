@@ -34,13 +34,15 @@
                                 <AppDatePicker Label="Start Date *"
                                                Value="@Model.StartDate"
                                                ValueChanged="OnFromChanged"
-                                               ValidationExpression="() => Model.StartDate" />
+                                               ValidationExpression="() => Model.StartDate"
+                                               IsDateDisabled="IsDateDisabled" />
                             </div>
                             <div class="col-md-6">
                                 <AppDatePicker Label="End Date *"
                                                Value="@Model.EndDate"
                                                ValueChanged="OnToChanged"
-                                               ValidationExpression="() => Model.EndDate" />
+                                               ValidationExpression="() => Model.EndDate"
+                                               IsDateDisabled="IsDateDisabled" />
                             </div>
                         </div>
 
@@ -88,13 +90,13 @@
     [Parameter] public EventCallback<bool> ShowModalChanged { get; set; }
     [Parameter] public LeaveRequestViewModel Model { get; set; } = new();
     [Parameter] public List<SelectOption> LeaveOptions { get; set; } = new();
-    [Parameter] public List<LeaveMasterViewModel> LeaveMasters { get; set; } = new();
-    [Parameter] public List<EmployeeLeaveBalanceViewModel> Summaries { get; set; } = new();
+    [Parameter] public List<LeaveTypeViewModel> LeaveMasters { get; set; } = new();
     [Parameter] public EditContext EditContext { get; set; } = null!;
     [Parameter] public bool IsFormValid { get; set; }
     [Parameter] public bool IsSubmitting { get; set; }
     [Parameter] public bool IsEditMode { get; set; }
     [Parameter] public EventCallback OnValidSubmit { get; set; }
+    [Parameter] public Func<DateTime, bool>? IsDateDisabled { get; set; }
 
     private async Task OnCloseModal()
     {

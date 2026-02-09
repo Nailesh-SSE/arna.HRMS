@@ -71,11 +71,6 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .HasForeignKey(t => t.ApprovedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasMany(e => e.EmployeeLeaveBalance)
-            .WithOne(t => t.Employee)
-            .HasForeignKey(t => t.EmployeeId)
-            .OnDelete(DeleteBehavior.Cascade);
-
         builder.HasIndex(e => e.EmployeeNumber).IsUnique();
         builder.HasIndex(e => e.Email).IsUnique();
     }

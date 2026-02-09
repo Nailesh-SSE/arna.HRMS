@@ -18,55 +18,48 @@ public class LeaveController : ControllerBase
     }
 
     // ============================
-    // LEAVE MASTER
+    // LEAVE TYPE
     // ============================
 
-    [HttpGet("masters")]
-    public async Task<IActionResult> GetLeaveMasters()
+    [HttpGet("Types")]
+    public async Task<IActionResult> GetLeaveTypes()
     {
-        var result = await _leaveService.GetLeaveMasterAsync();
+        var result = await _leaveService.GetLeaveTypeAsync();
         return Ok(result);
     }
 
-    [HttpGet("masters/{id:int}")]
-    public async Task<IActionResult> GetLeaveMastersById(int id)
+    [HttpGet("Types/{id:int}")]
+    public async Task<IActionResult> GetLeaveTypesById(int id)
     {
-        var leave = await _leaveService.GetLeaveMasterByIdAsync(id);
-        return leave.Data == null ? NotFound("Leave Master not found") : Ok(leave);
+        var leave = await _leaveService.GetLeaveTypeByIdAsync(id);
+        return leave.Data == null ? NotFound("Leave Type not found") : Ok(leave);
     }
 
-    [HttpGet("masters/by-name")]
-    public async Task<IActionResult> GetLeaveMastersByName([FromQuery] string leaveName)
-    {
-        var leave = await _leaveService.LeaveExistsAsync(leaveName);
-        return leave.Data == null ? NotFound("Leave Master not found") : Ok(leave);
-    }
-
-    [HttpPost("masters")]
-    public async Task<IActionResult> CreateLeaveMaster([FromBody] LeaveMasterDto dto)
+    [HttpPost("Types")]
+    public async Task<IActionResult> CreateLeaveType([FromBody] LeaveTypeDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var created = await _leaveService.CreateLeaveMasterAsync(dto);
+        var created = await _leaveService.CreateLeaveTypeAsync(dto);
         return Ok(created);
     }
 
-    [HttpPost("masters/{id:int}")]
-    public async Task<IActionResult> UpdateLeaveMaster(int id, [FromBody] LeaveMasterDto dto)
+    [HttpPost("Types/{id:int}")]
+    public async Task<IActionResult> UpdateLeaveType(int id, [FromBody] LeaveTypeDto dto)
     {
         if (id != dto.Id)
             return BadRequest("Invalid Id");
 
-        var updated = await _leaveService.UpdateLeaveMasterAsync(dto);
+        var updated = await _leaveService.UpdateLeaveTypeAsync(dto);
         return Ok(updated);
     }
 
-    [HttpDelete("masters/{id:int}")]
-    public async Task<IActionResult> DeleteLeaveMaster(int id)
+    [HttpDelete("Types/{id:int}")]
+    public async Task<IActionResult> DeleteLeaveType(int id)
     {
-        var deletedResult = await _leaveService.DeleteLeaveMasterAsync(id);
-        return deletedResult.Data ? Ok() : NotFound("Leave master not found");
+        var deletedResult = await _leaveService.DeleteLeaveTypeAsync(id);
+        return deletedResult.Data ? Ok() : NotFound("Leave Type not found");
     }
 
     // ============================
@@ -117,11 +110,11 @@ public class LeaveController : ControllerBase
         return deleted.Data ? Ok() : NotFound("Leave request not found");
     }
 
-    [HttpGet("requests/{status}")]
+    [HttpGet("requests/filter")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> GetLeaveRequestsByStatus(Status status)
+    public async Task<IActionResult> GetLeaveRequestsByFilter(Status? status, int? empId)
     {
-        var result = await _leaveService.GetByStatusAsync(status);
+        var result = await _leaveService.GetByFilterAsync(status, empId);
         return Ok(result);
     }
 
@@ -166,46 +159,5 @@ public class LeaveController : ControllerBase
             return BadRequest("Invalid leave request");
 
         return Ok(result);
-    }
-
-    // ============================
-    // LEAVE BALANCES
-    // ============================
-
-    [HttpGet("balances")]
-    public async Task<IActionResult> GetLeaveBalances()
-    {
-        var result = await _leaveService.GetLeaveBalanceAsync();
-        return Ok(result);
-    }
-
-    [HttpGet("balances/employee/{employeeId:int}")]
-    public async Task<IActionResult> GetLeaveBalanceByEmployee(int employeeId)
-    {
-        var balance =
-            await _leaveService.GetLeaveBalanceByEmployeeIdAsync(employeeId);
-
-        return balance == null
-            ? NotFound("Leave balance not found")
-            : Ok(balance);
-    }
-
-    [HttpPost("balances/{id:int}")]
-    public async Task<IActionResult> UpdateLeaveBalance(int id, [FromBody] EmployeeLeaveBalanceDto dto)
-    {
-        if (id != dto.Id)
-            return BadRequest("Invalid Id");
-
-        var updated = await _leaveService.UpdateLeaveBalanceAsync(dto);
-
-        return Ok(updated);
-    }
-
-    [HttpDelete("balances/{id:int}")]
-    public async Task<IActionResult> DeleteLeaveBalance(int id)
-    {
-        var deleted = await _leaveService.DeleteLeaveBalanceAsync(id);
-
-        return deleted.Data ? Ok() : NotFound("Leave balance not found");
     }
 }

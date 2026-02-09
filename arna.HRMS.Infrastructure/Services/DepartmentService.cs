@@ -48,6 +48,9 @@ public class DepartmentService : IDepartmentService
         if (string.IsNullOrWhiteSpace(departmentDto.Name))
             return ServiceResult<DepartmentDto>.Fail("Department Name is required");
 
+        if (await _departmentRepository.DepartmentExistsAsync(departmentDto.Name))
+            return ServiceResult<DepartmentDto>.Fail("Department name already exists");
+
         var department = _mapper.Map<Department>(departmentDto);
         var created = await _departmentRepository.CreateDepartmentAsync(department);
         var resultDto = _mapper.Map<DepartmentDto>(created);
@@ -62,6 +65,9 @@ public class DepartmentService : IDepartmentService
 
         if (departmentDto.Id <= 0)
             return ServiceResult<DepartmentDto>.Fail("Invalid Department ID");
+
+        if (await _departmentRepository.DepartmentExistsAsync(departmentDto.Name))
+            return ServiceResult<DepartmentDto>.Fail("Department name already exists");
 
         var department = _mapper.Map<Department>(departmentDto);
         var updated = await _departmentRepository.UpdateDepartmentAsync(department);

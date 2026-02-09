@@ -198,67 +198,97 @@ public sealed class ApiClients
 
     // ===================== LEAVE =====================
 
-    public sealed class LeaveApi
+    private sealed class CrudApi<T> : BaseCrudApi<T>
     {
-        private const string Url = "api/leave";
+        public CrudApi(HttpService http, string url) : base(http, url) { }
+
+        public Task<ApiResult<bool>> UpdateBool(int id, T dto, string error) =>
+            ToBool(UpdateRaw(id, dto), error);
+    }
+
+    public sealed class LeaveApi : BaseCrudApi<LeaveTypeViewModel>
+    {
         private readonly HttpService _http;
 
-        private readonly Crud<LeaveMasterViewModel> _masters;
-        private readonly Crud<LeaveRequestViewModel> _requests;
-        private readonly Crud<EmployeeLeaveBalanceViewModel> _balances;
+        private readonly CrudApi<LeaveTypeViewModel> _leaveTypes;
+        private readonly CrudApi<LeaveRequestViewModel> _leaveRequests;
 
-        private sealed class Crud<T> : BaseCrudApi<T>
-        {
-            public Crud(HttpService http, string url) : base(http, url) { }
+        private const string TypesPath = "types";
+        private const string RequestsPath = "requests";
 
-            public Task<ApiResult<bool>> UpdateBool(int id, T dto, string error) =>
-                ToBool(UpdateRaw(id, dto), error);
-        }
-
-        public LeaveApi(HttpService http)
+        public LeaveApi(HttpService http) : base(http, "api/leave")
         {
             _http = http;
-            _masters = new(http, $"{Url}/masters");
-            _requests = new(http, $"{Url}/requests");
-            _balances = new(http, $"{Url}/balances");
+            _leaveTypes = new(http, $"{Url}/{TypesPath}");
+            _leaveRequests = new(http, $"{Url}/{RequestsPath}");
         }
 
-        public Task<ApiResult<List<LeaveMasterViewModel>>> GetAllLeaveMaster() => _masters.GetAll();
-        public Task<ApiResult<LeaveMasterViewModel>> GetLeaveMasterById(int id) => _masters.GetById(id);
-        public Task<ApiResult<LeaveMasterViewModel>> CreateLeaveMaster(LeaveMasterViewModel dto) => _masters.Create(dto);
-        public Task<ApiResult<bool>> UpdateLeaveMasterAsync(int id, LeaveMasterViewModel dto) =>
-            _masters.UpdateBool(id, dto, "Unable to update leave master.");
-        public Task<ApiResult<bool>> DeleteLeaveMasterAsync(int id) => _masters.Delete(id);
+        // ===================== LEAVE TYPES =====================
 
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetAllLeaveRequest() => _requests.GetAll();
-        public Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestById(int id) => _requests.GetById(id);
-        public Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequest(LeaveRequestViewModel dto) => _requests.Create(dto);
+        public Task<ApiResult<List<LeaveTypeViewModel>>> GetAllLeaveType() =>
+            _leaveTypes.GetAll();
+
+        public Task<ApiResult<LeaveTypeViewModel>> GetLeaveTypeById(int id) =>
+            _leaveTypes.GetById(id);
+
+        public Task<ApiResult<LeaveTypeViewModel>> CreateLeaveType(LeaveTypeViewModel dto) =>
+            _leaveTypes.Create(dto);
+
+        public Task<ApiResult<bool>> UpdateLeaveTypeAsync(int id, LeaveTypeViewModel dto) =>
+            _leaveTypes.UpdateBool(id, dto, "Unable to update leave type.");
+
+        public Task<ApiResult<bool>> DeleteLeaveTypeAsync(int id) =>
+            _leaveTypes.Delete(id);
+
+        // ===================== LEAVE REQUESTS =====================
+
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetAllLeaveRequest() =>
+            _leaveRequests.GetAll();
+
+        public Task<ApiResult<LeaveRequestViewModel>> GetLeaveRequestById(int id) =>
+            _leaveRequests.GetById(id);
+
+        public Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequest(LeaveRequestViewModel dto) =>
+            _leaveRequests.Create(dto);
+
         public Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestViewModel dto) =>
-            _requests.UpdateBool(id, dto, "Unable to update leave request.");
-        public Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id) => _requests.Delete(id);
+            _leaveRequests.UpdateBool(id, dto, "Unable to update leave request.");
 
-        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status) =>
-            _http.PostAsync<bool>($"{Url}/requests/status/{leaveRequestId}?status={status}", new { });
+        public Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id) =>
+            _leaveRequests.Delete(id);
 
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetRequestByStatusAsync(Status status) =>
-            _http.GetAsync<List<LeaveRequestViewModel>>($"{Url}/requests/{status}");
+        // ===================== FILTERING =====================
 
-        public Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByEmployee(int employeeId) =>
-            _http.GetAsync<List<LeaveRequestViewModel>>($"{Url}/requests/employee/{employeeId}");
+        private Task<ApiResult<List<LeaveRequestViewModel>>> FilterRequests(Status? status, int? empId)
+        {
+            var query = new List<string>();
 
-        public Task<ApiResult<bool>> CancelLeaveRequest(int leaveRequestId, int employeeId) =>
-            _http.PostAsync<bool>($"{Url}/requests/cancel/{leaveRequestId}?employeeid={employeeId}", new { });
+            if (status.HasValue) query.Add($"status={status}");
+            if (empId.HasValue) query.Add($"employeeId={empId}");
 
-        public Task<ApiResult<List<EmployeeLeaveBalanceViewModel>>> GetLeaveBalanceAsync() =>
-            _balances.GetAll();
+            var qs = query.Any() ? "?" + string.Join("&", query) : "";
 
-        public Task<ApiResult<bool>> UpdateLeaveBalanceAsync(int id, EmployeeLeaveBalanceViewModel dto) =>
-            _balances.UpdateBool(id, dto, "Unable to update leave balance.");
+            return _http.GetAsync<List<LeaveRequestViewModel>>(
+                $"{Url}/{RequestsPath}{qs}");
+        }
 
-        public Task<ApiResult<bool>> DeleteLeaveBalanceAsync(int id) =>
-            _balances.Delete(id);
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetRequestByFilterAsync(Status? status, int? empId)
+            => FilterRequests(status, empId);
 
-        public Task<ApiResult<List<EmployeeLeaveBalanceViewModel?>>> GetLeaveBalanceByEmployeeIdAsync(int employeeId) =>
-            _http.GetAsync<List<EmployeeLeaveBalanceViewModel?>>($"{Url}/balances/employee/{employeeId}");
+        public Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestByEmployee(int employeeId) 
+            => _http.GetAsync<List<LeaveRequestViewModel>>($"{Url}/{RequestsPath}/employee/{employeeId}");
+
+        // ===================== STATUS ACTIONS =====================
+
+        public Task<ApiResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status) 
+            => _http.PostAsync<bool>($"{Url}/{RequestsPath}/status/{leaveRequestId}?status={status}", new { });
+
+        public Task<ApiResult<bool>> CancelLeaveRequest(int leaveRequestId, int employeeId) 
+            => _http.PostAsync<bool>($"{Url}/{RequestsPath}/cancel/{leaveRequestId}?employeeid={employeeId}", new { });
+
+        // ===== Backwards-compatible typo wrapper =====
+
+        public Task<ApiResult<bool>> UpadteLeaverequestStatusCancle(int leaveRequestId, int employeeId) 
+            => CancelLeaveRequest(leaveRequestId, employeeId);
     }
 }

@@ -31,9 +31,9 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = true, IsDeleted = false },
-            new FestivalHoliday { Id = 2, FestivalName = "Holiday 2", Date = DateTime.Now, IsActive = false, IsDeleted = false },
-            new FestivalHoliday { Id = 3, FestivalName = "Holiday 3", Date = DateTime.Now, IsActive = true, IsDeleted = true }
+            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = false },
+            new FestivalHoliday { Id = 2, FestivalName = "Holiday 2", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = false, IsDeleted = false },
+            new FestivalHoliday { Id = 3, FestivalName = "Holiday 3", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = true }
         );
         _dbContext.SaveChanges();
         // Act
@@ -60,8 +60,8 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = true, IsDeleted = false },
-            new FestivalHoliday { Id = 2, FestivalName = "Holiday 2", Date = DateTime.Now, IsActive = false, IsDeleted = false }
+            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = false },
+            new FestivalHoliday { Id = 2, FestivalName = "Holiday 2", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = false, IsDeleted = false }
         );
         _dbContext.SaveChanges();
         // Act
@@ -79,7 +79,7 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = true, IsDeleted = false }
+            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = false }
         );
         _dbContext.SaveChanges();
         // Act
@@ -96,6 +96,7 @@ public class FestivalHolidayRepositoryTests
         {
             FestivalName = "New Holiday",
             Date = DateTime.Now,
+            DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -150,6 +151,7 @@ public class FestivalHolidayRepositoryTests
         {
             FestivalName = "Existing Holiday",
             Date = DateTime.Now,
+            DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -189,6 +191,7 @@ public class FestivalHolidayRepositoryTests
         {
             FestivalName = "Holiday to Delete",
             Date = DateTime.Now,
+            DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -228,8 +231,8 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = true, IsDeleted = false },
-            new FestivalHoliday { Id = 2, FestivalName = "Holiday 2", Date = DateTime.Now, IsActive = false, IsDeleted = false }
+            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = false },
+            new FestivalHoliday { Id = 2, FestivalName = "Holiday 2", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = false, IsDeleted = false }
         );
         _dbContext.SaveChanges();
         // Act
@@ -246,8 +249,21 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = false, IsDeleted = false },
-            new FestivalHoliday { Id = 2, FestivalName = "Holiday 2", Date = DateTime.Now, IsActive = true, IsDeleted = true }
+            new FestivalHoliday { 
+                Id = 1, FestivalName = "Holiday 1", 
+                Date = DateTime.Now, 
+                DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
+                IsActive = false, 
+                IsDeleted = false 
+            },
+            new FestivalHoliday { 
+                Id = 2, 
+                FestivalName = "Holiday 2", 
+                Date = DateTime.Now,
+                DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
+                IsActive = true, 
+                IsDeleted = true 
+            }
         );
         _dbContext.SaveChanges();
         // Act
@@ -276,6 +292,7 @@ public class FestivalHolidayRepositoryTests
         {
             FestivalName = "Trimmed Holiday",
             Date = DateTime.Now,
+            DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -295,6 +312,7 @@ public class FestivalHolidayRepositoryTests
         {
             FestivalName = "Case Insensitive Holiday",
             Date = DateTime.Now,
+            DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
             IsActive = true,
             IsDeleted = false
         };
@@ -310,8 +328,8 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = true, IsDeleted = false },
-            new FestivalHoliday { Id = 2, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = true, IsDeleted = false }
+            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = false },
+            new FestivalHoliday { Id = 2, FestivalName = "Holiday 1", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = false }
         );
         _dbContext.SaveChanges();
         // Act
@@ -328,7 +346,7 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, IsActive = true, IsDeleted = false }
+            new FestivalHoliday { Id = 1, FestivalName = "Holiday 1", Date = DateTime.Now, DayOfWeek = DateTime.Now.DayOfWeek.ToString(), IsActive = true, IsDeleted = false }
         );
         _dbContext.SaveChanges();
         // Act
@@ -344,8 +362,15 @@ public class FestivalHolidayRepositoryTests
         var targetYear = 2024;
         var targetMonth = 6;
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday June Inactive", Date = new DateTime(targetYear, targetMonth, 15), IsActive = false, IsDeleted = false },
-            new FestivalHoliday { Id = 2, FestivalName = "Holiday June Deleted", Date = new DateTime(targetYear, targetMonth, 20), IsActive = true, IsDeleted = true }
+            new FestivalHoliday { 
+                Id = 1, 
+                FestivalName = "Holiday June Inactive", 
+                Date = new DateTime(targetYear, targetMonth, 15),
+                DayOfWeek = new DateTime(targetYear, targetMonth, 15).DayOfWeek.ToString(),
+                IsActive = false, 
+                IsDeleted = false
+            },
+            new FestivalHoliday { Id = 2, FestivalName = "Holiday June Deleted", Date = new DateTime(targetYear, targetMonth, 20), DayOfWeek = new DateTime(targetYear, targetMonth, 15).DayOfWeek.ToString(), IsActive = true, IsDeleted = true }
         );
         _dbContext.SaveChanges();
         // Act
@@ -361,9 +386,9 @@ public class FestivalHolidayRepositoryTests
         var targetYear = 2024;
         var targetMonth = 6;
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday June", Date = new DateTime(targetYear, targetMonth, 15), IsActive = true, IsDeleted = false },
-            new FestivalHoliday { Id = 2, FestivalName = "Holiday May", Date = new DateTime(targetYear, 5, 10), IsActive = true, IsDeleted = false },
-            new FestivalHoliday { Id = 3, FestivalName = "Holiday June Inactive", Date = new DateTime(targetYear, targetMonth, 20), IsActive = false, IsDeleted = false }
+            new FestivalHoliday { Id = 1, FestivalName = "Holiday June", Date = new DateTime(targetYear, targetMonth, 15), DayOfWeek = new DateTime(targetYear, targetMonth, 15).DayOfWeek.ToString(), IsActive = true, IsDeleted = false },
+            new FestivalHoliday { Id = 2, FestivalName = "Holiday May", Date = new DateTime(targetYear, 5, 10), DayOfWeek = new DateTime(targetYear, 5, 15).DayOfWeek.ToString(), IsActive = true, IsDeleted = false },
+            new FestivalHoliday { Id = 3, FestivalName = "Holiday June Inactive", Date = new DateTime(targetYear, targetMonth, 20), DayOfWeek = new DateTime(targetYear, targetMonth, 15).DayOfWeek.ToString(), IsActive = false, IsDeleted = false }
         );
         _dbContext.SaveChanges();
         // Act
@@ -384,7 +409,13 @@ public class FestivalHolidayRepositoryTests
         var targetYear = 2024;
         var targetMonth = 7;
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { Id = 1, FestivalName = "Holiday June", Date = new DateTime(2024, 6, 15), IsActive = true, IsDeleted = false }
+            new FestivalHoliday { 
+                Id = 1, FestivalName = "Holiday June", 
+                Date = new DateTime(2024, 6, 15), 
+                DayOfWeek = new DateTime(2024, 6, 15).DayOfWeek.ToString(),
+                IsActive = true, 
+                IsDeleted = false 
+            }
         );
         _dbContext.SaveChanges();
         // Act

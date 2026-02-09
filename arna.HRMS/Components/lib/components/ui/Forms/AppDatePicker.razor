@@ -37,6 +37,9 @@
     [Parameter] public DateTime? Value { get; set; }
     [Parameter] public EventCallback<DateTime?> ValueChanged { get; set; }
 
+    // ⭐ Date disable rule
+    [Parameter] public Func<DateTime, bool>? IsDateDisabled { get; set; }
+
     [Parameter] public string DefaultPlaceholder { get; set; } = "";
     [Parameter] public string? Placeholder { get; set; }
 
@@ -55,17 +58,23 @@
     protected override void OnParametersSet()
     {
         if (EditContext != null && ValidationExpression != null)
-        {
             _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
-        }
     }
 
     private async Task OnChange(ChangeEventArgs e)
     {
-        if (DateTime.TryParse(e.Value?.ToString(), out var date))
-            await ValueChanged.InvokeAsync(date);
-        else
+        if (!DateTime.TryParse(e.Value?.ToString(), out var selectedDate))
+        {
             await ValueChanged.InvokeAsync(null);
+            return;
+        }
+
+        // 🚫 BLOCK DATE
+        if (IsDateDisabled?.Invoke(selectedDate.Date) == true)
+        {
+            // Do nothing → Blazor re-renders old value automatically
+            return;
+        }
 
         if (ValidationExpression != null)
             EditContext?.NotifyFieldChanged(_fieldIdentifier);
