@@ -54,7 +54,21 @@
         ?? "Select Employee";
 
     private void Toggle() => IsOpen = !IsOpen;
-    private void Close() => IsOpen = false;
+
+    private async Task Close()
+    {
+        IsOpen = false;
+        await ResetSelect();
+    }
+
+    private async Task ResetSelect()
+    {
+        SearchText = string.Empty;
+        SelectedValue = null;
+
+        await OnChanged.InvokeAsync(null);
+        await OnNameChanged.InvokeAsync(null);
+    }
 
     private async Task Select(string value)
     {
