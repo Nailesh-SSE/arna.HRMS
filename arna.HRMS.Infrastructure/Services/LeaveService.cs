@@ -5,7 +5,6 @@ using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using AutoMapper;
-using System.Collections.Generic;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -49,18 +48,18 @@ public class LeaveService : ILeaveService
         if (LeaveTypeDto == null)
             return ServiceResult<LeaveTypeDto>.Fail("Data not Found");
         
-        if (string.IsNullOrWhiteSpace(nameof(LeaveTypeDto.LeaveName)))
+        if (!Enum.IsDefined(typeof(LeaveName), LeaveTypeDto.LeaveNameId))
             return ServiceResult<LeaveTypeDto>.Fail("Leave name is required");
 
         if (LeaveTypeDto.MaxPerYear <= 0)
             return ServiceResult<LeaveTypeDto>.Fail("number of days is required");
 
-        var existingLeaves = await _leaveRepository.LeaveExistsAsync(LeaveTypeDto.LeaveName);
+        var existingLeaves = await _leaveRepository.LeaveExistsAsync(LeaveTypeDto.LeaveNameId);
         
         if (existingLeaves)
         {
             return ServiceResult<LeaveTypeDto>.Fail(
-                $"Leave '{LeaveTypeDto.LeaveName}' already exists"
+                $"Leave '{LeaveTypeDto.LeaveNameId}' already exists"
             );
         }
 
@@ -85,16 +84,17 @@ public class LeaveService : ILeaveService
 
     public async Task<ServiceResult<LeaveTypeDto>> UpdateLeaveTypeAsync(LeaveTypeDto LeaveTypeDto)
     {
+        if (LeaveTypeDto.Id == 0 || LeaveTypeDto.LeaveNameId == 0 || LeaveTypeDto.MaxPerYear <=0 )
+        {
+            return ServiceResult<LeaveTypeDto>.Fail("Failed to update Leave Type");
+        }
         var leave = _mapper.Map<LeaveType>(LeaveTypeDto);
         var updatedLeaveType = await _leaveRepository.UpdateLeaveTypeAsync(leave);
         if (updatedLeaveType == null)
         {
             return ServiceResult<LeaveTypeDto>.Fail("Leave Type not found");
         }
-        if (updatedLeaveType.Id == 0 || updatedLeaveType.LeaveNameId == 0)
-        {
-            return ServiceResult<LeaveTypeDto>.Fail("Failed to update Leave Type");
-        }
+        
         var Data = _mapper.Map<LeaveTypeDto>(updatedLeaveType);
         return ServiceResult<LeaveTypeDto>.Success(Data);
     }
@@ -130,10 +130,25 @@ public class LeaveService : ILeaveService
 
     public async Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto LeaveRequestDto)
     {
-        if (LeaveRequestDto.StartDate > LeaveRequestDto.EndDate || LeaveRequestDto.StartDate.Date < DateTime.Now.Date || LeaveRequestDto.EndDate.Date < DateTime.Now.Date)
+        if (
+            LeaveRequestDto.StartDate > LeaveRequestDto.EndDate 
+            || LeaveRequestDto.StartDate.Date <= DateTime.Now.Date 
+            || LeaveRequestDto.EndDate.Date <= DateTime.Now.Date
+            || LeaveRequestDto.StartDate == default
+            || LeaveRequestDto.EndDate == default
+           )
         {
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Date you select ");
         }
+        if (LeaveRequestDto.LeaveTypeId == 0)
+        {
+            return ServiceResult<LeaveRequestDto>.Fail("Invalid Leave Type Id");
+        }
+        if (string.IsNullOrWhiteSpace(LeaveRequestDto.Reason))
+        {
+            return ServiceResult<LeaveRequestDto>.Fail("Reason is required");
+        }
+
         if (LeaveRequestDto.EmployeeId<=0)
         {
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Employee Id");
@@ -159,8 +174,12 @@ public class LeaveService : ILeaveService
     }
     public async Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id)
     {
+        if (id <= 0)
+            return ServiceResult<bool>.Fail("Invalid ID");
         var Data = await _leaveRepository.DeleteLeaveRequestAsync(id);
-        return ServiceResult<bool>.Success(Data);
+        return Data
+            ? ServiceResult<bool>.Success(true, "deleted successfully")
+            : ServiceResult<bool>.Fail("not found");
     }
 
     public async Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto LeaveRequestDto)
@@ -169,17 +188,28 @@ public class LeaveService : ILeaveService
         {
             return ServiceResult<LeaveRequestDto>.Fail("No Data Found");
         }
-        if (LeaveRequestDto.StartDate > LeaveRequestDto.EndDate || LeaveRequestDto.StartDate.Date < DateTime.Now.Date || LeaveRequestDto.EndDate.Date < DateTime.Now.Date)
+        if (
+            LeaveRequestDto.StartDate > LeaveRequestDto.EndDate
+            || LeaveRequestDto.StartDate.Date <= DateTime.Now.Date
+            || LeaveRequestDto.EndDate.Date <= DateTime.Now.Date
+            || LeaveRequestDto.StartDate == default
+            || LeaveRequestDto.EndDate == default
+           )
         {
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Date you select ");
         }
+        if (LeaveRequestDto.LeaveTypeId == 0)
+        {
+            return ServiceResult<LeaveRequestDto>.Fail("Invalid Leave Type Id");
+        }
+        if (string.IsNullOrWhiteSpace(LeaveRequestDto.Reason))
+        {
+            return ServiceResult<LeaveRequestDto>.Fail("Reason is required");
+        }
+
         if (LeaveRequestDto.EmployeeId <= 0)
         {
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Employee Id");
-        }
-        if(LeaveRequestDto.LeaveTypeId <= 0)
-        {
-            return ServiceResult<LeaveRequestDto>.Fail("Invalid Leave Type Id");
         }
 
         var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())

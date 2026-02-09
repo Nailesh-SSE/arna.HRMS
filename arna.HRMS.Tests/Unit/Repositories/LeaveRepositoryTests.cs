@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
@@ -196,6 +197,15 @@ public class LeaveRepositoryTests
     }
 
     [Test]
+    public async Task LeaveExistsAsync_ShouldReturnFalseIfLeaveDoesNotExist()
+    {
+        // Act
+        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.MaternityLeave);
+        // Assert
+        Assert.That(exists, Is.EqualTo(false));
+    }
+
+    [Test]
     public async Task UpdateLeaveTypeAsync_ShouldUpdateLeaveTypeDetails()
     {
         // Arrange
@@ -236,4 +246,578 @@ public class LeaveRepositoryTests
     }
 
 
+    // Leave Request
+
+    [Test]
+    public async Task CreateLeaveRequest_whenFound()
+    {
+        var leaveRequest = new LeaveRequest
+        {
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddDays(5),
+            LeaveDays = 5,
+            Reason = "Vacation",
+            StatusId = Status.Pending
+        };
+
+        var createdLeaveRequest = await _leaveRepository.CreateLeaveRequestAsync(leaveRequest);
+
+        Assert.That(createdLeaveRequest, Is.Not.Null);
+        Assert.That(createdLeaveRequest.Id, Is.GreaterThan(0));
+        Assert.That(createdLeaveRequest.EmployeeId, Is.EqualTo(1));
+        Assert.That(createdLeaveRequest.LeaveTypeId, Is.EqualTo(1));
+        Assert.That(createdLeaveRequest.StartDate, Is.EqualTo(leaveRequest.StartDate));
+        Assert.That(createdLeaveRequest.EndDate, Is.EqualTo(leaveRequest.EndDate));
+        Assert.That(createdLeaveRequest.LeaveDays, Is.EqualTo(5));
+        Assert.That(createdLeaveRequest.Reason, Is.EqualTo("Vacation"));
+        Assert.That(createdLeaveRequest.StatusId, Is.EqualTo(Status.Pending));
+        Assert.That(createdLeaveRequest.IsActive, Is.True);
+        Assert.That(createdLeaveRequest.IsDeleted, Is.False);
+        Assert.That(createdLeaveRequest.CreatedOn, Is.Not.EqualTo(default(DateTime)));
+    }
+
+    [Test]
+    public async Task CreateLeaveRequest_whenNullInput()
+    {
+        LeaveRequest? newLeaveRequest = null;
+        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        {
+            await _leaveRepository.CreateLeaveRequestAsync(newLeaveRequest!);
+        });
+    }
+
+    [Test]
+    public async Task GetLeaveRequestByIdAsync_WhenFound()
+    {
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 1,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@gmail.com",
+            EmployeeNumber = "EMP001",
+            DepartmentId = 1,
+            Position = "Software Engineer",
+            IsActive = true,
+            IsDeleted = false,
+            PhoneNumber = "1234567892"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.LeaveTypes.Add(new LeaveType
+        {
+            Id = 1,
+            LeaveNameId = LeaveName.CasualLeave,
+            Description = "Casual leave",
+            MaxPerYear = 7,
+            IsActive = true,
+            IsDeleted = false,
+        }); 
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.LeaveRequests.Add(new LeaveRequest
+        {
+            Id = 1,
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddDays(5),
+            LeaveDays = 5,
+            Reason = "Vacation",
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false,
+            CreatedOn = DateTime.Now
+        });
+        await _dbContext.SaveChangesAsync();
+        var leaveRequest = await _leaveRepository.GetLeaveRequestByIdAsync(1);
+        Assert.That(leaveRequest, Is.Not.Null); 
+        Assert.That(leaveRequest!.Id, Is.EqualTo(1));
+        Assert.That(leaveRequest.EmployeeId, Is.EqualTo(1));
+        Assert.That(leaveRequest.LeaveTypeId, Is.EqualTo(1));
+        Assert.That(leaveRequest.StartDate, Is.EqualTo(_dbContext.LeaveRequests.First().StartDate));
+    }
+
+    [Test]
+    public async Task GetLeaveRequestByIdAsync_WhenNotFound()
+    {
+        var leaveRequest = await _leaveRepository.GetLeaveRequestByIdAsync(999);
+        Assert.That(leaveRequest, Is.Null);
+    }
+
+    [Test]
+    public async Task GetLeaveRequestByIdAsync_WhenIdIsNegativeOrZero()
+    {
+        var leaveRequestZero = await _leaveRepository.GetLeaveRequestByIdAsync(0);
+        Assert.That(leaveRequestZero, Is.Null);
+        var leaveRequestNegative = await _leaveRepository.GetLeaveRequestByIdAsync(-10);
+        Assert.That(leaveRequestNegative, Is.Null);
+    }
+
+    [Test]
+    public async Task GetLeaveRequestsByEmployeeIdAsync_WhenFound()
+    {
+        _dbContext.Employees.AddRange(
+            new Employee
+            {
+                Id = 1,
+                FirstName = "John",
+                LastName = "Doe",
+                Email = "john@gmail.com",
+                EmployeeNumber = "EMP001",
+                DepartmentId = 1,
+                Position = "Software Engineer",
+                IsActive = true,
+                IsDeleted = false,
+                PhoneNumber = "1234567892"
+            },
+            new Employee
+            {
+                Id = 2,
+                EmployeeNumber= "EMP002",
+                FirstName = "Jane",
+                LastName = "Smith",
+                Email = "jane@gmail.com",
+                PhoneNumber = "9876543210",
+                DepartmentId = 2,
+                Position = "Project Manager",
+                IsActive = true,
+                IsDeleted = false,
+            }
+        );
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.LeaveTypes.AddRange(
+            new LeaveType
+            {
+                Id = 1,
+                LeaveNameId = LeaveName.CasualLeave,
+                Description = "Casual leave",
+                MaxPerYear = 7,
+                IsActive = true,
+                IsDeleted = false,
+            },
+            new LeaveType
+            {
+                Id = 2,
+                LeaveNameId = LeaveName.SickLeave,
+                Description = "Sick leave",
+                MaxPerYear = 10,
+                IsActive = true,
+                IsDeleted = false,
+            }
+        );
+        await _dbContext.SaveChangesAsync();
+        _dbContext.LeaveRequests.AddRange(
+            new LeaveRequest
+            {
+                Id = 1,
+                EmployeeId = 1,
+                LeaveTypeId = 1,
+                StartDate = DateTime.Now,
+                EndDate = DateTime.Now.AddDays(5),
+                LeaveDays = 5,
+                Reason = "Vacation",
+                StatusId = Status.Pending,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedOn = DateTime.Now
+            },
+            new LeaveRequest
+            {
+                Id = 2,
+                EmployeeId = 1,
+                LeaveTypeId = 2,
+                StartDate = DateTime.Now.AddDays(10),
+                EndDate = DateTime.Now.AddDays(15),
+                LeaveDays = 5,
+                Reason = "Medical",
+                StatusId = Status.Approved,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedOn = DateTime.Now
+            },
+            new LeaveRequest
+            {
+                Id = 3,
+                EmployeeId = 2,
+                LeaveTypeId = 1,
+                StartDate = DateTime.Now.AddDays(20),
+                EndDate = DateTime.Now.AddDays(25),
+                LeaveDays = 5,
+                Reason = "Family event",
+                StatusId = Status.Pending,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedOn = DateTime.Now
+            }
+        );
+        _dbContext.SaveChanges();
+
+        var leaveRequests = await _leaveRepository.GetLeaveRequestByEmployeeIdAsync(1);
+        Assert.That(leaveRequests, Is.Not.Null);
+        Assert.That(leaveRequests.Count, Is.EqualTo(2));
+        Assert.That(leaveRequests.All(lr => lr.EmployeeId == 1), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.IsActive && !lr.IsDeleted), Is.True);
+        Assert.That(leaveRequests.OrderByDescending(lr => lr.Id).SequenceEqual(leaveRequests), Is.True);
+        Assert.That(leaveRequests[0].Id, Is.GreaterThan(leaveRequests[1].Id));
+        Assert.That(leaveRequests[0].Employee, Is.Not.Null);
+        Assert.That(leaveRequests[0].Employee!.FirstName, Is.EqualTo("John"));
+        Assert.That(leaveRequests[0].Employee!.LastName, Is.EqualTo("Doe"));
+        Assert.That(leaveRequests[0].LeaveType, Is.Not.Null);
+        Assert.That(leaveRequests[0].LeaveType!.LeaveNameId, Is.EqualTo(LeaveName.SickLeave));
+        Assert.That(leaveRequests[0].LeaveType!.Description, Is.EqualTo("Sick leave"));
+        Assert.That(leaveRequests[0].LeaveType!.MaxPerYear, Is.EqualTo(10));
+        Assert.That(leaveRequests[1].Employee, Is.Not.Null);
+        Assert.That(leaveRequests[1].Employee!.FirstName, Is.EqualTo("John"));
+        Assert.That(leaveRequests[1].Employee!.LastName, Is.EqualTo("Doe"));
+        Assert.That(leaveRequests[1].LeaveType, Is.Not.Null);
+        Assert.That(leaveRequests[1].LeaveType!.LeaveNameId, Is.EqualTo(LeaveName.CasualLeave));
+        Assert.That(leaveRequests[1].LeaveType!.Description, Is.EqualTo("Casual leave"));
+        Assert.That(leaveRequests[1].LeaveType!.MaxPerYear, Is.EqualTo(7));
+    }
+
+    [Test]
+    public async Task GetLeaveRequestsByEmployeeIdAsync_WhenNotFound()
+    {
+        var leaveRequests = await _leaveRepository.GetLeaveRequestByEmployeeIdAsync(999);
+        Assert.That(leaveRequests, Is.Not.Null);
+        Assert.That(leaveRequests, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetLeaveRequestsByEmployeeIdAsync_WhenEmployeeIdIsNegativeOrZero()
+    {
+        var leaveRequestsZero = await _leaveRepository.GetLeaveRequestByEmployeeIdAsync(0);
+        Assert.That(leaveRequestsZero, Is.Not.Null);
+        Assert.That(leaveRequestsZero, Is.Empty);
+        var leaveRequestsNegative = await _leaveRepository.GetLeaveRequestByEmployeeIdAsync(-10);
+        Assert.That(leaveRequestsNegative, Is.Not.Null);
+        Assert.That(leaveRequestsNegative, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetLeaveRequestAsync_ShouldReturnAllActiveLeaveRequests()
+    {
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 1,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@gmail.com",
+            EmployeeNumber = "EMP001",
+            DepartmentId = 1,
+            Position = "Software Engineer",
+            IsActive = true,
+            IsDeleted = false,
+            PhoneNumber = "1234567892"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.LeaveTypes.Add(new LeaveType
+        {
+            Id = 1,
+            LeaveNameId = LeaveName.CasualLeave,
+            Description = "Casual leave",
+            MaxPerYear = 7,
+            IsActive = true,
+            IsDeleted = false,
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.LeaveRequests.AddRange(
+            new LeaveRequest
+            {
+                Id = 1,
+                EmployeeId = 1,
+                LeaveTypeId = 1,
+                StartDate = DateTime.Now,
+                EndDate = DateTime.Now.AddDays(5),
+                LeaveDays = 5,
+                Reason = "Vacation",
+                StatusId = Status.Pending,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedOn = DateTime.Now
+            },
+            new LeaveRequest
+            {
+                Id = 2,
+                EmployeeId = 1,
+                LeaveTypeId = 1,
+                StartDate = DateTime.Now.AddDays(10),
+                EndDate = DateTime.Now.AddDays(15),
+                LeaveDays = 5,
+                Reason = "Medical",
+                StatusId = Status.Approved,
+                IsActive = true,
+                IsDeleted = false,
+                CreatedOn = DateTime.Now
+            }
+        );
+        await _dbContext.SaveChangesAsync();
+        var leaveRequests = await _leaveRepository.GetLeaveRequestAsync();
+        Assert.That(leaveRequests, Is.Not.Null);
+        Assert.That(leaveRequests.Count, Is.EqualTo(2));
+        Assert.That(leaveRequests.All(lr => lr.IsActive && !lr.IsDeleted), Is.True);
+        Assert.That(leaveRequests.OrderByDescending(lr => lr.Id).SequenceEqual(leaveRequests), Is.True);
+        Assert.That(leaveRequests[0].Id, Is.GreaterThan(leaveRequests[1].Id));
+        Assert.That(leaveRequests[0].Employee, Is.Not.Null);
+        Assert.That(leaveRequests[0].Employee!.FirstName, Is.EqualTo("John"));
+        Assert.That(leaveRequests[0].Employee!.LastName, Is.EqualTo("Doe"));
+        Assert.That(leaveRequests[0].LeaveType, Is.Not.Null);
+        Assert.That(leaveRequests[0].LeaveType!.LeaveNameId, Is.EqualTo(LeaveName.CasualLeave));
+        Assert.That(leaveRequests[0].LeaveType!.Description, Is.EqualTo("Casual leave"));
+        Assert.That(leaveRequests[0].LeaveType!.MaxPerYear, Is.EqualTo(7));
+        Assert.That(leaveRequests[1].Employee, Is.Not.Null);
+        Assert.That(leaveRequests[1].Employee!.FirstName, Is.EqualTo("John"));
+        Assert.That(leaveRequests[1].Employee!.LastName, Is.EqualTo("Doe"));
+        Assert.That(leaveRequests[1].LeaveType, Is.Not.Null);
+        Assert.That(leaveRequests[1].LeaveType!.LeaveNameId, Is.EqualTo(LeaveName.CasualLeave));
+        Assert.That(leaveRequests[1].LeaveType!.Description, Is.EqualTo("Casual leave"));
+        Assert.That(leaveRequests[1].LeaveType!.MaxPerYear, Is.EqualTo(7));
+        Assert.That(leaveRequests.All(lr => lr.Employee != null), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.LeaveType != null), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.Employee!.FirstName == "John" && lr.Employee!.LastName == "Doe"), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.LeaveType!.LeaveNameId == LeaveName.CasualLeave && lr.LeaveType!.Description == "Casual leave" && lr.LeaveType!.MaxPerYear == 7), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.StartDate != default(DateTime) && lr.EndDate != default(DateTime)), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.LeaveDays == 5), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.Reason == "Vacation" || lr.Reason == "Medical"), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.StatusId == Status.Pending || lr.StatusId == Status.Approved), Is.True);
+        Assert.That(leaveRequests.All(lr => lr.CreatedOn != default(DateTime)), Is.True);
+    }
+
+    [Test]
+    public async Task GetLeaveRequestAsync_WhenEmpty_ShouldReturnEmptyList()
+    {
+        var leaveRequests = await _leaveRepository.GetLeaveRequestAsync();
+        Assert.That(leaveRequests, Is.Not.Null);
+        Assert.That(leaveRequests, Is.Empty);
+    }
+
+    [Test]
+    public async Task UpdateLeaveRequestAsync_ShouldUpdateLeaveRequestDetails()
+    {
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 1,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@gmail.com",
+            PhoneNumber= "1234564567",
+            EmployeeNumber = "EMP001",
+            DepartmentId = 1,
+            Position = "Software Engineer",
+            IsActive = true,
+            IsDeleted = false,
+        });
+        await _dbContext.SaveChangesAsync();
+        _dbContext.LeaveTypes.Add(new LeaveType
+        {
+            Id = 1,
+            LeaveNameId = LeaveName.CasualLeave,
+            Description = "Casual leave",
+            MaxPerYear = 7,
+            IsActive = true,
+            IsDeleted = false,
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.LeaveRequests.Add(new LeaveRequest
+        {
+            Id = 1,
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddDays(5),
+            LeaveDays = 5,
+            Reason = "Vacation",
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false,
+            CreatedOn = DateTime.Now
+        });
+        await _dbContext.SaveChangesAsync();
+        
+        Assert.That((await _leaveRepository.GetLeaveRequestByIdAsync(1))!.Reason, Is.EqualTo("Vacation"));
+        Assert.That((await _leaveRepository.GetLeaveRequestByIdAsync(1))!.StatusId, Is.EqualTo(Status.Pending));
+        Assert.That((await _leaveRepository.GetLeaveRequestByIdAsync(1))!.StartDate.Date, Is.EqualTo(_dbContext.LeaveRequests.First().StartDate.Date));
+        Assert.That((await _leaveRepository.GetLeaveRequestByIdAsync(1))!.EndDate.Date, Is.EqualTo(_dbContext.LeaveRequests.First().EndDate.Date));
+        Assert.That((await _leaveRepository.GetLeaveRequestByIdAsync(1))!.LeaveDays, Is.EqualTo(5));
+        Assert.That((await _leaveRepository.GetLeaveRequestByIdAsync(1))!.EmployeeId, Is.EqualTo(1));
+        Assert.That((await _leaveRepository.GetLeaveRequestByIdAsync(1))!.LeaveTypeId, Is.EqualTo(1));
+
+        _dbContext.ChangeTracker.Clear();
+
+        var dto = new LeaveRequest
+        {
+            Id = 1,
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(1),
+            EndDate = DateTime.Now.AddDays(6),
+            LeaveDays = 5,
+            Reason = "Updated Vacation",
+            StatusId = Status.Approved,
+            IsActive = true,
+            IsDeleted = false,
+        };
+        var leaveRequestToUpdate = await _leaveRepository.UpdateLeaveRequestAsync(dto);
+
+        Assert.That(leaveRequestToUpdate, Is.Not.Null);
+        Assert.That(leaveRequestToUpdate!.Id, Is.EqualTo(dto.Id));
+        Assert.That(leaveRequestToUpdate.EmployeeId, Is.EqualTo(dto.EmployeeId));
+        Assert.That(leaveRequestToUpdate.LeaveTypeId, Is.EqualTo(dto.LeaveTypeId));
+        Assert.That(leaveRequestToUpdate.StartDate.Date, Is.EqualTo(dto.StartDate.Date));
+        Assert.That(leaveRequestToUpdate.EndDate.Date, Is.EqualTo(dto.EndDate.Date));
+        Assert.That(leaveRequestToUpdate.LeaveDays, Is.EqualTo(dto.LeaveDays));
+        Assert.That(leaveRequestToUpdate.Reason, Is.EqualTo(dto.Reason));
+        Assert.That(leaveRequestToUpdate.StatusId, Is.EqualTo(dto.StatusId));
+    }
+
+    [Test]
+    public async Task UpdateLeaveRequestAsync_WhenLeaveRequestDoesNotExist_ShouldThrowException()
+    {
+        var dto = new LeaveRequest
+        {
+            Id = 999, // Non-existent ID
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(1),
+            EndDate = DateTime.Now.AddDays(6),
+            LeaveDays = 5,
+            Reason = "Updated Vacation",
+            StatusId = Status.Approved,
+            IsActive = true,
+            IsDeleted = false,
+        };
+        Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () =>
+        {
+            await _leaveRepository.UpdateLeaveRequestAsync(dto);
+        });
+    }
+
+    [Test]
+    public async Task UpdateLeaveRequestAsync_WhenIdIsNullOrZero_ShouldThrowException()
+    {
+        var dtoZero = new LeaveRequest
+        {
+            Id = 0, // Invalid ID
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(1),
+            EndDate = DateTime.Now.AddDays(6),
+            LeaveDays = 5,
+            Reason = "Updated Vacation",
+            StatusId = Status.Approved,
+            IsActive = true,
+            IsDeleted = false,
+        };
+        Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () =>
+        {
+            await _leaveRepository.UpdateLeaveRequestAsync(dtoZero);
+        });
+        var dtoNegative = new LeaveRequest
+        {
+            Id = -10, // Invalid ID
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(1),
+            EndDate = DateTime.Now.AddDays(6),
+            LeaveDays = 5,
+            Reason = "Updated Vacation",
+            StatusId = Status.Approved,
+            IsActive = true,
+            IsDeleted = false,
+        };
+        Assert.ThrowsAsync<DbUpdateConcurrencyException>(async () =>
+        {
+            await _leaveRepository.UpdateLeaveRequestAsync(dtoNegative);
+        });
+    }
+
+    [Test]
+    public async Task DeleteLeaveRequestAsync_ShouldMarkLeaveRequestAsDeleted()
+    {
+        // ---------- Arrange ----------
+        var baseDate = new DateTime(2026, 02, 09);
+
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 1,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john@gmail.com",
+            EmployeeNumber = "EMP001",
+            PhoneNumber = "1234567894",
+            DepartmentId = 1,
+            Position = "Software Engineer",
+            IsActive = true,
+            IsDeleted = false
+        });
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.LeaveTypes.Add(new LeaveType
+        {
+            Id = 1,
+            LeaveNameId = LeaveName.CasualLeave,
+            Description = "Casual leave",
+            MaxPerYear = 7,
+            IsActive = true,
+            IsDeleted = false
+        });
+        await _dbContext.SaveChangesAsync();
+
+        var leaveRequest = new LeaveRequest
+        {
+            Id = 1,
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = baseDate,
+            EndDate = baseDate.AddDays(5),
+            LeaveDays = 5,
+            Reason = "Vacation",
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false,
+            CreatedOn = baseDate
+        };
+
+        _dbContext.LeaveRequests.Add(leaveRequest); 
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
+        // ---------- Act ----------
+        var result = await _leaveRepository.DeleteLeaveRequestAsync(1);
+
+        // ---------- Assert ----------
+        Assert.That(result, Is.True);
+
+        var deletedLeaveRequest =
+            await _leaveRepository.GetLeaveRequestByIdAsync(1);
+
+        Assert.That(deletedLeaveRequest, Is.Null); 
+    }
+
+    [Test]
+    public async Task DeleteLeaveRequestAsync_WhenNotFound()
+    {
+        var result = await _leaveRepository.DeleteLeaveRequestAsync(999);
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task DeleteLeaveRequestAsync_WhenIdIsZeroOrNegative()
+    {
+        var resultZero = await _leaveRepository.DeleteLeaveRequestAsync(0);
+        Assert.That(resultZero, Is.False);
+
+        var resultNegative = await _leaveRepository.DeleteLeaveRequestAsync(-10);
+        Assert.That(resultNegative, Is.False);
+    }
 }

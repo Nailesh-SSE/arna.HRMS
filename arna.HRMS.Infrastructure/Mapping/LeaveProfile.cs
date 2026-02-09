@@ -16,12 +16,12 @@ public class LeaveProfile : Profile
         CreateMap<LeaveTypeDto, LeaveType>()
             .ForMember(
                 dest => dest.LeaveNameId,
-                opt => opt.MapFrom(src => (int)src.LeaveName)
+                opt => opt.MapFrom(src => (int)src.LeaveNameId)
             );
 
         CreateMap<LeaveType, LeaveTypeDto>()
             .ForMember(
-                dest => dest.LeaveName,
+                dest => dest.LeaveNameId,
                 opt => opt.MapFrom(src => (LeaveName)src.LeaveNameId)
             );
 
