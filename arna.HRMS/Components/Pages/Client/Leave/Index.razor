@@ -1,16 +1,13 @@
 ﻿@page "/leaverequest"
 
-@using System.ComponentModel.DataAnnotations
-@using Microsoft.AspNetCore.Components.Forms
 @using arna.HRMS.ClientServices.Leave
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Dropdown
 @using arna.HRMS.Models.Enums
-@using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Components.lib.components.ui.Model
 
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
@@ -26,10 +23,8 @@
 
     <div class="leave-management-container">
 
-        <div class="leave-header d-flex justify-content-between align-items-center">
-            <div>
-                <h1>Leave Management</h1>
-            </div>
+        <div class="leave-header d-flex justify-content-between align-items-center mb-3">
+            <h1>Leave Management</h1>
 
             <button class="btn btn-primary btn-lg"
                     @onclick="OpenCreateModal">
@@ -37,321 +32,155 @@
             </button>
         </div>
 
-       @*  <LeaveSummaries Summaries="summaries" LeaveTypes="leaveTypes" /> *@
+        <LeaveSummaries Summaries="summaries"
+                        LeaveTypes="leaveTypes" />
 
         <LeaveRequestList Requests="requests"
-                           OnCancel="handleCancelRequest"
-                           OnEdit="handleUpdateRequest" />
+                          OnCancel="HandleCancelRequest"
+                          OnEdit="HandleEditRequest" />
     </div>
 
     <LeaveRequestForm ShowModal="showModal"
                       ShowModalChanged="OnModalChanged"
-                      Model="leave"
+                      SelectedRequest="selectedRequest"
                       LeaveOptions="leaveOptions"
-                      EditContext="editContext"
-                      IsFormValid="isFormValid"
-                      IsSubmitting="isSubmitting"
-                      IsEditMode="isEditMode"
                       IsDateDisabled="IsDateBlocked"
-                      OnValidSubmit="HandleSubmit" />
+                      OnSaved="OnRequestSaved" />
 }
 
 @code {
 
-    private EditContext? editContext;
-    private ValidationMessageStore? messageStore;
-
-    private LeaveRequestViewModel leave = new();
-    private LeaveRequestViewModel? originalLeave;
-
-    private bool showModal;
     private bool isLoading = true;
-    private bool isSubmitting;
-    private bool isFormValid;
+    private bool showModal;
 
-    private bool isEditMode = false;
-    private int editingId = 0;
+    private LeaveRequestViewModel? selectedRequest;
 
     private List<LeaveRequestViewModel> requests = new();
-    private List<SelectOption> leaveOptions = new();
     private List<LeaveTypeViewModel> leaveTypes = new();
-
+    private List<SelectOption> leaveOptions = new();
+    private List<LeaveBalanceViewModel> summaries = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadUserAsync();
 
-        InitializeForm(GetEmployeeId());
-
         await LoadLeaveTypes();
-        await Task.WhenAll( LoadRequests());
+        await LoadRequests();
+        await LoadBalances();
 
         isLoading = false;
     }
 
-
     private void OpenCreateModal()
     {
-        ResetForm();
-        isEditMode = false;
+        selectedRequest = null; 
         showModal = true;
     }
 
-
-    private async Task handleUpdateRequest(int id)
+    private void HandleEditRequest(int id)
     {
-        var req = requests.FirstOrDefault(x => x.Id == id);
-        if (req == null) return;
-
-        leave = Clone(req);
-        originalLeave = Clone(req);
-
-        editingId = id;
-        isEditMode = true;
-
-        InitializeEditContext();
-
+        selectedRequest = requests.FirstOrDefault(x => x.Id == id);
         showModal = true;
     }
 
-    private async Task HandleSubmit()
+    private Task OnModalChanged(bool value)
     {
-        isSubmitting = true;
-
-        CalculateDays();
-
-        if (!ValidateAvailability())
-        {
-            isSubmitting = false;
-            return;
-        }
-
-        // ========= EDIT =========
-        if (isEditMode)
-        {
-            if (!HasChanges())
-            {
-                NotificationService.Info("Nothing changed.");
-                showModal = false;
-                isSubmitting = false;
-                return;
-            }
-
-            var updateResult =
-                await LeaveService.UpdateLeaveRequestAsync(editingId, leave);
-
-            if (updateResult?.IsSuccess == true)
-            {
-                NotificationService.Success("Leave updated successfully.");
-                await LoadRequests();
-                showModal = false;
-                ResetForm();
-            }
-
-            isSubmitting = false;
-            return;
-        }
-
-        // ========= CREATE =========
-        var createResult =
-            await LeaveService.CreateLeaveRequestAsync(leave);
-
-        if (createResult?.IsSuccess == true)
-        {
-            NotificationService.Success("Leave submitted successfully.");
-            await LoadRequests();
-            showModal = false;
-            ResetForm();
-        }
-
-        isSubmitting = false;
+        showModal = value;
+        return Task.CompletedTask;
     }
-
 
     private async Task LoadLeaveTypes()
     {
         var result = await LeaveService.GetLeaveTypeAsync();
-
         if (result?.IsSuccess == true && result.Data != null)
             leaveTypes = result.Data;
     }
 
-    // private async Task LoadBalances()
-    // {
-    //     var result = await LeaveService.GetLeaveBalanceByEmployeeIdAsync(leave.EmployeeId);
-
-    //     if (result?.IsSuccess == true && result.Data != null)
-    //     {
-    //         summaries = result.Data
-    //             .GroupBy(x => x.LeaveTypeId)
-    //             .Select(g => g.OrderByDescending(b => b.Id).First())
-    //             .ToList();
-    //     }
-
-    //     BuildLeaveOptions();
-    // }
-
     private async Task LoadRequests()
     {
-        var result = await LeaveService.GetLeaveRequestByEmployee(leave.EmployeeId);
-
+        var result = await LeaveService.GetLeaveRequestByEmployee(GetEmployeeId());
         if (result?.IsSuccess == true && result.Data != null)
             requests = result.Data;
     }
 
+    private async Task LoadBalances()
+    {
+        var result = await LeaveService.GetLeaveRequestByFilterAsync(
+            Status.Approved,
+            GetEmployeeId());
 
-        // In your main page, add this validation method
-        private bool ValidateAvailability()
+        var approvedLeaves = result?.IsSuccess == true && result.Data != null
+            ? result.Data
+            : new List<LeaveRequestViewModel>();
+
+        var usedByType = approvedLeaves
+            .GroupBy(x => x.LeaveTypeId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Sum(x => x.LeaveDays) // ✅ CORRECT
+            );
+
+        summaries = leaveTypes.Select(type =>
         {
-            if (editContext == null || messageStore == null)
-                return true;
+            usedByType.TryGetValue(type.Id, out var usedDays);
 
-            messageStore.Clear();
-            bool isValid = true;
-
-            // Check if any date in the range is blocked
-            if (leave.StartDate != default && leave.EndDate != default)
+            return new LeaveBalanceViewModel
             {
-                var currentDate = leave.StartDate.Date;
-                while (currentDate <= leave.EndDate.Date)
-                {
-                    if (IsDateBlocked(currentDate))
-                    {
-                        messageStore.Add(
-                            new FieldIdentifier(leave, nameof(leave.StartDate)),
-                            $"Date {currentDate:MMM dd, yyyy} is already booked for leave.");
-                        isValid = false;
-                        break;
-                    }
-                    currentDate = currentDate.AddDays(1);
-                }
-            }
+                LeaveTypeId = type.Id,
+                LeaveTypeName = type.LeaveNameId.ToString(),
+                TotalDays = type.MaxPerYear,
+                UsedDays = usedDays
+            };
+        }).ToList();
 
-            // ... rest of your validation ...
+        BuildLeaveOptions();
+    }
 
-            editContext.NotifyValidationStateChanged();
-            return isValid;
-        }
-
-    // private void BuildLeaveOptions()
-    // {
-    //     leaveOptions = leaveTypes.Select(Type =>
-    //     {
-    //         var balance = summaries.FirstOrDefault(x => x.LeaveTypeId == Type.Id);
-    //         var remaining = balance?.RemainingLeaves ?? 0;
-
-    //         return new SelectOption
-    //         {
-    //             Value = Type.Id.ToString(),
-    //             Text = $"{Type.LeaveName} ({remaining} left)",
-    //             IsDisabled = remaining == 0
-    //         };
-    //     }).ToList();
-    // }
-
-    private LeaveRequestViewModel Clone(LeaveRequestViewModel x)
-        => new()
+    private void BuildLeaveOptions()
+    {
+        leaveOptions = leaveTypes.Select(type =>
         {
-            Id = x.Id,
-            EmployeeId = x.EmployeeId,
-            EmployeeName = x.EmployeeName,
-            LeaveTypeId = x.LeaveTypeId,
-            LeaveTypeName = x.LeaveTypeName,
-            StartDate = x.StartDate,
-            EndDate = x.EndDate,
-            TotalDays = x.TotalDays,
-            Reason = x.Reason,
-            StatusId = x.StatusId
-        };
+            var balance = summaries.FirstOrDefault(x => x.LeaveTypeId == type.Id);
+            var remaining = balance?.RemainingDays ?? 0;
 
-    private bool HasChanges()
-    {
-        if (originalLeave == null) return true;
-
-        return
-            leave.LeaveTypeId != originalLeave.LeaveTypeId ||
-            leave.StartDate != originalLeave.StartDate ||
-            leave.EndDate != originalLeave.EndDate ||
-            leave.Reason != originalLeave.Reason ||
-            leave.TotalDays != originalLeave.TotalDays;
+            return new SelectOption
+            {
+                Value = type.Id.ToString(),
+                Text = $"{type.LeaveNameId} ({remaining} left)",
+                IsDisabled = remaining == 0
+            };
+        }).ToList();
     }
 
-    private void InitializeForm(int employeeId)
+    private async Task OnRequestSaved()
     {
-        leave = new LeaveRequestViewModel
-        {
-            EmployeeId = employeeId,
-            StartDate = DateTime.Today,
-            EndDate = DateTime.Today
-        };
-
-        InitializeEditContext();
+        await LoadRequests();
+        await LoadBalances();
     }
 
-    private void InitializeEditContext()
-    {
-        editContext = new EditContext(leave);
-        messageStore = new ValidationMessageStore(editContext);
-
-        editContext.OnFieldChanged += (_, __) =>
-        {
-            isFormValid = editContext.Validate();
-            StateHasChanged();
-        };
-    }
-
-    private void ResetForm()
-    {
-        InitializeForm(GetEmployeeId());
-        isEditMode = false;
-        editingId = 0;
-        originalLeave = null;
-    }
-
-    private async Task OnModalChanged(bool val)
-    {
-        showModal = val;
-        if (!val) ResetForm();
-    }
-
-    private void CalculateDays()
-        => leave.TotalDays = (leave.EndDate - leave.StartDate).Days + 1;
-
-    private async Task handleCancelRequest(int leaveRequestId)
+    private async Task HandleCancelRequest(int leaveRequestId)
     {
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Cancel this request?"))
             return;
 
-        var result = await LeaveService.UpadteLeaverequestStatusCancle(leaveRequestId, GetEmployeeId());
+        var result = await LeaveService.UpadteLeaverequestStatusCancle(
+            leaveRequestId,
+            GetEmployeeId());
 
         if (result?.IsSuccess == true)
         {
+            NotificationService.Success("Leave cancelled successfully.");
             await LoadRequests();
-            NotificationService.Success("Cancelled successfully.");
+            await LoadBalances();
         }
     }
 
     private bool IsDateBlocked(DateTime date)
     {
-        var blockedRequests = requests
-            .Where(r => r.EmployeeId == leave.EmployeeId
-                    && (r.StatusId == Status.Pending || r.StatusId == Status.Approved))
-            .ToList();
-
-        if (isEditMode && editingId > 0)
-        {
-            blockedRequests = blockedRequests.Where(r => r.Id != editingId).ToList();
-        }
-
-        foreach (var request in blockedRequests)
-        {
-            if (date >= request.StartDate.Date && date <= request.EndDate.Date)
-            {
-                return true; 
-            }
-        }
-
-        return false; 
+        return requests.Any(r =>
+            r.EmployeeId == GetEmployeeId()
+            && (r.StatusId == Status.Pending || r.StatusId == Status.Approved)
+            && date >= r.StartDate.Date
+            && date <= r.EndDate.Date);
     }
-
 }

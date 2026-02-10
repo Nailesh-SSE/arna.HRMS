@@ -28,7 +28,7 @@
             <div>
                 <h4 class="fw-bold text-primary mb-0">
                     <i class="bi bi-briefcase-fill me-2"></i>
-                    LeaveTypes
+                    Leave Types
                 </h4>
 
                 <small class="text-muted">
@@ -39,7 +39,6 @@
             </div>
 
             <div class="d-flex gap-2">
-
                 @if (!showLeaveRequests)
                 {
                     <AppButton ButtonClass="btn btn-primary px-3"
@@ -69,17 +68,15 @@
 
     <!-- CREATE/EDIT MODAL -->
     <LeaveTypes ShowModal="showModal"
-                   EditId="editId"
-                   OnClose="CloseModal"
-                   OnSaved="OnLeaveTypeSaved" />
+                EditId="editId"
+                OnClose="CloseModal"
+                OnSaved="OnLeaveTypeSaved" />
 
-    <!-- TABLE SWITCH -->
     <div class="card shadow-sm border-0">
         <div class="card-body">
 
             @if (!showLeaveRequests)
             {
-                <!-- LEAVE TYPE TABLE -->
                 <AppTable TItem="LeaveTypeViewModel"
                           Items="leaveTypes"
                           Columns="TableSchemas.LeaveTypes"
@@ -88,7 +85,6 @@
             }
             else
             {
-                <!-- LEAVE REQUEST TABLE -->
                 <AppTable TItem="LeaveRequestViewModel"
                           Items="leaveRequests"
                           Columns="TableSchemas.LeaveRequest">
@@ -135,17 +131,15 @@
         await LoadLeaveTypes();
     }
 
-    // ── Modal Handlers ──────────────────────────────────
-
     private void OpenCreateModal()
     {
-        editId = null;          
+        editId = null;
         showModal = true;
     }
 
     private void EditLeaveType(LeaveTypeViewModel model)
     {
-        editId = model.Id;      
+        editId = model.Id;
         showModal = true;
     }
 
@@ -160,8 +154,6 @@
         CloseModal();
         await LoadLeaveTypes();
     }
-
-    // ── Data Loading ────────────────────────────────────
 
     private async Task LoadLeaveTypes()
     {
@@ -201,8 +193,6 @@
         isLoading = false;
     }
 
-    // ── View Toggle ─────────────────────────────────────
-
     private async Task ShowLeaveRequests()
     {
         showLeaveRequests = true;
@@ -217,8 +207,6 @@
     {
         showLeaveRequests = false;
     }
-
-    // ── Leave Status ────────────────────────────────────
 
     private async Task UpdateLeaveStatus(LeaveRequestViewModel req, Status newStatus)
     {
@@ -272,13 +260,11 @@
             ? "btn btn-sm btn-danger"
             : "btn btn-sm btn-outline-danger";
 
-    // ── Delete ──────────────────────────────────────────
-
     private async Task DeleteLeaveType(LeaveTypeViewModel model)
     {
         bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm",
-            "Are you sure you want to delete this leave Type?"
+            "Are you sure you want to delete this leave type?"
         );
 
         if (!isConfirmed) return;
@@ -287,11 +273,11 @@
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error(result.Message ?? "Unable to delete leave Type.");
+            NotificationService.Error(result.Message ?? "Unable to delete leave type.");
             return;
         }
 
-        NotificationService.Success("Leave Type deleted successfully.");
+        NotificationService.Success("Leave type deleted successfully.");
         await LoadLeaveTypes();
     }
 }

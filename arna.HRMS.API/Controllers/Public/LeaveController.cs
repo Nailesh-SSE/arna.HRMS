@@ -111,7 +111,6 @@ public class LeaveController : ControllerBase
     }
 
     [HttpGet("requests/filter")]
-    [Authorize(Roles = UserRoleGroups.AdminRoles)]
     public async Task<IActionResult> GetLeaveRequestsByFilter(Status? status, int? empId)
     {
         var result = await _leaveService.GetByFilterAsync(status, empId);
