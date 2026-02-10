@@ -140,7 +140,7 @@ public class LeaveRepository
     {
         var LeaveRequest = await GetLeaveRequestByIdAsync(id);
 
-        if (LeaveRequest == null || LeaveRequest.StatusId == Status.Pending)
+        if (LeaveRequest == null || LeaveRequest.StatusId == Status.Approved)
             return false;
 
         LeaveRequest.IsActive = false;

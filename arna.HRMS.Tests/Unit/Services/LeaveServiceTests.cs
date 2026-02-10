@@ -194,7 +194,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.CreateLeaveTypeAsync(newLeaveType);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Leave '0' already exists"));
+        Assert.That(result.Message, Is.EqualTo("Leave name is required"));
     }
 
     [Test]
@@ -367,6 +367,27 @@ public class LeaveServiceTests
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Failed to update Leave Type"));
 
+    }
+
+    [Test]
+    public async Task UpdateLeaveType_WhenMaxPerYearIsMissing()
+    {
+        _dbContext.AddRange(
+            new LeaveType { Id = 1, LeaveNameId = LeaveName.SickLeave, Description = "Sick Leave Description", MaxPerYear = 10, IsPaid = true },
+            new LeaveType { Id = 2, LeaveNameId = LeaveName.CasualLeave, Description = "Casual Leave Description", MaxPerYear = 8, IsPaid = true }
+        );
+        await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
+        var updatedLeaveType = new LeaveTypeDto
+        {
+            Id = 2,
+            LeaveNameId = LeaveName.PaternityLeave,
+            Description = "Updated Description",
+            IsPaid = false
+        };
+        var result = await _leaveService.UpdateLeaveTypeAsync(updatedLeaveType);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Failed to update Leave Type"));
     }
 
     [Test]
@@ -758,6 +779,184 @@ public class LeaveServiceTests
 
     }
 
+    [Test] 
+    public async Task CreateLeaveRequest_WhenLeaveTypeNotFound()
+    {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+        var dto = new LeaveRequestDto
+        {
+            EmployeeId = 101,
+            StartDate = DateTime.Now.AddDays(3),
+            EndDate = DateTime.Now.AddDays(7),
+            Reason = "Medical",
+            StatusId = Status.Pending
+        };
+        // -------------------------------
+        // Act
+        // -------------------------------
+        var result = await _leaveService.CreateLeaveRequestAsync(dto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Leave Type Id"));
+    }
+
+    [Test]
+    public async Task CreateLeaveRequest_WhenStartDateAfterEndDate()
+    {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+        var dto = new LeaveRequestDto
+        {
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(7),
+            EndDate = DateTime.Now.AddDays(3),
+            Reason = "Medical",
+            StatusId = Status.Pending
+        };
+        // -------------------------------
+        // Act
+        // -------------------------------
+        var result = await _leaveService.CreateLeaveRequestAsync(dto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+    }
+
+    [Test]
+    public async Task CreateLeaveRequest_WhenStartDateInPast()
+    {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+        var dto = new LeaveRequestDto
+        {
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(-3),
+            EndDate = DateTime.Now.AddDays(3),
+            Reason = "Medical",
+            StatusId = Status.Pending
+        };
+        // -------------------------------
+        // Act
+        // -------------------------------
+        var result = await _leaveService.CreateLeaveRequestAsync(dto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+    }
+
+    [Test]
+    public async Task CreateLeaveRequest_WhenEndDateEqualCurrentDate()
+    {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+        var dto = new LeaveRequestDto
+        {
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now,
+            Reason = "Medical",
+            StatusId = Status.Pending
+        };
+        // -------------------------------
+        // Act
+        // -------------------------------
+        var result = await _leaveService.CreateLeaveRequestAsync(dto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+    }
+
+    [Test]
+    public async Task CreateLeaveRequest_WhenStartDateIsMissing()
+    {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+        var dto = new LeaveRequestDto
+        {
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            EndDate = DateTime.Now.AddDays(4),
+            Reason = "Medical",
+            StatusId = Status.Pending
+        };
+        // -------------------------------
+        // Act
+        // -------------------------------
+        var result = await _leaveService.CreateLeaveRequestAsync(dto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+    }
+
+    [Test]
+    public async Task CreateLeaveRequest_WhenEndDateIsMissing()
+    {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+        var dto = new LeaveRequestDto
+        {
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(4),
+            Reason = "Medical",
+            StatusId = Status.Pending
+        };
+        // -------------------------------
+        // Act
+        // -------------------------------
+        var result = await _leaveService.CreateLeaveRequestAsync(dto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+    }
+
+    [Test]
+    public async Task CreateLeaveRequest_WhenResoneIsMissing()
+    {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+        var dto = new LeaveRequestDto
+        {
+            EmployeeId = 101,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now.AddDays(4),
+            EndDate = DateTime.Now.AddDays(4),
+            StatusId = Status.Pending
+        };
+        // -------------------------------
+        // Act
+        // -------------------------------
+        var result = await _leaveService.CreateLeaveRequestAsync(dto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Reason is required"));
+    }
+
     [Test]
     public async Task CreateLeaveRequest_WhenEmployeeNotFound()
     {
@@ -915,7 +1114,7 @@ public class LeaveServiceTests
             StartDate = DateTime.Now.AddDays(10),
             EndDate = DateTime.Now.AddDays(12),
             Reason = "Flu",
-            StatusId = Status.Approved, // ✅ must be Approved
+            StatusId = Status.Pending, // ✅ must be Approved
             IsActive = true,
             IsDeleted = false
         });
@@ -947,8 +1146,21 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         var result = await _leaveService.DeleteLeaveRequestAsync(5);
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
+        Assert.That(result.Message, Is.EqualTo("not found"));
+    }
+    [Test]
+    public async Task DeleteLeaveRequestbyID_whenIsZeroOrNegative()
+    {
+        var result = await _leaveService.DeleteLeaveRequestAsync(0);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid ID"));
+
+        var result2 = await _leaveService.DeleteLeaveRequestAsync(-99);
+        Assert.That(result2.IsSuccess, Is.False);
+        Assert.That(result2.Message, Is.EqualTo("Invalid ID"));
+
     }
 
     [Test]
@@ -1014,6 +1226,8 @@ public class LeaveServiceTests
         Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
+    
+
     [Test]
     public async Task UpdateLeaveRequest_WhenLeaveTypeNotFound()
     {
@@ -1039,6 +1253,8 @@ public class LeaveServiceTests
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid Leave Type Id"));
     }
+
+
 
     [Test]
     public async Task UpdateLeaveRequestStatus_WhenApproved()
