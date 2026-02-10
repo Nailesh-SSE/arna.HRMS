@@ -541,6 +541,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
+        var result = await _service.GetAttendanceRequests(2, Status.Pending);
         var result = await _service.GetAttendanceRequests(2, null);
 
         Assert.That(result.IsSuccess, Is.True);
