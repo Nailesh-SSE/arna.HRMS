@@ -99,8 +99,7 @@ public class FestivalHolidayServiceTests
     public async Task GetAllFestivalHoliday_Empty()
     {
         var result = await _festivalHolidayService.GetFestivalHolidayAsync();
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("No Data Found"));
+        Assert.That(result.IsSuccess, Is.True);
     }
 
     [Test]

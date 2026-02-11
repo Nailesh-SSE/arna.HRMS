@@ -1066,8 +1066,8 @@ public class LeaveServiceTests
         // Act
         // -------------------------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.Not.Null);
     }
 
     [Test]

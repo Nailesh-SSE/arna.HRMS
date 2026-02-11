@@ -55,7 +55,7 @@ public class EmployeeRepository
         return true;
     }
 
-    public async Task<bool> EmployeeExistsAsync(string email, string phoneNumber)
+    public async Task<bool> EmployeeExistsAsync(string email, string phoneNumber, int? employeeId=0)
     {
         if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(phoneNumber))
             return false;
@@ -65,6 +65,7 @@ public class EmployeeRepository
 
         return await _baseRepository.Query().FirstOrDefaultAsync(e =>
             (e.Email.ToLower() == email || e.PhoneNumber == phoneNumber) &&
+             e.Id != employeeId &&
             e.IsActive && !e.IsDeleted) != null;
     }
 

@@ -519,7 +519,7 @@ public class EmployeeRepositoryTests
     [Test]
     public async Task EmployeeExistsAsync_ShouldReturnFalse_WhenEmailAndPhoneAreEmpty()
     {
-        var result = await _employeeRepository.EmployeeExistsAsync("", "");
+        var result = await _employeeRepository.EmployeeExistsAsync("", "",0);
 
         Assert.That(result, Is.False);
     }
@@ -529,7 +529,7 @@ public class EmployeeRepositoryTests
     {
         await SeedDepartmentAndEmployee();
 
-        var result = await _employeeRepository.EmployeeExistsAsync("doe3@gmail.com", null!);
+        var result = await _employeeRepository.EmployeeExistsAsync("doe3@gmail.com", null!,0);
 
         Assert.That(result, Is.True);
     }
@@ -539,7 +539,7 @@ public class EmployeeRepositoryTests
     {
         await SeedDepartmentAndEmployee();
 
-        var result = await _employeeRepository.EmployeeExistsAsync(null!, "1234561234");
+        var result = await _employeeRepository.EmployeeExistsAsync(null!, "1234561234",0);
 
         Assert.That(result, Is.True);
     }
@@ -549,7 +549,7 @@ public class EmployeeRepositoryTests
     {
         await SeedDepartmentAndEmployee();
 
-        var result = await _employeeRepository.EmployeeExistsAsync("  DOE3@GMAIL.COM  ", null!);
+        var result = await _employeeRepository.EmployeeExistsAsync("  DOE3@GMAIL.COM  ", null!, 0);
 
         Assert.That(result, Is.True);
     }
@@ -563,7 +563,7 @@ public class EmployeeRepositoryTests
         employee.IsActive = false;
         await _dbContext.SaveChangesAsync();
 
-        var result = await _employeeRepository.EmployeeExistsAsync("doe3@gmail.com", null!);
+        var result = await _employeeRepository.EmployeeExistsAsync("doe3@gmail.com", null!, 0);
 
         Assert.That(result, Is.False);
     }
@@ -577,7 +577,7 @@ public class EmployeeRepositoryTests
         employee.IsDeleted = true;
         await _dbContext.SaveChangesAsync();
 
-        var result = await _employeeRepository.EmployeeExistsAsync(null!, "1234561234");
+        var result = await _employeeRepository.EmployeeExistsAsync(null!, "1234561234", 0);
 
         Assert.That(result, Is.False);
     }
@@ -587,7 +587,7 @@ public class EmployeeRepositoryTests
     {
         await SeedDepartmentAndEmployee();
 
-        var result = await _employeeRepository.EmployeeExistsAsync("unknown@gmail.com", "9999999999");
+        var result = await _employeeRepository.EmployeeExistsAsync("unknown@gmail.com", "9999999999", 0);
 
         Assert.That(result, Is.False);
     }

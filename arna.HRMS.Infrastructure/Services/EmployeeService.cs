@@ -145,7 +145,7 @@ public class EmployeeService : IEmployeeService
         if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
             return ServiceResult<EmployeeDto>.Fail("PhoneNumber is required");
 
-        if (await _employeeRepository.EmployeeExistsAsync(dto.Email, dto.PhoneNumber))
+        if (await _employeeRepository.EmployeeExistsAsync(dto.Email, dto.PhoneNumber, dto.Id))
             return ServiceResult<EmployeeDto>.Fail("Email or Phone Number already exists");
 
         var employee = _mapper.Map<Employee>(dto);
@@ -169,12 +169,12 @@ public class EmployeeService : IEmployeeService
             : ServiceResult<bool>.Fail("Employee not found");
     }
 
-    public async Task<ServiceResult<bool>> EmployeeExistsAsync(string email, string phoneNumber)
+    public async Task<ServiceResult<bool>> EmployeeExistsAsync(string email, string phoneNumber, int? employeeId )
     {
         if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(phoneNumber))
             return ServiceResult<bool>.Fail("Email or PhoneNumber is required");
 
-        var exists = await _employeeRepository.EmployeeExistsAsync(email, phoneNumber);
+        var exists = await _employeeRepository.EmployeeExistsAsync(email, phoneNumber, employeeId);
         if (!exists)
             return ServiceResult<bool>.Fail("Employee does not exist");
 
