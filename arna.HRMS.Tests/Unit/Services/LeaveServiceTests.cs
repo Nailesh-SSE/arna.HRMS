@@ -8,6 +8,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Azure.Core;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,7 @@ public class LeaveServiceTests
 
         var festivalHolidayRepository = new FestivalHolidayRepository(festivalBaseRepo);
         var employeeRepository = new EmployeeRepository(employeeBaseRepo);
+        var leaveValidator = new LeaveValidator(leaveRepository);
 
         _attendanceRepository = new AttendanceRepository(attendanceBaseRepo, festivalHolidayRepository, employeeRepository);
 
@@ -66,7 +68,8 @@ public class LeaveServiceTests
             leaveRepository,
             _mapper,
             _festivalHolidayServiceMock.Object,
-            _attendanceRepository
+            _attendanceRepository,
+            leaveValidator
         );
     }
 

@@ -57,6 +57,8 @@ public static class DependencyInjection
         services.AddScoped<RoleValidator>();
         services.AddScoped<EmployeeValidator>();
         services.AddScoped<DepartmentValidator>();
+        services.AddScoped<FestivalHolidayValidator>();
+        services.AddScoped<LeaveValidator>();
 
         return services;
     }

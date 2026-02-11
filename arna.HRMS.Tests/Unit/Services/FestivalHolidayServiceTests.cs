@@ -2,7 +2,10 @@
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Mapping;
+using arna.HRMS.Infrastructure.Repositories;
+using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
@@ -32,14 +35,16 @@ public class FestivalHolidayServiceTests
             cfg.AddProfile<FestivalHolidayProfile>();
         });
 
+        var holidayRepository = new FestivalHolidayRepository(new BaseRepository<FestivalHoliday>(_dbContext));
+        var festival = new FestivalHolidayValidator(holidayRepository);
+
         _mapper = mapperConfig.CreateMapper();
 
         // ---------- Service ----------
         _festivalHolidayService = new FestivalHolidayService(
-            new Infrastructure.Repositories.FestivalHolidayRepository(
-                new Infrastructure.Repositories.Common.BaseRepository<arna.HRMS.Core.Entities.FestivalHoliday>(_dbContext)
-            ),
-            _mapper
+           holidayRepository,
+            _mapper,
+            festival
         );
     }
 
