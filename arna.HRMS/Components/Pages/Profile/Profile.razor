@@ -211,11 +211,11 @@ else
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error(result.Message ?? "Unable to update employee.");
+            NotificationService.Error(result.Message ?? "Unable to update profile.");
             return;
         }
 
-        NotificationService.Success("Employee updated successfully.");
+        NotificationService.Success("Profile updated successfully.");
         isEditMode = false;
     }
 
