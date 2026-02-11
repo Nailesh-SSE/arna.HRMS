@@ -2,6 +2,7 @@
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
+using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
@@ -51,20 +52,7 @@ public class EmployeeServiceTests
 
         var mapperConfig = new MapperConfiguration(cfg =>
         {
-            // DTO → Entity (IGNORE navigation properties)
-            cfg.CreateMap<EmployeeDto, Employee>()
-                .ForMember(dest => dest.Department, opt => opt.Ignore()) 
-                .ForMember(dest => dest.Manager, opt => opt.Ignore());
-
-            // Entity → DTO
-            cfg.CreateMap<Employee, EmployeeDto>()
-                .ForMember(dest => dest.DepartmentCode,
-                    opt => opt.MapFrom(src => src.Department != null ? src.Department.Code : ""))
-                .ForMember(dest => dest.ManagerFullName,
-                    opt => opt.MapFrom(src =>
-                        src.Manager != null
-                            ? $"{src.Manager.FirstName} {src.Manager.LastName}"
-                            : ""));
+            cfg.AddProfile<EmployeeProfile>();
         });
 
 
@@ -136,6 +124,60 @@ public class EmployeeServiceTests
         Assert.That(result.Data![0].FullName, Is.EqualTo("Pratham Smith"));
     }
 
+    [Test]
+    public async Task GetEmployeesAsync_WhenNoEmployees_ReturnsEmptyList()
+    {
+        var result = await _employeeService.GetEmployeesAsync();
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetEmployeesAsync_ShouldExcludeDeletedEmployees()
+    {
+        _dbContext.Employees.AddRange(
+            new Employee
+            {
+                EmployeeNumber = "Emp1",
+                FirstName = "Active",
+                LastName = "User",
+                Email = "active@test.com",
+                PhoneNumber = "1111111111",
+                Position = "Dev",
+                Salary = 10000,
+                DepartmentId = 1,
+                HireDate = DateTime.Now,
+                DateOfBirth = DateTime.Now.AddYears(-25),
+                IsActive = true,
+                IsDeleted = false
+            },
+            new Employee
+            {
+                EmployeeNumber = "Emp2",
+                FirstName = "Deleted",
+                LastName = "User",
+                Email = "deleted@test.com",
+                PhoneNumber = "2222222222",
+                Position = "Dev",
+                Salary = 10000,
+                DepartmentId = 1,
+                HireDate = DateTime.Now,
+                DateOfBirth = DateTime.Now.AddYears(-25),
+                IsActive = false,
+                IsDeleted = true
+            }
+        );
+
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.GetEmployeesAsync();
+
+        Assert.That(result.Data!.Count, Is.EqualTo(1));
+        Assert.That(result.Data![0].Email, Is.EqualTo("active@test.com"));
+    }
+
+
     // -------------------- GET BY ID --------------------
 
     [Test]
@@ -172,18 +214,59 @@ public class EmployeeServiceTests
         Assert.That(result.IsSuccess, Is.False);
     }
 
-    // -------------------- CREATE --------------------
+    [Test]
+    public async Task GetEmployeeByIdAsync_WhenIdZeroOrNegative_ReturnsFail()
+    {
+        var result = await _employeeService.GetEmployeeByIdAsync(0);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Employee ID"));
+
+        var result2 = await _employeeService.GetEmployeeByIdAsync(-5);
+
+        Assert.That(result2.IsSuccess, Is.False);
+    }
 
     [Test]
-    public async Task CreateEmployeeAsync_ReturnsCreatedEmployeeDto()
+    public async Task GetEmployeeByIdAsync_WhenDeleted_ReturnsFail()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp400",
+            FirstName = "Soft",
+            LastName = "Deleted",
+            Email = "soft@test.com",
+            PhoneNumber = "4444444444",
+            Position = "Dev",
+            Salary = 50000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25),
+            IsActive = false,
+            IsDeleted = true
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.GetEmployeeByIdAsync(employee.Id);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee not found"));
+    }
+
+
+    // -------------------- CREATE --------------------
+
+    private EmployeeDto EmployeeDetails(string Fn, string ln, string Em, string pn)
     {
         var dto = new EmployeeDto
         {
-            FirstName = "Chris",
-            LastName = "Evans",
+            FirstName = Fn,
+            LastName = ln,
             DepartmentName = "INFORMATION TECHNOLOGY",
-            Email = "chris@test.com",
-            PhoneNumber = "4444444444",
+            Email = Em,
+            PhoneNumber = pn,
             DateOfBirth = DateTime.Now.AddYears(-28),
             HireDate = DateTime.Now,
             DepartmentId = 1,
@@ -196,10 +279,10 @@ public class EmployeeServiceTests
             .ReturnsAsync(ServiceResult<RoleDto>.Success(new RoleDto { Id = 2, Name = "Employee" }));
         var uDto = new UserDto
         {
-            FullName = "Chris Evans",
+            FullName = dto.FirstName + " " + dto.LastName,
             Email = dto.Email,
             PhoneNumber = dto.PhoneNumber,
-            RoleId= 2
+            RoleId = 2
         };
         _userServicesMock.Setup(u => u.CreateUserAsync(It.Is<UserDto>(x =>
                 x.Email == uDto.Email &&
@@ -207,12 +290,151 @@ public class EmployeeServiceTests
                 x.RoleId == uDto.RoleId)))
             .ReturnsAsync(ServiceResult<UserDto>.Success(uDto));
 
+        return dto;
+    }
+
+
+    [Test]
+    public async Task CreateEmployeeAsync_ReturnsCreatedEmployeeDto()
+    {
+        var dto = EmployeeDetails("Chirag", "Evans", "chirag@gmail.com", "1234567892");
+
         var result = await _employeeService.CreateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data!.FullName, Is.EqualTo("Chris Evans"));
+        Assert.That(result.Data!.FullName, Is.EqualTo("Chirag Evans"));
         Assert.That(await _dbContext.Employees.CountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenDtoNull_ReturnsFail()
+    {
+        var result = await _employeeService.CreateEmployeeAsync(null!);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid request"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenFirstNameEmpty_ReturnsFail()
+    {
+        var dto = EmployeeDetails("", "Test", "test@test.com", "1234567890");
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("FirstName is required"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenLastNameEmpty_ReturnsFail()
+    {
+        var dto = EmployeeDetails("Test", "", "test@test.com", "1234567890");
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("LastName is required"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenEmailEmpty_ReturnsFail()
+    {
+        var dto = EmployeeDetails("Test", "User", "", "1234567890");
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Email is required"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenEmailInvalid_ReturnsFail()
+    {
+        var dto = EmployeeDetails("Test", "User", "invalid-email", "1234567890");
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid email format"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenDateOfBirthDefault_ReturnsFail()
+    {
+        var dto = EmployeeDetails("Test", "User", "test@test.com", "1234567890");
+        dto.DateOfBirth = default;
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid DateOfBirth"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenDateOfBirthFuture_ReturnsFail()
+    {
+        var dto = EmployeeDetails("Test", "User", "test@test.com", "1234567890");
+        dto.DateOfBirth = DateTime.Now.AddDays(1);
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid DateOfBirth"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenPhoneEmpty_ReturnsFail()
+    {
+        var dto = EmployeeDetails("Test", "User", "test@test.com", "");
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("PhoneNumber is required"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenEmailAlreadyExists_ReturnsFail()
+    {
+        var existing = new Employee
+        {
+            EmployeeNumber = "Emp001",
+            FirstName = "Old",
+            LastName = "User",
+            Email = "duplicate@test.com",
+            PhoneNumber = "9999999999",
+            Position = "Dev",
+            Salary = 10000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25)
+        };
+
+        _dbContext.Employees.Add(existing);
+        await _dbContext.SaveChangesAsync();
+
+        var dto = EmployeeDetails("New", "User", "duplicate@test.com", "9999999999");
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Email or Phone Number already exists"));
+    }
+
+    [Test]
+    public async Task CreateEmployeeAsync_WhenRoleNotFound_ReturnsFail()
+    {
+        var dto = EmployeeDetails("Test", "User", "rolefail@test.com", "8888888888");
+
+        _roleServiceMock.Setup(r => r.GetRoleByNameAsync(It.IsAny<string>()))
+            .ReturnsAsync(ServiceResult<RoleDto>.Fail("Not found"));
+
+        var result = await _employeeService.CreateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee role not found"));
     }
 
     // -------------------- UPDATE --------------------
@@ -237,7 +459,7 @@ public class EmployeeServiceTests
         _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.Entry(employee).State = EntityState.Detached;
+        _dbContext.ChangeTracker.Clear();
 
         var dto = new EmployeeDto
         {
@@ -257,6 +479,203 @@ public class EmployeeServiceTests
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.FullName, Is.EqualTo("Updated User"));
+    }
+
+    private async Task<Employee> AddEmployeeForUpdate(string email = "update@test.com")
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = Guid.NewGuid().ToString(),
+            FirstName = "Old",
+            LastName = "User",
+            Email = email,
+            PhoneNumber = Guid.NewGuid().ToString().Substring(0, 10),
+            Position = "Tester",
+            Salary = 40000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-30)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
+
+        return employee;
+    }
+
+    private EmployeeDto ValidUpdateDto(Employee employee)
+    {
+        return new EmployeeDto
+        {
+            Id = employee.Id,
+            FirstName = "Updated",
+            LastName = "User",
+            Email = employee.Email,
+            PhoneNumber = employee.PhoneNumber,
+            DateOfBirth = employee.DateOfBirth,
+            HireDate = employee.HireDate,
+            DepartmentId = 1,
+            Position = "Manager",
+            Salary = 90000
+        };
+    }
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenEmailAlreadyExists_ReturnsFail()
+    {
+        var employee1 = await AddEmployeeForUpdate();
+        var employee2 = await AddEmployeeForUpdate("other@test.com");
+
+        var dto = ValidUpdateDto(employee2);
+        dto.Email = employee1.Email;   // duplicate
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Email or Phone Number already exists"));
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenPhoneEmpty_ReturnsFail()
+    {
+        var employee = await AddEmployeeForUpdate();
+
+        var dto = ValidUpdateDto(employee);
+        dto.PhoneNumber = "";
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenDateOfBirthFuture_ReturnsFail()
+    {
+        var employee = await AddEmployeeForUpdate();
+
+        var dto = ValidUpdateDto(employee);
+        dto.DateOfBirth = DateTime.Now.AddDays(1);
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenDateOfBirthDefault_ReturnsFail()
+    {
+        var employee = await AddEmployeeForUpdate();
+
+        var dto = ValidUpdateDto(employee);
+        dto.DateOfBirth = default;
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenEmailInvalid_ReturnsFail()
+    {
+        var employee = await AddEmployeeForUpdate();
+
+        var dto = ValidUpdateDto(employee);
+        dto.Email = "invalid-email";
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid email format"));
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenEmailEmpty_ReturnsFail()
+    {
+        var employee = await AddEmployeeForUpdate();
+
+        var dto = ValidUpdateDto(employee);
+        dto.Email = "";
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenLastNameEmpty_ReturnsFail()
+    {
+        var employee = await AddEmployeeForUpdate();
+
+        var dto = ValidUpdateDto(employee);
+        dto.LastName = "";
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenFirstNameEmpty_ReturnsFail()
+    {
+        var employee = await AddEmployeeForUpdate();
+
+        var dto = ValidUpdateDto(employee);
+        dto.FirstName = "";
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("FirstName is required"));
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenEmployeeNotFound_ReturnsFail()
+    {
+        var dto = new EmployeeDto
+        {
+            Id = 999,
+            FirstName = "Test",
+            LastName = "User",
+            Email = "test@test.com",
+            PhoneNumber = "1234567890",
+            DateOfBirth = DateTime.Now.AddYears(-25)
+        };
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee not found"));
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenInvalidId_ReturnsFail()
+    {
+        var dto = new EmployeeDto { Id = 0 };
+
+        var result = await _employeeService.UpdateEmployeeAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Employee ID"));
+    }
+
+
+    [Test]
+    public async Task UpdateEmployeeAsync_WhenDtoIsNull_ReturnsFail()
+    {
+        var result = await _employeeService.UpdateEmployeeAsync(null!);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid request"));
     }
 
     // -------------------- DELETE --------------------
@@ -296,6 +715,48 @@ public class EmployeeServiceTests
     }
 
     [Test]
+    public async Task DeleteEmployeeAsync_WhenIdIsZeroOrNegative_ReturnsFail()
+    {
+        var result = await _employeeService.DeleteEmployeeAsync(0);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Employee ID"));
+        var result2 = await _employeeService.DeleteEmployeeAsync(-5);
+
+        Assert.That(result2.IsSuccess, Is.False);
+        Assert.That(result2.Message, Is.EqualTo("Invalid Employee ID"));
+    }
+
+    [Test]
+    public async Task DeleteEmployeeAsync_WhenAlreadyDeleted_ReturnsFail()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "EmpOld",
+            FirstName = "Old",
+            LastName = "Deleted",
+            Email = "old@test.com",
+            PhoneNumber = "8888888888",
+            Position = "Dev",
+            Salary = 20000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25),
+            IsActive = false,
+            IsDeleted = true
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.DeleteEmployeeAsync(employee.Id);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee not found"));
+    }
+
+
+    [Test]
     public async Task EmployeeExist_when_found()
     {
         var employee = new Employee
@@ -329,7 +790,7 @@ public class EmployeeServiceTests
             DateOfBirth = DateTime.Now.AddYears(-27)
         };
 
-        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber);
+        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber, employee2.Id);
 
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -368,9 +829,132 @@ public class EmployeeServiceTests
             DateOfBirth = DateTime.Now.AddYears(-27)
         };
 
-        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber);
+        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber, employee2.Id);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Employee does not exist"));
     }
+
+    [Test]
+    public async Task EmployeeExistsAsync_WhenEmailAndPhoneEmpty_ReturnsFail()
+    {
+        var result = await _employeeService.EmployeeExistsAsync("", "", null);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Email or PhoneNumber is required"));
+    }
+
+    [Test]
+    public async Task EmployeeExistsAsync_WhenEmailExists_ReturnsSuccess()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp10",
+            FirstName = "Test",
+            LastName = "User",
+            Email = "email@test.com",
+            PhoneNumber = "1111111111",
+            Position = "Dev",
+            Salary = 10000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.EmployeeExistsAsync("email@test.com", "", null);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.True);
+    }
+
+    [Test]
+    public async Task EmployeeExistsAsync_WhenPhoneExists_ReturnsSuccess()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp11",
+            FirstName = "Phone",
+            LastName = "User",
+            Email = "phone@test.com",
+            PhoneNumber = "2222222222",
+            Position = "Dev",
+            Salary = 10000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.EmployeeExistsAsync("", "2222222222", null);
+
+        Assert.That(result.IsSuccess, Is.True);
+    }
+
+    [Test]
+    public async Task EmployeeExistsAsync_WhenSameEmployeeId_ShouldReturnFail()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp12",
+            FirstName = "Self",
+            LastName = "User",
+            Email = "self@test.com",
+            PhoneNumber = "3333333333",
+            Position = "Dev",
+            Salary = 10000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25)
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.EmployeeExistsAsync(
+            employee.Email,
+            employee.PhoneNumber,
+            employee.Id   // same id
+        );
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee does not exist"));
+    }
+
+    [Test]
+    public async Task EmployeeExistsAsync_WhenEmployeeSoftDeleted_ShouldReturnFail()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "Emp13",
+            FirstName = "Deleted",
+            LastName = "User",
+            Email = "deleted@test.com",
+            PhoneNumber = "4444444444",
+            Position = "Dev",
+            Salary = 10000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25),
+            IsActive = false,
+            IsDeleted = true
+        };
+
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _employeeService.EmployeeExistsAsync(
+            "deleted@test.com",
+            "",
+            null
+        );
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee does not exist"));
+    }
+
 }

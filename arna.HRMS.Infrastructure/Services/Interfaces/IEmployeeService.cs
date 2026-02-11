@@ -9,5 +9,5 @@ public interface IEmployeeService
     Task<ServiceResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto);
     Task<ServiceResult<EmployeeDto>> UpdateEmployeeAsync(EmployeeDto dto);
     Task<ServiceResult<bool>> DeleteEmployeeAsync(int id);
-    Task<ServiceResult<bool>> EmployeeExistsAsync(string email, string phoneNumber);
+    Task<ServiceResult<bool>> EmployeeExistsAsync(string email, string phoneNumber, int? employeeId);
 }
