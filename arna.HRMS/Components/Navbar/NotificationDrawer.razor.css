@@ -1,0 +1,217 @@
+﻿.notification-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+/* 🔴 Notification count badge */
+.notification-count {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+}
+
+/* 🔔 Pulse ring (Bootstrap-safe) */
+.notification-btn.blink::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(239,68,68,.6);
+    animation: bell-ring 1.4s infinite;
+    pointer-events: none;
+}
+
+/* 🔄 Pulse animation */
+@keyframes bell-ring {
+    0% {
+        transform: scale(.85);
+        opacity: .9;
+    }
+
+    70% {
+        transform: scale(1.45);
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+
+.notification-note-panel {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    width: 360px;
+    max-width: 92vw;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0,0,0,.18);
+    z-index: 1050;
+    overflow: hidden;
+    animation: note-drop .25s ease;
+}
+
+/* Panel entry animation */
+@keyframes note-drop {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header */
+.note-panel-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Body */
+.note-panel-body {
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+.note-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background .2s ease;
+}
+
+    .note-item:hover {
+        background: #f8fafc;
+    }
+
+/* Icon */
+.note-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Text */
+.note-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.note-text {
+    font-size: 13px;
+    color: #475569;
+}
+
+.note-time {
+    font-size: 12px;
+    color: #64748b;
+}
+
+
+.notification-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.45);
+    backdrop-filter: blur(6px);
+    z-index: 1100;
+}
+
+.notification-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 420px;
+    max-width: 92vw;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 30px 70px rgba(0,0,0,.3);
+    z-index: 1110;
+    animation: modal-scale .25s ease;
+}
+
+@keyframes modal-scale {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -55%) scale(.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+/* Header */
+.notification-modal .modal-header {
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-modal .modal-body {
+    padding: 18px;
+}
+
+.modal-clickable {
+    cursor: pointer;
+    transition: background .2s ease;
+}
+
+    .modal-clickable:hover {
+        background: #f8fafc;
+    }
+
+.view-hint {
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+
+    .notification-note-panel {
+        right: 4vw;
+        width: 92vw;
+    }
+
+    .notification-modal {
+        width: 92vw;
+    }
+}
