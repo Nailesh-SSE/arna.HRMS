@@ -6,6 +6,7 @@ using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Authentication;
 using arna.HRMS.Infrastructure.Services.Authentication.Interfaces;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace arna.HRMS.Infrastructure.Configuration.Dependency;
@@ -50,6 +51,12 @@ public static class DependencyInjection
         // Auth Services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IJwtService, JwtService>();
+
+        // Validators
+        services.AddScoped<UserValidator>();
+        services.AddScoped<RoleValidator>();
+        services.AddScoped<EmployeeValidator>();
+        services.AddScoped<DepartmentValidator>();
 
         return services;
     }
