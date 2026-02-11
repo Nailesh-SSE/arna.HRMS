@@ -6,7 +6,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using arna.HRMS.Models.ViewModels.Attendance;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
@@ -32,6 +32,7 @@ public class UserServiceTest
 
         var requestBaseRepo = new BaseRepository<User>(_dbContext);
         var UserRepository = new UserRepository(requestBaseRepo);
+        var validator = new UserValidator(UserRepository);
 
         var config = new MapperConfiguration(cfg =>
         {
@@ -40,7 +41,8 @@ public class UserServiceTest
         _mapper = config.CreateMapper();
         _userService = new UserServices(
             UserRepository,
-            _mapper
+            _mapper,
+            validator
         );
     }
     [Test]
@@ -409,7 +411,7 @@ public class UserServiceTest
 
         await _dbContext.SaveChangesAsync();
         // Act
-        var result = await _userService.UserExistsAsync("testuser.com");
+        var result = await _userService.UserExistsAsync("testuser.com", "1234567890");
         // Assert
         Assert.That(result, Is.True);
     }
@@ -418,7 +420,7 @@ public class UserServiceTest
     public async Task UserExistsAsync_EmailDoesNotExist_ReturnsFalse()
     {
         // Act
-        var result = await _userService.UserExistsAsync("testuser.com");
+        var result = await _userService.UserExistsAsync("testuser.com", "1234567890");
         // Assert
         Assert.That(result, Is.False);
     }
@@ -427,7 +429,7 @@ public class UserServiceTest
     public async Task UserExistsAsync_WhitespaceEmail_ReturnsFalse()
     {
         // Act
-        var result = await _userService.UserExistsAsync("   ");
+        var result = await _userService.UserExistsAsync("", "");
         // Assert
         Assert.That(result, Is.False);
     }
@@ -457,7 +459,7 @@ public class UserServiceTest
         });
         await _dbContext.SaveChangesAsync();
         // Act
-        var result = await _userService.UserExistsAsync("testuser.com");
+        var result = await _userService.UserExistsAsync("testuser.com", "1234567890");
         // Assert
         Assert.That(result, Is.True);
     }
@@ -466,9 +468,9 @@ public class UserServiceTest
     public async Task UserExistsAsync_NullOrEmptyEmail_ReturnsFalse()
     {
         // Act
-        var resultNull = await _userService.UserExistsAsync(null!);
-        var resultEmpty = await _userService.UserExistsAsync(string.Empty);
-        var resultWhitespace = await _userService.UserExistsAsync("   ");
+        var resultNull = await _userService.UserExistsAsync(null, null);
+        var resultEmpty = await _userService.UserExistsAsync(string.Empty, string.Empty);
+        var resultWhitespace = await _userService.UserExistsAsync("", "");
         // Assert
         Assert.That(resultNull, Is.False);
         Assert.That(resultEmpty, Is.False);

@@ -3,26 +3,31 @@ using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Services;
 
 public class RoleService : IRoleService
 {
-    private readonly RoleRepository _roleRepository;
+    private readonly RoleRepository _repository;
     private readonly IMapper _mapper;
+    private readonly RoleValidator _validator;
 
-    public RoleService(RoleRepository roleRepository, IMapper mapper)
+    public RoleService(
+        RoleRepository repository,
+        IMapper mapper,
+        RoleValidator validator)
     {
-        _roleRepository = roleRepository;
+        _repository = repository;
         _mapper = mapper;
+        _validator = validator;
     }
 
     public async Task<ServiceResult<List<RoleDto>>> GetRoleAsync()
     {
-        var result = await _roleRepository.GetRolesAsync();
-        var roles = _mapper.Map<List<RoleDto>>(result);
-        return ServiceResult<List<RoleDto>>.Success(roles);
+        var roles = await _repository.GetRolesAsync();
+        return ServiceResult<List<RoleDto>>.Success(_mapper.Map<List<RoleDto>>(roles));
     }
 
     public async Task<ServiceResult<RoleDto?>> GetRoleByIdAsync(int id)
@@ -30,92 +35,57 @@ public class RoleService : IRoleService
         if (id <= 0)
             return ServiceResult<RoleDto?>.Fail("Invalid Role ID");
 
-        var result = await _roleRepository.GetRoleByIdAsync(id);
-        if (result == null)
+        var role = await _repository.GetRoleByIdAsync(id);
+
+        if (role == null)
             return ServiceResult<RoleDto?>.Fail("Role not found");
 
-        var role = _mapper.Map<RoleDto?>(result);
-        return ServiceResult<RoleDto?>.Success(role);
+        return ServiceResult<RoleDto?>.Success(_mapper.Map<RoleDto>(role));
     }
 
     public async Task<ServiceResult<RoleDto?>> GetRoleByNameAsync(string name)
     {
-        if(string.IsNullOrWhiteSpace(name))
-            return ServiceResult<RoleDto?>.Fail("Invalid Role");
+        if (string.IsNullOrWhiteSpace(name))
+            return ServiceResult<RoleDto?>.Fail("Role name is required");
 
-        var result = await _roleRepository.GetRoleByNameAsync(name);
-        if (result == null)
-            return ServiceResult<RoleDto?>.Fail("Role not found"); 
+        var role = await _repository.GetRoleByNameAsync(name);
+        if (role == null)
+            return ServiceResult<RoleDto?>.Fail("Role not found");
 
-        var role = _mapper.Map<RoleDto?>(result);
-        return ServiceResult<RoleDto?>.Success(role);
+        return ServiceResult<RoleDto?>.Success(_mapper.Map<RoleDto>(role));
     }
 
     public async Task<ServiceResult<RoleDto>> CreateRoleAsync(RoleDto dto)
     {
-        if (dto == null)
-            return ServiceResult<RoleDto>.Fail("Invalid request");
+        var validation = await _validator.ValidateCreateAsync(dto);
+        if (!validation.IsValid)
+            return ServiceResult<RoleDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return ServiceResult<RoleDto>.Fail("Role name is required");
+        var entity = _mapper.Map<Role>(dto);
+        var created = await _repository.CreateRoleAsync(entity);
 
-        if (await _roleRepository.RoleExistsAsync(dto.Name))
-            return ServiceResult<RoleDto>.Fail("Role name already exists");
-
-        var role = _mapper.Map<Role>(dto);
-
-        var result = await _roleRepository.CreateRoleAsync(role);
-        if (result == null)
-            return ServiceResult<RoleDto>.Fail("Failed to create role");
-
-        var createdRole = _mapper.Map<RoleDto>(result);
-
-        return ServiceResult<RoleDto>.Success(createdRole, "Role created successfully");
+        return ServiceResult<RoleDto>.Success(_mapper.Map<RoleDto>(created), "Role created successfully");
     }
 
     public async Task<ServiceResult<RoleDto>> UpdateRoleAsync(RoleDto dto)
     {
-        if (dto == null)
-            return ServiceResult<RoleDto>.Fail("Invalid request");
+        var validation = await _validator.ValidateUpdateAsync(dto);
+        if (!validation.IsValid)
+            return ServiceResult<RoleDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        var Data = await GetRoleByIdAsync(dto.Id);
-        if (!Data.IsSuccess)
-            return ServiceResult<RoleDto>.Fail("Failed to update role");
+        var updated = await _repository.UpdateRoleAsync(_mapper.Map<Role>(dto));
 
-        if (string.IsNullOrWhiteSpace(dto.Name))
-            return ServiceResult<RoleDto>.Fail("Role name is required");
-
-        if (await _roleRepository.RoleExistsAsync(dto.Name))
-            return ServiceResult<RoleDto>.Fail("Role name already exists");
-
-        var role = _mapper.Map<Role>(dto);
-
-        var result = await _roleRepository.UpdateRoleAsync(role);
-            if (result == null)
-                return ServiceResult<RoleDto>.Fail("Failed to update role");
-
-        var updatedRole = _mapper.Map<RoleDto>(result);
-
-        return ServiceResult<RoleDto>.Success(updatedRole, "Role updated successfully");
+        return ServiceResult<RoleDto>.Success(_mapper.Map<RoleDto>(updated), "Role updated successfully");
     }
 
     public async Task<ServiceResult<bool>> DeleteRoleAsync(int id)
     {
-        if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid Role ID");
+        var role = await GetRoleByIdAsync(id);
+        if (!role.IsSuccess)
+            return ServiceResult<bool>.Fail("Role not found");
 
-        var result = await _roleRepository.DeleteRoleAsync(id);
+        var deleted = await _repository.DeleteRoleAsync(id);
 
-        return result
-            ? ServiceResult<bool>.Success(true, "Role deleted successfully")
-            : ServiceResult<bool>.Fail("Role not found");
+        return ServiceResult<bool>.Success(deleted, "Role deleted successfully");
     }
-
-    public async Task<bool> RoleExistsAsync(string role)
-    {
-        if (role == null)
-            return false;
-
-        return await _roleRepository.RoleExistsAsync(role);
-    }  
 }

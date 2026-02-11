@@ -4,8 +4,8 @@ using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
-using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -15,25 +15,26 @@ public class EmployeeService : IEmployeeService
     private readonly IUserServices _userServices;
     private readonly IMapper _mapper;
     private readonly IRoleService _roleService;
+    private readonly EmployeeValidator _validator;
 
     public EmployeeService(
         EmployeeRepository employeeRepository,
         IMapper mapper,
         IUserServices userServices,
-        IRoleService roleService)
+        IRoleService roleService,
+        EmployeeValidator validator)
     {
         _employeeRepository = employeeRepository;
         _mapper = mapper;
         _userServices = userServices;
         _roleService = roleService;
+        _validator = validator;
     }
 
     public async Task<ServiceResult<List<EmployeeDto>>> GetEmployeesAsync()
     {
         var employees = await _employeeRepository.GetEmployeesAsync();
-        var employeesList = _mapper.Map<List<EmployeeDto>>(employees);
-
-        return ServiceResult<List<EmployeeDto>>.Success(employeesList);
+        return ServiceResult<List<EmployeeDto>>.Success(_mapper.Map<List<EmployeeDto>>(employees));
     }
 
     public async Task<ServiceResult<EmployeeDto?>> GetEmployeeByIdAsync(int id)
@@ -46,38 +47,14 @@ public class EmployeeService : IEmployeeService
         if (employee == null)
             return ServiceResult<EmployeeDto?>.Fail("Employee not found");
 
-        var employeeDto = _mapper.Map<EmployeeDto>(employee);
-        return employeeDto != null
-            ? ServiceResult<EmployeeDto?>.Success(employeeDto)
-            : ServiceResult<EmployeeDto?>.Fail("Employee Not Found");
-
+        return ServiceResult<EmployeeDto?>.Success(_mapper.Map<EmployeeDto>(employee));
     }
 
     public async Task<ServiceResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto)
     {
-        if (dto == null)
-            return ServiceResult<EmployeeDto>.Fail("Invalid request");
-
-        if (string.IsNullOrWhiteSpace(dto.FirstName))
-            return ServiceResult<EmployeeDto>.Fail("FirstName is required");
-
-        if (string.IsNullOrWhiteSpace(dto.LastName))
-            return ServiceResult<EmployeeDto>.Fail("LastName is required");
-
-        if (string.IsNullOrWhiteSpace(dto.Email))
-            return ServiceResult<EmployeeDto>.Fail("Email is required");
-
-        if (!new EmailAddressAttribute().IsValid(dto.Email))
-            return ServiceResult<EmployeeDto>.Fail("Invalid email format");
-
-        if (dto.DateOfBirth == default || dto.DateOfBirth >= DateTime.Now)
-            return ServiceResult<EmployeeDto>.Fail("Invalid DateOfBirth");
-
-        if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
-            return ServiceResult<EmployeeDto>.Fail("PhoneNumber is required");
-
-        if (await _employeeRepository.EmployeeExistsAsync(dto.Email, dto.PhoneNumber))
-            return ServiceResult<EmployeeDto>.Fail("Email or Phone Number already exists");
+        var validation = await _validator.ValidateCreateAsync(dto);
+        if (!validation.IsValid)
+            return ServiceResult<EmployeeDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
         var employee = _mapper.Map<Employee>(dto);
 
@@ -108,77 +85,30 @@ public class EmployeeService : IEmployeeService
             await _userServices.CreateUserAsync(userDto);
         }
 
-        var resultDto = _mapper.Map<EmployeeDto>(createdEmployee);
-
-        return resultDto != null
-            ? ServiceResult<EmployeeDto>.Success(resultDto, "Employee created successfully")
-            : ServiceResult<EmployeeDto>.Fail("Failed to create employee");
+        return ServiceResult<EmployeeDto>.Success(_mapper.Map<EmployeeDto>(createdEmployee), "Employee created successfully");
     }
 
     public async Task<ServiceResult<EmployeeDto>> UpdateEmployeeAsync(EmployeeDto dto)
     {
-        if (dto == null)
-            return ServiceResult<EmployeeDto>.Fail("Invalid request");
-
-        if (dto.Id <= 0)
-            return ServiceResult<EmployeeDto>.Fail("Invalid Employee ID");
-
-        var existingEmployee = await _employeeRepository.GetEmployeeByIdAsync(dto.Id);
-        if (existingEmployee == null)
-            return ServiceResult<EmployeeDto>.Fail("Employee not found");
-
-        if (string.IsNullOrWhiteSpace(dto.FirstName))
-            return ServiceResult<EmployeeDto>.Fail("FirstName is required");
-
-        if (string.IsNullOrWhiteSpace(dto.LastName))
-            return ServiceResult<EmployeeDto>.Fail("LastName is required");
-
-        if (string.IsNullOrWhiteSpace(dto.Email))
-            return ServiceResult<EmployeeDto>.Fail("Email is required");
-
-        if (!new EmailAddressAttribute().IsValid(dto.Email))
-            return ServiceResult<EmployeeDto>.Fail("Invalid email format");
-
-        if (dto.DateOfBirth == default || dto.DateOfBirth >= DateTime.Now)
-            return ServiceResult<EmployeeDto>.Fail("Invalid DateOfBirth");
-
-        if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
-            return ServiceResult<EmployeeDto>.Fail("PhoneNumber is required");
-
-        if (await _employeeRepository.EmployeeExistsAsync(dto.Email, dto.PhoneNumber, dto.Id))
-            return ServiceResult<EmployeeDto>.Fail("Email or Phone Number already exists");
+        var validation = await _validator.ValidateUpdateAsync(dto);
+        if (!validation.IsValid)
+            return ServiceResult<EmployeeDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
         var employee = _mapper.Map<Employee>(dto);
         var updated = await _employeeRepository.UpdateEmployeeAsync(employee);
-        var resultDto = _mapper.Map<EmployeeDto>(updated);
 
-        return resultDto != null
-            ? ServiceResult<EmployeeDto>.Success(resultDto, "Employee created successfully")
-            : ServiceResult<EmployeeDto>.Fail("Failed to update employee");
+        return ServiceResult<EmployeeDto>.Success(_mapper.Map<EmployeeDto>(updated), "Employee updated successfully");
     }
 
     public async Task<ServiceResult<bool>> DeleteEmployeeAsync(int id)
     {
-        if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid Employee ID");
+        var employee = await GetEmployeeByIdAsync(id);
+        if (!employee.IsSuccess || employee.Data == null)
+            return ServiceResult<bool>.Fail("Employee not found");
 
         var deleted = await _employeeRepository.DeleteEmployeeAsync(id);
 
-        return deleted
-            ? ServiceResult<bool>.Success(true, "Employee deleted successfully")
-            : ServiceResult<bool>.Fail("Employee not found");
-    }
-
-    public async Task<ServiceResult<bool>> EmployeeExistsAsync(string email, string phoneNumber, int? employeeId)
-    {
-        if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(phoneNumber))
-            return ServiceResult<bool>.Fail("Email or PhoneNumber is required");
-
-        var exists = await _employeeRepository.EmployeeExistsAsync(email, phoneNumber, employeeId);
-        if (!exists)
-            return ServiceResult<bool>.Fail("Employee does not exist");
-
-        return ServiceResult<bool>.Success(exists);
+        return ServiceResult<bool>.Success(deleted, "Employee deleted successfully");
     }
 
     private static string GenerateEmployeeNumber(string? lastEmployeeNumber)

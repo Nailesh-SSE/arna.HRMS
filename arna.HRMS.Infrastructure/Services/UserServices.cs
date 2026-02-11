@@ -3,153 +3,99 @@ using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 
 namespace arna.HRMS.Infrastructure.Services;
 
 public class UserServices : IUserServices
 {
-    private readonly UserRepository _userRepository;
+    private readonly UserRepository _repository;
     private readonly IMapper _mapper;
+    private readonly UserValidator _validator;
 
-    public UserServices(UserRepository userRepository, IMapper mapper)
+    public UserServices(
+        UserRepository repository,
+        IMapper mapper,
+        UserValidator validator)
     {
-        _userRepository = userRepository;
+        _repository = repository;
         _mapper = mapper;
+        _validator = validator;
     }
 
     public async Task<ServiceResult<List<UserDto>>> GetUserAsync()
     {
-        var users = await _userRepository.GetUserAsync();
-        var usersList = _mapper.Map<List<UserDto>>(users);
-        return ServiceResult<List<UserDto>>.Success(usersList);
+        var users = await _repository.GetUserAsync();
+        return ServiceResult<List<UserDto>>.Success(_mapper.Map<List<UserDto>>(users));
     }
 
     public async Task<ServiceResult<UserDto?>> GetUserByIdAsync(int id)
     {
-        if(id <= 0)
+        if (id <= 0)
             return ServiceResult<UserDto?>.Fail("Invalid User ID");
 
-        var user = await _userRepository.GetUserByIdAsync(id);
+        var user = await _repository.GetUserByIdAsync(id);
+
         if (user == null)
             return ServiceResult<UserDto?>.Fail("User not found");
 
-        var userDto = _mapper.Map<UserDto>(user);
-        return ServiceResult<UserDto?>.Success(userDto);
+        return ServiceResult<UserDto?>.Success(_mapper.Map<UserDto>(user));
     }
 
     public async Task<ServiceResult<UserDto>> CreateUserAsync(UserDto dto)
     {
-        if (dto == null)
-            return ServiceResult<UserDto>.Fail("Invalid request");
+        var validation = await _validator.ValidateCreateAsync(dto);
+        if (!validation.IsValid)
+            return ServiceResult<UserDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        if (string.IsNullOrWhiteSpace(dto.Username))
-            return ServiceResult<UserDto>.Fail("Username is required");
+        var entity = _mapper.Map<User>(dto);
+        var created = await _repository.CreateUserAsync(entity);
 
-        if (string.IsNullOrWhiteSpace(dto.Email))
-            return ServiceResult<UserDto>.Fail("Email is required");
-
-        if (string.IsNullOrWhiteSpace(dto.Password))
-            return ServiceResult<UserDto>.Fail("Password is required");
-
-        if (dto.Password.Length < 6)
-            return ServiceResult<UserDto>.Fail("Password must be at least 6 characters");
-
-        if (await _userRepository.UserExistsAsync(dto.Email))
-            return ServiceResult<UserDto>.Fail("Email already exists");
-
-        var user = _mapper.Map<User>(dto);
-        var created = await _userRepository.CreateUserAsync(user);
-        var resultDto = _mapper.Map<UserDto>(created);
-
-        return ServiceResult<UserDto>.Success(resultDto, "User created successfully");
+        return ServiceResult<UserDto>.Success(_mapper.Map<UserDto>(created), "User created successfully");
     }
 
     public async Task<ServiceResult<UserDto>> UpdateUserAsync(UserDto dto)
     {
-        if (dto == null)
-            return ServiceResult<UserDto>.Fail("Invalid request");
+        var validation = await _validator.ValidateUpdateAsync(dto);
+        if (!validation.IsValid)
+            return ServiceResult<UserDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        if (dto.Id <= 0)
-            return ServiceResult<UserDto>.Fail("Invalid User ID");
+        var updated = await _repository.UpdateUserAsync(_mapper.Map<User>(dto));
 
-        if (string.IsNullOrWhiteSpace(dto.Username) || dto.Username == null)
-            return ServiceResult<UserDto>.Fail("Username is required");
-
-        if (string.IsNullOrWhiteSpace(dto.Email) || dto.Email == null)
-            return ServiceResult<UserDto>.Fail("Email is required");
-
-        if (await _userRepository.UserExistsAsync(dto.Email))
-            return ServiceResult<UserDto>.Fail("Email already exists");
-
-        var user = _mapper.Map<User>(dto);
-        var updated = await _userRepository.UpdateUserAsync(user);
-        var resultDto = _mapper.Map<UserDto>(updated);
-
-        return ServiceResult<UserDto>.Success(resultDto, "User updated successfully");
+        return ServiceResult<UserDto>.Success(_mapper.Map<UserDto>(updated), "User updated successfully");
     }
 
     public async Task<ServiceResult<bool>> DeleteUserAsync(int id)
     {
-        var userResult = await GetUserByIdAsync(id);
-        if (!userResult.IsSuccess)
-            return ServiceResult<bool>.Fail("Invalid User ID");
+        var user = await GetUserByIdAsync(id);
+        if (user == null)
+            return ServiceResult<bool>.Fail("User not found");
 
-        var deleted = await _userRepository.DeleteUserAsync(id);
+        var deleted = await _repository.DeleteUserAsync(id);
 
-        return deleted
-            ? ServiceResult<bool>.Success(true, "User deleted successfully")
-            : ServiceResult<bool>.Fail("User not found");
+        return ServiceResult<bool>.Success(deleted, "User deleted successfully");
     }
 
     public async Task<ServiceResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
     {
-        var userResult = await GetUserByIdAsync(id);
-        if (!userResult.IsSuccess)
-            return ServiceResult<bool>.Fail("Invalid User ID");
+        var validation = _validator.ValidateChangePasswordAsync(id, newPassword);
+        if (!validation.IsValid)
+            return ServiceResult<bool>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        if (string.IsNullOrWhiteSpace(newPassword))
-            return ServiceResult<bool>.Fail("NewPassword is required");
+        var changed = await _repository.ChangeUserPasswordAsync(id, newPassword);
 
-        if (newPassword.Length < 6)
-            return ServiceResult<bool>.Fail("Password must be at least 6 characters");
-
-        var changed = await _userRepository.ChangeUserPasswordAsync(id, newPassword);
-
-        return changed
-            ? ServiceResult<bool>.Success(true, "Password updated successfully")
-            : ServiceResult<bool>.Fail("User not found");
+        return ServiceResult<bool>.Success(changed, "Password updated successfully");
     }
 
-    // Auth Service related method
-
-    public async Task<bool> UserExistsAsync(string email)
-    {
-        var exists = await _userRepository.UserExistsAsync(email);
-        if(!exists)
-            return false;
-
-        return true;
-    }
+    // Auth helpers remain unchanged
+    public async Task<bool> UserExistsAsync(string email, string phoneNumber)
+        => await _repository.UserExistsAsync(email, phoneNumber);
 
     public async Task<User?> GetUserByUserNameAndEmail(string userNameOrEmail)
-    {
-        if (string.IsNullOrWhiteSpace(userNameOrEmail))
-            return null;
-
-        var user = await _userRepository.GetByUsernameOrEmailAsync(userNameOrEmail);
-        if (user == null)
-            return null;
-
-        return user;
-    }
+        => string.IsNullOrWhiteSpace(userNameOrEmail) 
+        ? null : await _repository.GetByUsernameOrEmailAsync(userNameOrEmail);
 
     public async Task<User> CreateUserEntityAsync(UserDto dto)
-    {
-        var user = _mapper.Map<User>(dto);
-        var createdUser = await _userRepository.CreateUserAsync(user);
-        if (createdUser == null)
-            return null;
-        return createdUser;
-    }
+        => await _repository.CreateUserAsync(_mapper.Map<User>(dto));
 }

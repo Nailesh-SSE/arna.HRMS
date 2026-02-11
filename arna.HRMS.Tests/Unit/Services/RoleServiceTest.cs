@@ -6,9 +6,9 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Moq;
 using NUnit.Framework;
 
 namespace arna.HRMS.Tests.Unit.Services;
@@ -31,6 +31,7 @@ public class RoleServiceTest
 
         var requestBaseRepo = new BaseRepository<Role>(_dbContext);
         var RoleRepository = new RoleRepository(requestBaseRepo);
+        var roleValidator = new RoleValidator(RoleRepository);
 
         // ---------- Mapper ----------
         var mapperConfig = new MapperConfiguration(cfg =>
@@ -42,7 +43,8 @@ public class RoleServiceTest
 
         _roleService = new RoleService(
             RoleRepository, 
-            _mapper
+            _mapper,
+            roleValidator
         );
     }
 
@@ -284,27 +286,4 @@ public class RoleServiceTest
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Role not found"));
     }
-
-    [Test]
-    public async Task RoleExistsAsync_ShouldReturnTrue_WhenRoleExists()
-    {
-        // Arrange
-        var role = new Role { Name = "ExistingRole", Description = "Existing Role" };
-        _dbContext.Roles.Add(role);
-        await _dbContext.SaveChangesAsync();
-        // Act
-        var result = await _roleService.RoleExistsAsync("ExistingRole");
-        // Assert
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public async Task RoleExistsAsync_ShouldReturnFalse_WhenRoleDoesNotExist()
-    {
-        // Act
-        var result = await _roleService.RoleExistsAsync("NonExistentRole");
-        // Assert
-        Assert.That(result, Is.False);
-    }
-
 }

@@ -11,5 +11,4 @@ public interface IRoleService
     Task<ServiceResult<RoleDto>> CreateRoleAsync(RoleDto dto);
     Task<ServiceResult<RoleDto>> UpdateRoleAsync(RoleDto dto);
     Task<ServiceResult<bool>> DeleteRoleAsync(int id);
-    Task<bool> RoleExistsAsync(string role);   
 }

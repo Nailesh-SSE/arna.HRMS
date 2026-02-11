@@ -55,11 +55,13 @@ public class UserRepository
         return true;
     }
 
-    public async Task<bool> UserExistsAsync(string email)
+    public async Task<bool> UserExistsAsync(string email, string phoneNumber)
     {
         email = (email ?? string.Empty).Trim().ToLower();
+        phoneNumber = (phoneNumber ?? string.Empty).Trim().ToLower();
         return await _baseRepository.Query()
-            .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted && u.Email.Trim().ToLower() == email) != null;
+            .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted 
+                && u.Email.Trim().ToLower() == email && u.PhoneNumber.Trim().ToLower() == phoneNumber) != null;
     }
 
     public async Task<User?> GetByUsernameOrEmailAsync(string usernameOrEmail)

@@ -4,6 +4,7 @@ using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
@@ -31,6 +32,7 @@ public class DepartmentServiceTests
 
         var baseRepository = new BaseRepository<Department>(_dbContext);
         var departmentRepository = new DepartmentRepository(baseRepository);
+        var departmentValidator = new DepartmentValidator(departmentRepository);
 
         var mapperConfig = new MapperConfiguration(cfg =>
         {
@@ -42,7 +44,9 @@ public class DepartmentServiceTests
 
         _departmentService = new DepartmentService(
             departmentRepository,
-            _mapper);
+            _mapper,
+            departmentValidator
+        );
     }
 
     // =====================================================

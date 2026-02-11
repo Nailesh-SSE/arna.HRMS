@@ -7,6 +7,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -46,6 +47,7 @@ public class EmployeeServiceTests
 
         var baseRepository = new BaseRepository<Employee>(_dbContext);
         var employeeRepository = new EmployeeRepository(baseRepository);
+        var validator = new EmployeeValidator(employeeRepository);
 
         _userServicesMock = new Mock<IUserServices>();
         _roleServiceMock = new Mock<IRoleService>();
@@ -62,7 +64,8 @@ public class EmployeeServiceTests
             employeeRepository,
             _mapper,
             _userServicesMock.Object,
-            _roleServiceMock.Object
+            _roleServiceMock.Object,
+            validator
         );
     }
 
@@ -754,207 +757,4 @@ public class EmployeeServiceTests
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Employee not found"));
     }
-
-
-    [Test]
-    public async Task EmployeeExist_when_found()
-    {
-        var employee = new Employee
-        {
-            EmployeeNumber = "Emp005",
-            FirstName = "employee",
-            LastName = "Me",
-            Email = "exist@test.com",
-            PhoneNumber = "6666666666",
-            Position = "Support Manager",
-            Salary = 30000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now.AddYears(-5),
-            DateOfBirth = DateTime.Now.AddYears(-27)
-        };
-
-        _dbContext.Employees.Add(employee);
-        await _dbContext.SaveChangesAsync();
-
-        var employee2 = new Employee
-        {
-            EmployeeNumber = "Emp006",
-            FirstName = "Employee",
-            LastName = "Me",
-            Email = "exist@test.com",
-            PhoneNumber = "6666666666",
-            Position = "Support",
-            Salary = 3000000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-27)
-        };
-
-        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber, employee2.Id);
-
-        Assert.That(result.IsSuccess, Is.True);
-    }
-
-    [Test]
-    public async Task EmployeeExist_when_Not_Phone_found()
-    {
-        var employee = new Employee
-        {
-            EmployeeNumber = "Emp005",
-            FirstName = "employee",
-            LastName = "Me",
-            Email = "exist@test.com",
-            PhoneNumber = "6666666666",
-            Position = "Support Manager",
-            Salary = 30000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now.AddYears(-5),
-            DateOfBirth = DateTime.Now.AddYears(-27)
-        };
-
-        _dbContext.Employees.Add(employee);
-        await _dbContext.SaveChangesAsync();
-
-        var employee2 = new Employee
-        {
-            EmployeeNumber = "Emp006",
-            FirstName = "Employee",
-            LastName = "Me",
-            Email = "exist2@test.com",
-            PhoneNumber = "6666446666",
-            Position = "Support",
-            Salary = 3000000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-27)
-        };
-
-        var result = await _employeeService.EmployeeExistsAsync(employee2.Email, employee2.PhoneNumber, employee2.Id);
-
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Employee does not exist"));
-    }
-
-    [Test]
-    public async Task EmployeeExistsAsync_WhenEmailAndPhoneEmpty_ReturnsFail()
-    {
-        var result = await _employeeService.EmployeeExistsAsync("", "", null);
-
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Email or PhoneNumber is required"));
-    }
-
-    [Test]
-    public async Task EmployeeExistsAsync_WhenEmailExists_ReturnsSuccess()
-    {
-        var employee = new Employee
-        {
-            EmployeeNumber = "Emp10",
-            FirstName = "Test",
-            LastName = "User",
-            Email = "email@test.com",
-            PhoneNumber = "1111111111",
-            Position = "Dev",
-            Salary = 10000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-25)
-        };
-
-        _dbContext.Employees.Add(employee);
-        await _dbContext.SaveChangesAsync();
-
-        var result = await _employeeService.EmployeeExistsAsync("email@test.com", "", null);
-
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.True);
-    }
-
-    [Test]
-    public async Task EmployeeExistsAsync_WhenPhoneExists_ReturnsSuccess()
-    {
-        var employee = new Employee
-        {
-            EmployeeNumber = "Emp11",
-            FirstName = "Phone",
-            LastName = "User",
-            Email = "phone@test.com",
-            PhoneNumber = "2222222222",
-            Position = "Dev",
-            Salary = 10000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-25)
-        };
-
-        _dbContext.Employees.Add(employee);
-        await _dbContext.SaveChangesAsync();
-
-        var result = await _employeeService.EmployeeExistsAsync("", "2222222222", null);
-
-        Assert.That(result.IsSuccess, Is.True);
-    }
-
-    [Test]
-    public async Task EmployeeExistsAsync_WhenSameEmployeeId_ShouldReturnFail()
-    {
-        var employee = new Employee
-        {
-            EmployeeNumber = "Emp12",
-            FirstName = "Self",
-            LastName = "User",
-            Email = "self@test.com",
-            PhoneNumber = "3333333333",
-            Position = "Dev",
-            Salary = 10000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-25)
-        };
-
-        _dbContext.Employees.Add(employee);
-        await _dbContext.SaveChangesAsync();
-
-        var result = await _employeeService.EmployeeExistsAsync(
-            employee.Email,
-            employee.PhoneNumber,
-            employee.Id   // same id
-        );
-
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Employee does not exist"));
-    }
-
-    [Test]
-    public async Task EmployeeExistsAsync_WhenEmployeeSoftDeleted_ShouldReturnFail()
-    {
-        var employee = new Employee
-        {
-            EmployeeNumber = "Emp13",
-            FirstName = "Deleted",
-            LastName = "User",
-            Email = "deleted@test.com",
-            PhoneNumber = "4444444444",
-            Position = "Dev",
-            Salary = 10000,
-            DepartmentId = 1,
-            HireDate = DateTime.Now,
-            DateOfBirth = DateTime.Now.AddYears(-25),
-            IsActive = false,
-            IsDeleted = true
-        };
-
-        _dbContext.Employees.Add(employee);
-        await _dbContext.SaveChangesAsync();
-
-        var result = await _employeeService.EmployeeExistsAsync(
-            "deleted@test.com",
-            "",
-            null
-        );
-
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Employee does not exist"));
-    }
-
 }
