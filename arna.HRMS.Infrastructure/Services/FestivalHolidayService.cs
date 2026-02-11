@@ -37,51 +37,27 @@ public class FestivalHolidayService : IFestivalHolidayService
         var holidays = await _festivalHolidayRepository.GetByMonthAsync(year, month);
         var list = _mapper.Map<List<FestivalHolidayDto>>(holidays);
 
-        return ServiceResult<List<FestivalHolidayDto>>.Success(list);
+        return list.Count != 0
+            ? ServiceResult<List<FestivalHolidayDto>>.Success(list)
+            : ServiceResult<List<FestivalHolidayDto>>.Fail("No Data Found");
     }
 
     public async Task<ServiceResult<FestivalHolidayDto?>> GetFestivalHolidayByIdAsync(int id)
     {
         if (id <= 0)
             return ServiceResult<FestivalHolidayDto?>.Fail("Invalid FestivalHoliday ID");
-        
+
         var holiday = await _festivalHolidayRepository.GetFestivalHolidayByIdAsync(id);
         if (holiday == null)
             return ServiceResult<FestivalHolidayDto?>.Success(null, "Festival holiday not found");
-        
+
         var holidayDto = _mapper.Map<FestivalHolidayDto>(holiday);
-        return ServiceResult<FestivalHolidayDto?>.Success(holidayDto);
+        return holidayDto != null
+            ? ServiceResult<FestivalHolidayDto?>.Success(holidayDto)
+            : ServiceResult<FestivalHolidayDto?>.Fail("No Data Found");
     }
 
     public async Task<ServiceResult<FestivalHolidayDto>> CreateFestivalHolidayAsync(FestivalHolidayDto festivalHolidayDto)
-    {
-        if (festivalHolidayDto == null)
-            return ServiceResult<FestivalHolidayDto>.Fail("Invalid request");
-
-        if (string.IsNullOrWhiteSpace(festivalHolidayDto.FestivalName))
-            return ServiceResult<FestivalHolidayDto>.Fail("Festival name is required");
-
-        if(festivalHolidayDto.Date == default || festivalHolidayDto.Date == null)
-            return ServiceResult<FestivalHolidayDto>.Fail("Festival date is required");
-
-        if (festivalHolidayDto.Date < DateTime.Now.Date)
-            return ServiceResult<FestivalHolidayDto>.Fail("Festival date cannot be in the past");
-
-        var existingHoliday = await _festivalHolidayRepository.GetByNameAsync(festivalHolidayDto.FestivalName);
-        if (existingHoliday != null)
-            return ServiceResult<FestivalHolidayDto>.Fail("A festival with the same name already exists");
-
-        var festival = _mapper.Map<FestivalHoliday>(festivalHolidayDto);
-
-        var createdFestivalHoliday =
-            await _festivalHolidayRepository.CreateFestivalHolidayAsync(festival);
-
-        var resultDto = _mapper.Map<FestivalHolidayDto>(createdFestivalHoliday);
-
-        return ServiceResult<FestivalHolidayDto>.Success(resultDto, "Festival holiday created successfully");
-    }
-
-    public async Task<ServiceResult<FestivalHolidayDto>> UpdateFestivalHolidayAsync(FestivalHolidayDto festivalHolidayDto)
     {
         if (festivalHolidayDto == null)
             return ServiceResult<FestivalHolidayDto>.Fail("Invalid request");
@@ -95,8 +71,45 @@ public class FestivalHolidayService : IFestivalHolidayService
         if (festivalHolidayDto.Date < DateTime.Now.Date)
             return ServiceResult<FestivalHolidayDto>.Fail("Festival date cannot be in the past");
 
-        var existingHoliday = await _festivalHolidayRepository.GetByNameAsync(festivalHolidayDto.FestivalName);
-        if (existingHoliday != null && existingHoliday.Id != festivalHolidayDto.Id)
+        var existingHoliday = await _festivalHolidayRepository.GetByNameAndDateAsync(festivalHolidayDto.FestivalName, festivalHolidayDto.Date);
+        if (existingHoliday.Count != 0)
+            return ServiceResult<FestivalHolidayDto>.Fail("A festival with the same name already exists");
+
+        var festival = _mapper.Map<FestivalHoliday>(festivalHolidayDto);
+
+        var createdFestivalHoliday =
+            await _festivalHolidayRepository.CreateFestivalHolidayAsync(festival);
+
+        var resultDto = _mapper.Map<FestivalHolidayDto>(createdFestivalHoliday);
+
+        return resultDto != null
+            ? ServiceResult<FestivalHolidayDto>.Success(resultDto, "Festival holiday created successfully")
+            : ServiceResult<FestivalHolidayDto>.Fail("No Data Found");
+    }
+
+    public async Task<ServiceResult<FestivalHolidayDto>> UpdateFestivalHolidayAsync(FestivalHolidayDto festivalHolidayDto)
+    {
+        if (festivalHolidayDto == null)
+            return ServiceResult<FestivalHolidayDto>.Fail("Invalid request");
+
+        if (festivalHolidayDto.Id <= 0)
+            return ServiceResult<FestivalHolidayDto>.Fail("Invalid FestivalHoliday ID");
+
+        var existingHoliday = await _festivalHolidayRepository.GetFestivalHolidayByIdAsync(festivalHolidayDto.Id);
+        if (existingHoliday == null)
+            return ServiceResult<FestivalHolidayDto>.Fail("Festival holiday not found");
+
+        if (string.IsNullOrWhiteSpace(festivalHolidayDto.FestivalName))
+            return ServiceResult<FestivalHolidayDto>.Fail("Festival name is required");
+
+        if (festivalHolidayDto.Date == default || festivalHolidayDto.Date == null)
+            return ServiceResult<FestivalHolidayDto>.Fail("Festival date is required");
+
+        if (festivalHolidayDto.Date < DateTime.Now.Date)
+            return ServiceResult<FestivalHolidayDto>.Fail("Festival date cannot be in the past");
+
+        var existingHolidayName = await _festivalHolidayRepository.GetByNameAndDateAsync(festivalHolidayDto.FestivalName, festivalHolidayDto.Date);
+        if (existingHolidayName.Count != 0)
             return ServiceResult<FestivalHolidayDto>.Fail("A festival with the same name already exists");
 
         if (festivalHolidayDto.Id <= 0)
@@ -106,7 +119,9 @@ public class FestivalHolidayService : IFestivalHolidayService
         var updatedFestivalHoliday = await _festivalHolidayRepository.UpdateFestivalHolidayAsync(festival);
         var resultDto = _mapper.Map<FestivalHolidayDto>(updatedFestivalHoliday);
 
-        return ServiceResult<FestivalHolidayDto>.Success(resultDto, "Festival holiday updated successfully");
+        return resultDto != null
+            ? ServiceResult<FestivalHolidayDto>.Success(resultDto, "Festival holiday updated successfully")
+            : ServiceResult<FestivalHolidayDto>.Fail("No Data Found");
     }
 
     public async Task<ServiceResult<bool>> DeleteFestivalHolidayAsync(int id)
@@ -128,7 +143,9 @@ public class FestivalHolidayService : IFestivalHolidayService
         var holiday = await _festivalHolidayRepository.GetByNameAsync(name);
         if (holiday == null)
             return ServiceResult<List<FestivalHolidayDto?>>.Success(new List<FestivalHolidayDto?>());
-        var holidayDto = _mapper.Map<FestivalHolidayDto>(holiday);
-        return ServiceResult<List<FestivalHolidayDto?>>.Success(new List<FestivalHolidayDto?> { holidayDto });
+        var holidayDto = _mapper.Map<List<FestivalHolidayDto>>(holiday);
+        return holidayDto.Count != 0
+            ? ServiceResult<List<FestivalHolidayDto?>>.Success(holidayDto)
+            : ServiceResult<List<FestivalHolidayDto?>>.Fail("No Data Found");
     }
 }

@@ -1,4 +1,24 @@
-﻿.timeline-line {
+﻿.attendance-timeline-scroll {
+    max-height: 75vh;
+    overflow-y: auto;
+    padding-right: 8px; 
+}
+
+    /* optional smooth scrollbar */
+.attendance-timeline-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+
+.attendance-timeline-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.attendance-timeline-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.timeline-line {
     position: absolute;
     left: 12px;
     top: 0;

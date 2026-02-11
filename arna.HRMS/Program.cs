@@ -1,5 +1,6 @@
 using arna.HRMS.ClientServices.Admin.Department;
 using arna.HRMS.ClientServices.Admin.Employee;
+using arna.HRMS.ClientServices.Admin.FestivalHolidays;
 using arna.HRMS.ClientServices.Admin.Role;
 using arna.HRMS.ClientServices.Admin.User;
 using arna.HRMS.ClientServices.Auth;
@@ -82,6 +83,7 @@ public class Program
         builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
         builder.Services.AddScoped<ILeaveService, LeaveService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
+        builder.Services.AddScoped<IFestivalHoliday, FestivalHolidayService>();
 
         builder.Services.AddScoped<AttendanceState>();
 

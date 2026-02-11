@@ -239,9 +239,9 @@ public class FestivalHolidayRepositoryTests
         var result = await _festivalHolidayRepository.GetByNameAsync("Holiday 1");
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.FestivalName, Is.EqualTo("Holiday 1"));
-        Assert.That(result.IsActive, Is.True);
-        Assert.That(result.IsDeleted, Is.False);
+        Assert.That(result[0]!.FestivalName, Is.EqualTo("Holiday 1"));
+        Assert.That(result[0]!.IsActive, Is.True);
+        Assert.That(result[0]!.IsDeleted, Is.False);
     }
 
     [Test]
@@ -249,20 +249,23 @@ public class FestivalHolidayRepositoryTests
     {
         // Arrange
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { 
-                Id = 1, FestivalName = "Holiday 1", 
-                Date = DateTime.Now, 
-                DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
-                IsActive = false, 
-                IsDeleted = false 
-            },
-            new FestivalHoliday { 
-                Id = 2, 
-                FestivalName = "Holiday 2", 
+            new FestivalHoliday
+            {
+                Id = 1,
+                FestivalName = "Holiday 1",
                 Date = DateTime.Now,
                 DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
-                IsActive = true, 
-                IsDeleted = true 
+                IsActive = false,
+                IsDeleted = false
+            },
+            new FestivalHoliday
+            {
+                Id = 2,
+                FestivalName = "Holiday 2",
+                Date = DateTime.Now,
+                DayOfWeek = DateTime.Now.DayOfWeek.ToString(),
+                IsActive = true,
+                IsDeleted = true
             }
         );
         _dbContext.SaveChanges();
@@ -270,18 +273,18 @@ public class FestivalHolidayRepositoryTests
         var result1 = await _festivalHolidayRepository.GetByNameAsync("Holiday 1");
         var result2 = await _festivalHolidayRepository.GetByNameAsync("Holiday 2");
         // Assert
-        Assert.That(result1, Is.Null);
-        Assert.That(result2, Is.Null);
+        Assert.That(result1, Is.Empty);
+        Assert.That(result2, Is.Empty);
     }
 
     [Test]
     public async Task GetByNameAsync_WhenEmpty()
     {
         var resultEmpty = await _festivalHolidayRepository.GetByNameAsync(string.Empty);
-        Assert.That(resultEmpty, Is.Null);
+        Assert.That(resultEmpty, Is.Empty);
 
         var resultWhitespace = await _festivalHolidayRepository.GetByNameAsync("   ");
-        Assert.That(resultWhitespace, Is.Null);
+        Assert.That(resultWhitespace, Is.Empty);
 
     }
 
@@ -301,7 +304,7 @@ public class FestivalHolidayRepositoryTests
 
         var result = await _festivalHolidayRepository.GetByNameAsync("  Trimmed Holiday  ");
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.FestivalName, Is.EqualTo("Trimmed Holiday"));
+        Assert.That(result[0]!.FestivalName, Is.EqualTo("Trimmed Holiday"));
 
     }
 
@@ -320,7 +323,7 @@ public class FestivalHolidayRepositoryTests
         await _dbContext.SaveChangesAsync();
         var result = await _festivalHolidayRepository.GetByNameAsync("case insensitive holiday");
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.FestivalName, Is.EqualTo("Case Insensitive Holiday"));
+        Assert.That(result[0]!.FestivalName, Is.EqualTo("Case Insensitive Holiday"));
     }
 
     [Test]
@@ -336,9 +339,9 @@ public class FestivalHolidayRepositoryTests
         var result = await _festivalHolidayRepository.GetByNameAsync("Holiday 1");
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.FestivalName, Is.EqualTo("Holiday 1"));
-        Assert.That(result.IsActive, Is.True);
-        Assert.That(result.IsDeleted, Is.False);
+        Assert.That(result[0]!.FestivalName, Is.EqualTo("Holiday 1"));
+        Assert.That(result[1]!.IsActive, Is.True);
+        Assert.That(result[1]!.IsDeleted, Is.False);
     }
 
     [Test]
@@ -352,7 +355,7 @@ public class FestivalHolidayRepositoryTests
         // Act
         var result = await _festivalHolidayRepository.GetByNameAsync("Non Existent Holiday");
         // Assert
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Empty);
     }
 
     [Test]
@@ -362,12 +365,13 @@ public class FestivalHolidayRepositoryTests
         var targetYear = 2024;
         var targetMonth = 6;
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { 
-                Id = 1, 
-                FestivalName = "Holiday June Inactive", 
+            new FestivalHoliday
+            {
+                Id = 1,
+                FestivalName = "Holiday June Inactive",
                 Date = new DateTime(targetYear, targetMonth, 15),
                 DayOfWeek = new DateTime(targetYear, targetMonth, 15).DayOfWeek.ToString(),
-                IsActive = false, 
+                IsActive = false,
                 IsDeleted = false
             },
             new FestivalHoliday { Id = 2, FestivalName = "Holiday June Deleted", Date = new DateTime(targetYear, targetMonth, 20), DayOfWeek = new DateTime(targetYear, targetMonth, 15).DayOfWeek.ToString(), IsActive = true, IsDeleted = true }
@@ -409,12 +413,14 @@ public class FestivalHolidayRepositoryTests
         var targetYear = 2024;
         var targetMonth = 7;
         _dbContext.FestivalHoliday.AddRange(
-            new FestivalHoliday { 
-                Id = 1, FestivalName = "Holiday June", 
-                Date = new DateTime(2024, 6, 15), 
+            new FestivalHoliday
+            {
+                Id = 1,
+                FestivalName = "Holiday June",
+                Date = new DateTime(2024, 6, 15),
                 DayOfWeek = new DateTime(2024, 6, 15).DayOfWeek.ToString(),
-                IsActive = true, 
-                IsDeleted = false 
+                IsActive = true,
+                IsDeleted = false
             }
         );
         _dbContext.SaveChanges();
