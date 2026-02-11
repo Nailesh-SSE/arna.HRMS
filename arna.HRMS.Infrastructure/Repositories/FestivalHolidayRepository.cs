@@ -57,9 +57,23 @@ public class FestivalHolidayRepository
         return true;
     }
 
-    public async Task<FestivalHoliday?> GetByNameAsync(string name)
+    public async Task<List<FestivalHoliday?>> GetByNameAsync(string name)
     {
-        return await _baseRepository.Query()
-            .FirstOrDefaultAsync(h => h.FestivalName.ToLower().Trim() == name.ToLower().Trim() && h.IsActive && !h.IsDeleted);
+        var existingHoliday = await _baseRepository.Query()
+            .Where(h => h.FestivalName.ToLower().Trim() == name.ToLower().Trim() && h.IsActive && !h.IsDeleted).ToListAsync();
+        return existingHoliday;
     }
+
+    public async Task<List<FestivalHoliday?>> GetByNameAndDateAsync(string name, DateTime date)
+    {
+        var existingHoliday = await _baseRepository.Query()
+            .Where(h => 
+                h.FestivalName.ToLower().Trim() == name.ToLower().Trim() 
+                && h.IsActive 
+                && !h.IsDeleted 
+                && h.Date.Date == date.Date
+            ).ToListAsync();
+        return existingHoliday;
+    }
+
 }

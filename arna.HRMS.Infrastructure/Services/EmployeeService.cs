@@ -5,6 +5,7 @@ using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using AutoMapper;
+using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -46,7 +47,10 @@ public class EmployeeService : IEmployeeService
             return ServiceResult<EmployeeDto?>.Fail("Employee not found");
 
         var employeeDto = _mapper.Map<EmployeeDto>(employee);
-        return ServiceResult<EmployeeDto?>.Success(employeeDto);
+        return employeeDto!=null
+            ? ServiceResult<EmployeeDto?>.Success(employeeDto)
+            : ServiceResult<EmployeeDto?>.Fail("Employee Not Found");
+
     }
 
     public async Task<ServiceResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto)
@@ -62,6 +66,12 @@ public class EmployeeService : IEmployeeService
 
         if (string.IsNullOrWhiteSpace(dto.Email))
             return ServiceResult<EmployeeDto>.Fail("Email is required");
+
+        if (!new EmailAddressAttribute().IsValid(dto.Email))
+            return ServiceResult<EmployeeDto>.Fail("Invalid email format");
+
+        if (dto.DateOfBirth == default || dto.DateOfBirth >= DateTime.Now)
+            return ServiceResult<EmployeeDto>.Fail("Invalid DateOfBirth");
 
         if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
             return ServiceResult<EmployeeDto>.Fail("PhoneNumber is required");
@@ -100,7 +110,9 @@ public class EmployeeService : IEmployeeService
 
         var resultDto = _mapper.Map<EmployeeDto>(createdEmployee);
 
-        return ServiceResult<EmployeeDto>.Success(resultDto, "Employee created successfully");
+        return resultDto!=null
+            ? ServiceResult<EmployeeDto>.Success(resultDto, "Employee created successfully")
+            : ServiceResult<EmployeeDto>.Fail("Failed to create employee");
     }
 
     public async Task<ServiceResult<EmployeeDto>> UpdateEmployeeAsync(EmployeeDto dto)
@@ -111,11 +123,38 @@ public class EmployeeService : IEmployeeService
         if (dto.Id <= 0)
             return ServiceResult<EmployeeDto>.Fail("Invalid Employee ID");
 
+        var existingEmployee = await _employeeRepository.GetEmployeeByIdAsync(dto.Id);
+        if (existingEmployee == null)
+            return ServiceResult<EmployeeDto>.Fail("Employee not found");
+
+        if (string.IsNullOrWhiteSpace(dto.FirstName))
+            return ServiceResult<EmployeeDto>.Fail("FirstName is required");
+
+        if (string.IsNullOrWhiteSpace(dto.LastName))
+            return ServiceResult<EmployeeDto>.Fail("LastName is required");
+
+        if (string.IsNullOrWhiteSpace(dto.Email))
+            return ServiceResult<EmployeeDto>.Fail("Email is required");
+
+        if (!new EmailAddressAttribute().IsValid(dto.Email))
+            return ServiceResult<EmployeeDto>.Fail("Invalid email format");
+
+        if (dto.DateOfBirth == default || dto.DateOfBirth >= DateTime.Now)
+            return ServiceResult<EmployeeDto>.Fail("Invalid DateOfBirth");
+
+        if (string.IsNullOrWhiteSpace(dto.PhoneNumber))
+            return ServiceResult<EmployeeDto>.Fail("PhoneNumber is required");
+
+        if (await _employeeRepository.EmployeeExistsAsync(dto.Email, dto.PhoneNumber))
+            return ServiceResult<EmployeeDto>.Fail("Email or Phone Number already exists");
+
         var employee = _mapper.Map<Employee>(dto);
         var updated = await _employeeRepository.UpdateEmployeeAsync(employee);
         var resultDto = _mapper.Map<EmployeeDto>(updated);
 
-        return ServiceResult<EmployeeDto>.Success(resultDto, "Employee updated successfully");
+        return resultDto != null
+            ? ServiceResult<EmployeeDto>.Success(resultDto, "Employee created successfully")
+            : ServiceResult<EmployeeDto>.Fail("Failed to update employee");
     }
 
     public async Task<ServiceResult<bool>> DeleteEmployeeAsync(int id)

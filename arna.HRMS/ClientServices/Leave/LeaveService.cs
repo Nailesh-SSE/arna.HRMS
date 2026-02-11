@@ -77,5 +77,6 @@ public class LeaveService : ILeaveService
         => await _leaveApi.GetLeaveRequestByEmployee(employeeid);
 
     public async Task<ApiResult<bool>> UpadteLeaverequestStatusCancle(int leaveRequestId, int employeeid)
-        => await _leaveApi.CancelLeaveRequest(leaveRequestId, employeeid);
+        => await _leaveApi.UpadteLeaverequestStatusCancle(leaveRequestId, employeeid);
+
 }

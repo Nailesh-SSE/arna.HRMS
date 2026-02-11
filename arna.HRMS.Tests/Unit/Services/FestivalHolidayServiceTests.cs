@@ -99,8 +99,8 @@ public class FestivalHolidayServiceTests
     public async Task GetAllFestivalHoliday_Empty()
     {
         var result = await _festivalHolidayService.GetFestivalHolidayAsync();
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Empty);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
     [Test]
@@ -128,17 +128,43 @@ public class FestivalHolidayServiceTests
     }
 
     [Test]
-    public async Task GetFestivalHolidayById_NotFound()
+    public async Task GetFestivalHolidayById_WhenIsNegativeOrZero()
     {
         var result = await _festivalHolidayService.GetFestivalHolidayByIdAsync(-999);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid FestivalHoliday ID"));
         Assert.That(result.Data, Is.Null);
+
+        var resultZero = await _festivalHolidayService.GetFestivalHolidayByIdAsync(0);
+        Assert.That(resultZero.IsSuccess, Is.False);
+        Assert.That(resultZero.Message, Is.EqualTo("Invalid FestivalHoliday ID"));
     }
 
     [Test]
-    public async Task GetFestivalHolidayById_WhenDBEmpty()
+    public async Task GetFestivalHolidayById_WhenDBEmptyOrNotFound()
     {
+        var result = await _festivalHolidayService.GetFestivalHolidayByIdAsync(1);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.Null);
+        Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
+    }
+
+    [Test]
+    public async Task GetFestivalHolidayById_WhenAlreadyDeleted()
+    {
+        _dbContext.FestivalHoliday.Add(
+            new FestivalHoliday
+            {
+                Id = 1,
+                FestivalName = "Test1 Holiday",
+                Description = "Test Description",
+                Date = new DateTime(2024, 12, 25),
+                DayOfWeek = new DateTime(2024, 12, 25).DayOfWeek.ToString(),
+                IsActive = false,
+                IsDeleted = true
+            }
+        );
+        await _dbContext.SaveChangesAsync();
         var result = await _festivalHolidayService.GetFestivalHolidayByIdAsync(1);
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Null);
@@ -149,8 +175,8 @@ public class FestivalHolidayServiceTests
     public async Task GetFestivalHolidayByMonth_EmptyDB()
     {
         var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(2024, 5);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Empty);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Data, Is.Null);
     }
 
     [Test]
@@ -193,8 +219,8 @@ public class FestivalHolidayServiceTests
 
         var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(2024, 5);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Empty);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Data, Is.Null);
 
     }
 
@@ -378,8 +404,8 @@ public class FestivalHolidayServiceTests
         );
         await _dbContext.SaveChangesAsync();
         var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(3000, 5);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Empty);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Data, Is.Null);
     }
 
     [Test]
@@ -567,6 +593,64 @@ public class FestivalHolidayServiceTests
     }
 
     [Test]
+    public async Task UpdateFestivalHoliday_Fail_IdZero()
+    {
+        var updateDto = new FestivalHolidayDto
+        {
+            Id = 0,
+            FestivalName = "Zero ID Festival",
+            Description = "Zero ID Description",
+            Date = DateTime.Now.AddDays(1)
+        };
+        var result = await _festivalHolidayService.UpdateFestivalHolidayAsync(updateDto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid FestivalHoliday ID"));
+    }
+
+    [Test]
+    public async Task UpdateFestivalHoliday_Fail_IdNegative()
+    {
+        var updateDto = new FestivalHolidayDto
+        {
+            Id = -5,
+            FestivalName = "Negative ID Festival",
+            Description = "Negative ID Description",
+            Date = DateTime.Now.AddDays(1)
+        };
+        var result = await _festivalHolidayService.UpdateFestivalHolidayAsync(updateDto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid FestivalHoliday ID"));
+    }
+
+    [Test]
+    public async Task UpdateFestivalHoliday_WhereAlreadyDeleted()
+    {
+        var existingHoliday = new FestivalHoliday
+        {
+            FestivalName = "Deleted Festival",
+            Description = "Deleted Description",
+            Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
+            IsActive = false,
+            IsDeleted = true
+        };
+        _dbContext.FestivalHoliday.Add(existingHoliday);
+        await _dbContext.SaveChangesAsync();
+        Assert.That(existingHoliday.Id, Is.GreaterThan(0));
+        _dbContext.Entry(existingHoliday).State = EntityState.Detached;
+        var updateDto = new FestivalHolidayDto
+        {
+            Id = existingHoliday.Id,
+            FestivalName = "Deleted Festival",
+            Description = "Updated Description",
+            Date = DateTime.Now.AddDays(1)
+        };
+        var result = await _festivalHolidayService.UpdateFestivalHolidayAsync(updateDto);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
+    }
+
+    [Test]
     public async Task UpdateFestivalHoliday_Fail_DuplicateName()
     {
         var holiday1 = new FestivalHoliday
@@ -723,6 +807,14 @@ public class FestivalHolidayServiceTests
     }
 
     [Test]
+    public async Task DeleteFestivalHoliday_WhenIsNegativeOrZero()
+    {
+        var result = await _festivalHolidayService.DeleteFestivalHolidayAsync(0);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid FestivalHoliday ID"));
+    }
+
+    [Test]
     public async Task DeleteFestivalHoliday_Fail_AlreadyDeleted()
     {
         var holiday = new FestivalHoliday
@@ -775,8 +867,27 @@ public class FestivalHolidayServiceTests
     public async Task GetFestivalHolidayByName_whenNotFound()
     {
         var result = await _festivalHolidayService.GetFestivalHolidayByNameAsync("Nonexistent Holiday");
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Empty);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
+    }
+
+    [Test]
+    public async Task GetFestivalHolidayByName_WhenAlreadyDeleted()
+    {
+        var holiday = new FestivalHoliday
+        {
+            FestivalName = "Deleted Holiday",
+            Description = "Deleted Description",
+            Date = DateTime.Now.AddDays(1),
+            DayOfWeek = DateTime.Now.AddDays(1).DayOfWeek.ToString(),
+            IsActive = false,
+            IsDeleted = true
+        };
+        _dbContext.FestivalHoliday.Add(holiday);
+        await _dbContext.SaveChangesAsync();
+        var result = await _festivalHolidayService.GetFestivalHolidayByNameAsync("Deleted Holiday");
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
 
