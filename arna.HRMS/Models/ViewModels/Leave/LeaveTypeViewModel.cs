@@ -9,7 +9,9 @@ public class LeaveTypeViewModel : CommonViewModel
     [Required(ErrorMessage = "Leave Name is required")]
     public LeaveName LeaveNameId { get; set; }
     public string? Description { get; set; }
-    [Required(ErrorMessage = "Leave days is required")] 
+
+    [Required(ErrorMessage = "Leave days is required")]
+    
     public int MaxPerYear { get; set; }
     public bool IsPaid { get; set; } = true;
 }

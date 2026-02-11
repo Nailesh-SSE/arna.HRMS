@@ -8,14 +8,29 @@
         <label class="form-label">@Label</label>
     }
 
-    <select class="form-select"
-            value="@Value"
-            @onchange="OnChange">
-        <option value="">@Placeholder</option>
+    <select class="form-select" @onchange="OnChange">
+
+        @* ✅ Placeholder *@
+        @if (string.IsNullOrEmpty(Value))
+        {
+            <option value="" selected disabled>
+                @Placeholder
+            </option>
+        }
+        else
+        {
+            <option value="" disabled>
+                @Placeholder
+            </option>
+        }
 
         @foreach (var item in Options)
         {
-            <option value="@item.Value" disabled="@item.IsDisabled">@item.Text</option>
+            <option value="@item.Value"
+                    selected="@(item.Value == Value)"
+                    disabled="@item.IsDisabled">
+                @item.Text
+            </option>
         }
     </select>
 
@@ -26,6 +41,7 @@
 </div>
 
 @code {
+
     [CascadingParameter] private EditContext? EditContext { get; set; }
 
     [Parameter] public string Label { get; set; } = "";
@@ -51,12 +67,11 @@
     private async Task OnChange(ChangeEventArgs e)
     {
         var value = e.Value?.ToString();
-
         await ValueChanged.InvokeAsync(value);
 
-        if (ValidationExpression != null)
+        if (EditContext != null && ValidationExpression != null)
         {
-            EditContext?.NotifyFieldChanged(_fieldIdentifier);
+            EditContext.NotifyFieldChanged(_fieldIdentifier);
         }
     }
 }

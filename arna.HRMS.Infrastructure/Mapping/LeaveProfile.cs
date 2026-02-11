@@ -50,6 +50,13 @@ public class LeaveProfile : Profile
                     src.LeaveType != null
                         ? ((LeaveName)src.LeaveType.LeaveNameId).ToString()
                         : null)
+            )
+            .ForMember(
+                dest => dest.EmployeeNumber,
+                opt => opt.MapFrom(src =>
+                    src.Employee != null
+                        ? src.Employee.EmployeeNumber
+                        : null)
             );
 
         CreateMap<LeaveRequestDto, LeaveRequest>()

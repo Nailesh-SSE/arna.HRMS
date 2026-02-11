@@ -84,9 +84,10 @@ public class AttendanceRepository
         // ✅ Always load employee master data
         var employees = await _employeeRepository.GetEmployeesAsync();
 
-        var employeeMasterLookup = employees
-            .ToDictionary(e => e.Id, e => e.FullName);
-
+        var employeeMasterLookup = employees.ToDictionary(
+        e => e.Id,
+        e => ( e.FullName, e.EmployeeNumber)
+);
         var employeeIds = empId.HasValue && empId > 0
             ? new List<int> { empId.Value }
             : employeeMasterLookup.Keys.ToList();
@@ -111,16 +112,18 @@ public class AttendanceRepository
                     new { Date = date, EmployeeId = employeeId },
                     out var dailyRecords);
 
-                var empName = employeeMasterLookup.TryGetValue(employeeId, out var name)
-                    ? name
-                    : "Unknown";
+                employeeMasterLookup.TryGetValue(employeeId, out var emp);
+
+                var employeeName = emp.FullName ?? "Unknown";
+                var employeeNumber = emp.EmployeeNumber ?? string.Empty;
 
                 if (dailyRecords == null || !dailyRecords.Any())
                 {
                     dailyDto.Employees.Add(new EmployeeDailyAttendanceDto
                     {
                         EmployeeId = employeeId,
-                        EmployeeName = empName,
+                        EmployeeName = employeeName,
+                        EmployeeNumber = employeeNumber,
                         ClockIn = null,
                         ClockOut = null,
                         WorkingHours = TimeSpan.Zero,
@@ -161,7 +164,8 @@ public class AttendanceRepository
                 dailyDto.Employees.Add(new EmployeeDailyAttendanceDto
                 {
                     EmployeeId = employeeId,
-                    EmployeeName = empName,
+                    EmployeeName = employeeName,
+                    EmployeeNumber = employeeNumber,
                     ClockIn = clockIn?.TimeOfDay,
                     ClockOut = clockOut?.TimeOfDay,
                     WorkingHours = TimeSpan.FromSeconds(workingSeconds),

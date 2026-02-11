@@ -48,14 +48,31 @@ public class TableSchemas
     };
 
     // LEAVE TABLE
-    public static List<TableColumn<LeaveTypeViewModel>> LeaveTypes = new() 
+    public static List<TableColumn<LeaveTypeViewModel>> LeaveTypes = new()
+{
+    new()
     {
-        new() { Header = "Name", Value = u => u.LeaveNameId },
-        new() { Header = "Days", Value = u => u.MaxPerYear },
-        new() { Header = "Description", Value = u => u.Description },
-        new() {Header = "IsPaid", Value = u => u.IsPaid},
-        StatusColumn<LeaveTypeViewModel>(u => u.IsActive)
-    };
+        Header = "Name",
+        Value = u => System.Text.RegularExpressions.Regex
+                        .Replace(u.LeaveNameId.ToString(), "([a-z])([A-Z])", "$1 $2")
+    },
+    new()
+    {
+        Header = "Days",
+        Value = u => u.MaxPerYear.ToString()
+    },
+    new()
+    {
+        Header = "Description",
+        Value = u => u.Description ?? "—"
+    },
+    new()
+    {
+        Header = "Is Paid",
+        Value = u => u.IsPaid ? "Yes" : "No"
+    },
+    StatusColumn<LeaveTypeViewModel>(u => u.IsActive)
+};
 
     public static List<TableColumn<LeaveRequestViewModel>> LeaveRequest = new()
     {
@@ -63,7 +80,7 @@ public class TableSchemas
         new() { Header = "EmployeeName", Value = u => u.EmployeeName },
         new() { Header = "LeaveTypeId", Value = u => u.LeaveTypeId },
         new() { Header = "Reason", Value = u => u.Reason },
-        new() { Header = "TotalDays", Value = u => u.TotalDays },
+        new() { Header = "TotalDays", Value = u => u.LeaveDays },
         new() { Header = "Status", Value = u => u.StatusId },
         new() { Header = "ApprovedBy", Value = u => u.ApprovedBy },
         new() { Header = "StartDate", Value = u => u.StartDate.ToString("yyyy/MM/dd") },

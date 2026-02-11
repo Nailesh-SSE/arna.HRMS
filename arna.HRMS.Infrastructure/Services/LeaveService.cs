@@ -167,15 +167,16 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto LeaveRequestDto)
     {
         if (
-            LeaveRequestDto.StartDate > LeaveRequestDto.EndDate 
-            || LeaveRequestDto.StartDate.Date <= DateTime.Now.Date 
-            || LeaveRequestDto.EndDate.Date <= DateTime.Now.Date
+            (LeaveRequestDto.StartDate.Date > LeaveRequestDto.EndDate.Date && LeaveRequestDto.StartDate.Date != LeaveRequestDto.EndDate.Date)
+            || LeaveRequestDto.StartDate.Date < DateTime.Now.Date 
+            || LeaveRequestDto.EndDate.Date < DateTime.Now.Date
             || LeaveRequestDto.StartDate == default
             || LeaveRequestDto.EndDate == default
            )
         {
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Date you select ");
         }
+
         if (LeaveRequestDto.LeaveTypeId == 0)
         {
             return ServiceResult<LeaveRequestDto>.Fail("Invalid Leave Type Id");

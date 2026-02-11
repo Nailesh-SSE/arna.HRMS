@@ -393,7 +393,7 @@
                 ? result.Data.Select(e => new SelectOption
                 {
                     Value = e.Id.ToString(),
-                    Text = e.FullName
+                    Text = $"{e.FullName} ({e.EmployeeNumber})"
                 }).ToList()
                 : new();
         }
