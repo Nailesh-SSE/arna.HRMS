@@ -1,0 +1,189 @@
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@inject NavigationManager NavigationManager
+
+<!-- 🔔 Bell Button -->
+<div class="position-relative">
+    <button class="btn btn-light notification-btn @(HasUnread ? "blink" : "")"
+            @onclick="ToggleList">
+        <i class="bi bi-bell fs-5"></i>
+
+        @if (UnreadCount > 0)
+        {
+            <span class="notification-count">@UnreadCount</span>
+        }
+    </button>
+</div>
+
+<!-- 📝 Notification List -->
+@if (IsListOpen)
+{
+    <div class="notification-note-panel">
+
+        <div class="note-panel-header">
+            <span class="fw-semibold">Notifications</span>
+            <button class="btn btn-sm btn-light" @onclick="CloseList">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+
+        <div class="note-panel-body">
+            @if (!UnreadNotifications.Any())
+            {
+                <div class="text-center text-muted p-4">
+                    No new notifications
+                </div>
+            }
+            else
+            {
+                @foreach (var n in UnreadNotifications)
+                {
+                    <div class="note-item"
+                         @onclick="() => OpenNotification(n)">
+                        <div class="note-icon @n.IconBg">
+                            <i class="@n.Icon"></i>
+                        </div>
+
+                        <div class="note-info">
+                            <div class="note-title">@n.Title</div>
+                            <div class="note-text">@n.Message</div>
+                            <div class="note-time">@n.Time</div>
+                        </div>
+
+                        @if (n.IsPending)
+                        {
+                            <span class="badge bg-warning-subtle text-warning">
+                                Pending
+                            </span>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+}
+
+<!-- 🌫️ Modal Backdrop -->
+@if (IsModalOpen)
+{
+    <div class="notification-modal-backdrop"
+         @onclick="CloseModal"></div>
+}
+
+<!-- 🪟 Detail Modal -->
+@if (IsModalOpen && Selected != null)
+{
+    <div class="notification-modal">
+
+        <div class="modal-header">
+            <h6 class="mb-0">@Selected.Title</h6>
+            <button class="btn btn-sm btn-light"
+                    @onclick="CloseModal">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Click anywhere to navigate -->
+        <div class="modal-body modal-clickable"
+             @onclick="ViewDetails">
+
+            <p class="mb-2">@Selected.Message</p>
+
+            <div class="note-time">
+                <i class="bi bi-clock me-1"></i>
+                @Selected.Time
+            </div>
+
+            <div class="view-hint mt-3">
+                <i class="bi bi-arrow-right-circle me-1"></i>
+                View details
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool IsListOpen;
+    private bool IsModalOpen;
+
+    private NotificationItem? Selected;
+
+    private List<NotificationItem> Notifications = new()
+    {
+        new()
+        {
+            Id = 1,
+            Title = "Leave Request",
+            Message = "Chirag Prajapati applied for leave.",
+            Time = "Just now",
+            IsPending = true,
+            Icon = "bi bi-file-earmark-text",
+            IconBg = "bg-primary-subtle text-primary",
+            NavigateTo = "/leaveTypes",
+            IsRead = false
+        },
+        new()
+        {
+            Id = 2,
+            Title = "Attendance Alert",
+            Message = "Clock-in pending for today.",
+            Time = "Today",
+            IsPending = false,
+            Icon = "bi bi-clock-history",
+            IconBg = "bg-warning-subtle text-warning",
+            NavigateTo = "/attendance",
+            IsRead = false
+        }
+    };
+
+    private IEnumerable<NotificationItem> UnreadNotifications =>
+        Notifications.Where(n => !n.IsRead);
+
+    private int UnreadCount => UnreadNotifications.Count();
+    private bool HasUnread => UnreadCount > 0;
+
+    private void ToggleList()
+    {
+        IsListOpen = !IsListOpen;
+    }
+
+    private void CloseList() => IsListOpen = false;
+
+    private void OpenNotification(NotificationItem item)
+    {
+        Selected = item;
+        IsModalOpen = true;
+        IsListOpen = false;
+    }
+
+    private void CloseModal()
+    {
+        IsModalOpen = false;
+        Selected = null;
+    }
+
+    private void ViewDetails()
+    {
+        if (Selected == null)
+            return;
+
+        // ✅ Mark as read
+        Selected.IsRead = true;
+
+        NavigationManager.NavigateTo(Selected.NavigateTo);
+
+        CloseModal();
+    }
+
+    private class NotificationItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Message { get; set; } = "";
+        public string Time { get; set; } = "";
+        public bool IsPending { get; set; }
+        public bool IsRead { get; set; }
+        public string Icon { get; set; } = "";
+        public string IconBg { get; set; } = "";
+        public string NavigateTo { get; set; } = "";
+    }
+}
