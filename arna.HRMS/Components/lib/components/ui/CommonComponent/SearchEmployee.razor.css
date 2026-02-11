@@ -32,20 +32,20 @@
     position: relative;
 }
 
-.emp-arrow::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-right: 2px solid #64748b;
-    border-bottom: 2px solid #64748b;
-    transform: rotate(45deg);
-    transition: 0.25s ease;
-}
+    .emp-arrow::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid #64748b;
+        border-bottom: 2px solid #64748b;
+        transform: rotate(45deg);
+        transition: 0.25s ease;
+    }
 
-.emp-arrow.open::before {
-    transform: rotate(-135deg);
-    border-color: #2563eb;
-}
+    .emp-arrow.open::before {
+        transform: rotate(-135deg);
+        border-color: #2563eb;
+    }
 
 .emp-panel {
     position: absolute;

@@ -1,19 +1,21 @@
 ﻿@page "/leaveTypes"
 
-
-
+@using arna.HRMS.ClientServices.Admin.Employee
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Leave
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
 
-
-
+@inject AttendanceState State
 @inject NavigationManager NavigationManager
 @inject ILeaveService LeaveService
+@inject IEmployeeService EmployeeService
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
 
@@ -24,13 +26,11 @@
     <!-- HEADER -->
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body d-flex justify-content-between align-items-center">
-
             <div>
                 <h4 class="fw-bold text-primary mb-0">
                     <i class="bi bi-briefcase-fill me-2"></i>
                     Leave Types
                 </h4>
-
                 <small class="text-muted">
                     @(showLeaveRequests
                                         ? "View employee leave requests"
@@ -85,8 +85,30 @@
             }
             else
             {
+                <!-- 🔹 FILTER TOOLBAR -->
+                <div class="leave-filter-bar mb-3">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-lines-fill text-primary fs-5"></i>
+                            <span class="fw-semibold text-muted">
+                                Filter by Employee
+                            </span>
+                        </div>
+
+                        <div class="leave-filter-control">
+                            <SearchEmployee Employees="Employees"
+                                            SelectedValue="@GetEmployeeValue()"
+                                            OnChanged="OnEmployeeChanged"
+                                            OnNameChanged="OnEmployeeNameChanged" />
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- 🔹 FILTERED TABLE -->
                 <AppTable TItem="LeaveRequestViewModel"
-                          Items="leaveRequests"
+                          Items="FilteredLeaveRequests"
                           Columns="TableSchemas.LeaveRequest">
 
                     <ActionTemplate Context="req">
@@ -118,17 +140,54 @@
 
 @code {
 
-    private bool showLeaveRequests = false;
+    /* ================= STATE ================= */
+    private bool showLeaveRequests;
     private bool isLoading = true;
-    private bool showModal = false;
-    private int? editId = null;
+    private bool showModal;
+    private int? editId;
 
     private List<LeaveTypeViewModel> leaveTypes = new();
     private List<LeaveRequestViewModel> leaveRequests = new();
+    private List<SelectOption> Employees = new();
 
+    private string? selectedEmployeeName;
+    private string? selectedEmployeeNumber;
+
+    /* ================= INIT ================= */
     protected override async Task OnInitializedAsync()
     {
         await LoadLeaveTypes();
+    }
+
+    /* ================= EMPLOYEES ================= */
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            var result = await EmployeeService.GetEmployeesAsync();
+
+            if (result?.IsSuccess == true && result.Data != null)
+            {
+                Employees = result.Data.Select(e => new SelectOption
+                {
+                    Value = e.Id.ToString(),
+                    Text = $"{e.FullName} ({e.EmployeeNumber})"
+                }).ToList();
+            }
+        }
+        catch
+        {
+            Employees = new();
+        }
+    }
+
+    /* ================= LEAVE TYPES ================= */
+    private async Task LoadLeaveTypes()
+    {
+        isLoading = true;
+        var result = await LeaveService.GetLeaveTypeAsync();
+        leaveTypes = result.IsSuccess && result.Data != null ? result.Data : new();
+        isLoading = false;
     }
 
     private void OpenCreateModal()
@@ -155,129 +214,112 @@
         await LoadLeaveTypes();
     }
 
-    private async Task LoadLeaveTypes()
-    {
-        isLoading = true;
-
-        var result = await LeaveService.GetLeaveTypeAsync();
-
-        if (result.IsSuccess && result.Data != null)
-        {
-            leaveTypes = result.Data;
-        }
-        else
-        {
-            leaveTypes.Clear();
-            NotificationService.Error(result.Message ?? "Failed to load Leave Types");
-        }
-
-        isLoading = false;
-    }
-
+    /* ================= LEAVE REQUESTS ================= */
     private async Task LoadLeaveRequests()
     {
         isLoading = true;
-
         var result = await LeaveService.GetLeaveRequestAsync();
-
-        if (result.IsSuccess && result.Data != null)
-        {
-            leaveRequests = result.Data;
-        }
-        else
-        {
-            leaveRequests.Clear();
-            NotificationService.Error(result.Message ?? "Unable to load leave requests");
-        }
-
+        leaveRequests = result.IsSuccess && result.Data != null ? result.Data : new();
         isLoading = false;
     }
 
     private async Task ShowLeaveRequests()
     {
-        showLeaveRequests = true;
+        isLoading = true;
 
-        if (leaveRequests.Count == 0)
-        {
-            await LoadLeaveRequests();
-        }
+        if (!Employees.Any())
+            await LoadEmployees();
+
+        await LoadLeaveRequests();   // ALWAYS load
+
+        showLeaveRequests = true;
+        isLoading = false;
     }
+
 
     private void ShowLeaveTypes()
     {
         showLeaveRequests = false;
+        State.SelectedEmployeeId = null;
+        selectedEmployeeName = null;
+        selectedEmployeeNumber = null;
     }
 
+    /* ================= FILTER HANDLERS ================= */
+    private Task OnEmployeeChanged(string? empId)
+    {
+        if (string.IsNullOrWhiteSpace(empId) || empId == "0")
+            State.SelectedEmployeeId = null;
+        else
+            State.SelectedEmployeeId = int.Parse(empId);
+
+        return Task.CompletedTask;
+    }
+
+    private Task OnEmployeeNameChanged(string? text)
+    {
+        selectedEmployeeName = null;
+        selectedEmployeeNumber = null;
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                text, @"^(.*?)(?:\s*\((.*?)\))?$");
+
+            if (match.Success)
+            {
+                selectedEmployeeName = match.Groups[1].Value.Trim();
+                selectedEmployeeNumber = match.Groups[2].Value.Trim();
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    /* ================= FILTER LOGIC ================= */
+    private List<LeaveRequestViewModel> FilteredLeaveRequests =>
+      leaveRequests.Any()
+          ? leaveRequests.Where(r =>
+              (State.SelectedEmployeeId == null || r.EmployeeId == State.SelectedEmployeeId)
+              &&
+              (string.IsNullOrWhiteSpace(selectedEmployeeName)
+                  || r.EmployeeName.Contains(selectedEmployeeName, StringComparison.OrdinalIgnoreCase))
+              &&
+              (string.IsNullOrWhiteSpace(selectedEmployeeNumber)
+                  || r.EmployeeNumber.Contains(selectedEmployeeNumber, StringComparison.OrdinalIgnoreCase))
+            ).ToList()
+          : new();
+
+    /* ================= ACTIONS ================= */
     private async Task UpdateLeaveStatus(LeaveRequestViewModel req, Status newStatus)
     {
-        if (req.StatusId == Status.Cancelled)
-        {
-            NotificationService.Warning("Cannot modify a cancelled leave request.");
-            return;
-        }
+        bool confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm", $"Are you sure you want to {newStatus} this leave request?");
 
-        string action = newStatus == Status.Approved ? "approve" : "reject";
-        string currentStatusText = req.StatusId == Status.Pending ? "pending" :
-                                   req.StatusId == Status.Approved ? "approved" : "rejected";
-
-        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
-            "confirm",
-            $"Are you sure you want to {action} this {currentStatusText} leave request?"
-        );
-
-        if (!isConfirmed) return;
-
-        isLoading = true;
+        if (!confirmed) return;
 
         var result = await LeaveService.UpdateStatusLeaveAsync(req.Id, newStatus);
-
-        if (!result.IsSuccess)
-        {
-            NotificationService.Error(result.Message ?? "Failed to update leave status");
-            isLoading = false;
-            return;
-        }
+        if (!result.IsSuccess) return;
 
         req.StatusId = newStatus;
         req.ApprovedDate = DateTime.Now;
-
-        NotificationService.Success(
-            newStatus == Status.Approved
-                ? "Leave approved successfully"
-                : "Leave rejected successfully"
-        );
-
-        isLoading = false;
     }
 
-    private string GetApproveButtonClass(LeaveRequestViewModel req)
-        => req.StatusId == Status.Approved
-            ? "btn btn-sm btn-success"
-            : "btn btn-sm btn-outline-success";
+    private string GetApproveButtonClass(LeaveRequestViewModel r)
+        => r.StatusId == Status.Approved ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-success";
 
-    private string GetRejectButtonClass(LeaveRequestViewModel req)
-        => req.StatusId == Status.Rejected
-            ? "btn btn-sm btn-danger"
-            : "btn btn-sm btn-outline-danger";
+    private string GetRejectButtonClass(LeaveRequestViewModel r)
+        => r.StatusId == Status.Rejected ? "btn btn-sm btn-danger" : "btn btn-sm btn-outline-danger";
 
     private async Task DeleteLeaveType(LeaveTypeViewModel model)
     {
-        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
-            "confirm",
-            "Are you sure you want to delete this leave type?"
-        );
+        bool ok = await JsRuntime.InvokeAsync<bool>("confirm", "Delete this leave type?");
+        if (!ok) return;
 
-        if (!isConfirmed) return;
-
-        var result = await LeaveService.DeleteLeaveTypeAsync(model.Id);
-
-        if (!result.IsSuccess)
-        {
-            NotificationService.Error(result.Message ?? "Unable to delete leave type.");
-            return;
-        }
-
-        NotificationService.Success("Leave type deleted successfully.");
+        await LeaveService.DeleteLeaveTypeAsync(model.Id);
         await LoadLeaveTypes();
     }
+
+    private string GetEmployeeValue()
+        => State.SelectedEmployeeId?.ToString() ?? "0";
 }

@@ -1,19 +1,31 @@
-﻿.custom-table{
+﻿.attendance-table-wrapper {
+    max-height: 450px;
+    overflow-y: auto;
     border-radius: 15px;
 }
 
-.custom-table-head {
-    box-shadow: 0 4px 6px -3px rgba(0,0,0,.15);
-    z-index: 5;
+/* keep horizontal scroll */
+.table-responsive {
+    overflow-x: auto;
 }
 
-.table-row-hover {
-    transition: background .15s ease;
+/* sticky header */
+.custom-table thead th {
+    position: sticky;
+    top: 0;
+    background: #f8f9fa;
+    z-index: 10;
 }
 
-    .table-row-hover:hover {
-        background: #f8fafc;
-    }
+/* optional nice scrollbar */
+.attendance-table-wrapper::-webkit-scrollbar {
+    width: 8px;
+}
+
+.attendance-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
 
 /* soft pills */
 

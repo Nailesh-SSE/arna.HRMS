@@ -11,6 +11,7 @@
 @using arna.HRMS.Components.Pages.Client.Attendance.DetailsAndTable
 @using arna.HRMS.Components.Pages.Client.Attendance.MonthYearAndToggle
 @using arna.HRMS.Components.Pages.Client.Attendance.Summary
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Helper.Attendance
@@ -84,7 +85,7 @@
                                           SelectedDate="@State.SelectedDate"
                                           DateChanged="OnDateSelected" />
 
-                    <EmployeePicker Employees="Employees"
+                    <SearchEmployee Employees="Employees"
                                     SelectedValue="@GetEmployeeValue()"
                                     OnChanged="OnEmployeeChanged"
                                     OnNameChanged="OnEmployeeNameChanged" />
@@ -104,7 +105,7 @@
             {
                 @if (IsAdmin() || IsSuperAdmin())
                 {
-                    <EmployeePicker Employees="Employees"
+                    <SearchEmployee Employees="Employees"
                                     SelectedValue="@GetEmployeeValue()"
                                     OnChanged="OnEmployeeChanged"
                                     OnNameChanged="OnEmployeeNameChanged" />
