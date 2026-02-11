@@ -30,6 +30,8 @@ public sealed class ApiClients
 
     public LeaveApi Leave { get; }
 
+    public FestivalHolidayApi FestivalHoliday { get; }
+
     public ApiClients(HttpService http)
     {
         http.SetApiClients(this);
@@ -45,6 +47,7 @@ public sealed class ApiClients
         AttendanceRequests = new(http);
 
         Leave = new(http);
+        FestivalHoliday = new(http);
     }
 
     // ===================== SHARED CRUD CORE =====================
@@ -248,5 +251,26 @@ public sealed class ApiClients
             _http.PostAsync<bool>($"{Url}/requests/cancel/{leaveRequestId}?employeeid={employeeId}", new { });
 
     }
+
+    // ===================== FestivalHoliday =====================
+
+    public sealed class FestivalHolidayApi : BaseCrudApi<FestivalHolidayViewModel>
+    {
+        private const string Url = "api/FestivalHoliday";
+
+        public FestivalHolidayApi(HttpService http)
+            : base(http, Url) { }
+
+        public Task<ApiResult<bool>> Update(int id, FestivalHolidayViewModel dto) =>
+            ToBool(UpdateRaw(id, dto), "Unable to update holiday.");
+
+        public Task<ApiResult<List<FestivalHolidayViewModel>>> GetByName(string name) =>
+            Http.GetAsync<List<FestivalHolidayViewModel>>(
+                $"{Url}/by-name?name={name}");
+
+        public Task<ApiResult<List<FestivalHolidayViewModel>>> GetByMonth(int year, int month) =>
+            Http.GetAsync<List<FestivalHolidayViewModel>>(
+                $"{Url}/monthly?year={year}&month={month}");
+    }
+
 }
- 
