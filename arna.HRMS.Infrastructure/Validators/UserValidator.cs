@@ -18,13 +18,22 @@ public class UserValidator
 
     public async Task<ValidationResult> ValidateCreateAsync(UserDto instance)
     {
+        if (instance == null)
+            return ValidationResult.Fail("Invalid request");
+
         return await ValidateCommonAsync(instance);
     }
 
     public async Task<ValidationResult> ValidateUpdateAsync(UserDto instance)
     {
+        if (instance == null)
+            return ValidationResult.Fail("Invalid request");
+
         if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid User ID");
+        var exist = _repository.GetUserByIdAsync(instance.Id);
+        if (exist == null)
+            return ValidationResult.Fail("No Data Found");
 
         return await ValidateCommonAsync(instance);
     }
@@ -32,8 +41,10 @@ public class UserValidator
     public ValidationResult ValidateChangePasswordAsync(int id, string newPassword)
     {
         if (id <= 0)
-            return ValidationResult.Fail("Invalid User ID"); 
-
+            return ValidationResult.Fail("Invalid User ID");
+        var exist = _repository.GetUserByIdAsync(id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("No Data Found");
         else if (string.IsNullOrWhiteSpace(newPassword))
             return ValidationResult.Fail("Password is required");
 
@@ -45,9 +56,6 @@ public class UserValidator
 
     private async Task<ValidationResult> ValidateCommonAsync(UserDto instance)
     {
-        if (instance == null)
-            return ValidationResult.Fail("Invalid request");
-
         var errors = new List<string>();
 
         // Username
@@ -89,7 +97,7 @@ public class UserValidator
         // Phone
         if (string.IsNullOrWhiteSpace(instance.PhoneNumber))
             errors.Add("Phone number is required");
-        else if (!new PhoneAttribute().IsValid(instance.Email))
+        else if (!new PhoneAttribute().IsValid(instance.PhoneNumber))
             errors.Add("Invalid phone number format");
         else if (Regex.Replace(instance.PhoneNumber, @"\D", "").Length != 10)
             errors.Add("Phone number must be exactly 10 digits");

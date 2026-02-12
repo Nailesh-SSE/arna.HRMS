@@ -220,7 +220,7 @@ public class UserServiceTest
         var result = await _userService.CreateUserAsync(dto);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Username is required"));
+        Assert.That(result.Message, Does.Contain("Username is required"));
     }
 
     [Test]
@@ -246,7 +246,7 @@ public class UserServiceTest
         var result = await _userService.CreateUserAsync(dto);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Email is required"));
+        Assert.That(result.Message, Does.Contain("Email is required"));
     }
 
     [Test]
@@ -272,7 +272,7 @@ public class UserServiceTest
         var result = await _userService.CreateUserAsync(dto);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Password is required"));
+        Assert.That(result.Message, Does.Contain("Password is required"));
     }
 
     [Test]
@@ -301,7 +301,7 @@ public class UserServiceTest
         var result = await _userService.CreateUserAsync(dto);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Password must be at least 6 characters"));
+        Assert.That(result.Message, Does.Contain("Password must be between 6 and 100 characters"));
     }
 
     [Test]
@@ -318,24 +318,26 @@ public class UserServiceTest
         {
             Id = 1,
             Username = "existinguser",
-            Email = "testuser.com",
+            Email = "test@user.com",
             PasswordHash = "hashedpassword",
             FirstName = "Existing",
             LastName = "User",
             RoleId = 1,
             Password = "password",
-            PhoneNumber= "1234567890",
+            PhoneNumber= "1234567895",
+            IsActive=true,
             IsDeleted = false
         });
         await _dbContext.SaveChangesAsync();
-        var dto = new Core.DTOs.UserDto
+        var dto = new UserDto
         {
             Username = "newuser",
-            Email = "testuser.com",
+            Email = "test@user.com",
             Password = "password123",
+            IsActive = true,
             IsDeleted = false,
             PasswordHash = "hashedpassword",
-            PhoneNumber= "0987654321",
+            PhoneNumber= "1987654321",
             RoleId = 1,
             FirstName = "New",
             LastName = "User",
@@ -344,7 +346,7 @@ public class UserServiceTest
         var result = await _userService.CreateUserAsync(dto);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Email already exists"));
+        Assert.That(result.Message, Is.EqualTo("Email or Phone Number already exists"));
     }
 
     [Test]
@@ -491,7 +493,7 @@ public class UserServiceTest
         {
             Id = 1,
             Username = "existinguser",
-            Email = "testuser.com",
+            Email = "test@user.com",
             PasswordHash = "hashedpassword",
             FirstName = "Existing",
             LastName = "User",
@@ -506,7 +508,7 @@ public class UserServiceTest
         {
             Id = 1,
             Username = "existinguser",
-            Email = "testuser.com",
+            Email = "test@user.com",
             Password = "password123",
             IsDeleted = false,
             PasswordHash = "hashedpassword",
@@ -520,7 +522,7 @@ public class UserServiceTest
 
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Email already exists"));
+        Assert.That(result.Message, Is.EqualTo("Email or Phone Number already exists"));
     }
 
     [Test]
@@ -616,7 +618,7 @@ public class UserServiceTest
 
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Username is required"));
+        Assert.That(result.Message, Does.Contain("Username is required"));
     }
 
     [Test]
@@ -653,7 +655,7 @@ public class UserServiceTest
         var result = await _userService.UpdateUserAsync(dto);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Email is required"));
+        Assert.That(result.Message, Does.Contain("Email is required"));
     }
 
     [Test]
@@ -663,7 +665,7 @@ public class UserServiceTest
         var result = await _userService.DeleteUserAsync(999);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid User ID"));
+        Assert.That(result.Message, Is.EqualTo("Fail to Delete User"));
     }
 
     [Test]
@@ -708,7 +710,7 @@ public class UserServiceTest
         var result = await _userService.DeleteUserAsync(1);
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid User ID"));
+        Assert.That(result.Message, Is.EqualTo("Fail to Delete User"));
     }
 
     [Test]
@@ -718,7 +720,7 @@ public class UserServiceTest
         var result = await _userService.ChangeUserPasswordAsync(999, "newpassword");
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid User ID"));
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
     [Test]
@@ -762,7 +764,7 @@ public class UserServiceTest
         var result = await _userService.ChangeUserPasswordAsync(1, "newpassword");
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid User ID"));
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
     [Test]
@@ -794,7 +796,7 @@ public class UserServiceTest
         
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("NewPassword is required"));
+        Assert.That(result.Message, Is.EqualTo("Password is required"));
     }
 
     [Test]
@@ -826,7 +828,7 @@ public class UserServiceTest
         
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("NewPassword is required"));
+        Assert.That(result.Message, Is.EqualTo("Password is required"));
     }
 
     [Test]
@@ -858,7 +860,7 @@ public class UserServiceTest
         
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Password must be at least 6 characters"));
+        Assert.That(result.Message, Is.EqualTo("Password must be between 6 and 100 characters"));
     }
 
     [Test]

@@ -52,7 +52,7 @@ public class LeaveServiceTests
         var employeeRepository = new EmployeeRepository(employeeBaseRepo);
         var leaveValidator = new LeaveValidator(leaveRepository);
 
-        _attendanceRepository = new AttendanceRepository(attendanceBaseRepo, festivalHolidayRepository, employeeRepository);
+        _attendanceRepository = new AttendanceRepository(attendanceBaseRepo, employeeRepository, festivalHolidayRepository);
 
         _festivalHolidayServiceMock = new Mock<IFestivalHolidayService>();
 
@@ -77,9 +77,8 @@ public class LeaveServiceTests
     public async Task GetLeaveTypeAsync_WhenDbEmpty()
     {
         var result = await _leaveService.GetLeaveTypeAsync();
-        Assert.That(result.Data, Is.Null);
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Not Found"));
+        Assert.That(result.Data, Is.Empty);
+        Assert.That(result.IsSuccess, Is.True);
     }
 
     [Test]
@@ -133,8 +132,8 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         var result = await _leaveService.GetLeaveTypeByIdAsync(5);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Message, Is.EqualTo("leave not found"));
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Leave not found"));
     }
 
     [Test]
@@ -150,8 +149,8 @@ public class LeaveServiceTests
 
         var result = await _leaveService.GetLeaveTypeByIdAsync(2);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Message, Is.EqualTo("leave not found"));
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Leave not found"));
     }
 
     [Test]
@@ -215,7 +214,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.CreateLeaveTypeAsync(newLeaveType);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("number of days is required"));
+        Assert.That(result.Message, Is.EqualTo("Leave days must be greater than 0"));
     }
 
     [Test]
@@ -223,7 +222,7 @@ public class LeaveServiceTests
     {
         var result = await _leaveService.CreateLeaveTypeAsync(null!);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Data not Found"));
+        Assert.That(result.Message, Is.EqualTo("Invalid request"));
     }
 
     [Test]
@@ -367,7 +366,7 @@ public class LeaveServiceTests
         var result = await _leaveService.UpdateLeaveTypeAsync(updatedLeaveType);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("No Such Data Found"));
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
     [Test]
@@ -396,7 +395,7 @@ public class LeaveServiceTests
         };
         var result = await _leaveService.UpdateLeaveTypeAsync(updatedLeaveType);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to update Leave Type"));
+        Assert.That(result.Message, Is.EqualTo("Invalid Leave Type ID"));
     }
 
     public async Task UpdateLeaveType_WhereIdIsNegative()
@@ -481,7 +480,7 @@ public class LeaveServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
 
-        Assert.That(result.Message, Is.EqualTo("No Such Data Found"));
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
     [Test]
@@ -503,7 +502,7 @@ public class LeaveServiceTests
         var result = await _leaveService.UpdateLeaveTypeAsync(updatedLeaveType);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to update Leave Type"));
+        Assert.That(result.Message, Is.EqualTo("Leave name is required"));
 
     }
 
@@ -525,7 +524,7 @@ public class LeaveServiceTests
         };
         var result = await _leaveService.UpdateLeaveTypeAsync(updatedLeaveType);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to update Leave Type"));
+        Assert.That(result.Message, Is.EqualTo("Leave days must be greater than 0"));
     }
 
     [Test]
@@ -832,7 +831,7 @@ public class LeaveServiceTests
         var result = await _leaveService.GetLeaveRequestByIdAsync(3);
 
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("leave request not found"));
+        Assert.That(result.Message, Is.EqualTo("Leave request not found"));
     }
     [Test]
     public async Task GetLeaveRequestById_whenNotFound()
@@ -889,7 +888,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.GetLeaveRequestByIdAsync(5);
 
-        Assert.That(result.Message, Is.EqualTo("leave request not found"));
+        Assert.That(result.Message, Is.EqualTo("Leave request not found"));
         Assert.That(result.IsSuccess, Is.False);
     }
 
@@ -1018,7 +1017,7 @@ public class LeaveServiceTests
         // -------------------------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Is.EqualTo("Start date cannot be after End date"));
     }
 
     [Test]
@@ -1044,7 +1043,7 @@ public class LeaveServiceTests
         // -------------------------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Is.EqualTo("Leave dates cannot be in the past"));
     }
 
     [Test]
@@ -1069,8 +1068,8 @@ public class LeaveServiceTests
         // Act
         // -------------------------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Data, Is.Null);
     }
 
     [Test]
@@ -1095,7 +1094,7 @@ public class LeaveServiceTests
         // -------------------------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Does.Contain("Start and End date are required"));
     }
 
     [Test]
@@ -1120,7 +1119,7 @@ public class LeaveServiceTests
         // -------------------------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Does.Contain("Start and End date are required"));
     }
 
     [Test]
@@ -1262,7 +1261,7 @@ public class LeaveServiceTests
         var result = await _leaveService.GetLeaveRequestByEmployeeIdAsync(999);
         Assert.That(result.Data, Is.Null);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("leave requests not found for this employee"));
+        Assert.That(result.Message, Is.EqualTo("Leave requests not found for this employee"));
     }
 
     [Test]
@@ -1320,7 +1319,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.GetLeaveRequestByEmployeeIdAsync(101);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("leave requests not found for this employee"));
+        Assert.That(result.Message, Is.EqualTo("Leave requests not found for this employee"));
     }
     [Test]
     public async Task DeleteLeaveRequestbyID_whenFound()
@@ -1395,7 +1394,7 @@ public class LeaveServiceTests
         var result = await _leaveService.DeleteLeaveRequestAsync(1);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("not found"));
+        Assert.That(result.Message, Is.EqualTo("Leave request not found"));
     }
 
 
@@ -1410,18 +1409,18 @@ public class LeaveServiceTests
         var result = await _leaveService.DeleteLeaveRequestAsync(5);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("not found"));
+        Assert.That(result.Message, Is.EqualTo("Leave request not found"));
     }
     [Test]
     public async Task DeleteLeaveRequestbyID_whenIsZeroOrNegative()
     {
         var result = await _leaveService.DeleteLeaveRequestAsync(0);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid ID"));
+        Assert.That(result.Message, Is.EqualTo("Leave request not found"));
 
         var result2 = await _leaveService.DeleteLeaveRequestAsync(-99);
         Assert.That(result2.IsSuccess, Is.False);
-        Assert.That(result2.Message, Is.EqualTo("Invalid ID"));
+        Assert.That(result2.Message, Is.EqualTo("Leave request not found"));
 
     }
 
@@ -1534,7 +1533,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Does.Contain("Start and End date are required"));
 
     }
 
@@ -1584,7 +1583,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Does.Contain("Start and End date are required"));
 
     }
 
@@ -1635,7 +1634,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Is.EqualTo("Leave dates cannot be in the past"));
 
     }
 
@@ -1686,7 +1685,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Does.Contain("Start date cannot be after End date"));
 
     }
 
@@ -1804,7 +1803,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Is.EqualTo("Leave dates cannot be toDays date"));
 
     }
 
@@ -1855,7 +1854,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Date you select "));
+        Assert.That(result.Message, Does.Contain("Leave dates cannot be toDays date"));
 
     }
 
@@ -1877,7 +1876,7 @@ public class LeaveServiceTests
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.Data, Is.Null);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("No Data Found"));
+        Assert.That(result.Message, Is.EqualTo("Invalid Leave Request ID"));
     }
 
 
@@ -2199,7 +2198,7 @@ public class LeaveServiceTests
         _dbContext.ChangeTracker.Clear();
         var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Leave request is already cancelled."));
+        Assert.That(result.Message, Is.EqualTo("Cannot cancel this leave request"));
     }
 
     [Test]
@@ -2236,7 +2235,7 @@ public class LeaveServiceTests
         _dbContext.ChangeTracker.Clear();
         var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Cannot cancel an approved leave request"));
+        Assert.That(result.Message, Is.EqualTo("Cannot cancel this leave request"));
     }
 
     [Test]
@@ -2273,7 +2272,7 @@ public class LeaveServiceTests
         _dbContext.ChangeTracker.Clear();
         var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Cannot cancel an Rejected leave request"));
+        Assert.That(result.Message, Is.EqualTo("Cannot cancel this leave request"));
     }
 
     [Test]

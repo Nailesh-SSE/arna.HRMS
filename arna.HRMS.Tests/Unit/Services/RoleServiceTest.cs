@@ -195,7 +195,7 @@ public class RoleServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Invalid Role"));
+        Assert.That(result.Message, Is.EqualTo("Role name is required"));
     }
 
     [Test]
@@ -244,7 +244,7 @@ public class RoleServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Failed to update role"));
+        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
     [Test]

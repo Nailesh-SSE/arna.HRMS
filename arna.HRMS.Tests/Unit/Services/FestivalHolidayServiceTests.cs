@@ -148,7 +148,7 @@ public class FestivalHolidayServiceTests
     public async Task GetFestivalHolidayById_WhenDBEmptyOrNotFound()
     {
         var result = await _festivalHolidayService.GetFestivalHolidayByIdAsync(1);
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
         Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
     }
@@ -170,7 +170,7 @@ public class FestivalHolidayServiceTests
         );
         await _dbContext.SaveChangesAsync();
         var result = await _festivalHolidayService.GetFestivalHolidayByIdAsync(1);
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
         Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
     }
@@ -651,7 +651,7 @@ public class FestivalHolidayServiceTests
         };
         var result = await _festivalHolidayService.UpdateFestivalHolidayAsync(updateDto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
+        Assert.That(result.Message, Is.EqualTo("no such Date found"));
     }
 
     [Test]
@@ -807,7 +807,7 @@ public class FestivalHolidayServiceTests
     {
         var result = await _festivalHolidayService.DeleteFestivalHolidayAsync(-999);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid FestivalHoliday ID"));
+        Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
     }
 
     [Test]
@@ -815,7 +815,7 @@ public class FestivalHolidayServiceTests
     {
         var result = await _festivalHolidayService.DeleteFestivalHolidayAsync(0);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid FestivalHoliday ID"));
+        Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
     }
 
     [Test]
@@ -835,7 +835,7 @@ public class FestivalHolidayServiceTests
         Assert.That(holiday.Id, Is.GreaterThan(0));
         var result = await _festivalHolidayService.DeleteFestivalHolidayAsync(holiday.Id);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Festival not found"));
+        Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
     }
 
     [Test]
@@ -843,7 +843,7 @@ public class FestivalHolidayServiceTests
     {
         var result = await _festivalHolidayService.DeleteFestivalHolidayAsync(1);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Festival not found"));
+        Assert.That(result.Message, Is.EqualTo("Festival holiday not found"));
     }
 
     [Test]

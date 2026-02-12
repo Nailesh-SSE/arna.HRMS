@@ -15,14 +15,20 @@ public class RoleValidator
 
     public async Task<ValidationResult> ValidateCreateAsync(RoleDto instance)
     {
+        if (instance == null)
+            return ValidationResult.Fail("Invalid request");
         return await ValidateCommonAsync(instance);
     }
 
     public async Task<ValidationResult> ValidateUpdateAsync(RoleDto instance)
     {
-        if(instance.Id <= 0)
+        if (instance == null)
+            return ValidationResult.Fail("Invalid request");
+        if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid role ID");
-
+        var exist = _repository.GetRoleByIdAsync(instance.Id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("No Data Found");
         return await ValidateCommonAsync(instance);
     }
 
@@ -31,9 +37,6 @@ public class RoleValidator
     // =====================================================
     private async Task<ValidationResult> ValidateCommonAsync(RoleDto instance)
     {
-        if (instance == null)
-            return ValidationResult.Fail("Invalid request");
-
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(instance.Name))

@@ -6,6 +6,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -52,8 +53,10 @@ public class LeaveService : ILeaveService
 
         if (leave == null)
             return ServiceResult<LeaveTypeDto>.Fail("Leave not found");
-
-        return ServiceResult<LeaveTypeDto>.Success(_mapper.Map<LeaveTypeDto>(leave));
+        var dto = _mapper.Map<LeaveTypeDto>(leave);
+        return dto != null
+            ? ServiceResult<LeaveTypeDto>.Success(dto)
+            : ServiceResult<LeaveTypeDto>.Fail("Fail to find Leave Type") ;
     }
 
     public async Task<ServiceResult<LeaveTypeDto>> CreateLeaveTypeAsync(LeaveTypeDto dto)
@@ -63,8 +66,10 @@ public class LeaveService : ILeaveService
             return ServiceResult<LeaveTypeDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
         var created = await _leaveRepository.CreateLeaveTypeAsync(_mapper.Map<LeaveType>(dto));
-
-        return ServiceResult<LeaveTypeDto>.Success(_mapper.Map<LeaveTypeDto>(created), "Leave type created successfully");
+        var data = _mapper.Map<LeaveTypeDto>(created);
+        return data != null
+            ? ServiceResult<LeaveTypeDto>.Success(data, "Leave type created successfully")
+            : ServiceResult<LeaveTypeDto>.Fail("Fail to Create Leave Type");
     }
 
     public async Task<ServiceResult<LeaveTypeDto>> UpdateLeaveTypeAsync(LeaveTypeDto dto)
@@ -76,8 +81,10 @@ public class LeaveService : ILeaveService
         var updated = await _leaveRepository.UpdateLeaveTypeAsync(_mapper.Map<LeaveType>(dto));
         if (updated == null)
             return ServiceResult<LeaveTypeDto>.Fail("Leave Type not found");
-
-        return ServiceResult<LeaveTypeDto>.Success(_mapper.Map<LeaveTypeDto>(updated), "Leave type updated successfully");
+        var data = _mapper.Map<LeaveTypeDto>(updated);
+        return data!=null
+            ? ServiceResult<LeaveTypeDto>.Success(data, "Leave type updated successfully")
+            : ServiceResult<LeaveTypeDto>.Fail("Fail to Update Leave Type");
     }
 
     public async Task<ServiceResult<bool>> DeleteLeaveTypeAsync(int id)
@@ -110,7 +117,9 @@ public class LeaveService : ILeaveService
         var leave = await _leaveRepository.GetLeaveRequestsByFilterAsync(status, employeeId);
         var list = _mapper.Map<List<LeaveRequestDto>>(leave);
 
-        return ServiceResult<List<LeaveRequestDto>>.Success(list);
+        return list.Any()
+            ? ServiceResult<List<LeaveRequestDto>>.Success(list)
+            : ServiceResult<List<LeaveRequestDto>>.Fail("No Data Found");
     }
 
     public async Task<ServiceResult<LeaveRequestDto>> GetLeaveRequestByIdAsync(int id)
@@ -122,8 +131,10 @@ public class LeaveService : ILeaveService
 
         if (leave == null)
             return ServiceResult<LeaveRequestDto>.Fail("Leave request not found");
-
-        return ServiceResult<LeaveRequestDto>.Success(_mapper.Map<LeaveRequestDto>(leave));
+        var dto = _mapper.Map<LeaveRequestDto>(leave);
+        return dto != null
+            ? ServiceResult<LeaveRequestDto>.Success(dto)
+            : ServiceResult<LeaveRequestDto>.Fail("Fail to Find Leave") ;
     }
 
     public async Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestByEmployeeIdAsync(int employeeId)
@@ -155,7 +166,10 @@ public class LeaveService : ILeaveService
 
         var created = await _leaveRepository.CreateLeaveRequestAsync(_mapper.Map<LeaveRequest>(dto));
 
-        return ServiceResult<LeaveRequestDto>.Success(_mapper.Map<LeaveRequestDto>(created), "Leave created successfully");
+        var data = _mapper.Map<LeaveRequestDto>(created);
+        return data!=null
+            ? ServiceResult<LeaveRequestDto>.Success(data, "Leave created successfully")
+            : ServiceResult<LeaveRequestDto>.Fail("Fail to Create Leave");
     }
 
     public async Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto dto)
@@ -175,8 +189,10 @@ public class LeaveService : ILeaveService
         var updated = await _leaveRepository.UpdateLeaveRequestAsync(_mapper.Map<LeaveRequest>(dto));
         if (updated == null)
             return ServiceResult<LeaveRequestDto>.Fail("Leave request not found");
-
-        return ServiceResult<LeaveRequestDto>.Success(_mapper.Map<LeaveRequestDto>(updated), "Leave updated successfully");
+        var data = _mapper.Map<LeaveRequestDto>(updated);
+        return data!=null
+            ? ServiceResult<LeaveRequestDto>.Success(data, "Leave updated successfully")
+            : ServiceResult<LeaveRequestDto>.Fail("Fail to Update Leave");
     }
 
     public async Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id)
@@ -241,7 +257,9 @@ public class LeaveService : ILeaveService
             }
         }
 
-        return ServiceResult<bool>.Success(true, "Leave status updated successfully");
+        return updated
+            ? ServiceResult<bool>.Success(true, "Leave status updated successfully")
+            : ServiceResult<bool>.Fail("Failed to update leave status or status is not approved.");
     }
 
     public async Task<ServiceResult<bool>> UpdateLeaveRequestStatusCancelAsync(int id, int employeeId)
@@ -250,10 +268,10 @@ public class LeaveService : ILeaveService
             return ServiceResult<bool>.Fail("Invalid Id");
 
         var leaveRequest = await GetLeaveRequestByIdAsync(id);
-        if (leaveRequest == null && leaveRequest?.Data == null)
+        if (leaveRequest?.Data == null)
             return ServiceResult<bool>.Fail("Leave Request not found");
 
-        if (leaveRequest?.Data?.EmployeeId != employeeId)
+        if (leaveRequest.Data?.EmployeeId != employeeId)
             return ServiceResult<bool>.Fail("Unauthorized");
 
         if (leaveRequest.Data.StatusId is Status.Approved or Status.Cancelled or Status.Rejected)

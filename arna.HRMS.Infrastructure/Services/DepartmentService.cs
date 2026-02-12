@@ -39,7 +39,11 @@ public class DepartmentService : IDepartmentService
         if (department == null)
             return ServiceResult<DepartmentDto?>.Fail("Department not found");
 
-        return ServiceResult<DepartmentDto?>.Success(_mapper.Map<DepartmentDto>(department));
+        var dto = _mapper.Map<DepartmentDto>(department);
+
+        return dto != null
+            ? ServiceResult<DepartmentDto?>.Success(dto)
+            : ServiceResult<DepartmentDto?>.Fail("Failed to Find department.");
     }
 
     public async Task<ServiceResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto dto)
@@ -51,7 +55,12 @@ public class DepartmentService : IDepartmentService
         var entity = _mapper.Map<Department>(dto);
         var created = await _repository.CreateDepartmentAsync(entity);
 
-        return ServiceResult<DepartmentDto>.Success(_mapper.Map<DepartmentDto>(created), "Department created successfully");
+        var resultDto = _mapper.Map<DepartmentDto>(created);
+
+        return resultDto != null
+            ? ServiceResult<DepartmentDto>.Success(resultDto, "Department created successfully")
+            : ServiceResult<DepartmentDto>.Fail("Failed to create department.");
+
     }
 
     public async Task<ServiceResult<DepartmentDto>> UpdateDepartmentAsync(DepartmentDto dto)
@@ -62,7 +71,11 @@ public class DepartmentService : IDepartmentService
 
         var updated = await _repository.UpdateDepartmentAsync(_mapper.Map<Department>(dto));
 
-        return ServiceResult<DepartmentDto>.Success(_mapper.Map<DepartmentDto>(updated), "Department updated successfully");
+        var resultDto = _mapper.Map<DepartmentDto>(updated);
+
+        return resultDto != null
+            ? ServiceResult<DepartmentDto>.Success(resultDto, "Department updated successfully")
+            : ServiceResult<DepartmentDto>.Fail("Failed to Update department.");
     }
 
     public async Task<ServiceResult<bool>> DeleteDepartmentAsync(int id)
@@ -73,6 +86,8 @@ public class DepartmentService : IDepartmentService
 
         var deleted = await _repository.DeleteDepartmentAsync(id);
 
-        return ServiceResult<bool>.Success(deleted, "Department deleted successfully");
+        return deleted
+            ? ServiceResult<bool>.Success(true, "Department deleted successfully")
+            : ServiceResult<bool>.Fail("Department not found");
     }
 }

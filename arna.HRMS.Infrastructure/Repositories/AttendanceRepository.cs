@@ -14,12 +14,12 @@ public class AttendanceRepository
 
     public AttendanceRepository(
         IBaseRepository<Attendance> baseRepository,
-        FestivalHolidayRepository festivalHolidayRepository,
-        EmployeeRepository employeeRepository)
+        EmployeeRepository employeeRepository,
+        FestivalHolidayRepository festivalHolidayRepository)
     {
         _baseRepository = baseRepository;
-        _festivalHolidayRepository = festivalHolidayRepository;
         _employeeRepository = employeeRepository;
+        _festivalHolidayRepository = festivalHolidayRepository;
     }
 
     public async Task<List<Attendance>> GetAttendenceAsync()
@@ -42,7 +42,11 @@ public class AttendanceRepository
         return _baseRepository.AddAsync(attendance);
     }
 
-    public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? selectedDate)
+    public async Task<List<MonthlyAttendanceDto>> GetAttendanceByMonthAsync(
+    int year,
+    int month,
+    int? empId,
+    DateTime? selectedDate)
     {
         var attendanceQuery = _baseRepository.Query()
             .Include(a => a.Employee)
@@ -55,7 +59,7 @@ public class AttendanceRepository
         if (selectedDate.HasValue)
         {
             var date = selectedDate.Value.Date;
-            attendanceQuery = attendanceQuery.Where(a => a.Date == date);
+            attendanceQuery = attendanceQuery.Where(a => a.Date.Date == date);
 
             year = date.Year;
             month = date.Month;
@@ -72,6 +76,11 @@ public class AttendanceRepository
 
         var attendances = await attendanceQuery.ToListAsync();
 
+        var festivalDates = (await _festivalHolidayRepository
+                .GetByMonthAsync(year, month))
+            .Select(f => f.Date.Date)
+            .ToList();
+
         var startDate = new DateTime(year, month, 1);
         var endDate = startDate.AddMonths(1).AddDays(-1);
 
@@ -81,16 +90,16 @@ public class AttendanceRepository
                 .Select(d => startDate.AddDays(d).Date)
                 .ToList();
 
-        // ✅ Always load employee master data
         var employees = await _employeeRepository.GetEmployeesAsync();
 
-        var employeeMasterLookup = employees.ToDictionary(
-        e => e.Id,
-        e => ( e.FullName, e.EmployeeNumber)
-);
+        var employeeLookup = employees.ToDictionary(
+            e => e.Id,
+            e => (e.FullName, e.EmployeeNumber)
+        );
+
         var employeeIds = empId.HasValue && empId > 0
             ? new List<int> { empId.Value }
-            : employeeMasterLookup.Keys.ToList();
+            : employeeLookup.Keys.ToList();
 
         var attendanceLookup = attendances
             .GroupBy(a => new { a.Date.Date, a.EmployeeId })
@@ -106,13 +115,15 @@ public class AttendanceRepository
                 Day = date.DayOfWeek.ToString()
             };
 
+            bool isFestivalHoliday = festivalDates.Contains(date);
+
             foreach (var employeeId in employeeIds)
             {
                 attendanceLookup.TryGetValue(
                     new { Date = date, EmployeeId = employeeId },
                     out var dailyRecords);
 
-                employeeMasterLookup.TryGetValue(employeeId, out var emp);
+                employeeLookup.TryGetValue(employeeId, out var emp);
 
                 var employeeName = emp.FullName ?? "Unknown";
                 var employeeNumber = emp.EmployeeNumber ?? string.Empty;
@@ -129,7 +140,10 @@ public class AttendanceRepository
                         WorkingHours = TimeSpan.Zero,
                         BreakDuration = TimeSpan.Zero,
                         TotalHours = TimeSpan.Zero,
-                        Status = null
+                        Status = CalculateStatus(
+                            Enumerable.Empty<AttendanceStatus>(),
+                            isFestivalHoliday,
+                            DateOnly.FromDateTime(date))
                     });
 
                     continue;
@@ -159,7 +173,10 @@ public class AttendanceRepository
                     .Distinct()
                     .ToList();
 
-                var status = CalculateStatus(statuses);
+                var status = CalculateStatus(
+                    statuses,
+                    isFestivalHoliday,
+                    DateOnly.FromDateTime(date));
 
                 dailyDto.Employees.Add(new EmployeeDailyAttendanceDto
                 {
@@ -181,13 +198,21 @@ public class AttendanceRepository
         return result;
     }
 
-    private static string CalculateStatus(IEnumerable<AttendanceStatus> statuses)
+    private static string CalculateStatus(
+    IEnumerable<AttendanceStatus> statuses,
+    bool isFestivalHoliday,
+    DateOnly date)
     {
+        var hasAttendance = statuses.Any();
+
+        if (isFestivalHoliday)
+            return "Holiday";
+
+        if (IsWeekend(date) && !hasAttendance)
+            return "Holiday";
+
         if (statuses.Contains(AttendanceStatus.Present))
             return "Present";
-
-        if (statuses.Contains(AttendanceStatus.Absent))
-            return "Absent";
 
         if (statuses.Contains(AttendanceStatus.Late))
             return "Late";
@@ -198,8 +223,21 @@ public class AttendanceRepository
         if (statuses.Contains(AttendanceStatus.Leave))
             return "Leave";
 
+        if (statuses.Contains(AttendanceStatus.Absent))
+            return "Absent";
+
+       /* if (!hasAttendance)
+            return "Absent";*/
+
         return string.Empty;
     }
+
+    private static bool IsWeekend(DateOnly date)
+    {
+        return date.DayOfWeek == DayOfWeek.Saturday ||
+               date.DayOfWeek == DayOfWeek.Sunday;
+    }
+
 
     public async Task<DateTime?> GetLastAttendanceDateAsync(int employeeId)
     {

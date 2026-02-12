@@ -15,13 +15,22 @@ public class FestivalHolidayValidator
 
     public async Task<ValidationResult> ValidateCreateAsync(FestivalHolidayDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
         return await ValidateCommonAsync(dto);
     }
 
     public async Task<ValidationResult> ValidateUpdateAsync(FestivalHolidayDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
+
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid FestivalHoliday ID");
+
+        var exist = _repository.GetFestivalHolidayByIdAsync(dto.Id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("no such Date found");
 
         return await ValidateCommonAsync(dto);
     }
@@ -39,9 +48,6 @@ public class FestivalHolidayValidator
 
     private async Task<ValidationResult> ValidateCommonAsync(FestivalHolidayDto dto)
     {
-        if (dto == null)
-            return ValidationResult.Fail("Invalid request");
-
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(dto.FestivalName))
@@ -49,12 +55,15 @@ public class FestivalHolidayValidator
 
         if (dto.Date == default)
             errors.Add("Festival date is required");
-        else if (dto.Date.Date < DateTime.Today)
+        else if (dto.Date.Date < DateTime.Today.Date)
             errors.Add("Festival date cannot be in the past");
 
-        var duplicates = await _repository.GetByNameAndDateAsync(dto.FestivalName, dto.Date);
-        if (duplicates == null)
-            return ValidationResult.Fail("Error checking for duplicates");
+        if (!string.IsNullOrWhiteSpace(dto.FestivalName))
+        {
+            var duplicates = await _repository.GetByNameAndDateAsync(dto.FestivalName, dto.Date);
+            if (duplicates.Any())
+                errors.Add("A festival with the same name already exists");
+        }
 
         return errors.Any()
             ? ValidationResult.Fail(errors.ToArray())

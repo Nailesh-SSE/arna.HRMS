@@ -29,14 +29,18 @@ public class AttendanceRequestService : IAttendanceRequestService
         var attendanceRequests = await _attendanceRequestRepository.GetAttendanceRequests(employeeId, status);
         var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
 
-        return ServiceResult<List<AttendanceRequestDto>>.Success(list); 
+        return list.Any()
+            ? ServiceResult<List<AttendanceRequestDto>>.Success(list)
+            : ServiceResult<List<AttendanceRequestDto>>.Fail("No Data Found"); 
     }
 
     public async Task<ServiceResult<List<AttendanceRequestDto>>> GetPendingAttendanceRequestesAsync()
     {
         var attendanceRequests = await _attendanceRequestRepository.GetPandingAttendanceRequestes();
         var list = _mapper.Map<List<AttendanceRequestDto>>(attendanceRequests);
-        return ServiceResult<List<AttendanceRequestDto>>.Success(list);
+        return list.Any()
+            ? ServiceResult<List<AttendanceRequestDto>>.Success(list)
+            : ServiceResult<List<AttendanceRequestDto>>.Fail("No Data Found");
     }
 
     public async Task<ServiceResult<AttendanceRequestDto?>> GetAttendenceRequestByIdAsync(int id)
@@ -50,7 +54,9 @@ public class AttendanceRequestService : IAttendanceRequestService
             return ServiceResult<AttendanceRequestDto?>.Fail("Attendance request not found");
 
         var dto = _mapper.Map<AttendanceRequestDto>(attendance);
-        return ServiceResult<AttendanceRequestDto?>.Success(dto);
+        return dto != null
+            ? ServiceResult<AttendanceRequestDto?>.Success(dto)
+            : ServiceResult<AttendanceRequestDto?>.Fail("Fail to Find Attendance Request") ;
     }
 
     public async Task<ServiceResult<AttendanceRequestDto>> CreateAttendanceRequestAsync(AttendanceRequestDto attendanceRequestDto)
@@ -61,6 +67,24 @@ public class AttendanceRequestService : IAttendanceRequestService
         if (attendanceRequestDto.EmployeeId <= 0)
             return ServiceResult<AttendanceRequestDto>.Fail("EmployeeId is required");
 
+        if (attendanceRequestDto.ClockIn == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("ClockIn is required");
+        if (attendanceRequestDto.ClockOut == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("ClockOut is required");
+
+        if (attendanceRequestDto.LocationId == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("Location is required");
+        if (attendanceRequestDto.ReasonTypeId == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("Reson is required");
+
+        if (attendanceRequestDto.FromDate == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("From Date is required");
+        if (attendanceRequestDto.ToDate == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("To Date is required");
+        if (attendanceRequestDto.FromDate.Value.Date >= DateTime.Now.Date)
+            return ServiceResult<AttendanceRequestDto>.Fail("Future or current date is not allowed.");
+        if (attendanceRequestDto.ToDate.Value.Date >= DateTime.Now.Date)
+            return ServiceResult<AttendanceRequestDto>.Fail("Future or current date is not allowed.");
         var entity = _mapper.Map<AttendanceRequest>(attendanceRequestDto);
 
         var createdAttendanceRequest =
@@ -68,7 +92,9 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         var resultDto = _mapper.Map<AttendanceRequestDto>(createdAttendanceRequest);
 
-        return ServiceResult<AttendanceRequestDto>.Success(resultDto, "Attendance request created successfully");
+        return resultDto!=null
+            ? ServiceResult<AttendanceRequestDto>.Success(resultDto, "Attendance request created successfully")
+            : ServiceResult<AttendanceRequestDto>.Fail("Fail to create");
     }
 
     public async Task<ServiceResult<AttendanceRequestDto>> UpdateAttendanceRequestAsync(AttendanceRequestDto dto)
@@ -78,12 +104,40 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         if (dto.Id <= 0)
             return ServiceResult<AttendanceRequestDto>.Fail("Invalid Attendance Request ID");
+        var exist = GetAttendenceRequestByIdAsync(dto.Id);
+        if(exist==null)
+            return ServiceResult<AttendanceRequestDto>.Fail("Invalid Attendance Request ID");
+
+        if (dto.EmployeeId <= 0)
+            return ServiceResult<AttendanceRequestDto>.Fail("EmployeeId is required");
+
+        if (dto.ClockIn == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("ClockIn is required");
+        if (dto.ClockOut == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("ClockOut is required");
+
+        if (dto.LocationId == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("Location is required");
+        if (dto.ReasonTypeId == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("Reson is required");
+
+        if (dto.FromDate == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("From Date is required");
+        if (dto.ToDate == default)
+            return ServiceResult<AttendanceRequestDto>.Fail("To Date is required");
+        if (dto.FromDate.Value.Date >= DateTime.Now.Date)
+            return ServiceResult<AttendanceRequestDto>.Fail("Future or current date is not allowed.");
+        if (dto.ToDate.Value.Date >= DateTime.Now.Date)
+            return ServiceResult<AttendanceRequestDto>.Fail("Future or current date is not allowed.");
+
 
         var Attendance = _mapper.Map<AttendanceRequest>(dto);
         var updated = await _attendanceRequestRepository.UpdateAttendanceRequestAsync(Attendance);
         var resultDto = _mapper.Map<AttendanceRequestDto>(updated);
 
-        return ServiceResult<AttendanceRequestDto>.Success(resultDto, "Request updated successfully");
+        return resultDto != null
+            ? ServiceResult<AttendanceRequestDto>.Success(resultDto, "Request updated successfully")
+            : ServiceResult<AttendanceRequestDto>.Fail("Fail to Update Attendance Form");
     }
 
     public async Task<ServiceResult<bool>> DeleteAttendanceRequestAsync(int id)
@@ -92,14 +146,26 @@ public class AttendanceRequestService : IAttendanceRequestService
             return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");
 
         var deleted = await _attendanceRequestRepository.DeleteAttendanceRequestAsync(id);
-        return ServiceResult<bool>.Success(deleted, "Attendance request deleted successfully");
+        return deleted
+            ? ServiceResult<bool>.Success(deleted, "Attendance request deleted successfully")
+            : ServiceResult<bool>.Fail("Attendance request Fail to deleted");
     }
 
     public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id, Status status, int approvedBy)
     {
         if (id <= 0)
             return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");
+        var exist = GetAttendenceRequestByIdAsync(id);
+        if (exist == null)
+            return ServiceResult<bool>.Fail("Invalid Attendance Request ID");
 
+        if (status == Status.Cancelled)
+            return ServiceResult<bool>.Fail("Not Allow to Cancle");
+        if (status == Status.Pending)
+            return ServiceResult<bool>.Fail("Not Allow to Pending");
+
+        if (approvedBy <= 0)
+            return ServiceResult<bool>.Fail("Invalid Approved ID");
         var updated = await _attendanceRequestRepository.UpdateAttendanceRequestStatusAsync(id, status, approvedBy);
 
         var attendanceRequest = await _attendanceRequestRepository.GetAttendanceRequestByIdAsync(id);
@@ -109,7 +175,9 @@ public class AttendanceRequestService : IAttendanceRequestService
             await CreateAttendanceFromRequestAsync(dto);
         }
 
-        return ServiceResult<bool>.Success(updated);
+        return updated
+            ? ServiceResult<bool>.Success(updated)
+            : ServiceResult<bool>.Fail("Fail to Update Status");
     }
 
     private async Task CreateAttendanceFromRequestAsync(AttendanceRequestDto req)
@@ -216,7 +284,15 @@ public class AttendanceRequestService : IAttendanceRequestService
     {
         if (id <= 0)
             return ServiceResult<bool>.Fail("Invalid AttendanceRequest ID");
+
+        var exist = GetAttendenceRequestByIdAsync(id);
+        if (exist == null)
+            return ServiceResult<bool>.Fail("Invalid Attendance Request ID");
+        if (EmployeeId<=0)
+            return ServiceResult<bool>.Fail("Invalid Employee");
         var updated = await _attendanceRequestRepository.GetAttendanceRequestCancelAsync(id, EmployeeId);
-        return ServiceResult<bool>.Success(updated);
+        return updated
+            ? ServiceResult<bool>.Success(updated)
+            : ServiceResult<bool>.Fail("Fail to Update Status");
     }
 }

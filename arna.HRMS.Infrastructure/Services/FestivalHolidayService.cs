@@ -53,8 +53,10 @@ public class FestivalHolidayService : IFestivalHolidayService
 
         if (holiday == null)
             return ServiceResult<FestivalHolidayDto?>.Fail("Festival holiday not found");
-
-        return ServiceResult<FestivalHolidayDto?>.Success(_mapper.Map<FestivalHolidayDto>(holiday));
+        var dto = _mapper.Map<FestivalHolidayDto>(holiday);
+        return dto!=null
+            ? ServiceResult<FestivalHolidayDto?>.Success(dto)
+            : ServiceResult<FestivalHolidayDto?>.Fail("Fail to Finf Festival");
     }
 
     public async Task<ServiceResult<FestivalHolidayDto>> CreateFestivalHolidayAsync(FestivalHolidayDto dto)
@@ -65,8 +67,10 @@ public class FestivalHolidayService : IFestivalHolidayService
 
         var festival = _mapper.Map<FestivalHoliday>(dto);
         var created = await _festivalHolidayRepository.CreateFestivalHolidayAsync(festival);
-
-        return ServiceResult<FestivalHolidayDto>.Success(_mapper.Map<FestivalHolidayDto>(created), "Festival holiday created successfully");
+        var Data = _mapper.Map<FestivalHolidayDto>(created);
+        return Data!=null
+            ? ServiceResult<FestivalHolidayDto>.Success(Data, "Festival holiday created successfully")
+            : ServiceResult<FestivalHolidayDto>.Fail("Fail to create Festival");
     }
 
     public async Task<ServiceResult<FestivalHolidayDto>> UpdateFestivalHolidayAsync(FestivalHolidayDto dto)
@@ -77,8 +81,10 @@ public class FestivalHolidayService : IFestivalHolidayService
 
         var festival = _mapper.Map<FestivalHoliday>(dto);
         var updated = await _festivalHolidayRepository.UpdateFestivalHolidayAsync(festival);
-
-        return ServiceResult<FestivalHolidayDto>.Success(_mapper.Map<FestivalHolidayDto>(updated), "Festival holiday updated successfully");
+        var data = _mapper.Map<FestivalHolidayDto>(updated);
+        return data!=null
+            ? ServiceResult<FestivalHolidayDto>.Success(data, "Festival holiday updated successfully")
+            : ServiceResult<FestivalHolidayDto>.Fail("Fail to update Festival");
     }
 
     public async Task<ServiceResult<bool>> DeleteFestivalHolidayAsync(int id)
@@ -89,7 +95,9 @@ public class FestivalHolidayService : IFestivalHolidayService
 
         var deleted = await _festivalHolidayRepository.DeleteFestivalHolidayAsync(id);
 
-        return ServiceResult<bool>.Success(deleted, "Festival holiday deleted successfully");
+        return deleted
+            ? ServiceResult<bool>.Success(deleted, "Festival holiday deleted successfully")
+            : ServiceResult<bool>.Fail("Fail to delet Festival") ;
     }
 
     public async Task<ServiceResult<List<FestivalHolidayDto?>>> GetFestivalHolidayByNameAsync(string name)

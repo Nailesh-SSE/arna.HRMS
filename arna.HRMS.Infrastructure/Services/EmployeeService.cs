@@ -47,7 +47,10 @@ public class EmployeeService : IEmployeeService
         if (employee == null)
             return ServiceResult<EmployeeDto?>.Fail("Employee not found");
 
-        return ServiceResult<EmployeeDto?>.Success(_mapper.Map<EmployeeDto>(employee));
+        var dto = _mapper.Map<EmployeeDto>(employee);
+        return dto != null
+            ? ServiceResult<EmployeeDto?>.Success(dto)
+            : ServiceResult<EmployeeDto?>.Fail("Fail to Find Employee");
     }
 
     public async Task<ServiceResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto)
@@ -84,8 +87,10 @@ public class EmployeeService : IEmployeeService
 
             await _userServices.CreateUserAsync(userDto);
         }
-
-        return ServiceResult<EmployeeDto>.Success(_mapper.Map<EmployeeDto>(createdEmployee), "Employee created successfully");
+        var Data = _mapper.Map<EmployeeDto>(createdEmployee);
+        return Data != null
+            ? ServiceResult<EmployeeDto>.Success(Data, "Employee created successfully")
+            : ServiceResult<EmployeeDto>.Fail("Fail to create employee") ;
     }
 
     public async Task<ServiceResult<EmployeeDto>> UpdateEmployeeAsync(EmployeeDto dto)
@@ -96,8 +101,10 @@ public class EmployeeService : IEmployeeService
 
         var employee = _mapper.Map<Employee>(dto);
         var updated = await _employeeRepository.UpdateEmployeeAsync(employee);
-
-        return ServiceResult<EmployeeDto>.Success(_mapper.Map<EmployeeDto>(updated), "Employee updated successfully");
+        var Data = _mapper.Map<EmployeeDto>(updated);
+        return Data!=null 
+            ? ServiceResult<EmployeeDto>.Success(Data, "Employee updated successfully")
+            : ServiceResult<EmployeeDto>.Fail("Fail to Update employee");
     }
 
     public async Task<ServiceResult<bool>> DeleteEmployeeAsync(int id)
@@ -108,7 +115,9 @@ public class EmployeeService : IEmployeeService
 
         var deleted = await _employeeRepository.DeleteEmployeeAsync(id);
 
-        return ServiceResult<bool>.Success(deleted, "Employee deleted successfully");
+        return deleted
+            ? ServiceResult<bool>.Success(deleted, "Employee deleted successfully")
+            : ServiceResult<bool>.Fail("Fail to Delete employee");
     }
 
     private static string GenerateEmployeeNumber(string? lastEmployeeNumber)

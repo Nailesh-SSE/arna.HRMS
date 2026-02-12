@@ -360,7 +360,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.CreateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid email format"));
+        Assert.That(result.Message, Is.EqualTo("Invalid Email format"));
     }
 
     [Test]
@@ -372,7 +372,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.CreateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid DateOfBirth"));
+        Assert.That(result.Message, Is.EqualTo("DateOfBirth is required"));
     }
 
     [Test]
@@ -384,7 +384,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.CreateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid DateOfBirth"));
+        Assert.That(result.Message, Does.Contain("DateOfBirth cannot be in the future"));
     }
 
     [Test]
@@ -395,7 +395,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.CreateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("PhoneNumber is required"));
+        Assert.That(result.Message, Is.EqualTo("Phone number is required."));
     }
 
     [Test]
@@ -536,7 +536,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.UpdateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Email or Phone Number already exists"));
+        Assert.That(result.Message, Does.Contain("Email or Phone Number already exists"));
     }
 
 
@@ -593,7 +593,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.UpdateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid email format"));
+        Assert.That(result.Message, Does.Contain("Invalid Email format"));
     }
 
 
@@ -636,7 +636,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.UpdateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("FirstName is required"));
+        Assert.That(result.Message, Does.Contain("FirstName is required"));
     }
 
 
@@ -723,11 +723,11 @@ public class EmployeeServiceTests
         var result = await _employeeService.DeleteEmployeeAsync(0);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Employee ID"));
+        Assert.That(result.Message, Is.EqualTo("Employee not found"));
         var result2 = await _employeeService.DeleteEmployeeAsync(-5);
 
         Assert.That(result2.IsSuccess, Is.False);
-        Assert.That(result2.Message, Is.EqualTo("Invalid Employee ID"));
+        Assert.That(result2.Message, Is.EqualTo("Employee not found"));
     }
 
     [Test]

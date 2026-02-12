@@ -5,6 +5,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace arna.HRMS.Infrastructure.Services;
 
@@ -39,8 +40,10 @@ public class RoleService : IRoleService
 
         if (role == null)
             return ServiceResult<RoleDto?>.Fail("Role not found");
-
-        return ServiceResult<RoleDto?>.Success(_mapper.Map<RoleDto>(role));
+        var dto = _mapper.Map<RoleDto>(role);
+        return dto!=null
+            ? ServiceResult<RoleDto?>.Success(dto)
+            : ServiceResult<RoleDto?>.Fail("No Data Found");
     }
 
     public async Task<ServiceResult<RoleDto?>> GetRoleByNameAsync(string name)
@@ -51,8 +54,11 @@ public class RoleService : IRoleService
         var role = await _repository.GetRoleByNameAsync(name);
         if (role == null)
             return ServiceResult<RoleDto?>.Fail("Role not found");
+        var Data = _mapper.Map<RoleDto>(role);
+        return Data!=null
+            ? ServiceResult<RoleDto?>.Success(Data)
+            : ServiceResult<RoleDto?>.Fail("No Data Found");
 
-        return ServiceResult<RoleDto?>.Success(_mapper.Map<RoleDto>(role));
     }
 
     public async Task<ServiceResult<RoleDto>> CreateRoleAsync(RoleDto dto)
@@ -63,8 +69,10 @@ public class RoleService : IRoleService
 
         var entity = _mapper.Map<Role>(dto);
         var created = await _repository.CreateRoleAsync(entity);
-
-        return ServiceResult<RoleDto>.Success(_mapper.Map<RoleDto>(created), "Role created successfully");
+        var data = _mapper.Map<RoleDto>(created);
+        return data!=null
+            ? ServiceResult<RoleDto>.Success(data, "Role created successfully")
+            : ServiceResult<RoleDto>.Fail("Fail to create Role");
     }
 
     public async Task<ServiceResult<RoleDto>> UpdateRoleAsync(RoleDto dto)
@@ -74,8 +82,10 @@ public class RoleService : IRoleService
             return ServiceResult<RoleDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
         var updated = await _repository.UpdateRoleAsync(_mapper.Map<Role>(dto));
-
-        return ServiceResult<RoleDto>.Success(_mapper.Map<RoleDto>(updated), "Role updated successfully");
+        var data = _mapper.Map<RoleDto>(updated);
+        return data != null
+            ? ServiceResult<RoleDto>.Success(data, "Role updated successfully")
+            : ServiceResult<RoleDto>.Fail("Fail to Update Role");
     }
 
     public async Task<ServiceResult<bool>> DeleteRoleAsync(int id)
@@ -86,6 +96,8 @@ public class RoleService : IRoleService
 
         var deleted = await _repository.DeleteRoleAsync(id);
 
-        return ServiceResult<bool>.Success(deleted, "Role deleted successfully");
+        return deleted
+            ? ServiceResult<bool>.Success(deleted, "Role deleted successfully")
+            : ServiceResult<bool>.Fail("Fail to Delete Role");
     }
 }

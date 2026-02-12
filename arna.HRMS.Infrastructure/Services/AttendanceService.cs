@@ -55,7 +55,9 @@ public class AttendanceService : IAttendanceService
             return ServiceResult<AttendanceDto?>.Fail("Attendance not found");
 
         var dto = _mapper.Map<AttendanceDto>(attendance);
-        return ServiceResult<AttendanceDto?>.Success(dto);
+        return dto!=null
+            ? ServiceResult<AttendanceDto?>.Success(dto)
+            : ServiceResult<AttendanceDto?>.Fail("Fail to find Attendance");
     }
 
     public async Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync([FromBody] AttendanceDto attendanceDto)
@@ -65,6 +67,10 @@ public class AttendanceService : IAttendanceService
 
         if (attendanceDto.EmployeeId <= 0)
             return ServiceResult<AttendanceDto>.Fail("EmployeeId is required");
+        if (attendanceDto.Date == default)
+            return ServiceResult<AttendanceDto>.Fail("Date is Required.");
+        if (attendanceDto.Notes == default)
+            return ServiceResult<AttendanceDto>.Fail("Note is Required.");
 
         var entity = _mapper.Map<Attendance>(attendanceDto);
 
@@ -82,7 +88,9 @@ public class AttendanceService : IAttendanceService
         var created = await _attendanceRepository.CreateAttendanceAsync(entity);
 
         var resultDto = _mapper.Map<AttendanceDto>(created);
-        return ServiceResult<AttendanceDto>.Success(resultDto, "Attendance created successfully");
+        return resultDto!=null
+            ? ServiceResult<AttendanceDto>.Success(resultDto, "Attendance created successfully")
+            : ServiceResult<AttendanceDto>.Fail("Fail to Create Attendance");
     }
 
     #endregion
@@ -98,7 +106,9 @@ public class AttendanceService : IAttendanceService
 
         var attendances = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId, date);
 
-        return ServiceResult<List<MonthlyAttendanceDto>>.Success((List<MonthlyAttendanceDto>)attendances);
+        return attendances.Any()
+            ? ServiceResult<List<MonthlyAttendanceDto>>.Success((List<MonthlyAttendanceDto>)attendances)
+            : ServiceResult<List<MonthlyAttendanceDto>>.Fail("Data Not Found");
 
     }
     #endregion

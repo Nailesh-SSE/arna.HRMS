@@ -20,22 +20,26 @@ public class LeaveValidator
 
     public async Task<ValidationResult> ValidateLeaveTypeCreateAsync(LeaveTypeDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
         return await ValidateLeaveTypeCommonAsync(dto);
     }
 
     public async Task<ValidationResult> ValidateLeaveTypeUpdateAsync(LeaveTypeDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Leave Type ID");
+        var exist = _repository.GetLeaveTypeByIdAsync(dto.Id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("No Data Found");
 
         return await ValidateLeaveTypeCommonAsync(dto);
     }
 
     private async Task<ValidationResult> ValidateLeaveTypeCommonAsync(LeaveTypeDto dto)
     {
-        if (dto == null)
-            return ValidationResult.Fail("Invalid request");
-
         var errors = new List<string>();
 
         if (!Enum.IsDefined(typeof(LeaveName), dto.LeaveNameId))
@@ -64,17 +68,19 @@ public class LeaveValidator
 
     public async Task<ValidationResult> ValidateLeaveRequestUpdateAsync(LeaveRequestDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Leave Request ID");
+        var exist = _repository.GetLeaveRequestByIdAsync(dto.Id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("No Such Data Found");
 
         return await ValidateLeaveRequestCommonAsync(dto);
     }
 
     private Task<ValidationResult> ValidateLeaveRequestCommonAsync(LeaveRequestDto dto)
     {
-        if (dto == null)
-            return Task.FromResult(ValidationResult.Fail("Invalid request"));
-
         var errors = new List<string>();
 
         if (dto.EmployeeId <= 0)
@@ -92,8 +98,11 @@ public class LeaveValidator
         if (dto.StartDate.Date > dto.EndDate.Date)
             errors.Add("Start date cannot be after End date");
 
-        if (dto.StartDate.Date < DateTime.Today || dto.EndDate.Date < DateTime.Today)
+        if (dto.StartDate.Date < DateTime.Today.Date || dto.EndDate.Date < DateTime.Today.Date)
             errors.Add("Leave dates cannot be in the past");
+
+        if (dto.StartDate.Date == DateTime.Today.Date || dto.EndDate.Date == DateTime.Today.Date)
+            errors.Add("Leave dates cannot be toDays date");
 
         return Task.FromResult(
             errors.Any()

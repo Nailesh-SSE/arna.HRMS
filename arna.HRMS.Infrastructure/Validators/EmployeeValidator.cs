@@ -20,6 +20,9 @@ public class EmployeeValidator
     // =====================================================
     public async Task<ValidationResult> ValidateCreateAsync(EmployeeDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
+
         return await ValidateCommonFields(dto);
     }
 
@@ -28,8 +31,15 @@ public class EmployeeValidator
     // =====================================================
     public async Task<ValidationResult> ValidateUpdateAsync(EmployeeDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
+
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Employee ID");
+
+        var exist = _repository.GetEmployeeByIdAsync(dto.Id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("Employee not found");
 
         return await ValidateCommonFields(dto);
     }
@@ -39,9 +49,7 @@ public class EmployeeValidator
     // =====================================================
     private async Task<ValidationResult> ValidateCommonFields(EmployeeDto instance)
     {
-        if (instance == null)
-            return ValidationResult.Fail("Invalid request");
-
+        
         var errors = new List<string>();
 
         if (string.IsNullOrWhiteSpace(instance.FirstName))
@@ -89,7 +97,7 @@ public class EmployeeValidator
         if (instance.Salary <= 0)
             errors.Add("Salary must be greater than 0");
 
-        var duplicate = await _repository.EmployeeExistsAsync(instance.Email, instance.PhoneNumber);
+        var duplicate = await _repository.EmployeeExistsAsync(instance.Email, instance.PhoneNumber, instance.Id);
 
         if (duplicate)
             errors.Add("Email or Phone Number already exists");

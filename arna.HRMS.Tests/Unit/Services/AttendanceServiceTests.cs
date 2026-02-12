@@ -49,7 +49,7 @@ public class AttendanceServiceTests
             new EmployeeRepository(employeeBaseRepo);
 
         var attendanceRepository =
-            new AttendanceRepository(attendanceBaseRepo, festivalHolidayRepository, employeeRepository);
+            new AttendanceRepository(attendanceBaseRepo, employeeRepository, festivalHolidayRepository);
 
 
         // ---------- Mocks ----------

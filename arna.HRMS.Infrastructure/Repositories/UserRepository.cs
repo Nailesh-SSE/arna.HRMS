@@ -61,7 +61,7 @@ public class UserRepository
         phoneNumber = (phoneNumber ?? string.Empty).Trim().ToLower();
         return await _baseRepository.Query()
             .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted 
-                && u.Email.Trim().ToLower() == email && u.PhoneNumber.Trim().ToLower() == phoneNumber) != null;
+                && u.Email.Trim().ToLower() == email || u.PhoneNumber.Trim().ToLower() == phoneNumber) != null;
     }
 
     public async Task<User?> GetByUsernameOrEmailAsync(string usernameOrEmail)

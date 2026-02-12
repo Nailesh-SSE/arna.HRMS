@@ -15,13 +15,23 @@ public class DepartmentValidator
 
     public async Task<ValidationResult> ValidateCreateAsync(DepartmentDto instance)
     {
+        if (instance == null)
+            return ValidationResult.Fail("Invalid request");
+
         return await ValidateCommonAsync(instance);
     }
 
     public async Task<ValidationResult> ValidateUpdateAsync(DepartmentDto instance)
     {
+        if (instance == null)
+            return ValidationResult.Fail("Invalid request");
+
         if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid Department ID");
+
+        var exist = _repository.GetDepartmentByIdAsync(instance.Id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("Data not found");
 
         return await ValidateCommonAsync(instance);
     }
@@ -31,9 +41,6 @@ public class DepartmentValidator
     // =====================================================
     private async Task<ValidationResult> ValidateCommonAsync(DepartmentDto instance)
     {
-        if (instance == null)
-            return ValidationResult.Fail("Invalid request");
-
         var errors = new List<string>();
 
         // Name
@@ -51,8 +58,8 @@ public class DepartmentValidator
             errors.Add("Department Code must be at most 50 characters");
 
         // Description
-        if (!string.IsNullOrWhiteSpace(instance.Description) && instance.Description.Length > 500)
-            errors.Add("Department Description must be at most 500 characters");
+        if (string.IsNullOrWhiteSpace(instance.Description))
+            errors.Add("Department Description Required");
 
         // Duplicate 
         var duplicate = await _repository.DepartmentExistsAsync(instance.Name);

@@ -68,13 +68,11 @@ public class UserServices : IUserServices
 
     public async Task<ServiceResult<bool>> DeleteUserAsync(int id)
     {
-        var user = await GetUserByIdAsync(id);
-        if (user == null)
-            return ServiceResult<bool>.Fail("User not found");
-
         var deleted = await _repository.DeleteUserAsync(id);
 
-        return ServiceResult<bool>.Success(deleted, "User deleted successfully");
+        return deleted
+            ? ServiceResult<bool>.Success(deleted, "User deleted successfully")
+            : ServiceResult<bool>.Fail("Fail to Delete User");
     }
 
     public async Task<ServiceResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
