@@ -7,6 +7,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -64,6 +65,9 @@ public class AttendanceServiceTests
             cfg.AddProfile<AttendanceProfile>();
         });
 
+        // ---------- Validator ----------
+        var validator = new AttendanceValidator(attendanceRepository);
+
         _mapper = mapperConfig.CreateMapper();
 
         // ---------- Service ----------
@@ -72,7 +76,8 @@ public class AttendanceServiceTests
             _mapper,
             _employeeServiceMock.Object,
             _festivalHolidayServiceMock.Object,
-            _leaveServiceMock.Object
+            _leaveServiceMock.Object,
+            validator
         );
     }
 

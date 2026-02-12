@@ -8,6 +8,7 @@ using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -40,6 +41,7 @@ public class AttendanceRequestServiceTests
         var requestBaseRepo = new BaseRepository<AttendanceRequest>(_dbContext);
         var attendanceRequestRepository =
             new AttendanceRequestRepository(requestBaseRepo);
+        var validator = new AttendanceRequestValidator(attendanceRequestRepository);
 
         // ---------- MOCK AttendanceService ----------
         _attendanceServiceMock = new Mock<IAttendanceService>();
@@ -56,7 +58,8 @@ public class AttendanceRequestServiceTests
         _service = new AttendanceRequestService(
             attendanceRequestRepository,
             _mapper,
-            _attendanceServiceMock.Object   
+            _attendanceServiceMock.Object,
+            validator
         );
     }
 
