@@ -1058,7 +1058,7 @@ public class LeaveServiceTests
         var dto = new LeaveRequestDto
         {
             EmployeeId = 101,
-            LeaveTypeId = 1,
+            LeaveTypeId = 2,
             StartDate = DateTime.Now,
             EndDate = DateTime.Now,
             Reason = "Medical",
@@ -1792,7 +1792,7 @@ public class LeaveServiceTests
         {
             Id = 1,
             EmployeeId = 101,
-            LeaveTypeId = 1,
+            LeaveTypeId = 2,
             StartDate = DateTime.Now,
             EndDate = DateTime.Now.AddDays(4),
             Reason = "Medical Update",
@@ -1843,7 +1843,7 @@ public class LeaveServiceTests
         {
             Id = 1,
             EmployeeId = 101,
-            LeaveTypeId = 1,
+            LeaveTypeId = 2,
             StartDate = DateTime.Now.AddDays(1),
             EndDate = DateTime.Now,
             Reason = "Medical Update",

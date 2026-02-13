@@ -101,8 +101,11 @@ public class LeaveValidator
         if (dto.StartDate.Date < DateTime.Today.Date || dto.EndDate.Date < DateTime.Today.Date)
             errors.Add("Leave dates cannot be in the past");
 
-        if (dto.StartDate.Date == DateTime.Today.Date || dto.EndDate.Date == DateTime.Today.Date)
-            errors.Add("Leave dates cannot be toDays date");
+        if ((LeaveName)dto.LeaveTypeId != LeaveName.SickLeave)
+        {
+            if (dto.StartDate.Date == DateTime.Today.Date || dto.EndDate.Date == DateTime.Today.Date)
+                errors.Add("Leave dates cannot be toDays date");
+        }
 
         return Task.FromResult(
             errors.Any()

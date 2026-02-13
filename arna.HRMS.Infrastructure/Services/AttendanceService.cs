@@ -100,6 +100,13 @@ public class AttendanceService : IAttendanceService
         if (month < 1 || month > 12)
             return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid month");
 
+        if (empId > 0)
+        {
+            var exist = await _employeeService.GetEmployeeByIdAsync(empId.Value);
+            if(exist==null)
+                return ServiceResult<List<MonthlyAttendanceDto>>.Fail("No such Employee Found");
+        }
+
         var attendances = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId, date);
 
         return attendances.Any()
@@ -185,6 +192,9 @@ public class AttendanceService : IAttendanceService
     {
         if (employeeId <= 0)
             return ServiceResult<AttendanceDto?>.Fail("Invalid Employee ID");
+        var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
+        if (exist == null)
+            return ServiceResult<AttendanceDto?>.Fail("No such Employee Found");
 
         var last =
             await _attendanceRepository.GetLastAttendanceTodayAsync(employeeId);
@@ -193,7 +203,9 @@ public class AttendanceService : IAttendanceService
             return ServiceResult<AttendanceDto?>.Fail("Attendance not found");
 
         var dto = _mapper.Map<AttendanceDto>(last);
-        return ServiceResult<AttendanceDto?>.Success(dto);
+        return dto!=null
+            ? ServiceResult<AttendanceDto?>.Success(dto)
+            : ServiceResult<AttendanceDto?>.Fail("No data found");
     }
 
     #endregion

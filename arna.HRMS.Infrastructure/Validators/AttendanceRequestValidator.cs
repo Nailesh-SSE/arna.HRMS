@@ -19,6 +19,8 @@ public class AttendanceRequestValidator
     // =============================
     public async Task<ValidationResult> ValidateCreateAsync(AttendanceRequestDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
         return await ValidateCommonAsync(dto);
     }
 
@@ -27,8 +29,13 @@ public class AttendanceRequestValidator
     // =============================
     public async Task<ValidationResult> ValidateUpdateAsync(AttendanceRequestDto dto)
     {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Attendance Request ID");
+        var exits = _repository.GetAttendanceRequestByIdAsync(dto.Id);
+        if (exits.Result == null)
+            return ValidationResult.Fail("No Data Found");
 
         return await ValidateCommonAsync(dto);
     }
@@ -84,7 +91,7 @@ public class AttendanceRequestValidator
             if (dto.ToDate.Value.Date >= DateTime.Now.Date)
                 errors.Add("Future or current To Date is not allowed");
 
-            if (dto.FromDate > dto.ToDate)
+            if (dto.FromDate.Value.Date > dto.ToDate.Value.Date)
                 errors.Add("From Date cannot be greater than To Date");
         }
 
@@ -109,10 +116,13 @@ public class AttendanceRequestValidator
         if (dto.BreakDuration == null)
             errors.Add("Break duration is required");
 
-        if (string.IsNullOrWhiteSpace(dto.Description) && dto.Description?.Length > 500)
+        if(string.IsNullOrWhiteSpace(dto.Description))
+            errors.Add("Description is requied");
+
+        if (dto.Description?.Length > 500)
             errors.Add("Description cannot exceed 500 characters");
 
-        // Clock times should fall within the from/to dates when provided
+        /*// Clock times should fall within the from/to dates when provided
         if (dto.ClockIn != null && dto.FromDate != null && dto.ToDate != null)
         {
             var cinDate = dto.ClockIn.Value.Date;
@@ -125,7 +135,7 @@ public class AttendanceRequestValidator
             var coutDate = dto.ClockOut.Value.Date;
             if (coutDate < dto.FromDate.Value.Date || coutDate > dto.ToDate.Value.Date)
                 errors.Add("ClockOut date must be within FromDate and ToDate range");
-        }
+        }*/
 
         // Break duration and total hours basic sanity checks
         if (dto.BreakDuration != null && dto.TotalHours < dto.BreakDuration)

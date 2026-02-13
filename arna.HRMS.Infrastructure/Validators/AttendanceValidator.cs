@@ -29,12 +29,6 @@ public class AttendanceValidator
         if (string.IsNullOrWhiteSpace(dto.Notes))
             errors.Add("Note is Required.");
 
-        if (dto.ClockInTime.HasValue && dto.ClockOutTime.HasValue)
-        {
-            if (dto.ClockOutTime.Value <= dto.ClockInTime.Value)
-                errors.Add("ClockOut must be greater than ClockIn");
-        }
-
         if (dto.WorkingHours.HasValue && dto.WorkingHours.Value < TimeSpan.Zero)
             errors.Add("Working hours must be greater than or equal to zero");
 
