@@ -87,6 +87,53 @@ public class TableSchemas
         new() { Header = "EndDate", Value = u => u.EndDate.Date.ToString("yyyy/MM/dd") },
     };
 
+    public static List<TableColumn<LeaveRequestViewModel>> DashboardPendingLeaves = new()
+    {
+        new()
+        {
+            Header = "Employee",
+            Value = u => $"{u.EmployeeNumber}"
+        },
+         new()
+        {
+            Header = "Employee",
+            Value = u => $"{u.EmployeeName}"
+        },
+        new()
+        {
+            Header = "LeaveType Id",
+            Value = u => System.Text.RegularExpressions.Regex
+                            .Replace(u.LeaveTypeName ?? u.LeaveTypeId.ToString(),
+                                     "([a-z])([A-Z])", "$1 $2"),
+            CssClass = "badge text-center bg-light text-dark border"
+        },
+
+        new()
+        {
+            Header = "Duration",
+            Value = u => $"{u.StartDate:MMM dd} – {u.EndDate:MMM dd}"
+        },
+        new()
+        {
+            Header = "Days",
+            Value = u => u.LeaveDays.ToString(),
+            CssClass = "fw-semibold"
+        },
+        new()
+        {
+            Header = "Status",
+            Value = u => u.StatusId.ToString(),
+            CssClassFunc = u => u.StatusId switch
+            {
+                Models.Enums.Status.Pending   => "badge bg-warning text-dark",
+                Models.Enums.Status.Approved  => "badge bg-success",
+                Models.Enums.Status.Rejected  => "badge bg-danger",
+                Models.Enums.Status.Cancelled => "badge bg-secondary",
+                _ => "badge bg-secondary"
+            }
+        }
+    };
+
     // GENERIC STATUS COLUMN
     private static TableColumn<T> StatusColumn<T>(Func<T, bool> isActiveSelector)
     {

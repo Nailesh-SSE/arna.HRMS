@@ -1,0 +1,135 @@
+﻿/* ══════════ ANIMATION ══════════ */
+.dash-fade-in {
+    animation: dashFade 0.4s ease-out;
+}
+
+@keyframes dashFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ══════════ STAT ICON ══════════ */
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ══════════ LEAVE TYPE CARD ══════════ */
+.leave-type-card {
+    transition: transform 0.2s ease;
+}
+
+    .leave-type-card:hover {
+        transform: scale(1.02);
+    }
+
+/* ══════════ REQUEST ICON ══════════ */
+.request-type-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.req-approved {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #198754;
+}
+
+.req-pending {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #d97706;
+}
+
+.req-rejected {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+}
+
+.req-cancelled {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #6c757d;
+}
+
+/* ══════════ SCROLL AREA ══════════ */
+.dash-scroll-area-sm {
+    max-height: 340px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+    .dash-scroll-area-sm::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .dash-scroll-area-sm::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .dash-scroll-area-sm::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 10px;
+    }
+
+        .dash-scroll-area-sm::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+.dash-scroll-area-sm {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+/* ══════════ QUICK ACTIONS ══════════ */
+.action-tile {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .action-tile:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    }
+
+.action-icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ══════════ RESPONSIVE ══════════ */
+@media (max-width: 576px) {
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+    }
+
+        .stat-icon .fs-4 {
+            font-size: 1rem !important;
+        }
+
+    .action-icon-circle {
+        width: 40px;
+        height: 40px;
+    }
+}

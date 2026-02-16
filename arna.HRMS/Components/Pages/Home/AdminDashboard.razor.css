@@ -1,0 +1,143 @@
+﻿/* ══════════ ANIMATION ══════════ */
+.dash-fade-in {
+    animation: dashFade 0.4s ease-out;
+}
+
+@keyframes dashFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ══════════ STAT ICON ══════════ */
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ══════════ AVATAR ══════════ */
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.avatar-green {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+}
+
+.avatar-red {
+    background: linear-gradient(135deg, #ee5a6f, #f093fb);
+}
+
+/* ══════════ STATUS DOT ══════════ */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ══════════ SCROLL AREAS ══════════ */
+.dash-scroll-area {
+    max-height: 380px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.dash-scroll-area-sm {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+    .dash-scroll-area::-webkit-scrollbar,
+    .dash-scroll-area-sm::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .dash-scroll-area::-webkit-scrollbar-track,
+    .dash-scroll-area-sm::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .dash-scroll-area::-webkit-scrollbar-thumb,
+    .dash-scroll-area-sm::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 10px;
+    }
+
+        .dash-scroll-area::-webkit-scrollbar-thumb:hover,
+        .dash-scroll-area-sm::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+.dash-scroll-area,
+.dash-scroll-area-sm {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+    .dash-scroll-area .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: #f8f9fa;
+    }
+
+/* ══════════ QUICK ACTIONS ══════════ */
+.action-tile {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .action-tile:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    }
+
+.action-icon-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ══════════ RESPONSIVE ══════════ */
+@media (max-width: 576px) {
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+    }
+
+        .stat-icon .fs-4 {
+            font-size: 1rem !important;
+        }
+
+    .action-icon-circle {
+        width: 40px;
+        height: 40px;
+    }
+}

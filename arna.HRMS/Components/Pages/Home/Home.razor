@@ -1,0 +1,49 @@
+﻿@page "/"
+
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+
+@inherits AuthenticatedLayoutBase
+@inject NavigationManager Nav
+
+<FullPageLoader Visible="isLoading" />
+
+@if (!isLoading)
+{
+    @if (IsAdmin() || IsSuperAdmin())
+    {
+        <AdminDashboard UserFullName="@GetUserFullName()" />
+    }
+    else if (IsEmployee())
+    {
+        <EmployeeDashboard UserFullName="@GetUserFullName()"
+                           EmployeeId="@GetEmployeeId()" />
+    }
+}
+
+@code {
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+
+            if (!IsAuthentication())
+            {
+                Nav.NavigateTo("/login");
+                return;
+            }
+        }
+        catch
+        {
+            Nav.NavigateTo("/login");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
