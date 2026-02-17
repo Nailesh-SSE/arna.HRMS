@@ -55,10 +55,17 @@ public class DepartmentRepository
         return true;
     }
 
-    public async Task<bool> DepartmentExistsAsync(string name)
+    public async Task<bool> DepartmentExistsAsync(string name, int? id)
     {
-        name = (name ?? string.Empty).Trim().ToLower();  
+        name = (name ?? string.Empty).Trim().ToLower();
+
         return await _baseRepository.Query()
-            .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted && u.Name.Trim().ToLower() == name) != null;
+            .AnyAsync(u =>
+                u.IsActive &&
+                !u.IsDeleted &&
+                u.Name.Trim().ToLower() == name &&
+                u.Id != id
+            );
     }
+
 }

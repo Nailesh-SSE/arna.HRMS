@@ -224,6 +224,65 @@ public class UserServiceTest
     }
 
     [Test]
+    public async Task CreateUserAsync_MissingFirstName_ReturnsFail()
+    {
+        var dto = new UserDto
+        {
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.CreateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("First name is required"));
+    }
+
+    [Test]
+    public async Task CreateUserAsync_MissingLastName_ReturnsFail()
+    {
+        var dto = new UserDto
+        {
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            FirstName = "Test",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.CreateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Last name is required"));
+    }
+
+    [Test]
+    public async Task CreateUserAsync_InvalidRole_ReturnsFail()
+    {
+        var dto = new UserDto
+        {
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 0,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.CreateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Role is required"));
+    }
+
+
+    [Test]
     public async Task CreateUserAsync_MissingEmail_ReturnsFailResult()
     {
         var role = new Role
@@ -247,6 +306,26 @@ public class UserServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Does.Contain("Email is required"));
+    }
+
+    [Test]
+    public async Task CreateUserEntityAsync_ValidDto_ReturnsEntity()
+    {
+        var dto = new UserDto
+        {
+            Username = "entityuser",
+            Email = "entity@test.com",
+            Password = "password123",
+            FirstName = "Entity",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.CreateUserEntityAsync(dto);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.Username, Is.EqualTo("entityuser"));
     }
 
     [Test]
@@ -413,7 +492,7 @@ public class UserServiceTest
 
         await _dbContext.SaveChangesAsync();
         // Act
-        var result = await _userService.UserExistsAsync("testuser.com", "1234567890");
+        var result = await _userService.UserExistsAsync("testuser.com", "1234567890", null);
         // Assert
         Assert.That(result, Is.True);
     }
@@ -422,7 +501,7 @@ public class UserServiceTest
     public async Task UserExistsAsync_EmailDoesNotExist_ReturnsFalse()
     {
         // Act
-        var result = await _userService.UserExistsAsync("testuser.com", "1234567890");
+        var result = await _userService.UserExistsAsync("testuser.com", "1234567890", 1);
         // Assert
         Assert.That(result, Is.False);
     }
@@ -431,9 +510,32 @@ public class UserServiceTest
     public async Task UserExistsAsync_WhitespaceEmail_ReturnsFalse()
     {
         // Act
-        var result = await _userService.UserExistsAsync("", "");
+        var result = await _userService.UserExistsAsync("", "",0);
         // Assert
         Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task UserExistsAsync_DuplicatePhone_ReturnsTrue()
+    {
+        _dbContext.Users.Add(new User
+        {
+            Id = 1,
+            Username = "user1",
+            Email = "user1@test.com",
+            Password = "password",
+            PasswordHash = "hash",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        });
+
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _userService.UserExistsAsync("new@test.com", "1234567890", null);
+
+        Assert.That(result, Is.True);
     }
 
     [Test]
@@ -461,18 +563,61 @@ public class UserServiceTest
         });
         await _dbContext.SaveChangesAsync();
         // Act
-        var result = await _userService.UserExistsAsync("testuser.com", "1234567890");
+        var result = await _userService.UserExistsAsync("testuser.com", "1234567890", null);
         // Assert
         Assert.That(result, Is.True);
     }
 
     [Test]
+    public async Task UpdateUserAsync_InvalidId_ReturnsFailResult()
+    {
+        var dto = new UserDto
+        {
+            Id = 0,
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.UpdateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Invalid User ID"));
+    }
+
+    [Test]
+    public async Task UpdateUserAsync_NonExistingUser_ReturnsFailResult()
+    {
+        var dto = new UserDto
+        {
+            Id = 999,
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.UpdateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("No Data Found"));
+    }
+
+
+    [Test]
     public async Task UserExistsAsync_NullOrEmptyEmail_ReturnsFalse()
     {
         // Act
-        var resultNull = await _userService.UserExistsAsync(null, null);
-        var resultEmpty = await _userService.UserExistsAsync(string.Empty, string.Empty);
-        var resultWhitespace = await _userService.UserExistsAsync("", "");
+        var resultNull = await _userService.UserExistsAsync(null!, null!, 0);
+        var resultEmpty = await _userService.UserExistsAsync(string.Empty, string.Empty, 0);
+        var resultWhitespace = await _userService.UserExistsAsync("", "",0);
         // Assert
         Assert.That(resultNull, Is.False);
         Assert.That(resultEmpty, Is.False);
@@ -480,49 +625,153 @@ public class UserServiceTest
     }
 
     [Test]
-    public async Task UpdateUserAsync_WhenEmailExists_ReturnsTrue()
+    public async Task UpdateUserAsync_WhenEmailExists_ReturnsFalse()
     {
+        // Arrange
+
         var role = new Role
         {
             Id = 1,
             Name = "Admin",
             IsDeleted = false
         };
+
         _dbContext.Roles.Add(role);
-        _dbContext.Users.Add(new User
+
+        // First user (the one we will update)
+        var user1 = new User
         {
             Id = 1,
-            Username = "existinguser",
-            Email = "test@user.com",
-            PasswordHash = "hashedpassword",
-            FirstName = "Existing",
+            Username = "user1",
+            Email = "first@user.com",
+            PasswordHash = "hash1",
+            FirstName = "First",
             LastName = "User",
             RoleId = 1,
             Password = "password",
             IsDeleted = false,
-            PhoneNumber= "1234567890"
-        });
+            IsActive = true,
+            PhoneNumber = "1111111111"
+        };
+
+        // Second user (already using target email)
+        var user2 = new User
+        {
+            Id = 2,
+            Username = "user2",
+            Email = "test@user.com",   // 🔥 duplicate email
+            PasswordHash = "hash2",
+            FirstName = "Second",
+            LastName = "User",
+            RoleId = 1,
+            Password = "password",
+            IsDeleted = false,
+            IsActive = true,
+            PhoneNumber = "2222222222"
+        };
+
+        _dbContext.Users.AddRange(user1, user2);
         await _dbContext.SaveChangesAsync();
 
+        // Act → Try to update user1 with email already used by user2
         var dto = new UserDto
         {
             Id = 1,
-            Username = "existinguser",
-            Email = "test@user.com",
-            Password = "password123",
-            IsDeleted = false,
-            PasswordHash = "hashedpassword",
+            Username = "user1",
+            Email = "test@user.com", 
+            Password = "newpassword",
             RoleId = 1,
-            PhoneNumber= "0987654321",
-            FirstName = "Existing",
+            PhoneNumber = "1111111111",
+            FirstName = "First",
             LastName = "User",
+            IsDeleted = false
         };
-        // Act
+
         var result = await _userService.UpdateUserAsync(dto);
 
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Email or Phone Number already exists"));
+    }
+
+    [Test]
+    public async Task UpdateUserAsync_MissingFirstName_ReturnsFail()
+    {
+        var role = new Role { Id = 1, Name = "Admin" };
+        _dbContext.Roles.Add(role);
+
+        _dbContext.Users.Add(new User
+        {
+            Id = 1,
+            Username = "user",
+            Email = "user@test.com",
+            Password = "password",
+            PasswordHash = "hash",
+            FirstName = "Old",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        });
+
+        await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
+
+        var dto = new UserDto
+        {
+            Id = 1,
+            Username = "user",
+            Email = "user@test.com",
+            Password = "password123",
+            FirstName = "",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.UpdateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("First name is required"));
+    }
+
+    [Test]
+    public async Task UpdateUserAsync_InvalidRole_ReturnsFail()
+    {
+        var role = new Role { Id = 1, Name = "Admin" };
+        _dbContext.Roles.Add(role);
+
+        _dbContext.Users.Add(new User
+        {
+            Id = 1,
+            Username = "user",
+            Email = "user@test.com",
+            Password = "password",
+            PasswordHash = "hash",
+            FirstName = "Old",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        });
+
+        await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
+
+        var dto = new UserDto
+        {
+            Id = 1,
+            Username = "user",
+            Email = "user@test.com",
+            Password = "password123",
+            FirstName = "Updated",
+            LastName = "User",
+            RoleId = 0,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.UpdateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Role is required"));
     }
 
     [Test]
@@ -599,10 +848,26 @@ public class UserServiceTest
             IsDeleted = false
         };
         _dbContext.Roles.Add(role);
-        _dbContext.SaveChanges();
+
+        _dbContext.Users.Add(new User
+        {
+            Id = 1,
+            Username = "existinguser",
+            Email = "test@user.com",
+            PasswordHash = "hashedpassword",
+            FirstName = "Existing",
+            LastName = "User",
+            RoleId = 1,
+            Password = "password",
+            IsDeleted = false,
+            PhoneNumber = "1234599990"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
         var dto = new UserDto
         {
-            Id = 999,
+            Id = 1,
             Email = "testuser.com", 
             Password = "password123",
             IsDeleted = false,
@@ -620,6 +885,98 @@ public class UserServiceTest
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Does.Contain("Username is required"));
     }
+
+    [Test]
+    public async Task UpdateUserAsync_InvalidEmailFormat_ReturnsFail()
+    {
+        var role = new Role
+        {
+            Id = 1,
+            Name = "Admin",
+            IsDeleted = false
+        };
+        _dbContext.Roles.Add(role);
+
+        _dbContext.Users.Add(new User
+        {
+            Id = 1,
+            Username = "existinguser",
+            Email = "test@user.com",
+            PasswordHash = "hashedpassword",
+            FirstName = "Existing",
+            LastName = "User",
+            RoleId = 1,
+            Password = "password",
+            IsDeleted = false,
+            PhoneNumber = "1234599990"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
+        var dto = new UserDto
+        {
+            Id = 1,
+            Username = "testuser",
+            Email = "invalid-email",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.UpdateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Invalid email format"));
+    }
+
+    [Test]
+    public async Task UpdateUserAsync_InvalidPhoneFormat_ReturnsFail()
+    {
+        var role = new Role
+        {
+            Id = 1,
+            Name = "Admin",
+            IsDeleted = false
+        };
+        _dbContext.Roles.Add(role);
+
+        _dbContext.Users.Add(new User
+        {
+            Id = 1,
+            Username = "existinguser",
+            Email = "test@user.com",
+            PasswordHash = "hashedpassword",
+            FirstName = "Existing",
+            LastName = "User",
+            RoleId = 1,
+            Password = "password",
+            IsDeleted = false,
+            PhoneNumber = "1234599990"
+        });
+        await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+        var dto = new UserDto
+        {
+            Id = 1,
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "abc"
+        };
+
+        var result = await _userService.UpdateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Invalid phone number format"));
+    }
+
 
     [Test]
     public async Task UpdateUserAsync_WhenNullDto_ReturnsFailResult()
@@ -641,7 +998,24 @@ public class UserServiceTest
             IsDeleted = false
         };
         _dbContext.Roles.Add(role);
+
+        _dbContext.Users.Add(new User
+        {
+            Id = 1,
+            Username = "existinguser",
+            Email = "test@user.com",
+            PasswordHash = "hashedpassword",
+            FirstName = "Existing",
+            LastName = "User",
+            RoleId = 1,
+            Password = "password",
+            IsDeleted = false,
+            PhoneNumber = "1234599990"
+        });
         await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
         var dto = new UserDto
         {
             Id = 1,
@@ -768,6 +1142,69 @@ public class UserServiceTest
     }
 
     [Test]
+    public async Task CreateUserAsync_PhoneNot10Digits_ReturnsFail()
+    {
+        var dto = new UserDto
+        {
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "12345"
+        };
+
+        var result = await _userService.CreateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Phone number must be exactly 10 digits"));
+    }
+
+
+    [Test]
+    public async Task CreateUserAsync_InvalidPhoneFormat_ReturnsFail()
+    {
+        var dto = new UserDto
+        {
+            Username = "testuser",
+            Email = "test@test.com",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "abc123"
+        };
+
+        var result = await _userService.CreateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Invalid phone number format"));
+    }
+
+
+    [Test]
+    public async Task CreateUserAsync_InvalidEmailFormat_ReturnsFail()
+    {
+        var dto = new UserDto
+        {
+            Username = "testuser",
+            Email = "invalid-email",
+            Password = "password123",
+            FirstName = "Test",
+            LastName = "User",
+            RoleId = 1,
+            PhoneNumber = "1234567890"
+        };
+
+        var result = await _userService.CreateUserAsync(dto);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Invalid email format"));
+    }
+
+
+    [Test]
     public async Task ChangeUserPasswordAsync_NullPassword_ReturnsFailResult()
     {
         var role = new Role
@@ -832,6 +1269,15 @@ public class UserServiceTest
     }
 
     [Test]
+    public async Task ChangeUserPasswordAsync_InvalidId_ReturnsFailResult()
+    {
+        var result = await _userService.ChangeUserPasswordAsync(0, "password123");
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Invalid User ID"));
+    }
+
+    [Test]
     public async Task ChangeUserPasswordAsync_WhenLessLengthPassword_ReturnsFailResult()
     {
         var role = new Role
@@ -861,6 +1307,14 @@ public class UserServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Password must be between 6 and 100 characters"));
+    }
+
+    [Test]
+    public async Task GetUserByUserNameAndEmail_Whitespace_ReturnsNull()
+    {
+        var result = await _userService.GetUserByUserNameAndEmail("   ");
+
+        Assert.That(result, Is.Null);
     }
 
     [Test]

@@ -346,7 +346,7 @@ public class DepartmentServiceTests
         var result = await _departmentService.CreateDepartmentAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Department name already exists"));
+        Assert.That(result.Message, Does.Contain("Department already exists"));
     }
 
     [Test]
@@ -554,7 +554,7 @@ public class DepartmentServiceTests
         var result = await _departmentService.UpdateDepartmentAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Department name already exists"));
+        Assert.That(result.Message, Does.Contain("Department already exists"));
     }
 
     [Test]

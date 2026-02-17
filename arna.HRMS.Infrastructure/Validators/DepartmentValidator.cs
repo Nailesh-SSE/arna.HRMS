@@ -48,8 +48,6 @@ public class DepartmentValidator
             errors.Add("Department Name is required");
         else if (instance.Name.Length > 100)
             errors.Add("Department Name must be at most 100 characters");
-        else if (await _repository.DepartmentExistsAsync(instance.Name))
-            errors.Add("Department name already exists");
 
         // Code
         if (string.IsNullOrWhiteSpace(instance.Code))
@@ -62,7 +60,7 @@ public class DepartmentValidator
             errors.Add("Department Description Required");
 
         // Duplicate 
-        var duplicate = await _repository.DepartmentExistsAsync(instance.Name);
+        var duplicate = await _repository.DepartmentExistsAsync(instance.Name, instance.Id);
         if (duplicate)
             errors.Add("Department already exists.");
 

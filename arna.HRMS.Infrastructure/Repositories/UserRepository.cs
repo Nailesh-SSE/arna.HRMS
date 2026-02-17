@@ -55,14 +55,23 @@ public class UserRepository
         return true;
     }
 
-    public async Task<bool> UserExistsAsync(string email, string phoneNumber)
+    public async Task<bool> UserExistsAsync(string email, string phoneNumber, int? id)
     {
         email = (email ?? string.Empty).Trim().ToLower();
         phoneNumber = (phoneNumber ?? string.Empty).Trim().ToLower();
+
         return await _baseRepository.Query()
-            .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted 
-                && u.Email.Trim().ToLower() == email || u.PhoneNumber.Trim().ToLower() == phoneNumber) != null;
+            .AnyAsync(u =>
+                u.IsActive &&
+                !u.IsDeleted &&
+                u.Id != id &&
+                (
+                    u.Email.Trim().ToLower() == email ||
+                    u.PhoneNumber.Trim().ToLower() == phoneNumber
+                )
+            );
     }
+
 
     public async Task<User?> GetByUsernameOrEmailAsync(string usernameOrEmail)
     {
@@ -81,6 +90,9 @@ public class UserRepository
 
     public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)
     {
+        if (string.IsNullOrWhiteSpace(newPassword))
+            return false;
+
         var user = await GetUserByIdAsync(id);
         if (user == null)
             return false;

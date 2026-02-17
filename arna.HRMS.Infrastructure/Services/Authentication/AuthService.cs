@@ -73,7 +73,7 @@ public class AuthService : IAuthService
         if (dto.Password.Length < 6)
             return ServiceResult<AuthResponse>.Fail("Password must be at least 6 characters");
 
-        if (await _userServices.UserExistsAsync(dto.Email, dto.PhoneNumber))
+        if (await _userServices.UserExistsAsync(dto.Email, dto.PhoneNumber, dto.Id))
             return ServiceResult<AuthResponse>.Fail("Email or Phone Number already exists");
 
         var model = _mapper.Map<UserDto>(dto);

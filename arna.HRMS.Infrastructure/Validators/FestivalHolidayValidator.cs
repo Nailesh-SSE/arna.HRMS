@@ -60,7 +60,7 @@ public class FestivalHolidayValidator
 
         if (!string.IsNullOrWhiteSpace(dto.FestivalName))
         {
-            var duplicates = await _repository.GetByNameAndDateAsync(dto.FestivalName, dto.Date);
+            var duplicates = await _repository.GetByNameAndDateAsync(dto.FestivalName, dto.Date, dto.Id);
             if (duplicates.Any())
                 errors.Add("A festival with the same name already exists");
         }

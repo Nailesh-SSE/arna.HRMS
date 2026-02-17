@@ -32,10 +32,10 @@ public class LeaveRepository
             .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
     }
 
-   public async Task<bool> LeaveExistsAsync(LeaveName Name)
+   public async Task<bool> LeaveExistsAsync(LeaveName Name, int? id)
     {
         return await _leaveTypeRepo.Query()
-            .AnyAsync(x => x.LeaveNameId == Name && x.IsActive && !x.IsDeleted);
+            .AnyAsync(x => x.LeaveNameId == Name && x.IsActive && !x.IsDeleted && x.Id != id);
     }
 
     public Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType)

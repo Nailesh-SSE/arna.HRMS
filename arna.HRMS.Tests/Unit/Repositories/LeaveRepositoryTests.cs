@@ -185,13 +185,14 @@ public class LeaveRepositoryTests
         // Arrange
         var leaveType = new LeaveType
         {
+            Id = 1,
             LeaveNameId = LeaveName.PaternityLeave,
             Description = "Maternity leave",
             MaxPerYear = 90
         };
         await _leaveRepository.CreateLeaveTypeAsync(leaveType);
         // Act
-        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.PaternityLeave);
+        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.PaternityLeave,null);
         // Assert
         Assert.That(exists, Is.EqualTo(true));
     }
@@ -200,7 +201,7 @@ public class LeaveRepositoryTests
     public async Task LeaveExistsAsync_ShouldReturnFalseIfLeaveDoesNotExist()
     {
         // Act
-        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.MaternityLeave);
+        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.MaternityLeave, 1);
         // Assert
         Assert.That(exists, Is.EqualTo(false));
     }

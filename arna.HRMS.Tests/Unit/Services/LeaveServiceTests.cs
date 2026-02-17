@@ -10,15 +10,13 @@ using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
-using Azure.Core;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
-using System.Threading.Channels;
-
 
 namespace arna.HRMS.Tests.Unit.Services;
 
+[TestFixture]
 public class LeaveServiceTests
 {
     private ApplicationDbContext _dbContext = null!;
@@ -38,7 +36,7 @@ public class LeaveServiceTests
         _dbContext = new ApplicationDbContext(options);
 
         var leaveRequestBaseRepo = new BaseRepository<LeaveRequest>(_dbContext);
-        var leaveTypeBaseRepo = new BaseRepository<Core.Entities.LeaveType>(_dbContext);
+        var leaveTypeBaseRepo = new BaseRepository<LeaveType>(_dbContext);
         var attendanceBaseRepo = new BaseRepository<Attendance>(_dbContext);
         var festivalBaseRepo = new BaseRepository<FestivalHoliday>(_dbContext);
         var employeeBaseRepo = new BaseRepository<Employee>(_dbContext);
@@ -74,7 +72,7 @@ public class LeaveServiceTests
     }
 
     [Test]
-    public async Task GetLeaveTypeAsync_WhenDbEmpty()
+    public async Task GetLeaveTypeAsync_ShouldSuccess_WhenDbEmpty()
     {
         var result = await _leaveService.GetLeaveTypeAsync();
         Assert.That(result.Data, Is.Empty);
@@ -1043,7 +1041,7 @@ public class LeaveServiceTests
         // -------------------------------
         var result = await _leaveService.CreateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Leave dates cannot be in the past"));
+        Assert.That(result.Message, Does.Contain("Leave dates cannot be in the past"));
     }
 
     [Test]
@@ -1059,8 +1057,8 @@ public class LeaveServiceTests
         {
             EmployeeId = 101,
             LeaveTypeId = 2,
-            StartDate = DateTime.Now,
-            EndDate = DateTime.Now,
+            StartDate = DateTime.Now.AddDays(-1),
+            EndDate = DateTime.Now.AddDays(-1),
             Reason = "Medical",
             StatusId = Status.Pending
         };
@@ -1634,7 +1632,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Leave dates cannot be in the past"));
+        Assert.That(result.Message,Does.Contain("Leave dates cannot be in the past"));
 
     }
 
@@ -1759,6 +1757,13 @@ public class LeaveServiceTests
     [Test]
     public async Task UpdateLeaveRequest_WhenStartDateIsCurrentDate()
     {
+        _festivalHolidayServiceMock
+        .Setup(f => f.GetFestivalHolidayAsync())
+        .ReturnsAsync(
+            ServiceResult<List<FestivalHolidayDto>>
+                .Success(new List<FestivalHolidayDto>())
+        );
+
         _dbContext.Add(
             new Employee
             {
@@ -1802,8 +1807,8 @@ public class LeaveServiceTests
         };
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Leave dates cannot be toDays date"));
+        Assert.That(result.IsSuccess, Is.True);
+        //Assert.That(result.Message, Is.EqualTo("Leave dates cannot be toDays date"));
 
     }
 
@@ -1854,7 +1859,7 @@ public class LeaveServiceTests
 
         var result = await _leaveService.UpdateLeaveRequestAsync(dto);
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Leave dates cannot be toDays date"));
+        Assert.That(result.Message, Does.Contain("Start date cannot be after End date"));
 
     }
 

@@ -87,8 +87,8 @@ public class UserServices : IUserServices
     }
 
     // Auth helpers remain unchanged
-    public async Task<bool> UserExistsAsync(string email, string phoneNumber)
-        => await _repository.UserExistsAsync(email, phoneNumber);
+    public async Task<bool> UserExistsAsync(string email, string phoneNumber, int? Id)
+        => await _repository.UserExistsAsync(email, phoneNumber, Id);
 
     public async Task<User?> GetUserByUserNameAndEmail(string userNameOrEmail)
         => string.IsNullOrWhiteSpace(userNameOrEmail) 

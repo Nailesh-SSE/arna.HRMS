@@ -48,7 +48,7 @@ public class LeaveValidator
         if (dto.MaxPerYear <= 0)
             errors.Add("Leave days must be greater than 0");
 
-        var exists = await _repository.LeaveExistsAsync(dto.LeaveNameId);
+        var exists = await _repository.LeaveExistsAsync(dto.LeaveNameId , dto.Id);
         if (exists)
             errors.Add($"Leave '{dto.LeaveNameId}' already exists");
 
@@ -94,18 +94,18 @@ public class LeaveValidator
 
         if (dto.StartDate == default || dto.EndDate == default)
             errors.Add("Start and End date are required");
-/*
-        if (dto.StartDate.Date <= dto.EndDate.Date)
+
+        if (dto.StartDate.Date > dto.EndDate.Date)
             errors.Add("Start date cannot be after End date");
 
-        if (dto.StartDate.Date <= DateTime.Today.Date || dto.EndDate.Date < DateTime.Today.Date)
+        if (dto.StartDate.Date < DateTime.Today.Date || dto.EndDate.Date < DateTime.Today.Date)
             errors.Add("Leave dates cannot be in the past");
 
-        if ((LeaveName)dto.LeaveTypeId != LeaveName.SickLeave)
-        {
-            if (dto.StartDate.Date == DateTime.Today.Date || dto.EndDate.Date == DateTime.Today.Date)
-                errors.Add("Leave dates cannot be toDays date");
-        }*/
+        /*    if ((LeaveName)dto.LeaveTypeId != LeaveName.SickLeave)
+            {
+                if (dto.StartDate.Date == DateTime.Today.Date || dto.EndDate.Date == DateTime.Today.Date)
+                    errors.Add("Leave dates cannot be toDays date");
+            }*/
 
         return Task.FromResult(
             errors.Any()

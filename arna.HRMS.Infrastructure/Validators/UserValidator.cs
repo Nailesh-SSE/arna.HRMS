@@ -32,7 +32,7 @@ public class UserValidator
         if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid User ID");
         var exist = _repository.GetUserByIdAsync(instance.Id);
-        if (exist == null)
+        if (exist.Result == null)
             return ValidationResult.Fail("No Data Found");
 
         return await ValidateCommonAsync(instance);
@@ -103,7 +103,7 @@ public class UserValidator
             errors.Add("Phone number must be exactly 10 digits");
 
         // Duplicate 
-        if (await _repository.UserExistsAsync(instance.Email, instance.PhoneNumber ?? string.Empty))
+        if (await _repository.UserExistsAsync(instance.Email, instance.PhoneNumber ?? string.Empty, instance.Id))
             errors.Add("Email or Phone Number already exists");
 
         return errors.Any()

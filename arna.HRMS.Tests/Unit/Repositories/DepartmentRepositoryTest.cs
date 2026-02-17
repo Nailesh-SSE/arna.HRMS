@@ -574,6 +574,7 @@ public class DepartmentRepositoryTests
     {
         var department = new Department
         {
+            Id=1,
             Name = "IT",
             Code = "IT01",
             Description = "IT Dept",
@@ -584,7 +585,7 @@ public class DepartmentRepositoryTests
         _dbContext.Departments.Add(department);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentRepository.DepartmentExistsAsync("IT");
+        var result = await _departmentRepository.DepartmentExistsAsync("IT", 0);
 
         Assert.That(result, Is.True);
     }
@@ -594,6 +595,7 @@ public class DepartmentRepositoryTests
     {
         _dbContext.Departments.Add(new Department
         {
+            Id = 1,
             Name = "Finance",
             Code = "FN",
             Description = "Finance Dept",
@@ -603,7 +605,7 @@ public class DepartmentRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentRepository.DepartmentExistsAsync("finance");
+        var result = await _departmentRepository.DepartmentExistsAsync("finance", null);
 
         Assert.That(result, Is.True);
     }
@@ -613,6 +615,7 @@ public class DepartmentRepositoryTests
     {
         _dbContext.Departments.Add(new Department
         {
+            Id = 1,
             Name = "HR",
             Code = "HR01",
             Description = "HR Dept",
@@ -622,7 +625,7 @@ public class DepartmentRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentRepository.DepartmentExistsAsync("   HR   ");
+        var result = await _departmentRepository.DepartmentExistsAsync("   HR   ", 0);
 
         Assert.That(result, Is.True);
     }
@@ -630,7 +633,7 @@ public class DepartmentRepositoryTests
     [Test]
     public async Task DepartmentExistsAsync_WhenNotFound_ReturnsFalse()
     {
-        var result = await _departmentRepository.DepartmentExistsAsync("Unknown");
+        var result = await _departmentRepository.DepartmentExistsAsync("Unknown", 1);
 
         Assert.That(result, Is.False);
     }
@@ -640,6 +643,7 @@ public class DepartmentRepositoryTests
     {
         _dbContext.Departments.Add(new Department
         {
+            Id = 1,
             Name = "InactiveDept",
             Code = "IN",
             Description = "Inactive",
@@ -649,7 +653,7 @@ public class DepartmentRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentRepository.DepartmentExistsAsync("InactiveDept");
+        var result = await _departmentRepository.DepartmentExistsAsync("InactiveDept", 1);
 
         Assert.That(result, Is.False);
     }
@@ -659,6 +663,7 @@ public class DepartmentRepositoryTests
     {
         _dbContext.Departments.Add(new Department
         {
+            Id = 1,
             Name = "DeletedDept",
             Code = "DD",
             Description = "Deleted",
@@ -668,7 +673,7 @@ public class DepartmentRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentRepository.DepartmentExistsAsync("DeletedDept");
+        var result = await _departmentRepository.DepartmentExistsAsync("DeletedDept", 1);
 
         Assert.That(result, Is.False);
     }
@@ -676,7 +681,8 @@ public class DepartmentRepositoryTests
     [Test]
     public async Task DepartmentExistsAsync_WhenNameIsNull_ReturnsFalse()
     {
-        var result = await _departmentRepository.DepartmentExistsAsync(null!);
+
+        var result = await _departmentRepository.DepartmentExistsAsync(null!, 0);
 
         Assert.That(result, Is.False);
     }
@@ -684,7 +690,7 @@ public class DepartmentRepositoryTests
     [Test]
     public async Task DepartmentExistsAsync_WhenNameIsEmpty_ReturnsFalse()
     {
-        var result = await _departmentRepository.DepartmentExistsAsync("");
+        var result = await _departmentRepository.DepartmentExistsAsync("", 0);
 
         Assert.That(result, Is.False);
     }

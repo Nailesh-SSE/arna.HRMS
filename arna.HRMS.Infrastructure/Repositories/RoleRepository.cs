@@ -54,9 +54,9 @@ public class RoleRepository
         return true;
     }
 
-    public async Task<bool> RoleExistsAsync(string name)
+    public async Task<bool> RoleExistsAsync(string name, int? id)
     {
         name = (name ?? string.Empty).Trim().ToLower();
-        return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Name.ToLower() == name && x.IsActive && !x.IsDeleted) != null;
+        return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Name.ToLower() == name && x.IsActive && !x.IsDeleted && x.Id != id) != null;
     }
 }

@@ -64,7 +64,7 @@ public class FestivalHolidayRepository
         return existingHoliday;
     }
 
-    public async Task<List<FestivalHoliday?>> GetByNameAndDateAsync(string name, DateTime date)
+    public async Task<List<FestivalHoliday?>> GetByNameAndDateAsync(string name, DateTime date, int id)
     {
         var existingHoliday = await _baseRepository.Query()
             .Where(h =>
@@ -72,6 +72,7 @@ public class FestivalHolidayRepository
                 && h.IsActive
                 && !h.IsDeleted
                 && h.Date.Date == date.Date
+                && h.Id != id
             ).ToListAsync();
         return existingHoliday;
     }

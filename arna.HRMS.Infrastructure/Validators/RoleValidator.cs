@@ -43,7 +43,7 @@ public class RoleValidator
             errors.Add("Role name is required");
         else if (instance.Name.Length > 100)
             errors.Add("Role name must be at most 100 characters");
-        else if (await _repository.RoleExistsAsync(instance.Name))
+        else if (await _repository.RoleExistsAsync(instance.Name, instance.Id))
             errors.Add("Role name already exists");
 
         return errors.Any()

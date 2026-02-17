@@ -33,9 +33,12 @@ public class AttendanceRequestValidator
             return ValidationResult.Fail("Invalid request");
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Attendance Request ID");
-        var exits = _repository.GetAttendanceRequestByIdAsync(dto.Id);
-        if (exits.Result == null)
-            return ValidationResult.Fail("No Data Found");
+        if (dto.EmployeeId > 0)
+        {
+            var exits = _repository.GetAttendanceRequestByIdAsync(dto.Id);
+            if (exits.Result == null)
+                return ValidationResult.Fail("No Data Found");
+        }
 
         return await ValidateCommonAsync(dto);
     }
@@ -48,8 +51,8 @@ public class AttendanceRequestValidator
         if (id <= 0)
             return ValidationResult.Fail("Invalid AttendanceRequest ID");
 
-        var exist = await _repository.GetAttendanceRequestByIdAsync(id);
-        if (exist == null)
+        var exist = _repository.GetAttendanceRequestByIdAsync(id);
+        if (exist.Result == null)
             return ValidationResult.Fail("Invalid Attendance Request ID");
 
         if (status == Status.Cancelled)
