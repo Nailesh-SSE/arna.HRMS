@@ -1,0 +1,267 @@
+﻿@using arna.HRMS.ClientServices.Admin.Employee
+@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.State.Attendance
+@using arna.HRMS.Models.ViewModels.Leave
+
+@inject AttendanceState State
+@inject ILeaveService LeaveService
+@inject IEmployeeService EmployeeService
+@inject NotificationService NotificationService
+@inject IJSRuntime JsRuntime
+
+<!-- TOOLBAR -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+    <div>
+        <h5 class="fw-semibold mb-0">
+            <i class="bi bi-inbox text-warning me-1"></i>
+            Leave Requests
+        </h5>
+        <small class="text-muted">Review and manage employee leave requests</small>
+    </div>
+</div>
+
+<!-- STATUS SUMMARY CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == null ? "border-primary border-2" : "")"
+             @onclick="() => FilterByStatus(null)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-primary">@allRequests.Count</div>
+                <small class="text-muted fw-medium">All</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == Status.Pending ? "border-warning border-2" : "")"
+             @onclick="() => FilterByStatus(Status.Pending)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-warning">@pendingCount</div>
+                <small class="text-muted fw-medium">Pending</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == Status.Approved ? "border-success border-2" : "")"
+             @onclick="() => FilterByStatus(Status.Approved)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-success">@approvedCount</div>
+                <small class="text-muted fw-medium">Approved</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == Status.Rejected ? "border-danger border-2" : "")"
+             @onclick="() => FilterByStatus(Status.Rejected)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-danger">@rejectedCount</div>
+                <small class="text-muted fw-medium">Rejected</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="card border-0 shadow-sm rounded-3 mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel text-primary"></i>
+                <span class="fw-medium text-muted small">Filter</span>
+            </div>
+
+            <div style="min-width:280px;">
+                <SearchEmployee Employees="Employees"
+                                SelectedValue="@GetEmployeeValue()"
+                                OnChanged="OnEmployeeChanged"
+                                OnNameChanged="OnEmployeeNameChanged" />
+            </div>
+
+            @if (statusFilter != null || State.SelectedEmployeeId != null)
+            {
+                <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                        @onclick="ClearFilters">
+                    <i class="bi bi-x-lg me-1"></i> Clear Filters
+                </button>
+            }
+
+        </div>
+    </div>
+</div>
+
+<!-- TABLE -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-body p-0">
+        <div class="request-scroll-area">
+            <AppTable TItem="LeaveRequestViewModel"
+                      Items="FilteredRequests"
+                      Columns="TableSchemas.LeaveRequest">
+
+                <ActionTemplate Context="req">
+                    @if (req.StatusId != Status.Cancelled)
+                    {
+                        <AppButton ButtonClass="@GetApproveClass(req)"
+                                   OnClick="() => UpdateStatus(req, Status.Approved)">
+                            <i class="bi bi-check-circle"></i>
+                        </AppButton>
+
+                        <AppButton ButtonClass="@GetRejectClass(req)"
+                                   OnClick="() => UpdateStatus(req, Status.Rejected)">
+                            <i class="bi bi-x-circle"></i>
+                        </AppButton>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Cancelled</span>
+                    }
+                </ActionTemplate>
+
+            </AppTable>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter] public EventCallback<int> OnPendingCountChanged { get; set; }
+
+    private List<LeaveRequestViewModel> allRequests = new();
+    private List<SelectOption> Employees = new();
+
+    private Status? statusFilter;
+    private string? selectedEmployeeName;
+    private string? selectedEmployeeNumber;
+
+    private int pendingCount;
+    private int approvedCount;
+    private int rejectedCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployees();
+        await LoadRequests();
+    }
+
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            var result = await EmployeeService.GetEmployeesAsync();
+            Employees = result?.IsSuccess == true && result.Data != null
+                ? result.Data.Select(e => new SelectOption
+                {
+                    Value = e.Id.ToString(),
+                    Text = $"{e.FullName} ({e.EmployeeNumber})"
+                }).ToList()
+                : new();
+        }
+        catch { Employees = new(); }
+    }
+
+    private async Task LoadRequests()
+    {
+        try
+        {
+            var result = await LeaveService.GetLeaveRequestAsync();
+            allRequests = result?.IsSuccess == true && result.Data != null
+                ? result.Data : new();
+
+            pendingCount = allRequests.Count(r => r.StatusId == Status.Pending);
+            approvedCount = allRequests.Count(r => r.StatusId == Status.Approved);
+            rejectedCount = allRequests.Count(r => r.StatusId == Status.Rejected);
+
+            await OnPendingCountChanged.InvokeAsync(pendingCount);
+        }
+        catch { allRequests = new(); }
+    }
+
+    private List<LeaveRequestViewModel> FilteredRequests =>
+        allRequests.Where(r =>
+            (statusFilter == null || r.StatusId == statusFilter)
+            &&
+            (State.SelectedEmployeeId == null || r.EmployeeId == State.SelectedEmployeeId)
+            &&
+            (string.IsNullOrWhiteSpace(selectedEmployeeName)
+                || r.EmployeeName.Contains(selectedEmployeeName, StringComparison.OrdinalIgnoreCase))
+            &&
+            (string.IsNullOrWhiteSpace(selectedEmployeeNumber)
+                || r.EmployeeNumber.Contains(selectedEmployeeNumber, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+
+    private void FilterByStatus(Status? status)
+    {
+        statusFilter = status;
+    }
+
+    private void ClearFilters()
+    {
+        statusFilter = null;
+        State.SelectedEmployeeId = null;
+        selectedEmployeeName = null;
+        selectedEmployeeNumber = null;
+    }
+
+    private Task OnEmployeeChanged(string? empId)
+    {
+        State.SelectedEmployeeId = !string.IsNullOrWhiteSpace(empId) && empId != "0"
+            ? int.Parse(empId) : null;
+        return Task.CompletedTask;
+    }
+
+    private Task OnEmployeeNameChanged(string? text)
+    {
+        selectedEmployeeName = null;
+        selectedEmployeeNumber = null;
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                text, @"^(.*?)(?:\s*\((.*?)\))?$");
+            if (match.Success)
+            {
+                selectedEmployeeName = match.Groups[1].Value.Trim();
+                selectedEmployeeNumber = match.Groups[2].Value.Trim();
+            }
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task UpdateStatus(LeaveRequestViewModel req, Status newStatus)
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm", $"Are you sure you want to {newStatus} this leave request?");
+        if (!confirmed) return;
+
+        var result = await LeaveService.UpdateStatusLeaveAsync(req.Id, newStatus);
+        if (result?.IsSuccess == true)
+        {
+            req.StatusId = newStatus;
+            req.ApprovedDate = DateTime.Now;
+            NotificationService.Success($"Leave {newStatus.ToString().ToLower()} successfully.");
+            await LoadRequests();
+        }
+        else
+        {
+            NotificationService.Error(result?.Message ?? "Operation failed.");
+        }
+    }
+
+    private string GetApproveClass(LeaveRequestViewModel r) =>
+        r.StatusId == Status.Approved ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-success";
+
+    private string GetRejectClass(LeaveRequestViewModel r) =>
+        r.StatusId == Status.Rejected ? "btn btn-sm btn-danger" : "btn btn-sm btn-outline-danger";
+
+    private string GetEmployeeValue() =>
+        State.SelectedEmployeeId?.ToString() ?? "0";
+}

@@ -3,7 +3,6 @@ using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]

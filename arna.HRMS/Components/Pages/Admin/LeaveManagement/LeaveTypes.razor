@@ -1,0 +1,237 @@
+﻿@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.Pages.Admin.LeaveManagement
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels.Leave
+
+@inject ILeaveService LeaveService
+@inject NotificationService NotificationService
+@inject IJSRuntime JsRuntime
+
+<!-- TOOLBAR -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h5 class="fw-semibold mb-0">
+            <i class="bi bi-bookmark-check text-primary me-1"></i>
+            Leave Types
+        </h5>
+        <small class="text-muted">Configure leave policies and entitlements</small>
+    </div>
+    <button class="btn btn-primary rounded-3"
+            @onclick="OpenCreateModal">
+        <i class="bi bi-plus-circle me-1"></i> Add Leave Type
+    </button>
+</div>
+
+<!-- LEAVE TYPE CARDS -->
+@if (leaveTypes.Any())
+{
+    <div class="row g-3 mb-4">
+        @foreach (var (lt, idx) in leaveTypes.Select((l, i) => (l, i)))
+        {
+            var color = GetColor(idx);
+
+            <div class="col-sm-6 col-lg-4 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100
+                            leave-type-card-hover">
+                    <div class="card-body">
+
+                        <!-- Header -->
+                        <div class="d-flex align-items-start justify-content-between mb-3">
+                            <div class="leave-type-icon bg-@color bg-opacity-10">
+                                <i class="bi bi-calendar-check text-@color fs-5"></i>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light rounded-circle"
+                                        data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                    <li>
+                                        <button class="dropdown-item"
+                                                @onclick="() => EditLeaveType(lt)">
+                                            <i class="bi bi-pencil me-2"></i> Edit
+                                        </button>
+                                    </li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <button class="dropdown-item text-danger"
+                                                @onclick="() => DeleteLeaveType(lt)">
+                                            <i class="bi bi-trash me-2"></i> Delete
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Name -->
+                        <h6 class="fw-bold mb-1">@FormatName(lt.LeaveNameId.ToString())</h6>
+
+                        <!-- Info -->
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-@color bg-opacity-10 text-@color fw-semibold">
+                                @lt.MaxPerYear days/year
+                            </span>
+                            @if (lt.IsPaid)
+                            {
+                                <span class="badge bg-success bg-opacity-10 text-success">
+                                    <i class="bi bi-cash me-1"></i>Paid
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                    Unpaid
+                                </span>
+                            }
+                        </div>
+
+                        <!-- Description -->
+                        @if (!string.IsNullOrWhiteSpace(lt.Description))
+                        {
+                            <p class="text-muted small mb-2 leave-desc">
+                                @lt.Description
+                            </p>
+                        }
+
+                        <!-- Status -->
+                        <div class="mt-auto">
+                            @if (lt.IsActive)
+                            {
+                                <span class="badge bg-success bg-opacity-10 text-success">
+                                    <i class="bi bi-check-circle me-1"></i>Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger bg-opacity-10 text-danger">
+                                    <i class="bi bi-x-circle me-1"></i>Inactive
+                                </span>
+                            }
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-bookmark-x fs-1 text-muted opacity-50 d-block mb-2"></i>
+            <p class="text-muted mb-0">No leave types configured yet</p>
+            <button class="btn btn-outline-primary mt-3 rounded-pill"
+                    @onclick="OpenCreateModal">
+                <i class="bi bi-plus me-1"></i> Create First Leave Type
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Also show table view -->
+@if (leaveTypes.Any())
+{
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <h6 class="fw-semibold mb-0">
+                <i class="bi bi-table text-primary me-2"></i>
+                All Leave Types (Table View)
+            </h6>
+        </div>
+        <div class="card-body p-0">
+            <AppTable TItem="LeaveTypeViewModel"
+                      Items="leaveTypes"
+                      Columns="TableSchemas.LeaveTypes"
+                      OnEdit="EditLeaveType"
+                      OnDelete="DeleteLeaveType" />
+        </div>
+    </div>
+}
+
+<!-- MODAL -->
+<LeaveTypeModal ShowModal="showModal"
+                EditId="editId"
+                OnClose="CloseModal"
+                OnSaved="OnLeaveTypeSaved" />
+
+@code {
+
+    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+
+    private List<LeaveTypeViewModel> leaveTypes = new();
+    private bool showModal;
+    private int? editId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLeaveTypes();
+    }
+
+    private async Task LoadLeaveTypes()
+    {
+        try
+        {
+            var result = await LeaveService.GetLeaveTypeAsync();
+            leaveTypes = result?.IsSuccess == true && result.Data != null
+                ? result.Data : new();
+
+            await OnCountChanged.InvokeAsync(leaveTypes.Count);
+        }
+        catch
+        {
+            leaveTypes = new();
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        editId = null;
+        showModal = true;
+    }
+
+    private void EditLeaveType(LeaveTypeViewModel model)
+    {
+        editId = model.Id;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        editId = null;
+    }
+
+    private async Task OnLeaveTypeSaved()
+    {
+        CloseModal();
+        await LoadLeaveTypes();
+    }
+
+    private async Task DeleteLeaveType(LeaveTypeViewModel model)
+    {
+        bool ok = await JsRuntime.InvokeAsync<bool>(
+            "confirm", $"Delete '{FormatName(model.LeaveNameId.ToString())}'?");
+        if (!ok) return;
+
+        await LeaveService.DeleteLeaveTypeAsync(model.Id);
+        NotificationService.Success("Leave type deleted.");
+        await LoadLeaveTypes();
+    }
+
+    private static string FormatName(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(name ?? "", "([A-Z])", " $1").Trim();
+
+    private static string GetColor(int idx) => (idx % 5) switch
+    {
+        0 => "primary",
+        1 => "success",
+        2 => "warning",
+        3 => "info",
+        4 => "danger",
+        _ => "secondary"
+    };
+}

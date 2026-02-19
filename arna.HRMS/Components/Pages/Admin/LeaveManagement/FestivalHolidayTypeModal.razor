@@ -1,0 +1,182 @@
+﻿@using arna.HRMS.ClientServices.Admin.FestivalHolidays
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.ViewModels
+
+@inject IFestivalHoliday FestivalHolidayService
+@inject NotificationService NotificationService
+
+@if (ShowModal)
+{
+    <div class="modal fade show d-block leave-modal-backdrop" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+                <div class="modal-header bg-gradient text-white px-4 py-3 border-0"
+                     style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                    <h5 class="modal-title fw-semibold d-flex align-items-center gap-2 mb-0 text-black">
+                        <i class="bi @(IsEditMode ? "bi-pencil-square" : "bi-calendar-plus")"></i>
+                        @(IsEditMode ? "Update Festival Holiday" : "Add Festival Holiday")
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white"
+                            @onclick="Close"></button>
+                </div>
+
+                <EditForm Model="model" OnValidSubmit="OnSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body px-4 pt-4 pb-3">
+
+                        <div class="mb-3">
+                            <AppInput Label="Festival Name *"
+                                      Value="@model.FestivalName"
+                                      ValueChanged="v => model.FestivalName = v"
+                                      ValidationExpression="() => model.FestivalName"
+                                      Placeholder="e.g. Diwali, Christmas..." />
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <AppDatePicker Label="Select Date *"
+                                               Value="@model.Date"
+                                               ValidationExpression="() => model.Date" />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label fw-medium text-secondary">
+                                    <i class="bi bi-calendar-day me-1"></i>Day
+                                </label>
+                                <div class="form-control bg-light border-0 fw-semibold
+                                                text-primary d-flex align-items-center">
+                                    @if (model.Date == default)
+                                    {
+                                        <span class="text-muted fst-italic">
+                                            Select a date
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-calendar-check me-2"></i>
+                                        @model.Days
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-1">
+                            <AppTextArea Label="Description"
+                                         Rows="3"
+                                         Value="@model.Description"
+                                         ValueChanged="v => model.Description = v"
+                                         ValidationExpression="() => model.Description"
+                                         Placeholder="Brief description of the festival..." />
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer border-top bg-light px-4 py-3
+                                    d-flex justify-content-end gap-2">
+                        <button type="button"
+                                class="btn btn-outline-secondary rounded-pill px-4"
+                                @onclick="Close">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </button>
+                        <button type="submit"
+                                class="btn btn-primary rounded-pill px-4 shadow-sm">
+                            <i class="bi @(IsEditMode ? "bi-arrow-repeat" : "bi-check2-circle") me-1"></i>
+                            @(IsEditMode ? "Update" : "Save")
+                        </button>
+                    </div>
+                </EditForm>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter] public bool ShowModal { get; set; }
+    [Parameter] public int? EditId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private FestivalHolidayViewModel model = new();
+    private bool isInitialized;
+
+    private bool IsEditMode => EditId.HasValue;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!ShowModal) { isInitialized = false; return; }
+        if (isInitialized) return;
+        isInitialized = true;
+
+        if (IsEditMode)
+        {
+            try
+            {
+                var result = await FestivalHolidayService.GetFestivalHolidayByIdAsync(EditId!.Value);
+                if (result?.IsSuccess == true && result.Data != null)
+                    model = result.Data;
+                else
+                {
+                    NotificationService.Error("Holiday not found");
+                    await Close();
+                }
+            }
+            catch
+            {
+                NotificationService.Error("Error loading holiday");
+                await Close();
+            }
+        }
+        else
+        {
+            model = new();
+        }
+    }
+
+    private async Task OnSubmit()
+    {
+        try
+        {
+
+            if (IsEditMode)
+            {
+                var result = await FestivalHolidayService
+                    .UpdateFestivalHolidayAsync(EditId!.Value, model);
+                    if (result?.IsSuccess != true)
+                    {
+                        NotificationService.Error(result?.Message ?? "Update failed.");
+                        return;
+                }
+            }
+            else
+            {
+                var result = await FestivalHolidayService
+                    .CreateFestivalHolidayAsync(model);
+                    if (result?.IsSuccess != true)
+                    {
+                        NotificationService.Error(result?.Message ?? "Creation failed.");
+                        return;
+                    }
+            }
+                NotificationService.Success(
+                    IsEditMode ? "Holiday updated" : "Holiday created");
+
+                await OnSaved.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error(ex.Message ?? "Error saving holiday.");
+        }
+    }
+
+
+    private async Task Close()
+    {
+        isInitialized = false;
+        model = new();
+        await OnClose.InvokeAsync();
+    }
+}

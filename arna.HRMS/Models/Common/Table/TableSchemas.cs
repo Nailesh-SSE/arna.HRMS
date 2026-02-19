@@ -134,6 +134,36 @@ public class TableSchemas
         }
     };
 
+    // Add this to your existing TableSchemas class
+
+    public static List<TableColumn<FestivalHolidayViewModel>> FestivalHolidays = new()
+{
+    new()
+    {
+        Header = "Festival Name",
+        Value = f => f.FestivalName
+    },
+    new()
+    {
+        Header = "Date",
+        Value = f => f.Date.ToString("MMM dd, yyyy")
+    },
+    new()
+    {
+        Header = "Day",
+        Value = f => f.Days,
+        CssClass = "badge bg-light text-dark border"
+    },
+    new()
+    {
+        Header = "Description",
+        Value = f => !string.IsNullOrWhiteSpace(f.Description)
+                    ? (f.Description.Length > 40
+                        ? f.Description[..40] + "..."
+                        : f.Description)
+                    : "—"
+    }
+};
     // GENERIC STATUS COLUMN
     private static TableColumn<T> StatusColumn<T>(Func<T, bool> isActiveSelector)
     {

@@ -1,0 +1,265 @@
+﻿@typeparam TItem
+
+<!-- ══════════ CALENDAR CARD ══════════ -->
+<div class="card border-0 shadow-sm rounded-3">
+
+    <!-- Header with Nav -->
+    <div class="card-header bg-transparent border-bottom py-3">
+        <div class="d-flex align-items-center justify-content-between">
+
+            <button class="btn btn-sm btn-outline-primary rounded-circle"
+                    @onclick="PrevMonth">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+
+            <h6 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-calendar3 me-2"></i>
+                @(new DateTime(Year, Month, 1).ToString("MMMM yyyy"))
+            </h6>
+
+            <button class="btn btn-sm btn-outline-primary rounded-circle"
+                    @onclick="NextMonth">
+                <i class="bi bi-chevron-right"></i>
+            </button>
+
+        </div>
+    </div>
+
+    <div class="card-body p-3">
+
+        <!-- Day Headers -->
+        <div class="row g-0 mb-2">
+            @foreach (var dayName in dayNames)
+            {
+                <div class="col text-center">
+                    <small class="fw-bold text-muted text-uppercase">@dayName</small>
+                </div>
+            }
+        </div>
+
+        <!-- Calendar Grid -->
+        @foreach (var week in calendarWeeks)
+        {
+            <div class="row g-0">
+                @foreach (var day in week)
+                {
+                    var isCurrentMonth = day.Month == Month && day.Year == Year;
+                    var isToday = day.Date == DateTime.Today;
+                    var matchedItem = GetItemForDate(day);
+                    var hasItem = matchedItem != null;
+
+                    <div class="col">
+                        <div class="cal-cell @CellClass(isCurrentMonth, isToday, hasItem)"
+                             title="@(hasItem? GetTitle(matchedItem!) : "")"
+                             @onclick="() => OnDateClicked(day, matchedItem)">
+
+                            <!-- Day Number -->
+                            <span class="cal-day-num @(isToday ? "bg-primary text-white" : "")">
+                                @day.Day
+                            </span>
+
+                            <!-- Event Tag -->
+                            @if (hasItem && isCurrentMonth)
+                            {
+                                <div class="cal-event @EventClass"
+                                     title="@GetTitle(matchedItem!)">
+                                    <i class="@EventIcon me-1"></i>
+                                    <span class="cal-event-text">
+                                        @Truncate(GetTitle(matchedItem!), 12)
+                                    </span>
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Legend -->
+        <div class="d-flex align-items-center gap-4 mt-3 pt-2 border-top">
+            <div class="d-flex align-items-center gap-1">
+                <span class="legend-dot bg-primary"></span>
+                <small class="text-muted">Today</small>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(EventLegendLabel))
+            {
+                <div class="d-flex align-items-center gap-1">
+                    <span class="legend-dot @EventLegendDotClass"></span>
+                    <small class="text-muted">@EventLegendLabel</small>
+                </div>
+            }
+            <div class="ms-auto">
+                <small class="text-muted fw-medium">
+                    @currentMonthItemCount @(EventLegendLabel)(s) this month
+                </small>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    [Parameter] public int Year { get; set; } = DateTime.Now.Year;
+
+    [Parameter] public int Month { get; set; } = DateTime.Now.Month;
+
+    [Parameter] public List<TItem> Items { get; set; } = new();
+
+    [Parameter] public Func<TItem, DateTime> DateSelector { get; set; } = default!;
+
+    [Parameter] public Func<TItem, string> TitleSelector { get; set; } = default!;
+
+    [Parameter] public EventCallback<(int Year, int Month)> OnMonthChanged { get; set; }
+
+    [Parameter] public EventCallback<DateTime> OnDateClick { get; set; }
+
+    [Parameter] public string EventClass { get; set; } = "cal-event-danger";
+
+    [Parameter] public string EventIcon { get; set; } = "bi bi-star-fill";
+
+    [Parameter] public string EventLegendLabel { get; set; } = "Holiday";
+
+    [Parameter] public string EventLegendDotClass { get; set; } = "bg-danger";
+
+    // ═══════════ STATE ═══════════
+
+    private readonly string[] dayNames = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    private List<List<DateTime>> calendarWeeks = new();
+    private Dictionary<DateTime, TItem> itemLookup = new();
+    private int currentMonthItemCount;
+
+    // ═══════════ LIFECYCLE ═══════════
+
+    protected override void OnParametersSet()
+    {
+        BuildCalendar();
+        BuildLookup();
+    }
+
+    // ═══════════ BUILD ═══════════
+
+    private void BuildCalendar()
+    {
+        calendarWeeks = new();
+
+        var firstDay = new DateTime(Year, Month, 1);
+        var startDate = firstDay.AddDays(-(int)firstDay.DayOfWeek);
+        var lastDay = firstDay.AddMonths(1).AddDays(-1);
+
+        var current = startDate;
+
+        while (true)
+        {
+            var week = new List<DateTime>();
+
+            for (int i = 0; i < 7; i++)
+            {
+                week.Add(current);
+                current = current.AddDays(1);
+            }
+
+            calendarWeeks.Add(week);
+
+            // Stop after covering the last day of the month
+            if (current > lastDay && current.DayOfWeek == DayOfWeek.Sunday)
+                break;
+
+            // Safety: max 6 weeks
+            if (calendarWeeks.Count >= 6)
+                break;
+        }
+    }
+
+    private void BuildLookup()
+    {
+        if (Items == null || DateSelector == null)
+        {
+            itemLookup = new();
+            currentMonthItemCount = 0;
+            return;
+        }
+
+        itemLookup = Items
+            .GroupBy(item => DateSelector(item).Date)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        currentMonthItemCount = Items
+            .Count(item =>
+            {
+                var d = DateSelector(item);
+                return d.Year == Year && d.Month == Month;
+            });
+    }
+
+    // ═══════════ NAVIGATION ═══════════
+
+    private async Task PrevMonth()
+    {
+        if (Month == 1)
+        {
+            Month = 12;
+            Year--;
+        }
+        else
+        {
+            Month--;
+        }
+
+        BuildCalendar();
+        BuildLookup();
+
+        await OnMonthChanged.InvokeAsync((Year, Month));
+    }
+
+    private async Task NextMonth()
+    {
+        if (Month == 12)
+        {
+            Month = 1;
+            Year++;
+        }
+        else
+        {
+            Month++;
+        }
+
+        BuildCalendar();
+        BuildLookup();
+
+        await OnMonthChanged.InvokeAsync((Year, Month));
+    }
+
+    // ═══════════ HELPERS ═══════════
+
+    private TItem? GetItemForDate(DateTime date)
+    {
+        itemLookup.TryGetValue(date.Date, out var item);
+        return item;
+    }
+
+    private string GetTitle(TItem item)
+    {
+        return TitleSelector != null ? TitleSelector(item) : item?.ToString() ?? "";
+    }
+
+    private async Task OnDateClicked(DateTime date, TItem? item)
+    {
+        if (OnDateClick.HasDelegate)
+            await OnDateClick.InvokeAsync(date);
+    }
+
+    private static string CellClass(bool isCurrentMonth, bool isToday, bool hasItem)
+    {
+        var css = "";
+        if (!isCurrentMonth) css += " cal-outside";
+        if (isToday) css += " cal-today";
+        if (hasItem && isCurrentMonth) css += " cal-holiday";
+        return css;
+    }
+
+    private static string Truncate(string text, int max) =>
+        string.IsNullOrEmpty(text) ? "" :
+        text.Length <= max ? text : text[..max] + "…";
+}

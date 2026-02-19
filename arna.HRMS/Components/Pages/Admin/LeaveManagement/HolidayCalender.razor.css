@@ -1,0 +1,129 @@
+﻿/* ══════════ CALENDAR CELLS ══════════ */
+.cal-cell {
+    min-height: 80px;
+    border: 1px solid #f0f0f0;
+    padding: 4px 6px;
+    position: relative;
+    transition: background 0.15s ease;
+    cursor: pointer;
+}
+
+    .cal-cell:hover {
+        background: #f8f9fa;
+    }
+
+.cal-outside {
+    background: #fafafa;
+    opacity: 0.4;
+}
+
+.cal-today {
+    background: #eff6ff !important;
+    border-color: #bfdbfe !important;
+}
+
+.cal-holiday {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+}
+
+/* ══════════ DAY NUMBER ══════════ */
+.cal-day-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* ══════════ EVENT TAG ══════════ */
+.cal-event {
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.cal-event-danger {
+    background: #dc3545;
+    color: #fff;
+}
+
+.cal-event-primary {
+    background: #0d6efd;
+    color: #fff;
+}
+
+.cal-event-success {
+    background: #198754;
+    color: #fff;
+}
+
+.cal-event-warning {
+    background: #ffc107;
+    color: #000;
+}
+
+.cal-event-info {
+    background: #0dcaf0;
+    color: #000;
+}
+
+.cal-event-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ══════════ LEGEND ══════════ */
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* ══════════ RESPONSIVE ══════════ */
+@media (max-width: 768px) {
+    .cal-cell {
+        min-height: 60px;
+        padding: 2px 3px;
+    }
+
+    .cal-day-num {
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+    }
+
+    .cal-event {
+        font-size: 0.55rem;
+        padding: 1px 3px;
+    }
+
+        .cal-event i {
+            display: none;
+        }
+}
+
+@media (max-width: 576px) {
+    .cal-cell {
+        min-height: 45px;
+    }
+
+    .cal-event-text {
+        display: none;
+    }
+
+    .cal-event i {
+        display: inline;
+        font-size: 0.6rem;
+    }
+}

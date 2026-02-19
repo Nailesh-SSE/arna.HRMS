@@ -12,21 +12,22 @@
 {
     <div class="modal fade show d-block leave-modal-backdrop" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-md">
-            <div class="modal-content leave-modal">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-semibold">
+                <div class="modal-header bg-primary bg-gradient text-white px-4 py-3 border-0">
+                    <h5 class="modal-title fw-semibold d-flex align-items-center gap-2 mb-0">
+                        <i class="bi @(IsEditMode ? "bi-pencil-square" : "bi-bookmark-plus")"></i>
                         @(IsEditMode ? "Update Leave Type" : "Add Leave Type")
                     </h5>
-                    <button type="button" class="btn-close" @onclick="Close"></button>
+                    <button type="button" class="btn-close btn-close-white"
+                            @onclick="Close"></button>
                 </div>
 
                 <EditForm Model="leaveType" OnValidSubmit="OnSubmit">
                     <DataAnnotationsValidator />
 
-                    <div class="modal-body pt-3">
+                    <div class="modal-body px-4 pt-4 pb-3">
 
-                        @* ──── FIX 1: Placeholder now works ──── *@
                         <div class="mb-3">
                             <AppSelect Label="Select Leave Type *"
                                        Options="leaveTypeOptions"
@@ -40,38 +41,39 @@
                             <div class="col-md-6">
                                 <AppNumberInput Label="Max Days *"
                                                 Value="@leaveType.MaxPerYear"
-                                                ValueChanged="OnMaxDaysChanged"
+                                                ValueChanged="v => leaveType.MaxPerYear = v"
                                                 ValidationExpression="() => leaveType.MaxPerYear" />
                             </div>
                             <div class="col-md-6 d-flex align-items-center pt-4">
-                                <div class="form-check leave-checkbox">
-                                    <AppCheckBox Label="Paid Leave"
-                                                 Value="@leaveType.IsPaid"
-                                                 ValueChanged="v => leaveType.IsPaid = v" />
-                                </div>
+                                <AppCheckBox Label="Paid Leave"
+                                             Value="@leaveType.IsPaid"
+                                             ValueChanged="v => leaveType.IsPaid = v" />
                             </div>
                         </div>
 
-                        @* ──── FIX 2: Added ValueChanged for Description ──── *@
                         <div class="mt-3">
                             <AppTextArea Label="Description"
                                          Rows="3"
                                          Value="@leaveType.Description"
-                                         ValueChanged="OnDescriptionChanged"
+                                         ValueChanged="v => leaveType.Description = v"
                                          ValidationExpression="() => leaveType.Description"
-                                         Placeholder="Please provide description for leave..." />
+                                         Placeholder="Brief description of this leave type..." />
                         </div>
 
                     </div>
 
-                    <div class="modal-footer border-0 pt-0">
-                        <AppButton ButtonClass="btn btn-light px-4"
-                                   OnClick="Close">
-                            Cancel
-                        </AppButton>
-                        <AppButton ButtonClass="btn btn-primary px-4" type="submit">
+                    <div class="modal-footer border-top bg-light px-4 py-3
+                                    d-flex justify-content-end gap-2">
+                        <button type="button"
+                                class="btn btn-outline-secondary rounded-pill px-4"
+                                @onclick="Close">
+                            <i class="bi bi-x-lg me-1"></i> Cancel
+                        </button>
+                        <button type="submit"
+                                class="btn btn-primary rounded-pill px-4">
+                            <i class="bi @(IsEditMode ? "bi-arrow-repeat" : "bi-check2-circle") me-1"></i>
                             @(IsEditMode ? "Update" : "Save")
-                        </AppButton>
+                        </button>
                     </div>
                 </EditForm>
 
@@ -89,18 +91,13 @@
 
     private LeaveTypeViewModel leaveType = new();
     private List<SelectOption> leaveTypeOptions = new();
-    private bool isInitialized = false;
+    private bool isInitialized;
 
     private bool IsEditMode => EditId.HasValue;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (!ShowModal)
-        {
-            isInitialized = false;
-            return;
-        }
-
+        if (!ShowModal) { isInitialized = false; return; }
         if (isInitialized) return;
         isInitialized = true;
 
@@ -109,11 +106,8 @@
         if (IsEditMode)
         {
             var result = await LeaveService.GetLeaveTypeByIdAsync(EditId!.Value);
-
-            if (result.IsSuccess && result.Data != null)
-            {
+            if (result?.IsSuccess == true && result.Data != null)
                 leaveType = result.Data;
-            }
             else
             {
                 NotificationService.Error("Leave type not found");
@@ -122,7 +116,7 @@
         }
         else
         {
-            leaveType = new LeaveTypeViewModel();
+            leaveType = new();
         }
     }
 
@@ -132,18 +126,10 @@
             .Select(e => new SelectOption
             {
                 Value = ((int)e).ToString(),
-                Text = FormatEnumName(e.ToString())
-            })
-            .ToList();
+                Text = FormatEnum(e.ToString())
+            }).ToList();
     }
 
-    private string FormatEnumName(string name)
-    {
-        return System.Text.RegularExpressions.Regex
-            .Replace(name, "([a-z])([A-Z])", "$1 $2");
-    }
-
-    // ──── FIX: Returns "" when enum is default (0) so placeholder shows ────
     private string GetLeaveNameValue()
     {
         var intVal = (int)leaveType.LeaveNameId;
@@ -152,63 +138,42 @@
 
     private void OnLeaveNameChanged(string? value)
     {
-        if (!string.IsNullOrEmpty(value) && int.TryParse(value, out int intValue))
-        {
-            leaveType.LeaveNameId = (LeaveName)intValue;
-        }
-        else
-        {
-            leaveType.LeaveNameId = default;
-        }
-    }
-
-    // ──── FIX: Explicit handler for MaxPerYear ────
-    private void OnMaxDaysChanged(int value)
-    {
-        leaveType.MaxPerYear = value;
-    }
-
-    // ──── FIX: Description now writes back to model ────
-    private void OnDescriptionChanged(string? value)
-    {
-        leaveType.Description = value;
+        leaveType.LeaveNameId = !string.IsNullOrEmpty(value) && int.TryParse(value, out int v)
+            ? (LeaveName)v : default;
     }
 
     private async Task OnSubmit()
     {
-        bool success;
-        string message;
-
-        if (IsEditMode)
+        if(IsEditMode)
         {
             var result = await LeaveService.UpdateLeaveTypeAsync(EditId!.Value, leaveType);
-            success = result.IsSuccess;
-            message = result.Message;
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error(result.Message ?? "");
+                return;
+            }
         }
         else
         {
             var result = await LeaveService.CreateLeaveTypeAsync(leaveType);
-            success = result.IsSuccess;
-            message = result.Message;
+            if (!result.IsSuccess)
+            {
+                NotificationService.Error(result.Message ?? "");
+                return;
+            }
         }
 
-        if (!success)
-        {
-            NotificationService.Error(message);
-            return;
-        }
-
-        NotificationService.Success(
-            IsEditMode ? "Leave Type updated" : "Leave Type created"
-        );
-
+        NotificationService.Success(IsEditMode ? "Leave type updated" : "Leave type created");
         await OnSaved.InvokeAsync();
     }
 
     private async Task Close()
     {
         isInitialized = false;
-        leaveType = new LeaveTypeViewModel();
+        leaveType = new();
         await OnClose.InvokeAsync();
     }
+
+    private static string FormatEnum(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2");
 }

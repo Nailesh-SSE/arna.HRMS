@@ -1,0 +1,441 @@
+﻿@using arna.HRMS.ClientServices.Admin.FestivalHolidays
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.Pages.Admin.LeaveManagement
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels
+
+@inject IFestivalHoliday FestivalHolidayService
+@inject NotificationService NotificationService
+@inject IJSRuntime JsRuntime
+
+<!-- ══════════ TOOLBAR ══════════ -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h5 class="fw-semibold mb-0">
+            <i class="bi bi-calendar-heart text-danger me-1"></i>
+            Festival Holidays
+        </h5>
+        <small class="text-muted">Manage company-wide festival holidays</small>
+    </div>
+
+    <button class="btn btn-primary rounded-3"
+            @onclick="OpenCreateModal">
+        <i class="bi bi-plus-circle me-1"></i> Add Holiday
+    </button>
+</div>
+
+<!-- ══════════ UPCOMING BANNER ══════════ -->
+@if (upcomingHoliday != null)
+{
+    <div class="card border-0 shadow-sm rounded-3 mb-4 upcoming-banner">
+        <div class="card-body d-flex align-items-center gap-3 py-3">
+            <div class="upcoming-icon">
+                <i class="bi bi-balloon-heart-fill fs-4"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="fw-bold text-white">
+                    Next Holiday: @upcomingHoliday.FestivalName
+                </div>
+                <small class="text-white-50">
+                    @upcomingHoliday.Date.ToString("dddd, MMMM dd, yyyy")
+                    — @DaysUntil(upcomingHoliday.Date) day(s) from now
+                </small>
+            </div>
+            <span class="badge bg-white text-primary fw-bold fs-6 px-3 py-2 rounded-3">
+                @upcomingHoliday.Date.ToString("MMM dd")
+            </span>
+        </div>
+    </div>
+}
+
+<!-- ══════════ STATS ══════════ -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-primary">@allFestivals.Count</div>
+                <small class="text-muted fw-medium">Total</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-success">@filteredFestivals.Count</div>
+                <small class="text-muted fw-medium">
+                    @GetMonthName(selectedMonth) @selectedYear
+                </small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-warning">
+                    @allFestivals.Count(f => f.Date >= DateTime.Today)
+                </div>
+                <small class="text-muted fw-medium">Upcoming</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 h-100">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-secondary">
+                    @allFestivals.Count(f => f.Date < DateTime.Today)
+                </div>
+                <small class="text-muted fw-medium">Past</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ FILTER BAR ══════════ -->
+<div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-body py-2 px-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-funnel text-primary"></i>
+                <span class="fw-medium text-muted small">Filter</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm rounded-pill"
+                        style="width:140px;"
+                        value="@selectedMonth"
+                        @onchange="OnMonthFilterChanged">
+                    <option value="0">All Months</option>
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m">
+                            @(new DateTime(2000, m, 1).ToString("MMMM"))
+                        </option>
+                    }
+                </select>
+
+                <select class="form-select form-select-sm rounded-pill"
+                        style="width:100px;"
+                        value="@selectedYear"
+                        @onchange="OnYearFilterChanged">
+                    @for (int y = DateTime.Now.Year - 1; y <= DateTime.Now.Year + 2; y++)
+                    {
+                        <option value="@y">@y</option>
+                    }
+                </select>
+
+                @if (selectedMonth != 0)
+                {
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill"
+                            @onclick="ClearFilters">
+                        <i class="bi bi-x-lg me-1"></i> Clear
+                    </button>
+                }
+            </div>
+
+            <div class="btn-group btn-group-sm" role="group">
+                <button class="btn @(activeView == "table" ? "btn-primary" : "btn-outline-primary")"
+                        @onclick='() => activeView = "table"'>
+                    <i class="bi bi-table me-1"></i> Table
+                </button>
+                <button class="btn @(activeView == "calendar" ? "btn-primary" : "btn-outline-primary")"
+                        @onclick='() => activeView = "calendar"'>
+                    <i class="bi bi-calendar3 me-1"></i> Calendar
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ TABLE VIEW ══════════ -->
+@if (activeView == "table")
+{
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-transparent border-bottom py-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <h6 class="fw-semibold mb-0">
+                    <i class="bi bi-table text-primary me-2"></i>
+                    @if (selectedMonth > 0)
+                    {
+                        @:@GetMonthName(selectedMonth) @selectedYear — Holidays
+                    }
+                    else
+                    {
+                        @:All Holidays — @selectedYear
+                    }
+                </h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">
+                    @filteredFestivals.Count holiday(s)
+                </span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (filteredFestivals.Any())
+            {
+                <div class="festival-scroll-area">
+                    <AppTable TItem="FestivalHolidayViewModel"
+                              Items="filteredFestivals"
+                              Columns="TableSchemas.FestivalHolidays"
+                              OnEdit="EditFestival"
+                              OnDelete="DeleteFestival" />
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-calendar-x fs-1 text-muted opacity-50 d-block mb-2"></i>
+                    <p class="text-muted mb-2">
+                        No festival holidays for
+                        @(selectedMonth > 0
+                            ? $"{GetMonthName(selectedMonth)} {selectedYear}"
+                            : selectedYear.ToString())
+                    </p>
+                    <button class="btn btn-outline-primary rounded-pill"
+                            @onclick="OpenCreateModal">
+                        <i class="bi bi-plus me-1"></i> Add Holiday
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- ══════════ CALENDAR VIEW ══════════ -->
+@if (activeView == "calendar")
+{
+    <!-- Calendar Component -->
+    <HolidayCalender TItem="FestivalHolidayViewModel"
+                     Year="calendarYear"
+                     Month="calendarMonth"
+                     Items="allFestivals"
+                     DateSelector="f => f.Date"
+                     TitleSelector="f => f.FestivalName"
+                     EventClass="cal-event-danger"
+                     EventIcon="bi bi-star-fill"
+                     EventLegendLabel="Holiday"
+                     EventLegendDotClass="bg-danger"
+                     OnMonthChanged="OnCalendarMonthChanged" />
+
+    <!-- Holidays list below calendar -->
+    @if (calendarMonthHolidays.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-3 mt-3">
+            <div class="card-header bg-transparent border-bottom py-3">
+                <h6 class="fw-semibold mb-0">
+                    <i class="bi bi-list-check text-primary me-2"></i>
+                    @(new DateTime(calendarYear, calendarMonth, 1).ToString("MMMM yyyy"))
+                    — Holiday List
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <AppTable TItem="FestivalHolidayViewModel"
+                          Items="calendarMonthHolidays"
+                          Columns="TableSchemas.FestivalHolidays"
+                          OnEdit="EditFestival"
+                          OnDelete="DeleteFestival" />
+            </div>
+        </div>
+    }
+}
+
+<!-- MODAL -->
+<FestivalHolidayTypeModal ShowModal="showModal"
+                          EditId="editId"
+                          OnClose="CloseModal"
+                          OnSaved="OnFestivalSaved" />
+
+@code {
+
+    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+
+    // ── Data ──
+    private List<FestivalHolidayViewModel> allFestivals = new();
+    private List<FestivalHolidayViewModel> filteredFestivals = new();
+    private List<FestivalHolidayViewModel> calendarMonthHolidays = new();
+    private FestivalHolidayViewModel? upcomingHoliday;
+
+    // ── Filters ──
+    private int selectedYear = DateTime.Now.Year;
+    private int selectedMonth = 0;
+
+    // ── Calendar ──
+    private int calendarYear = DateTime.Now.Year;
+    private int calendarMonth = DateTime.Now.Month;
+
+    // ── View ──
+    private string activeView = "table";
+
+    // ── Modal ──
+    private bool showModal;
+    private int? editId;
+
+    // ═══════════ LIFECYCLE ═══════════
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFestivals();
+    }
+
+    // ═══════════ DATA ═══════════
+
+    private async Task LoadFestivals()
+    {
+        try
+        {
+            var result = await FestivalHolidayService.GetFestivalHolidayAsync();
+
+            allFestivals = result?.IsSuccess == true && result.Data != null
+                ? result.Data.OrderBy(f => f.Date).ToList()
+                : new();
+
+            upcomingHoliday = allFestivals
+                .Where(f => f.Date >= DateTime.Today)
+                .OrderBy(f => f.Date)
+                .FirstOrDefault();
+
+            ApplyFilters();
+            BuildCalendarList();
+
+            await OnCountChanged.InvokeAsync(allFestivals.Count);
+        }
+        catch
+        {
+            allFestivals = new();
+            filteredFestivals = new();
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        filteredFestivals = allFestivals
+            .Where(f => f.Date.Year == selectedYear)
+            .Where(f => selectedMonth == 0 || f.Date.Month == selectedMonth)
+            .OrderBy(f => f.Date)
+            .ToList();
+    }
+
+    private void BuildCalendarList()
+    {
+        calendarMonthHolidays = allFestivals
+            .Where(f => f.Date.Year == calendarYear && f.Date.Month == calendarMonth)
+            .OrderBy(f => f.Date)
+            .ToList();
+    }
+
+    // ═══════════ FILTER HANDLERS ═══════════
+
+    private void OnMonthFilterChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var month))
+        {
+            selectedMonth = month;
+
+            if (month > 0)
+            {
+                calendarMonth = month;
+                calendarYear = selectedYear;
+            }
+
+            ApplyFilters();
+            BuildCalendarList();
+        }
+    }
+
+    private void OnYearFilterChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var year))
+        {
+            selectedYear = year;
+            calendarYear = year;
+
+            ApplyFilters();
+            BuildCalendarList();
+        }
+    }
+
+    private void ClearFilters()
+    {
+        selectedMonth = 0;
+        ApplyFilters();
+    }
+
+    // ═══════════ CALENDAR CALLBACK ═══════════
+
+    private void OnCalendarMonthChanged((int Year, int Month) value)
+    {
+        calendarYear = value.Year;
+        calendarMonth = value.Month;
+
+        // Sync filters
+        selectedYear = value.Year;
+        selectedMonth = value.Month;
+
+        ApplyFilters();
+        BuildCalendarList();
+    }
+
+    // ═══════════ MODAL ═══════════
+
+    private void OpenCreateModal()
+    {
+        editId = null;
+        showModal = true;
+    }
+
+    private void EditFestival(FestivalHolidayViewModel model)
+    {
+        editId = model.Id;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        editId = null;
+    }
+
+    private async Task OnFestivalSaved()
+    {
+        CloseModal();
+        await LoadFestivals();
+    }
+
+    private async Task DeleteFestival(FestivalHolidayViewModel model)
+    {
+        bool ok = await JsRuntime.InvokeAsync<bool>(
+            "confirm", $"Delete '{model.FestivalName}'?");
+        if (!ok) return;
+
+        try
+        {
+            var result = await FestivalHolidayService.DeleteFestivalHolidayAsync(model.Id);
+            if (result?.IsSuccess == true)
+            {
+                NotificationService.Success("Holiday deleted successfully.");
+                await LoadFestivals();
+            }
+            else
+            {
+                NotificationService.Error(result?.Message ?? "Failed to delete.");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Error(ex.Message ?? "Error deleting holiday.");
+        }
+    }
+
+    // ═══════════ HELPERS ═══════════
+
+    private static int DaysUntil(DateTime date)
+    {
+        var diff = (date.Date - DateTime.Today).Days;
+        return diff > 0 ? diff : 0;
+    }
+
+    private static string GetMonthName(int month) =>
+        month > 0 ? new DateTime(2000, month, 1).ToString("MMMM") : "All Months";
+}
