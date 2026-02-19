@@ -69,12 +69,13 @@
             return;
         }
 
-        // 🚫 BLOCK DATE
         if (IsDateDisabled?.Invoke(selectedDate.Date) == true)
         {
-            // Do nothing → Blazor re-renders old value automatically
             return;
         }
+
+        // ✅ THIS WAS MISSING — invoke the parent callback with the selected date
+        await ValueChanged.InvokeAsync(selectedDate.Date);
 
         if (ValidationExpression != null)
             EditContext?.NotifyFieldChanged(_fieldIdentifier);
