@@ -38,6 +38,8 @@ public class DepartmentController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateDepartment([FromBody] DepartmentDto departmentDto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);  
         var result = await _departmentService.CreateDepartmentAsync(departmentDto);
 
         if (!result.IsSuccess)
@@ -49,6 +51,8 @@ public class DepartmentController : ControllerBase
     [HttpPost("{id:int}")]
     public async Task<IActionResult> UpdateDepartment(int id, [FromBody] DepartmentDto departmentDto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
         departmentDto.Id = id;
 
         var result = await _departmentService.UpdateDepartmentAsync(departmentDto);

@@ -48,3 +48,9 @@
     background: #f1f5f9 !important;
     color: #475569;
 }
+
+.badge.bg-danger {
+    background: #FFB8B8 !important; /* Extremely light red */
+    color: #D10000 !important;
+}
+

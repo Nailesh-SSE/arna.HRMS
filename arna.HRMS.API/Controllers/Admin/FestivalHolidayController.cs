@@ -30,8 +30,7 @@ public class FestivalHolidayController : ControllerBase
         var result = await _holidayService.GetFestivalHolidayByIdAsync(id);
         if (!result.IsSuccess)
             return BadRequest(result.Message);
-        if (result.Data == null)
-            return NotFound("Festival holiday not found");
+
         return Ok(result);
     }
 

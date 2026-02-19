@@ -33,8 +33,10 @@
             <AppButton ButtonClass="btn btn-success btn-sm"
                        Disabled="DisableClockIn"
                        OnClick="ClockInAsync">
-                <i class="bi bi-clock"></i>
+                <i class="bi bi-clock @(IsClockInOut ? "clock-alert" : "")"></i>
             </AppButton>
+
+
         }
     }
 
@@ -96,6 +98,8 @@
     private double? CurrentLongitude;
     private bool IsGettingLocation;
 
+    public bool IsClockInOut=false;
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -110,7 +114,10 @@
         if (!lastEntry.IsSuccess || lastEntry.Data == null)
             return;
 
-        if (lastEntry.Data.ClockInTime != null && lastEntry.Data.ClockOutTime == null)
+        if (lastEntry.Data.ClockInTime != null
+            && lastEntry.Data.ClockOutTime == null
+            && lastEntry.Data.Date.Date == DateTime.Today
+        )
         {
             IsClockedIn = true;
 
@@ -130,6 +137,23 @@
                 DisableClockOut = false;
             }
         }
+        else
+        {
+            IsClockedIn = false;
+
+            // Show red icon only if yesterday open
+            if (lastEntry.Data.ClockInTime != null
+                && lastEntry.Data.ClockOutTime == null
+                && lastEntry.Data.Date.Date < DateTime.Today)
+            {
+                IsClockInOut = true;
+            }
+            else
+            {
+                IsClockInOut = false;
+            }
+        }
+
     }
 
     private async Task ClockInAsync()
@@ -223,6 +247,7 @@
             var worked = Out.ToTimeSpan() - In.ToTimeSpan();
             AccumulatedHours = AccumulatedHours.Add(worked);
 
+            IsClockInOut = false;
             var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
             {
                 EmployeeId = employeeId,
@@ -241,7 +266,7 @@
                 return;
             }
 
-            await ShowNotification($"Clocked out | {AccumulatedHours:hh\\:mm\\:ss}");
+            await ShowNotification($"Clocked out | {new TimeSpan(Out.Hour, Out.Minute, Out.Second)}");
         }
         CurrentLatitude = null;
         CurrentLongitude = null;

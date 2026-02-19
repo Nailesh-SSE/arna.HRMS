@@ -52,3 +52,10 @@
     .time-info-pill .value {
         font-variant-numeric: tabular-nums;
     }
+
+.clock-alert {
+    color: #ff3b30 !important;
+    filter: drop-shadow(0 0 1px rgba(0,0,0,0.4));
+}
+
+

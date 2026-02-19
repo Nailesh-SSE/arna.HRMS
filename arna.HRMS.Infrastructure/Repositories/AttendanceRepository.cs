@@ -252,8 +252,7 @@ public class AttendanceRepository
     {
         return await _baseRepository.Query()
             .Where(a =>
-                a.EmployeeId == employeeId &&
-                a.Date.Date == DateTime.Today)
+                a.EmployeeId == employeeId)
             .OrderByDescending(a => a.Id)
             .FirstOrDefaultAsync();
     }

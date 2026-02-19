@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\arna.HRMS.API\arna.HRMS.API.csproj" />
     <ProjectReference Include="..\arna.HRMS.Core\arna.HRMS.Core.csproj" />
     <ProjectReference Include="..\arna.HRMS.Infrastructure\arna.HRMS.Infrastructure.csproj" />
     <ProjectReference Include="..\arna.HRMS\arna.HRMS.csproj" />

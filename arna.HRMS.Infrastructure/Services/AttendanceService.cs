@@ -19,7 +19,7 @@ public class AttendanceService : IAttendanceService
     private readonly AttendanceValidator _validator;
 
 
-    private static readonly DateTime SystemStartDate = new(2026, 2, 1);
+    private static readonly DateTime SystemStartDate = DateTime.Now;
 
     public AttendanceService(
         AttendanceRepository attendanceRepository,

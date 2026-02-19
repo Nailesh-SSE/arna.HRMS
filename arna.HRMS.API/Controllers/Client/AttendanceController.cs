@@ -38,6 +38,9 @@ public class AttendanceController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateAttendance([FromBody] AttendanceDto attendanceDto)
     {
+        if(!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var result = await _attendanceService.CreateAttendanceAsync(attendanceDto);
 
         if (!result.IsSuccess)

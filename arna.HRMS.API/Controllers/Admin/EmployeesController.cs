@@ -38,6 +38,9 @@ public class EmployeesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] EmployeeDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var result = await _employeeService.CreateEmployeeAsync(dto);
 
         if (!result.IsSuccess)
@@ -49,6 +52,9 @@ public class EmployeesController : ControllerBase
     [HttpPost("{id:int}")]
     public async Task<IActionResult> UpdateEmployee(int id, [FromBody] EmployeeDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         dto.Id = id;
 
         var result = await _employeeService.UpdateEmployeeAsync(dto);
