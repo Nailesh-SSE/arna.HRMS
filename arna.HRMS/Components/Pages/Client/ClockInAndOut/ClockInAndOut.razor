@@ -35,8 +35,6 @@
                        OnClick="ClockInAsync">
                 <i class="bi bi-clock @(IsClockInOut ? "clock-alert" : "")"></i>
             </AppButton>
-
-
         }
     }
 
@@ -153,7 +151,6 @@
                 IsClockInOut = false;
             }
         }
-
     }
 
     private async Task ClockInAsync()
