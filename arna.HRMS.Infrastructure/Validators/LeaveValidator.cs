@@ -48,6 +48,9 @@ public class LeaveValidator
         if (dto.MaxPerYear <= 0)
             errors.Add("Leave days must be greater than 0");
 
+        var exists = await _repository.LeaveExistsAsync(dto.LeaveNameId, dto.Id);
+        if (exists)
+            errors.Add($"Leave '{dto.LeaveNameId}' already exists");
         return errors.Any()
             ? ValidationResult.Fail(errors.ToArray())
             : ValidationResult.Success();
