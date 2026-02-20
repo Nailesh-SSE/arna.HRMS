@@ -4,8 +4,7 @@
 <div class="bg-dark text-white d-flex flex-column h-100" style="width:260px;">
 
     <div class="p-3 border-bottom">
-        <i class="bi bi-buildings fs-5"></i>
-        <strong>Arna Technosoft</strong>
+       <img src="companyLogo/arna_logo.svg"/>
     </div>
 
     <nav class="nav nav-pills flex-column p-2">
@@ -24,7 +23,7 @@
 
         @if (IsAdmin() || IsSuperAdmin())
         {
-            <NavLink href="/leaveTypes" class="nav-link text-white">
+            <NavLink href="/admin-leave-management" class="nav-link text-white">
                 <i class="bi bi-box-arrow-left"></i>Leave Management
             </NavLink>
 
@@ -42,7 +41,7 @@
         }
         else
         {
-            <NavLink href="/leaverequest" class="nav-link text-white">
+            <NavLink href="/emp-leave-management" class="nav-link text-white">
                 <i class="bi bi-box-arrow-left"></i>Leave
             </NavLink>
         }

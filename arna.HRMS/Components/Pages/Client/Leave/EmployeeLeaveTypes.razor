@@ -1,0 +1,127 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Models.Enums
+
+@inject ILeaveService LeaveService
+@inherits AuthenticatedLayoutBase
+
+<!-- ══════════ TOOLBAR ══════════ -->
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+    <div>
+        <h5 class="fw-semibold mb-0">
+            <i class="bi bi-calendar-check text-primary me-1"></i>
+            View your balance, apply & track leave requests
+        </h5>
+    </div>
+    <button class="btn btn-primary rounded-3 shadow-sm"
+            @onclick="OpenApplyModal">
+        <i class="bi bi-plus-circle me-1"></i> Apply Leave
+    </button>
+</div>
+
+<!-- ══════════ BALANCE SUMMARY ══════════ -->
+<EmployeeLeaveBalance @ref="balanceSummaryRef" />
+
+<!-- ══════════ REQUEST LIST ══════════ -->
+<EmployeeLeaveRequestList @ref="requestListRef"
+                          OnApplyClicked="OpenApplyModal"
+                          OnEditClicked="OpenEditModal"
+                          OnRequestChanged="OnRequestChanged"
+                          OnCountChanged="HandleCountChanged" />
+
+<!-- ══════════ APPLY / EDIT MODAL ══════════ -->
+<EmployeeLeaveApplyModal ShowModal="showModal"
+                         ShowModalChanged="OnModalChanged"
+                         SelectedRequest="selectedRequest"
+                         LeaveOptions="leaveOptions"
+                         OnSaved="OnLeaveSaved" />
+
+@code {
+
+    [Parameter] public EventCallback<int> OnRequestCountChanged { get; set; }
+
+    private EmployeeLeaveBalance? balanceSummaryRef;
+    private EmployeeLeaveRequestList? requestListRef;
+
+    private bool showModal;
+    private LeaveRequestViewModel? selectedRequest;
+    private List<SelectOption> leaveOptions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLeaveOptions();
+    }
+
+    private async Task LoadLeaveOptions()
+    {
+        var result = await LeaveService.GetLeaveTypeAsync();
+
+        if (result?.IsSuccess == true && result.Data != null)
+        {
+            leaveOptions = result.Data
+                .Where(x => x.IsActive)
+                .Select(x => new SelectOption
+                {
+                    Value = x.Id.ToString(),
+                    Text = x.LeaveNameId.ToString()
+                })
+                .ToList();
+        }
+        else
+        {
+            leaveOptions = new();
+        }
+    }
+
+    private void OpenApplyModal()
+    {
+        selectedRequest = null;
+        showModal = true;
+    }
+
+    private void OpenEditModal(LeaveRequestViewModel req)
+    {
+        selectedRequest = req;
+        showModal = true;
+    }
+
+    private Task OnModalChanged(bool value)
+    {
+        showModal = value;
+        return Task.CompletedTask;
+    }
+
+    private async Task OnLeaveSaved()
+    {
+        showModal = false;
+        selectedRequest = null;
+
+        try
+        {
+            if (balanceSummaryRef != null)
+                await balanceSummaryRef.RefreshAsync();
+
+            if (requestListRef != null)
+                await requestListRef.RefreshAsync();
+        }
+        catch (ObjectDisposedException) { }
+    }
+
+    private async Task OnRequestChanged()
+    {
+        try
+        {
+            if (balanceSummaryRef != null)
+                await balanceSummaryRef.RefreshAsync();
+        }
+        catch (ObjectDisposedException) { }
+    }
+
+    private async Task HandleCountChanged(int count)
+    {
+        await OnRequestCountChanged.InvokeAsync(count);
+    }
+}

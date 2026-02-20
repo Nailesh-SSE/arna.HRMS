@@ -1,9 +1,10 @@
-﻿@page "/leaverequest"
+﻿@page "/emp-leave-management"
 
 @using arna.HRMS.ClientServices.Leave
 @using arna.HRMS.ClientServices.Common
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.Pages.Admin.LeaveManagement
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Dropdown
@@ -15,172 +16,107 @@
 
 @inherits AuthenticatedLayoutBase
 
+@* @using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.Pages.Employee.LeaveManagement
+
+@inherits AuthenticatedLayoutBase *@
+
 <FullPageLoader Visible="isLoading" />
 
 @if (!isLoading)
 {
-    <PageTitle>Leave Management</PageTitle>
+    <div class="container-fluid px-3 px-md-4 py-3 leave-fade-in">
 
-    <div class="leave-management-container">
-
-        <div class="leave-header d-flex justify-content-between align-items-center mb-3">
-            <h1>Leave Management</h1>
-
-            <button class="btn btn-primary btn-lg"
-                    @onclick="OpenCreateModal">
-                + Apply Leave
-            </button>
+        <!-- ══════════ HEADER ══════════ -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">
+                    <i class="bi bi-calendar2-check-fill text-primary me-2"></i>
+                    Leave Management 
+                </h3>
+                <p class="text-muted mb-0">
+                    Apply for leaves, track your balance & view festival holidays
+                </p>
+            </div>
         </div>
 
-        <LeaveSummaries Summaries="summaries"
-                        LeaveTypes="leaveTypes" />
+        <!-- ══════════ TAB NAVIGATION ══════════ -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-0">
+                <ul class="nav nav-tabs leave-tabs px-3 pt-3" role="tablist">
 
-        <LeaveRequestList Requests="requests"
-                          OnCancel="HandleCancelRequest"
-                          OnEdit="HandleEditRequest" />
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link @(activeTab == Tab.Leaves ? "active" : "")"
+                                @onclick="() => SetTab(Tab.Leaves)">
+                            <i class="bi bi-bookmark-check me-2"></i>
+                            Leaves Types
+                            @if (leaveRequestCount > 0)
+                            {
+                                <span class="badge bg-primary bg-opacity-10 text-primary
+                                             rounded-pill ms-2">
+                                    @leaveRequestCount
+                                </span>
+                            }
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link @(activeTab == Tab.FestivalsHoliday ? "active" : "")"
+                                @onclick="() => SetTab(Tab.FestivalsHoliday)">
+                            <i class="bi bi-calendar-heart me-2"></i>
+                            Festival Holidays
+                            @if (festivalCount > 0)
+                            {
+                                <span class="badge bg-success bg-opacity-10 text-success
+                                             rounded-pill ms-2">
+                                    @festivalCount
+                                </span>
+                            }
+                        </button>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+
+        <!-- ══════════ TAB CONTENT ══════════ -->
+        <div class="tab-content">
+
+            @if (activeTab == Tab.Leaves)
+            {
+                <EmployeeLeaveTypes @ref="leaveTab" OnRequestCountChanged="c => { leaveRequestCount = c; StateHasChanged(); }" />
+            }
+
+            @* @if (activeTab == Tab.FestivalsHoliday)
+            {
+                <EmployeeFestivalHolidayTab @ref="festivalTab"
+                                            OnCountChanged="c => { festivalCount = c; StateHasChanged(); }" />
+            } *@
+
+        </div>
     </div>
-
-    <LeaveRequestForm ShowModal="showModal"
-                      ShowModalChanged="OnModalChanged"
-                      SelectedRequest="selectedRequest"
-                      LeaveOptions="leaveOptions"
-                      IsDateDisabled="IsDateBlocked"
-                      OnSaved="OnRequestSaved" />
 }
-
 @code {
 
     private bool isLoading = true;
     private bool showModal;
+    private enum Tab { Leaves, FestivalsHoliday }
+    private Tab activeTab = Tab.Leaves;
+    private int leaveRequestCount;
+    private int festivalCount;
 
-    private LeaveRequestViewModel? selectedRequest;
-
-    private List<LeaveRequestViewModel> requests = new();
-    private List<LeaveTypeViewModel> leaveTypes = new();
-    private List<SelectOption> leaveOptions = new();
-    private List<LeaveBalanceViewModel> summaries = new();
-
+    private EmployeeLeaveTypes? leaveTab;
+    // private FestivalHolidayType? festivalTab;
+    
     protected override async Task OnInitializedAsync()
     {
-        await LoadUserAsync();
-
-        await LoadLeaveTypes();
-        await LoadRequests();
-        await LoadBalances();
-
+        await base.OnInitializedAsync();
         isLoading = false;
     }
 
-    private void OpenCreateModal()
+    private void SetTab(Tab tab)
     {
-        selectedRequest = null; 
-        showModal = true;
-    }
-
-    private void HandleEditRequest(int id)
-    {
-        selectedRequest = requests.FirstOrDefault(x => x.Id == id);
-        showModal = true;
-    }
-
-    private Task OnModalChanged(bool value)
-    {
-        showModal = value;
-        return Task.CompletedTask;
-    }
-
-    private async Task LoadLeaveTypes()
-    {
-        var result = await LeaveService.GetLeaveTypeAsync();
-        if (result?.IsSuccess == true && result.Data != null)
-            leaveTypes = result.Data;
-    }
-
-    private async Task LoadRequests()
-    {
-        var result = await LeaveService.GetLeaveRequestByEmployee(GetEmployeeId());
-        if (result?.IsSuccess == true && result.Data != null)
-            requests = result.Data;
-    }
-
-    private async Task LoadBalances()
-    {
-        var result = await LeaveService.GetLeaveRequestByFilterAsync(
-            Status.Approved,
-            GetEmployeeId());
-
-        var approvedLeaves = result?.IsSuccess == true && result.Data != null
-            ? result.Data
-            : new List<LeaveRequestViewModel>();
-
-        var usedByType = approvedLeaves
-            .GroupBy(x => x.LeaveTypeId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Sum(x => x.LeaveDays) // ✅ CORRECT
-            );
-
-        summaries = leaveTypes.Select(type =>
-        {
-            usedByType.TryGetValue(type.Id, out var usedDays);
-
-            return new LeaveBalanceViewModel
-            {
-                LeaveTypeId = type.Id,
-                LeaveTypeName = type.LeaveNameId.ToString(),
-                TotalDays = type.MaxPerYear,
-                UsedDays = usedDays
-            };
-        }).ToList();
-
-        BuildLeaveOptions();
-    }
-
-    private void BuildLeaveOptions()
-    {
-        leaveOptions = leaveTypes.Select(type =>
-        {
-            var balance = summaries.FirstOrDefault(x => x.LeaveTypeId == type.Id);
-            var remaining = balance?.RemainingDays ?? 0;
-
-            return new SelectOption
-            {
-                Value = type.Id.ToString(),
-                Text = $"{type.LeaveNameId} ({remaining} left)",
-                IsDisabled = remaining == 0
-            };
-        }).ToList();
-    }
-
-    private async Task OnRequestSaved()
-    {
-        await LoadRequests();
-        await LoadBalances();
-    }
-
-    private async Task HandleCancelRequest(int leaveRequestId)
-    {
-        if (!await JsRuntime.InvokeAsync<bool>("confirm", "Cancel this request?"))
-            return;
-
-        var result = await LeaveService.UpadteLeaverequestStatusCancle(
-            leaveRequestId,
-            GetEmployeeId());
-
-        if (result?.IsSuccess == true)
-        {
-            NotificationService.Success("Leave cancelled successfully.");
-            await LoadRequests();
-            await LoadBalances();
-        }
-    }
-
-    private bool IsDateBlocked(DateTime date)
-    {
-        return requests.Any(r =>
-            r.EmployeeId == GetEmployeeId()
-            && (r.StatusId == Status.Pending || r.StatusId == Status.Approved)
-            && date >= r.StartDate.Date
-            && date <= r.EndDate.Date);
+        activeTab = tab;
     }
 }

@@ -1,0 +1,100 @@
+﻿@* All custom styles live in MainHeader.razor.css (Blazor CSS Isolation) *@
+@* NOTE: Add this to your global app.css / site.css:
+   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+*@
+@using System.Security.Claims
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.Pages.Attendance
+@using arna.HRMS.Components.Pages.Auth
+@using arna.HRMS.Components.Pages.Client.ClockInAndOut
+@inherits AuthenticatedLayoutBase
+
+<header class="hrms-header bg-white px-3 d-flex align-items-center sticky-top">
+
+    <!-- ── Toggle ── -->
+    <button class="hrms-toggle-btn btn btn-light d-flex align-items-center justify-content-center me-2"
+            @onclick="OnToggleSidebar" title="Toggle Sidebar">
+        <i class="bi bi-list fs-5 text-secondary"></i>
+    </button>
+
+    <!-- ── Greeting ── -->
+    <div class="hrms-greeting d-flex flex-column me-2">
+        <span class="hrms-greeting-sub">@GetDayLabel()</span>
+        <span class="hrms-greeting-main">
+            @Greeting@(!string.IsNullOrEmpty(GetUserFullName()) ? $", {GetUserFullName()}" : "")
+        </span>
+    </div>
+
+    <!-- ── Vertical Divider (desktop only) ── -->
+    <div class="hrms-vr vr opacity-25 mx-1"></div>
+
+    <!-- ── Search Bar (desktop only) ── -->
+    <div class="hrms-search-wrap position-relative mx-2">
+        <i class="bi bi-search position-absolute top-50 translate-middle-y text-secondary"
+           style="left:11px; font-size:.82rem; pointer-events:none;"></i>
+        <input class="hrms-search-input form-control border ps-4" style="min-width:200px; max-width:300px;"
+               type="search" placeholder="Search anything…" />
+    </div>
+
+    <!-- ── Right Actions ── -->
+    <div class="hrms-actions ms-auto">
+
+        <!-- Clock In/Out — always visible, pill styling applied via CSS on desktop -->
+        <div class="hrms-clock-badge">
+            <span class="hrms-clock-dot"></span>
+            <ClockInAndOut />
+        </div>
+
+        <button class="hrms-icon-btn btn btn-light d-flex align-items-center justify-content-center border-0"
+                title="Notifications">
+            <NotificationDrawer />
+        </button>
+
+        <!-- Avatar -->
+        <div class="hrms-avatar d-flex align-items-center justify-content-center text-white"
+             title="@GetUserFullName()">
+            @GetInitials()
+        </div>
+
+        <SimpleUserMenu />
+
+    </div>
+
+</header>
+
+@code {
+    [Parameter] public EventCallback OnToggleSidebar { get; set; }
+
+    private string Greeting = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        SetGreeting();
+    }
+
+    private void SetGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+        Greeting = hour switch
+        {
+            >= 5 and < 12 => "Good Morning",
+            >= 12 and < 17 => "Good Afternoon",
+            >= 17 and < 21 => "Good Evening",
+            _ => "Good Night"
+        };
+    }
+
+    private string GetDayLabel() =>
+        DateTime.Now.ToString("ddd, dd MMM");
+
+    private string GetInitials()
+    {
+        var name = GetUserFullName();
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : parts[0][0].ToString().ToUpper();
+    }
+}
