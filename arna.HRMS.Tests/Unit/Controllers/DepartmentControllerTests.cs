@@ -197,6 +197,25 @@ public class DepartmentControllerTests
     }
 
     [Test]
+    public async Task UpdateDepartment_ReturnsBadRequestResult_WhenIdIsZeroOrNegative()
+    {
+        var departmentDto = new DepartmentDto() { Id = 1, Name = "IT" };
+        _departmentServiceMock
+            .Setup(service => service.UpdateDepartmentAsync(departmentDto))
+            .ReturnsAsync(ServiceResult<DepartmentDto>.Fail("Failed to update department"));
+        // Act
+        var result = await _departmentController.UpdateDepartment(0, departmentDto);
+        // Assert
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Failed to update department"));
+        // Act
+        result = await _departmentController.UpdateDepartment(-1, departmentDto);
+        // Assert
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Failed to update department"));
+    }
+
+    [Test]
     public async Task DeleteDepartment_ReturnsOkResult()
     {
         var departmentDto = new DepartmentDto() { Id = 1, Name = "IT" };

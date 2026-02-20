@@ -43,6 +43,9 @@ public class AttendanceRequestController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateAttendanceRequest([FromBody] AttendanceRequestDto attendanceRequestDto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var result = await _attendanceRequestService.CreateAttendanceRequestAsync(attendanceRequestDto);
 
         if (!result.IsSuccess)
@@ -54,7 +57,12 @@ public class AttendanceRequestController : ControllerBase
     [HttpPost("{id:int}")]
     public async Task<IActionResult> UpdateAttendanceRequest(int id, [FromBody] AttendanceRequestDto dto)
     {
-        dto.Id = id;
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (id != dto.Id)
+            return BadRequest("Invalid Id");
+
         var result = await _attendanceRequestService.UpdateAttendanceRequestAsync(dto); 
 
         if (!result.IsSuccess)

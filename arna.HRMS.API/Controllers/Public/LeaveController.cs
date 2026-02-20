@@ -41,16 +41,27 @@ public class LeaveController : ControllerBase
             return BadRequest(ModelState);
 
         var created = await _leaveService.CreateLeaveTypeAsync(dto);
+
+        if(!created.IsSuccess)
+            return BadRequest(created.Message);
+
         return Ok(created);
     }
 
     [HttpPost("Types/{id:int}")]
     public async Task<IActionResult> UpdateLeaveType(int id, [FromBody] LeaveTypeDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         if (id != dto.Id)
             return BadRequest("Invalid Id");
 
         var updated = await _leaveService.UpdateLeaveTypeAsync(dto);
+
+        if(!updated.IsSuccess)
+            return BadRequest(updated.Message);
+
         return Ok(updated);
     }
 
@@ -86,12 +97,19 @@ public class LeaveController : ControllerBase
             return BadRequest(ModelState);
 
         var created = await _leaveService.CreateLeaveRequestAsync(dto);
+
+        if(!created.IsSuccess)
+            return BadRequest(created.Message);
+
         return Ok(created);
     }
 
     [HttpPost("requests/{id:int}")]
     public async Task<IActionResult> UpdateLeaveRequest(int id, [FromBody] LeaveRequestDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         if (id != dto.Id)
             return BadRequest("Invalid Id");
 
@@ -99,6 +117,10 @@ public class LeaveController : ControllerBase
             return BadRequest("Only pending leave requests can be updated");
 
         var updated = await _leaveService.UpdateLeaveRequestAsync(dto);
+
+        if(!updated.IsSuccess)
+            return BadRequest(updated.Message);
+
         return Ok(updated);
     }
 
@@ -146,6 +168,9 @@ public class LeaveController : ControllerBase
     public async Task<IActionResult> GetEmployeeLeaveRequest(int employeeid)
     {
         var data = await _leaveService.GetLeaveRequestByEmployeeIdAsync(employeeid);
+        if(!data.IsSuccess)
+            return BadRequest(data.Message);
+
         return Ok(data);
     }
 

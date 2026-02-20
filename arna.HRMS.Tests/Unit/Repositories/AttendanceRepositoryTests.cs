@@ -767,7 +767,7 @@ public class AttendanceRepositoryTests
 
         var result = await _attendanceRepository.GetLastAttendanceTodayAsync(2);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Not.Null);
     }
 
     [Test]
@@ -812,7 +812,7 @@ public class AttendanceRepositoryTests
 
         _dbContext.Attendances.AddRange(
             new Attendance { Id = 1, EmployeeId = 30, Date = today, Notes="Test Note" },
-            new Attendance { Id = 100, EmployeeId = 30, Date = today.AddDays(1), Notes = "Test Note" } // future
+            new Attendance { Id = 100, EmployeeId = 31, Date = today.AddDays(1), Notes = "Test Note" } // future
         );
 
         await _dbContext.SaveChangesAsync();

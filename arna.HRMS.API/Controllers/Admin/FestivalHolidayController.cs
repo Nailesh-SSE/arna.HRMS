@@ -48,6 +48,9 @@ public class FestivalHolidayController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateFestivalHoliday([FromBody] FestivalHolidayDto festivalHolidayDto)
     {
+        if(!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var result = await _holidayService.CreateFestivalHolidayAsync(festivalHolidayDto);
 
         if (!result.IsSuccess)
@@ -59,7 +62,11 @@ public class FestivalHolidayController : ControllerBase
     [HttpPost("{id:int}")]
     public async Task<IActionResult> UpdateFestivalHoliday(int id, [FromBody] FestivalHolidayDto festivalHolidayDto)
     {
-        festivalHolidayDto.Id = id;
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (id != festivalHolidayDto.Id)
+            return BadRequest("Invalid Id");
 
         var result = await _holidayService.UpdateFestivalHolidayAsync(festivalHolidayDto);
 

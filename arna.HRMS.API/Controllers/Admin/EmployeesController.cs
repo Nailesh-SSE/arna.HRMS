@@ -55,7 +55,8 @@ public class EmployeesController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        dto.Id = id;
+        if (id != dto.Id)
+            return BadRequest("Invalid Id");
 
         var result = await _employeeService.UpdateEmployeeAsync(dto);
 

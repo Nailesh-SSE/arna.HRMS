@@ -53,7 +53,9 @@ public class DepartmentController : ControllerBase
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-        departmentDto.Id = id;
+
+        if (id != departmentDto.Id)
+            return BadRequest("Invalid Id");
 
         var result = await _departmentService.UpdateDepartmentAsync(departmentDto);
 

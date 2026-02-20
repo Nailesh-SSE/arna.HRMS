@@ -2,7 +2,6 @@
 using arna.HRMS.Core.Common.ServiceResult;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Services.Interfaces;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
@@ -199,6 +198,22 @@ public class EmployeesControllerTests
             .ReturnsAsync(ServiceResult<EmployeeDto>.Fail("Fail to Update Employee"));
         var result = await _controller.UpdateEmployee(2, dto);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateEmployee_ReturnsBadRequestResult_WhenIdIsZeroOrNegative()
+    {
+        var dto = new EmployeeDto { Id = 1, FirstName = "John", LastName = "Doe" };
+        _serviceMock
+            .Setup(s => s.UpdateEmployeeAsync(dto))
+            .ReturnsAsync(ServiceResult<EmployeeDto>.Fail("invalid Id"));
+
+        var result1 = await _controller.UpdateEmployee(0, dto);
+        var result2 = await _controller.UpdateEmployee(-1, dto);
+
+        Assert.That(result1, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That(result2, Is.TypeOf<BadRequestObjectResult>());
+
     }
 
     [Test]

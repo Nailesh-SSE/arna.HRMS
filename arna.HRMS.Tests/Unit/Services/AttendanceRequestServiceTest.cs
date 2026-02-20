@@ -6,14 +6,12 @@ using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
 using arna.HRMS.Infrastructure.Repositories.Common;
-using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
-using System.Threading.Tasks;
 
 namespace arna.HRMS.Tests.Unit.Services;
 

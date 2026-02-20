@@ -5,7 +5,6 @@ using arna.HRMS.Infrastructure.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace arna.HRMS.Tests.Unit.Controllers;
 
