@@ -20,6 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\companyLogo\arna_logo.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\arna.HRMS.Core\arna.HRMS.Core.csproj" />
   </ItemGroup>
 

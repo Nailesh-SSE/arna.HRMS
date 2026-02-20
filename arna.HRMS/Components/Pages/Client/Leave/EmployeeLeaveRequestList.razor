@@ -1,0 +1,192 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Leave
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Models.Enums
+
+@inject ILeaveService LeaveService
+@inject NotificationService NotificationService
+@inject IJSRuntime JsRuntime
+@inherits AuthenticatedLayoutBase
+
+<!-- ══════════ STATUS SUMMARY CARDS ══════════ -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == null ? "border-primary border-2" : "")"
+             @onclick="() => FilterByStatus(null)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-primary">@allRequests.Count</div>
+                <small class="text-muted">All</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == Status.Pending ? "border-warning border-2" : "")"
+             @onclick="() => FilterByStatus(Status.Pending)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-warning">@pendingCount</div>
+                <small class="text-muted">Pending</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == Status.Approved ? "border-success border-2" : "")"
+             @onclick="() => FilterByStatus(Status.Approved)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-success">@approvedCount</div>
+                <small class="text-muted">Approved</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
+                    @(statusFilter == Status.Rejected ? "border-danger border-2" : "")"
+             @onclick="() => FilterByStatus(Status.Rejected)">
+            <div class="card-body text-center py-3">
+                <div class="fs-3 fw-bold text-danger">@rejectedCount</div>
+                <small class="text-muted">Rejected</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ TABLE ══════════ -->
+<div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-transparent border-bottom py-3 d-flex justify-content-between">
+        <h6 class="fw-semibold mb-0">
+            <i class="bi bi-inbox me-2"></i> Leave Request List
+        </h6>
+    </div>
+
+    <div class="card-body p-3">
+        @if (FilteredRequests.Count == 0)
+        {
+            <div class="text-center text-muted py-5">
+                No leave requests found
+            </div>
+        }
+        else
+        {
+            <AppTable TItem="LeaveRequestViewModel"
+                      Items="FilteredRequests"
+                      Columns="TableSchemas.LeaveRequestColumns"
+                      ShowActions="true">
+
+                <ActionTemplate Context="req">
+                    @if (req.StatusId == Status.Pending)
+                    {
+                        <AppButton ButtonClass="btn btn-sm btn-outline-primary"
+                                   OnClick="() => OnEditClicked.InvokeAsync(req)">
+                            <i class="bi bi-pencil-square"></i>
+                        </AppButton>
+
+                        <AppButton ButtonClass="btn btn-sm btn-outline-danger"
+                                   OnClick="() => CancelRequest(req)">
+                            <i class="bi bi-x-lg"></i>
+                        </AppButton>
+                    }
+                    else
+                    {
+                        <span class="@GetStatusBadgeClass(req.StatusId)">
+                            <i class="@GetStatusIcon(req.StatusId) me-1"></i>
+                            @req.StatusId
+                        </span>
+                    }
+                </ActionTemplate>
+
+            </AppTable>
+        }
+    </div>
+</div>
+
+@code {
+
+    [Parameter] public EventCallback OnApplyClicked { get; set; }
+    [Parameter] public EventCallback<LeaveRequestViewModel> OnEditClicked { get; set; }
+    [Parameter] public EventCallback OnRequestChanged { get; set; }
+    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+
+    private List<LeaveRequestViewModel> allRequests = new();
+    private Status? statusFilter;
+
+    private int pendingCount;
+    private int approvedCount;
+    private int rejectedCount;
+    private bool _loaded = false;
+
+    private List<LeaveRequestViewModel> FilteredRequests =>
+        allRequests
+            .Where(r => statusFilter == null || r.StatusId == statusFilter)
+            .OrderByDescending(r => r.StartDate)
+            .ToList();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_loaded)
+        {
+            _loaded = true;
+            await LoadRequestsAsync();
+            StateHasChanged();
+        }
+    }
+    public async Task RefreshAsync()
+    {
+        await LoadRequestsAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadRequestsAsync()
+    {
+        var employeeId = GetEmployeeId();
+        var result = await LeaveService.GetLeaveRequestByEmployee(employeeId);
+
+        allRequests = result?.IsSuccess == true && result.Data != null
+            ? result.Data
+            : new();
+
+        // ✅ ADD THESE - counts were never being calculated
+        pendingCount = allRequests.Count(r => r.StatusId == Status.Pending);
+        approvedCount = allRequests.Count(r => r.StatusId == Status.Approved);
+        rejectedCount = allRequests.Count(r => r.StatusId == Status.Rejected);
+
+        await OnCountChanged.InvokeAsync(allRequests.Count);
+    }
+
+    private void FilterByStatus(Status? status) => statusFilter = status;
+
+    private async Task CancelRequest(LeaveRequestViewModel req)
+    {
+        var confirm = await JsRuntime.InvokeAsync<bool>("confirm", "Cancel this leave?");
+        if (!confirm) return;
+
+        await LeaveService.UpadteLeaverequestStatusCancle(req.Id, req.EmployeeId);
+        await RefreshAsync();
+        await OnRequestChanged.InvokeAsync();
+    }
+
+    private static string GetStatusBadgeClass(Status status) => status switch
+    {
+        Status.Pending => "badge bg-warning text-dark rounded-pill",
+        Status.Approved => "badge bg-success rounded-pill",
+        Status.Rejected => "badge bg-danger rounded-pill",
+        Status.Cancelled => "badge bg-secondary rounded-pill",
+        _ => "badge bg-light text-dark"
+    };
+
+    private static string GetStatusIcon(Status status) => status switch
+    {
+        Status.Pending => "bi bi-clock",
+        Status.Approved => "bi bi-check-circle",
+        Status.Rejected => "bi bi-x-circle",
+        Status.Cancelled => "bi bi-slash-circle",
+        _ => "bi bi-question-circle"
+    };
+}

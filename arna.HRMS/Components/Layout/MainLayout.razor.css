@@ -17,3 +17,6 @@
     transition: width .3s !important;
     overflow: hidden !important;
 }
+.topbar-wrapper {
+    min-height: 74px; /* desktop default */
+}

@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Models.ViewModels;
+﻿using arna.HRMS.Models.Enums;
+using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Models.ViewModels.Attendance;
 using arna.HRMS.Models.ViewModels.Leave;
 
@@ -162,6 +163,28 @@ public class TableSchemas
                         ? f.Description[..40] + "..."
                         : f.Description)
                     : "—"
+    }
+    };
+
+    public static List<TableColumn<LeaveRequestViewModel>> LeaveRequestColumns = new()
+{
+    new() { Header = "Leave Type", Value = u => u.LeaveTypeName },
+    new() { Header = "Reason", Value = u => string.IsNullOrWhiteSpace(u.Reason) ? "-" : u.Reason },
+    new() { Header = "Total Days", Value = u => u.LeaveDays.ToString() },
+    new() { Header = "Start Date", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
+    new() { Header = "End Date", Value = u => u.EndDate.ToString("yyyy/MM/dd") },
+    new()
+    {
+        Header = "Status",
+        Value = u => u.StatusId.ToString(),
+        CssClassFunc = u => u.StatusId switch
+        {
+            Status.Pending => "badge bg-warning text-dark rounded-pill",
+            Status.Approved => "badge bg-success rounded-pill",
+            Status.Rejected => "badge bg-danger rounded-pill",
+            Status.Cancelled => "badge bg-secondary rounded-pill",
+            _ => "badge bg-light text-dark"
+        }
     }
 };
     // GENERIC STATUS COLUMN

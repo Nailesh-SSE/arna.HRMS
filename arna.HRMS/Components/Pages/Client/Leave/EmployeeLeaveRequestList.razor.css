@@ -1,0 +1,87 @@
+﻿/* ══════════ STATUS FILTER CARDS ══════════ */
+.cursor-pointer {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+    .cursor-pointer:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+    }
+
+.border-2 {
+    border-width: 2px !important;
+    border-style: solid !important;
+}
+
+/* ══════════ REQUEST CARD ══════════ */
+.leave-request-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .leave-request-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+/* ══════════ ICON ══════════ */
+.leave-type-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ══════════ REASON BOX ══════════ */
+.leave-reason-box {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.5;
+}
+
+/* ══════════ SCROLL AREA ══════════ */
+.request-scroll-area {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+    .request-scroll-area::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .request-scroll-area::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .request-scroll-area::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 10px;
+    }
+
+/* ══════════ ACTION BUTTONS ══════════ */
+.btn-outline-primary.rounded-circle,
+.btn-outline-danger.rounded-circle {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+    .btn-outline-primary.rounded-circle:hover {
+        transform: scale(1.1);
+    }
+
+    .btn-outline-danger.rounded-circle:hover {
+        transform: scale(1.1);
+    }

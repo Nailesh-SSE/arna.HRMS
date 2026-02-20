@@ -1,65 +1,45 @@
-﻿.leave-management-container {
-    max-width: 1200px;
-    margin: 32px auto;
-    padding: 20px;
+﻿/* ══════════ FADE IN ══════════ */
+.leave-fade-in {
+    animation: leaveFade 0.35s ease-out;
 }
 
-.leave-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 32px;
-    gap: 20px;
-}
-
-.header-text {
-    flex: 1;
-}
-
-.header-title {
-    font-weight: 800;
-    font-size: 28px;
-    margin: 0 0 8px 0;
-    color: #0f172a;
-}
-
-.header-subtitle {
-    color: #6b7280;
-    margin: 0;
-    font-size: 16px;
-}
-
-.btn-primary {
-    background: linear-gradient(90deg, #2563eb, #1e40af);
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    padding: 12px 24px;
-    white-space: nowrap;
-}
-
-.btn-primary:hover {
-    background: linear-gradient(90deg, #1e40af, #1e3a8a);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-}
-
-@media (max-width: 768px) {
-    .leave-management-container {
-        padding: 12px;
-        margin: 16px auto;
+@keyframes leaveFade {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
     }
 
-    .leave-header {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .header-title {
-        font-size: 24px;
-    }
-
-    .btn-primary {
-        width: 100%;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
+
+/* ══════════ TABS ══════════ */
+::deep .leave-tabs {
+    border-bottom: 2px solid #e9ecef;
+    gap: 4px;
+}
+
+    ::deep .leave-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.2s ease;
+    }
+
+        ::deep .leave-tabs .nav-link:hover {
+            color: #0d6efd;
+            background: #f8f9fa;
+            border-bottom-color: #dee2e6;
+        }
+
+        ::deep .leave-tabs .nav-link.active {
+            color: #0d6efd;
+            background: transparent;
+            border-bottom-color: #0d6efd;
+            font-weight: 600;
+        }
