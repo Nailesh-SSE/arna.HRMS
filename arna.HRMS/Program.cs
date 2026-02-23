@@ -32,12 +32,8 @@ public class Program
         // ==========================
         builder.Services.AddHttpClient("Default", client =>
         {
-            var baseUrl = builder.Configuration["ApiSettings:BaseUrl"];
-
-            if (string.IsNullOrWhiteSpace(baseUrl))
-                throw new InvalidOperationException("ApiSettings:BaseUrl is missing in appsettings.json");
-
-            client.BaseAddress = new Uri(baseUrl);
+            var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? string.Empty;
+            client.BaseAddress = new Uri(baseUrl!);
         });
 
         // Default HttpClient

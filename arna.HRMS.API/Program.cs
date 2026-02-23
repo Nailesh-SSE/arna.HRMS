@@ -13,6 +13,25 @@ namespace arna.HRMS.API
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowBlazorApp", policy =>
+                {
+                    policy
+                      .WithOrigins(
+                          "https://hrms.arnatechnosoft.com",
+                          "https://www.hrms.arnatechnosoft.com",
+                          "http://hrms.arnatechnosoft.com",
+                          "https://hrms-api.arnatechnosoft.com",
+                          "https://www.hrms-api.arnatechnosoft.com",
+                          "http://hrms-api.arnatechnosoft.com"
+                      )
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+                });
+            });
+
             builder.Services.AddSwaggerWithJwt();
             builder.Services.AddDatabase(builder.Configuration);
             builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -29,6 +48,9 @@ namespace arna.HRMS.API
 
             app.UseMiddleware<TestAuthHeaderMiddleware>();
             app.UseHttpsRedirection();
+
+            // Use CORS middleware
+            app.UseCors("AllowBlazorApp");
 
             app.UseAuthentication();
             app.UseAuthorization();

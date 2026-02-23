@@ -3,6 +3,7 @@ using arna.HRMS.Core.Common.ServiceResult;
 using arna.HRMS.Models.Common;
 using arna.HRMS.Models.ViewModels;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -12,8 +13,8 @@ public sealed class HttpService
 {
     private readonly HttpClient _http;
     private readonly CustomAuthStateProvider _authProvider;
-
     private ApiClients? _apiClients;
+
     private static readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
@@ -27,13 +28,27 @@ public sealed class HttpService
     public void SetApiClients(ApiClients apiClients) =>
         _apiClients = apiClients;
 
-    // ===================== PUBLIC =====================
+    // ===================== PUBLIC API =====================
 
     public Task<ApiResult<T>> GetAsync<T>(string url) =>
         SendAsync<T>(() => _http.GetAsync(url), url);
 
-    public Task<ApiResult<T>> PostAsync<T>(string url, object body) =>
-        SendAsync<T>(() => _http.PostAsJsonAsync(url, body), url);
+    public Task<ApiResult<T>> PostAsync<T>(string url, object data)
+    {
+        return SendAsync<T>(async () =>
+        {
+            var json = JsonSerializer.Serialize(data, JsonOptions);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            // Force content length explicitly
+            content.Headers.ContentLength = System.Text.Encoding.UTF8.GetByteCount(json);
+
+            return await _http.PostAsync(url, content);
+        }, url);
+    }
+
+    public Task<ApiResult<T>> PutAsync<T>(string url, object data) =>
+        SendAsync<T>(() => _http.PutAsJsonAsync(url, data, JsonOptions), url);
 
     public Task<ApiResult<T>> DeleteAsync<T>(string url) =>
         SendAsync<T>(() => _http.DeleteAsync(url), url);
@@ -46,6 +61,8 @@ public sealed class HttpService
     {
         try
         {
+            await AttachTokenAsync();
+
             using var response = await request();
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
@@ -67,16 +84,26 @@ public sealed class HttpService
         }
     }
 
+    // ===================== TOKEN HANDLING =====================
+
+    private async Task AttachTokenAsync()
+    {
+        var token = await _authProvider.GetAccessTokenAsync();
+
+        _http.DefaultRequestHeaders.Authorization =
+            string.IsNullOrWhiteSpace(token)
+            ? null
+            : new AuthenticationHeaderValue("Bearer", token);
+    }
+
     private async Task<ApiResult<T>> HandleUnauthorizedAsync<T>(
         Func<Task<HttpResponseMessage>> request,
         string url)
     {
-        var statusCode = (int)HttpStatusCode.Unauthorized;
-
         if (IsAuthEndpoint(url))
         {
             await _authProvider.LogoutAsync();
-            return ApiResult<T>.Fail("Unauthorized.", statusCode);
+            return ApiResult<T>.Fail("Unauthorized.", 401);
         }
 
         var refreshed = await TrySilentRefreshAsync();
@@ -84,108 +111,18 @@ public sealed class HttpService
         if (!refreshed)
         {
             await _authProvider.LogoutAsync();
-            return ApiResult<T>.Fail("Session expired. Please login again.", statusCode);
+            return ApiResult<T>.Fail("Session expired. Please login again.", 401);
         }
+
+        await AttachTokenAsync();
 
         using var retry = await request();
         return await HandleResponseAsync<T>(retry);
     }
 
     private static bool IsAuthEndpoint(string url) =>
-        url.Contains("api/auth/login") || url.Contains("api/auth/refresh");
-
-    // ===================== RESPONSE =====================
-
-    private async Task<ApiResult<T>> HandleResponseAsync<T>(HttpResponseMessage response)
-    {
-        var statusCode = (int)response.StatusCode;
-
-        if (response.StatusCode == HttpStatusCode.Forbidden)
-            return ApiResult<T>.Fail("You do not have permission to perform this action.", statusCode);
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-            return ApiResult<T>.Success(default!, statusCode);
-
-        if (!response.IsSuccessStatusCode)
-            return await HandleFailureAsync<T>(response);
-
-        var raw = await ReadContentAsync(response);
-
-        if (string.IsNullOrWhiteSpace(raw))
-            return SuccessEmpty<T>(statusCode);
-
-        return ParseWrappedResult<T>(raw, statusCode);
-    }
-
-    private static async Task<ApiResult<T>> HandleFailureAsync<T>(HttpResponseMessage response)
-    {
-        var statusCode = (int)response.StatusCode;
-        var error = await ReadErrorAsync(response);
-
-        return response.StatusCode switch
-        {
-            HttpStatusCode.BadRequest => ApiResult<T>.Fail(error ?? "Invalid request.", statusCode),
-            HttpStatusCode.NotFound => ApiResult<T>.Fail("Resource not found.", statusCode),
-            HttpStatusCode.Conflict => ApiResult<T>.Fail(error ?? "Conflict occurred.", statusCode),
-            HttpStatusCode.InternalServerError => ApiResult<T>.Fail("Server error occurred.", statusCode),
-            _ => ApiResult<T>.Fail(error ?? "Request failed.", statusCode)
-        };
-    }
-
-    private static ApiResult<T> SuccessEmpty<T>(int statusCode)
-    {
-        if (typeof(T) == typeof(bool))
-            return ApiResult<T>.Success((T)(object)true, statusCode);
-
-        return ApiResult<T>.Success(default!, statusCode);
-    }
-
-    private static ApiResult<T> ParseWrappedResult<T>(string raw, int statusCode)
-    {
-        try
-        {
-            var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
-
-            if (wrapper == null)
-                return ApiResult<T>.Fail("Invalid response from server.", statusCode);
-
-            if (!wrapper.IsSuccess)
-                return ApiResult<T>.Fail(wrapper.Message ?? "Request failed.", statusCode);
-
-            if (wrapper.Data.ValueKind == JsonValueKind.Null ||
-                wrapper.Data.ValueKind == JsonValueKind.Undefined)
-                return SuccessEmpty<T>(statusCode);
-
-            var data = JsonSerializer.Deserialize<T>(
-                wrapper.Data.GetRawText(),
-                JsonOptions);
-
-            return ApiResult<T>.Success(data!, statusCode);
-        }
-        catch
-        {
-            return ApiResult<T>.Fail($"Invalid JSON response: {raw}", statusCode);
-        }
-    }
-
-    private static async Task<string?> ReadContentAsync(HttpResponseMessage response)
-    {
-        if (response.Content == null)
-            return null;
-
-        return await response.Content.ReadAsStringAsync();
-    }
-
-    private static async Task<string?> ReadErrorAsync(HttpResponseMessage response)
-    {
-        if (response.Content == null)
-            return response.ReasonPhrase;
-
-        var content = await response.Content.ReadAsStringAsync();
-        return string.IsNullOrWhiteSpace(content) ? response.ReasonPhrase : content;
-    }
-
-    // ===================== REFRESH =====================
+        url.Contains("api/auth/login", StringComparison.OrdinalIgnoreCase) ||
+        url.Contains("api/auth/refresh", StringComparison.OrdinalIgnoreCase);
 
     private async Task<bool> TrySilentRefreshAsync()
     {
@@ -193,6 +130,7 @@ public sealed class HttpService
             return false;
 
         await _refreshLock.WaitAsync();
+
         try
         {
             var (userId, refreshToken) = await _authProvider.GetRefreshDataAsync();
@@ -209,9 +147,6 @@ public sealed class HttpService
             if (!refresh.IsSuccess || refresh.Data == null)
                 return false;
 
-            if (string.IsNullOrWhiteSpace(refresh.Data.AccessToken))
-                return false;
-
             await _authProvider.UpdateTokensAsync(
                 refresh.Data.AccessToken,
                 refresh.Data.RefreshToken
@@ -225,7 +160,50 @@ public sealed class HttpService
         }
     }
 
-    // ===================== JSON =====================
+    // ===================== RESPONSE HANDLING =====================
+
+    private async Task<ApiResult<T>> HandleResponseAsync<T>(HttpResponseMessage response)
+    {
+        var statusCode = (int)response.StatusCode;
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+            return ApiResult<T>.Success(default!, statusCode);
+
+        var raw = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            return ApiResult<T>.Fail(raw, statusCode);
+
+        if (string.IsNullOrWhiteSpace(raw))
+            return ApiResult<T>.Success(default!, statusCode);
+
+        try
+        {
+            var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
+
+            if (wrapper == null)
+                return ApiResult<T>.Fail("Invalid server response.", statusCode);
+
+            if (!wrapper.IsSuccess)
+                return ApiResult<T>.Fail(wrapper.Message ?? "Request failed.", statusCode);
+
+            if (wrapper.Data.ValueKind == JsonValueKind.Null ||
+                wrapper.Data.ValueKind == JsonValueKind.Undefined)
+                return ApiResult<T>.Success(default!, statusCode);
+
+            var data = JsonSerializer.Deserialize<T>(
+                wrapper.Data.GetRawText(),
+                JsonOptions);
+
+            return ApiResult<T>.Success(data!, statusCode);
+        }
+        catch
+        {
+            return ApiResult<T>.Fail("Invalid JSON response.", statusCode);
+        }
+    }
+
+    // ===================== JSON CONFIG =====================
 
     private static JsonSerializerOptions CreateJsonOptions()
     {
@@ -246,16 +224,13 @@ public sealed class HttpService
 
     private sealed class TimeSpanJsonConverter : JsonConverter<TimeSpan>
     {
-        public override TimeSpan Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
+        public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.String &&
                 TimeSpan.TryParse(reader.GetString(), out var ts))
                 return ts;
 
-            if (reader.TokenType == JsonTokenType.Number)
-                return TimeSpan.FromSeconds(reader.GetDouble());
-
-            throw new JsonException("Invalid TimeSpan");
+            throw new JsonException("Invalid TimeSpan.");
         }
 
         public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options) =>
@@ -264,7 +239,7 @@ public sealed class HttpService
 
     private sealed class NullableTimeSpanJsonConverter : JsonConverter<TimeSpan?>
     {
-        public override TimeSpan? Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
+        public override TimeSpan? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.Null)
                 return null;
@@ -273,10 +248,7 @@ public sealed class HttpService
                 TimeSpan.TryParse(reader.GetString(), out var ts))
                 return ts;
 
-            if (reader.TokenType == JsonTokenType.Number)
-                return TimeSpan.FromSeconds(reader.GetDouble());
-
-            throw new JsonException("Invalid TimeSpan");
+            throw new JsonException("Invalid TimeSpan.");
         }
 
         public override void Write(Utf8JsonWriter writer, TimeSpan? value, JsonSerializerOptions options)
@@ -290,13 +262,13 @@ public sealed class HttpService
 
     private sealed class DateOnlyJsonConverter : JsonConverter<DateOnly>
     {
-        public override DateOnly Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
+        public override DateOnly Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.String &&
-                DateOnly.TryParse(reader.GetString(), out var d))
-                return d;
+                DateOnly.TryParse(reader.GetString(), out var date))
+                return date;
 
-            throw new JsonException("Invalid DateOnly");
+            throw new JsonException("Invalid DateOnly.");
         }
 
         public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options) =>
@@ -305,16 +277,16 @@ public sealed class HttpService
 
     private sealed class NullableDateOnlyJsonConverter : JsonConverter<DateOnly?>
     {
-        public override DateOnly? Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)
+        public override DateOnly? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType == JsonTokenType.Null)
                 return null;
 
             if (reader.TokenType == JsonTokenType.String &&
-                DateOnly.TryParse(reader.GetString(), out var d))
-                return d;
+                DateOnly.TryParse(reader.GetString(), out var date))
+                return date;
 
-            throw new JsonException("Invalid DateOnly");
+            throw new JsonException("Invalid DateOnly.");
         }
 
         public override void Write(Utf8JsonWriter writer, DateOnly? value, JsonSerializerOptions options)

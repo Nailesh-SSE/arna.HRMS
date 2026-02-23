@@ -19,3 +19,9 @@
 /EmployeeManagement/obj
 /EmployeeManagement.Core/obj
 /EmployeeManagement.Infrastructure/obj
+/arna.HRMS/bin/Release/net8.0
+/arna.HRMS/Properties/PublishProfiles
+/arna.HRMS.API/bin/Release/net8.0
+/arna.HRMS.Core/bin/Release/net8.0
+/arna.HRMS.Tests/bin/Release/net8.0
+/arna.HRMS.Infrastructure/bin/Release/net8.0
