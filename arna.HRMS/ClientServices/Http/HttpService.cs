@@ -70,12 +70,17 @@ public sealed class HttpService
         {
             var request = requestFactory();
 
-            await AttachTokenAsync(request);
-
             using var response = await _http.SendAsync(request);
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
-                return await HandleUnauthorizedAsync<T>(requestFactory, url);
+            {
+                var refreshed = await TrySilentRefreshAsync();
+
+                if (!refreshed)
+                {
+                    await _authProvider.LogoutAsync();
+                }
+            }
 
             return await HandleResponseAsync<T>(response);
         }
@@ -92,52 +97,6 @@ public sealed class HttpService
             return ApiResult<T>.Fail(ex.Message, 500);
         }
     }
-
-    private async Task AttachTokenAsync(HttpRequestMessage request)
-    {
-        var token = await _authProvider.GetAccessTokenAsync();
-
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            request.Headers.Authorization =
-                new AuthenticationHeaderValue("Bearer", token);
-        }
-    }
-
-    // =========================================================
-    // UNAUTHORIZED & REFRESH
-    // =========================================================
-
-    private async Task<ApiResult<T>> HandleUnauthorizedAsync<T>(
-        Func<HttpRequestMessage> requestFactory,
-        string url)
-    {
-        if (IsAuthEndpoint(url))
-        {
-            await _authProvider.LogoutAsync();
-            return ApiResult<T>.Fail("Unauthorized.", 401);
-        }
-
-        var refreshed = await TrySilentRefreshAsync();
-
-        if (!refreshed)
-        {
-            await _authProvider.LogoutAsync();
-            return ApiResult<T>.Fail("Session expired. Please login again.", 401);
-        }
-
-        var retryRequest = requestFactory();
-
-        await AttachTokenAsync(retryRequest);
-
-        using var retryResponse = await _http.SendAsync(retryRequest);
-
-        return await HandleResponseAsync<T>(retryResponse);
-    }
-
-    private static bool IsAuthEndpoint(string url)
-        => url.Contains("api/auth/login", StringComparison.OrdinalIgnoreCase)
-        || url.Contains("api/auth/refresh", StringComparison.OrdinalIgnoreCase);
 
     private async Task<bool> TrySilentRefreshAsync()
     {
