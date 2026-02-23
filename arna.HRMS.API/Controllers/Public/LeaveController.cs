@@ -128,6 +128,10 @@ public class LeaveController : ControllerBase
     public async Task<IActionResult> DeleteLeaveRequest(int id)
     {
         var deleted = await _leaveService.DeleteLeaveRequestAsync(id);
+
+        if (!deleted.IsSuccess)
+            return BadRequest(deleted.Message);
+
         return deleted.Data ? Ok() : NotFound("Leave request not found");
     }
 
@@ -135,6 +139,10 @@ public class LeaveController : ControllerBase
     public async Task<IActionResult> GetLeaveRequestsByFilter(Status? status, int? empId)
     {
         var result = await _leaveService.GetByFilterAsync(status, empId);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Message);
+
         return Ok(result);
     }
 

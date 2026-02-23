@@ -28,12 +28,17 @@ public class RoleController : ControllerBase
     public async Task<IActionResult> GetRoleById(int id)
     {
         var result = await _roleService.GetRoleByIdAsync(id); 
+        if(!result.IsSuccess)
+            return NotFound(result.Message);
         return result == null ? NotFound("Role not found") : Ok(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateRole([FromBody] RoleDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var result = await _roleService.CreateRoleAsync(dto); 
 
         if (!result.IsSuccess)
@@ -45,7 +50,11 @@ public class RoleController : ControllerBase
     [HttpPost("{id:int}")]
     public async Task<IActionResult> UpdateRole(int id, [FromBody] RoleDto dto)
     {
-        dto.Id = id;
+        if(dto.Id != id)
+            return BadRequest("Invalid Id");
+
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         var result = await _roleService.UpdateRoleAsync(dto);
 

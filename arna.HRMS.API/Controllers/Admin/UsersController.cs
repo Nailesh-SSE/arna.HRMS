@@ -28,12 +28,18 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetUserById(int id)
     {
         var user = await _userServices.GetUserByIdAsync(id);
+        if (!user.IsSuccess)
+            return NotFound(user.Message);
+
         return user == null ? NotFound("User not found") : Ok(user);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] UserDto dto)
     {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
         var result = await _userServices.CreateUserAsync(dto);
 
         if (!result.IsSuccess)
@@ -45,7 +51,11 @@ public class UsersController : ControllerBase
     [HttpPost("{id:int}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto dto)
     {
-        dto.Id = id; 
+        if(dto.Id != id)
+            return BadRequest("Invalid Id");
+
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         var result = await _userServices.UpdateUserAsync(dto);
 

@@ -568,6 +568,45 @@ public class LeaveControllerTest
         Assert.That(apiResult!.Data, Is.Null);
     }
 
-    /*[Test]
-    public async Task GetLea*/
+    [Test]
+    public async Task GetLeaveRequestsByStatus_ShouldFail_WhenStatusIsInvalid()
+    {
+        _leaveServiceMock
+            .Setup(s => s.GetByFilterAsync(It.Is<Status>(status => !Enum.IsDefined(typeof(Status), status)), null))
+            .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("Invalid Status"));
+        var result = await _controller.GetLeaveRequestsByFilter((Status)999, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task GetLeaveRequestsByStatus_ShouldFail_WhenEmployeeIdIsZeroOrNegative()
+    {
+        _leaveServiceMock
+            .Setup(s => s.GetByFilterAsync(Status.Pending, It.Is<int?>(id => id <= 0)))
+            .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("Invalid Employee Id"));
+        var result = await _controller.GetLeaveRequestsByFilter(Status.Pending, 0);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        result = await _controller.GetLeaveRequestsByFilter(Status.Pending, -1);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task GetLeaveRequestsByStatus_ShouldFail_WhenBothFiltersAreNull()
+    {
+        _leaveServiceMock
+            .Setup(s => s.GetByFilterAsync(null, null))
+            .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("At least one filter must be provided"));
+        var result = await _controller.GetLeaveRequestsByFilter(null, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task GetLeaveRequestsByStatus_ShouldFail_WhenBothFiltersAreProvided()
+    {
+        _leaveServiceMock
+            .Setup(s => s.GetByFilterAsync(Status.Pending, 1))
+            .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("Only one filter can be provided"));
+        var result = await _controller.GetLeaveRequestsByFilter(Status.Pending, 1);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
 }

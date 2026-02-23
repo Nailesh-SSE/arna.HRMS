@@ -169,11 +169,10 @@ public class EmployeesControllerTests
             .Setup(s => s.UpdateEmployeeAsync(It.IsAny<EmployeeDto>()))
             .ReturnsAsync(ServiceResult<EmployeeDto>.Success(dto));
 
-        await _controller.UpdateEmployee(5, dto);
+        var result = await _controller.UpdateEmployee(5, dto);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
 
-        _serviceMock.Verify(s =>
-            s.UpdateEmployeeAsync(It.Is<EmployeeDto>(d => d.Id == 5)),
-            Times.Once);
     }
 
     [Test]
