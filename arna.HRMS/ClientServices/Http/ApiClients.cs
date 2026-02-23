@@ -99,8 +99,20 @@ public sealed class ApiClients
 
         public AuthApi(HttpService http) => _http = http;
 
-        public Task<ApiResult<AuthResponse>> Login(LoginRequest req) =>
-            _http.PostAsync<AuthResponse>($"{Url}/login", req);
+        public async Task<ApiResult<AuthResponse>> Login(LoginRequest req)
+        {
+            try
+            {
+                return await _http.PostAsync<AuthResponse>($"{Url}/login", req);
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+            
+        }
+
 
         public Task<ApiResult<AuthResponse>> RefreshToken(RefreshTokenViewModel req) =>
             _http.PostAsync<AuthResponse>($"{Url}/refresh", req);
