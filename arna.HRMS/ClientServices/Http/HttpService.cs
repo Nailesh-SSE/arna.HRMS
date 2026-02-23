@@ -4,6 +4,7 @@ using arna.HRMS.Models.Common;
 using arna.HRMS.Models.ViewModels;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -16,7 +17,6 @@ public sealed class HttpService
     private ApiClients? _apiClients;
 
     private static readonly SemaphoreSlim _refreshLock = new(1, 1);
-
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
     public HttpService(HttpClient http, CustomAuthStateProvider authProvider)
@@ -25,48 +25,57 @@ public sealed class HttpService
         _authProvider = authProvider;
     }
 
-    public void SetApiClients(ApiClients apiClients) =>
-        _apiClients = apiClients;
+    public void SetApiClients(ApiClients apiClients)
+        => _apiClients = apiClients;
 
-    // ===================== PUBLIC API =====================
+    // =========================================================
+    // PUBLIC METHODS
+    // =========================================================
 
-    public Task<ApiResult<T>> GetAsync<T>(string url) =>
-        SendAsync<T>(() => _http.GetAsync(url), url);
+    public Task<ApiResult<T>> GetAsync<T>(string url)
+        => SendAsync<T>(() =>
+            new HttpRequestMessage(HttpMethod.Get, url), url);
 
-    public Task<ApiResult<T>> PostAsync<T>(string url, object data)
-    {
-        return SendAsync<T>(async () =>
+    public Task<ApiResult<T>> DeleteAsync<T>(string url)
+        => SendAsync<T>(() =>
+            new HttpRequestMessage(HttpMethod.Delete, url), url);
+
+    public Task<ApiResult<T>> PostAsync<T>(string url, object body)
+        => SendAsync<T>(() =>
         {
-            var json = JsonSerializer.Serialize(data, JsonOptions);
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
-            // Force content length explicitly
-            content.Headers.ContentLength = System.Text.Encoding.UTF8.GetByteCount(json);
-
-            return await _http.PostAsync(url, content);
+            var json = JsonSerializer.Serialize(body, JsonOptions);
+            var request = new HttpRequestMessage(HttpMethod.Post, url);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            return request;
         }, url);
-    }
 
-    public Task<ApiResult<T>> PutAsync<T>(string url, object data) =>
-        SendAsync<T>(() => _http.PutAsJsonAsync(url, data, JsonOptions), url);
+    public Task<ApiResult<T>> PutAsync<T>(string url, object body)
+        => SendAsync<T>(() =>
+        {
+            var json = JsonSerializer.Serialize(body, JsonOptions);
+            var request = new HttpRequestMessage(HttpMethod.Put, url);
+            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            return request;
+        }, url);
 
-    public Task<ApiResult<T>> DeleteAsync<T>(string url) =>
-        SendAsync<T>(() => _http.DeleteAsync(url), url);
-
-    // ===================== PIPELINE =====================
+    // =========================================================
+    // CORE PIPELINE
+    // =========================================================
 
     private async Task<ApiResult<T>> SendAsync<T>(
-        Func<Task<HttpResponseMessage>> request,
+        Func<HttpRequestMessage> requestFactory,
         string url)
     {
         try
         {
-            await AttachTokenAsync();
+            var request = requestFactory();
 
-            using var response = await request();
+            await AttachTokenAsync(request);
+
+            using var response = await _http.SendAsync(request);
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
-                return await HandleUnauthorizedAsync<T>(request, url);
+                return await HandleUnauthorizedAsync<T>(requestFactory, url);
 
             return await HandleResponseAsync<T>(response);
         }
@@ -84,20 +93,23 @@ public sealed class HttpService
         }
     }
 
-    // ===================== TOKEN HANDLING =====================
-
-    private async Task AttachTokenAsync()
+    private async Task AttachTokenAsync(HttpRequestMessage request)
     {
         var token = await _authProvider.GetAccessTokenAsync();
 
-        _http.DefaultRequestHeaders.Authorization =
-            string.IsNullOrWhiteSpace(token)
-            ? null
-            : new AuthenticationHeaderValue("Bearer", token);
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            request.Headers.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+        }
     }
 
+    // =========================================================
+    // UNAUTHORIZED & REFRESH
+    // =========================================================
+
     private async Task<ApiResult<T>> HandleUnauthorizedAsync<T>(
-        Func<Task<HttpResponseMessage>> request,
+        Func<HttpRequestMessage> requestFactory,
         string url)
     {
         if (IsAuthEndpoint(url))
@@ -114,15 +126,18 @@ public sealed class HttpService
             return ApiResult<T>.Fail("Session expired. Please login again.", 401);
         }
 
-        await AttachTokenAsync();
+        var retryRequest = requestFactory();
 
-        using var retry = await request();
-        return await HandleResponseAsync<T>(retry);
+        await AttachTokenAsync(retryRequest);
+
+        using var retryResponse = await _http.SendAsync(retryRequest);
+
+        return await HandleResponseAsync<T>(retryResponse);
     }
 
-    private static bool IsAuthEndpoint(string url) =>
-        url.Contains("api/auth/login", StringComparison.OrdinalIgnoreCase) ||
-        url.Contains("api/auth/refresh", StringComparison.OrdinalIgnoreCase);
+    private static bool IsAuthEndpoint(string url)
+        => url.Contains("api/auth/login", StringComparison.OrdinalIgnoreCase)
+        || url.Contains("api/auth/refresh", StringComparison.OrdinalIgnoreCase);
 
     private async Task<bool> TrySilentRefreshAsync()
     {
@@ -147,6 +162,9 @@ public sealed class HttpService
             if (!refresh.IsSuccess || refresh.Data == null)
                 return false;
 
+            if (string.IsNullOrWhiteSpace(refresh.Data.AccessToken))
+                return false;
+
             await _authProvider.UpdateTokensAsync(
                 refresh.Data.AccessToken,
                 refresh.Data.RefreshToken
@@ -160,7 +178,9 @@ public sealed class HttpService
         }
     }
 
-    // ===================== RESPONSE HANDLING =====================
+    // =========================================================
+    // RESPONSE HANDLING
+    // =========================================================
 
     private async Task<ApiResult<T>> HandleResponseAsync<T>(HttpResponseMessage response)
     {
@@ -203,7 +223,9 @@ public sealed class HttpService
         }
     }
 
-    // ===================== JSON CONFIG =====================
+    // =========================================================
+    // JSON CONFIG
+    // =========================================================
 
     private static JsonSerializerOptions CreateJsonOptions()
     {
@@ -220,7 +242,9 @@ public sealed class HttpService
         return options;
     }
 
-    // ===================== CONVERTERS =====================
+    // =========================================================
+    // CONVERTERS
+    // =========================================================
 
     private sealed class TimeSpanJsonConverter : JsonConverter<TimeSpan>
     {
@@ -233,8 +257,8 @@ public sealed class HttpService
             throw new JsonException("Invalid TimeSpan.");
         }
 
-        public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options) =>
-            writer.WriteStringValue(value.ToString());
+        public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options)
+            => writer.WriteStringValue(value.ToString());
     }
 
     private sealed class NullableTimeSpanJsonConverter : JsonConverter<TimeSpan?>
@@ -271,8 +295,8 @@ public sealed class HttpService
             throw new JsonException("Invalid DateOnly.");
         }
 
-        public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options) =>
-            writer.WriteStringValue(value.ToString("yyyy-MM-dd"));
+        public override void Write(Utf8JsonWriter writer, DateOnly value, JsonSerializerOptions options)
+            => writer.WriteStringValue(value.ToString("yyyy-MM-dd"));
     }
 
     private sealed class NullableDateOnlyJsonConverter : JsonConverter<DateOnly?>

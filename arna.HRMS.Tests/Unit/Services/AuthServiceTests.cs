@@ -554,4 +554,128 @@ public class AuthServiceTests
         Assert.That(result.Data.AccessToken, Is.EqualTo("new_access_token"));
         Assert.That(result.Data.RefreshToken, Is.EqualTo("new_refresh_token"));
     }
+
+    [Test]
+    public async Task LogoutAsync_ShouldFail_WhenUserIdIsInvalid()
+    {
+        var result = await _authService.LogoutAsync(0);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid UserId"));
+
+        // Ensure JWT service was NOT called
+        _jwtServiceMock.Verify(
+            x => x.RevokeRefreshTokenAsync(It.IsAny<int>()),
+            Times.Never);
+    }
+
+    [Test]
+    public async Task LogoutAsync_ShouldReturnSuccess_WhenUserIdIsValid()
+    {
+        int userId = 1;
+
+        _jwtServiceMock
+            .Setup(x => x.RevokeRefreshTokenAsync(userId))
+            .Returns(Task.CompletedTask);
+
+        var result = await _authService.LogoutAsync(userId);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("Logged out successfully"));
+        Assert.That(result.Data, Is.True);
+
+        // Verify JWT revoke was called once
+        _jwtServiceMock.Verify(
+            x => x.RevokeRefreshTokenAsync(userId),
+            Times.Once);
+    }
+
+    [Test]
+    public async Task GenerateAuthResponseAsync_ShouldReturnValidAuthResponse()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Username = "testuser",
+            Email = "test@test.com",
+            EmployeeId = 10,
+            Role = new Role { Name = "Admin" }
+        };
+
+        _jwtServiceMock
+            .Setup(x => x.GenerateAccessToken(user))
+            .Returns("access_token");
+
+        _jwtServiceMock
+            .Setup(x => x.GenerateRefreshToken())
+            .Returns("refresh_token");
+
+        _jwtServiceMock
+            .Setup(x => x.SaveRefreshTokenAsync(user.Id, "refresh_token"))
+            .Returns(Task.CompletedTask);
+
+        var method = typeof(AuthService)
+            .GetMethod("GenerateAuthResponseAsync",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        // Act
+        var task = (Task<AuthResponse>)method!
+            .Invoke(_authService, new object[] { user, "Success message" })!;
+
+        var result = await task;
+
+        // Assert
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("Success message"));
+        Assert.That(result.AccessToken, Is.EqualTo("access_token"));
+        Assert.That(result.RefreshToken, Is.EqualTo("refresh_token"));
+        Assert.That(result.UserId, Is.EqualTo(user.Id));
+        Assert.That(result.Username, Is.EqualTo(user.Username));
+        Assert.That(result.FullName, Is.EqualTo(user.FullName));
+        Assert.That(result.Email, Is.EqualTo(user.Email));
+        Assert.That(result.EmployeeId, Is.EqualTo(user.EmployeeId));
+        Assert.That(result.Role, Is.EqualTo("Admin"));
+
+        _jwtServiceMock.Verify(x => x.GenerateAccessToken(user), Times.Once);
+        _jwtServiceMock.Verify(x => x.GenerateRefreshToken(), Times.Once);
+        _jwtServiceMock.Verify(x => x.SaveRefreshTokenAsync(user.Id, "refresh_token"), Times.Once);
+    }
+
+    [Test]
+    public async Task GenerateAuthResponseAsync_ShouldHandleNullValues()
+    {
+        var user = new User
+        {
+            Id = 1,
+            Username = null,
+            Email = null,
+            Role = null
+        };
+
+        _jwtServiceMock
+            .Setup(x => x.GenerateAccessToken(user))
+            .Returns("access_token");
+
+        _jwtServiceMock
+            .Setup(x => x.GenerateRefreshToken())
+            .Returns("refresh_token");
+
+        _jwtServiceMock
+            .Setup(x => x.SaveRefreshTokenAsync(user.Id, "refresh_token"))
+            .Returns(Task.CompletedTask);
+
+        var method = typeof(AuthService)
+            .GetMethod("GenerateAuthResponseAsync",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+        var task = (Task<AuthResponse>)method!
+            .Invoke(_authService, new object[] { user, "Success" })!;
+
+        var result = await task;
+
+        Assert.That(result.Username, Is.EqualTo(string.Empty));
+        Assert.That(result.Role, Is.EqualTo(string.Empty));
+    }
 }
