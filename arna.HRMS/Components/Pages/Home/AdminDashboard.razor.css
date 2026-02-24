@@ -57,15 +57,14 @@
     flex-shrink: 0;
 }
 
-/* ══════════ SCROLL AREAS ══════════ */
 .dash-scroll-area {
-    max-height: 380px;
+    max-height: 244px;
     overflow-y: auto;
     overflow-x: hidden;
 }
 
 .dash-scroll-area-sm {
-    max-height: 300px;
+    max-height: 244px;
     overflow-y: auto;
     overflow-x: hidden;
 }

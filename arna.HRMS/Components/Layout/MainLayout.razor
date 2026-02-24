@@ -4,28 +4,36 @@
 @inject NotificationService NotificationService
 
 <div class="d-flex vh-100 overflow-hidden">
-    <div class="flex-shrink-0 sidebar"
-         style="width:@(IsSidebarOpen ? "260px" : "0");">
+
+    <!-- Overlay: covers page content below header on mobile/tablet -->
+    @if (IsSidebarOpen)
+    {
+        <div class="sidebar-overlay d-lg-none" @onclick="ToggleSidebar"></div>
+    }
+
+    <!-- Sidebar -->
+    <div class="sidebar-panel @(IsSidebarOpen ? "sidebar-open" : "sidebar-closed")">
         <NavMenu />
     </div>
 
+    <!-- Main -->
     <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-        <div class="flex-shrink-0 border-bottom bg-white topbar-wrapper">
-            <Header OnToggleSidebar="ToggleSidebar" />
+        <div class="flex-shrink-0 border-bottom bg-white">
+            <Header OnToggleSidebar="ToggleSidebar" IsSidebarOpen="IsSidebarOpen" />
         </div>
-        <main class="flex-grow-1 overflow-auto bg-light p-3 main-scroll">
+        <main class="flex-grow-1 overflow-auto bg-light p-3">
             @Body
         </main>
     </div>
 </div>
 
-<div class="position-fixed top-0 start-50 mt-3 toasting-container">
+<div class="position-fixed top-0 start-50 mt-3" style="z-index:9999;">
     <Toasts Messages="NotificationService.Messages"
             Placement="ToastsPlacement.TopRight" Delay="4000" />
 </div>
 
 @code {
-    private bool IsSidebarOpen = true;
+    private bool IsSidebarOpen = false;
 
     protected override void OnInitialized()
     {

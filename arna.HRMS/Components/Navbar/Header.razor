@@ -1,69 +1,71 @@
-﻿@* All custom styles live in MainHeader.razor.css (Blazor CSS Isolation) *@
-@* NOTE: Add this to your global app.css / site.css:
-   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-*@
-@using System.Security.Claims
+﻿@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Components.Pages.Auth
 @using arna.HRMS.Components.Pages.Client.ClockInAndOut
+@inject IJSRuntime JS
 @inherits AuthenticatedLayoutBase
 
-<header class="hrms-header bg-white px-3 d-flex align-items-center sticky-top">
+<header class="hrms-header" id="hrms-header">
 
-    <!-- ── Toggle ── -->
-    <button class="hrms-toggle-btn btn btn-light d-flex align-items-center justify-content-center me-2"
-            @onclick="OnToggleSidebar" title="Toggle Sidebar">
-        <i class="bi bi-list fs-5 text-secondary"></i>
-    </button>
+    <!-- ══ ROW 1: Main bar — always visible ══ -->
+    <div class="hrms-row1 d-flex align-items-center gap-2 px-2 px-lg-4">
 
-    <!-- ── Greeting ── -->
-    <div class="hrms-greeting d-flex flex-column me-2">
-        <span class="hrms-greeting-sub">@GetDayLabel()</span>
-        <span class="hrms-greeting-main">
-            @Greeting@(!string.IsNullOrEmpty(GetUserFullName()) ? $", {GetUserFullName()}" : "")
-        </span>
-    </div>
-
-    <!-- ── Vertical Divider (desktop only) ── -->
-    <div class="hrms-vr vr opacity-25 mx-1"></div>
-
-    <!-- ── Search Bar (desktop only) ── -->
-    <div class="hrms-search-wrap position-relative mx-2">
-        <i class="bi bi-search position-absolute top-50 translate-middle-y text-secondary"
-           style="left:11px; font-size:.82rem; pointer-events:none;"></i>
-        <input class="hrms-search-input form-control border ps-4" style="min-width:200px; max-width:300px;"
-               type="search" placeholder="Search anything…" />
-    </div>
-
-    <!-- ── Right Actions ── -->
-    <div class="hrms-actions ms-auto">
-
-        <!-- Clock In/Out — always visible, pill styling applied via CSS on desktop -->
-        <div class="hrms-clock-badge">
-            <span class="hrms-clock-dot"></span>
-            <ClockInAndOut />
-        </div>
-
-        <button class="hrms-icon-btn btn btn-light d-flex align-items-center justify-content-center border-0"
-                title="Notifications">
-            <NotificationDrawer />
+        <!-- Toggle -->
+        <button class="hrms-toggle btn border-0 d-flex align-items-center justify-content-center flex-shrink-0"
+                @onclick="OnToggleSidebar" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+            <i class="bi @(IsSidebarOpen ? "bi-layout-sidebar" : "bi-layout-sidebar-reverse") fs-5"></i>
         </button>
 
-        <!-- Avatar -->
-        <div class="hrms-avatar d-flex align-items-center justify-content-center text-white"
-             title="@GetUserFullName()">
-            @GetInitials()
+        <!-- Greeting -->
+        <div class="hrms-greeting d-flex flex-column lh-1 flex-shrink-0 me-auto">
+            <span class="hrms-day">@GetDayLabel()</span>
+            <span class="hrms-hello fw-semibold text-truncate">
+                @Greeting@(!string.IsNullOrEmpty(GetUserFullName()) ? $", {GetUserFullName()}" : "")
+            </span>
         </div>
 
-        <SimpleUserMenu />
+        <!-- Right actions -->
+        <div class="d-flex align-items-center gap-1 gap-lg-2 flex-shrink-0">
 
+            <!-- Clock — lg+ only (desktop) -->
+            <AuthorizeView Roles="Employee">
+                <Authorized>
+                    <div class="hrms-clock-desktop d-none d-lg-flex align-items-center gap-2">
+                        <ClockInAndOut />
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+            <div class="vr opacity-25 d-none d-lg-block" style="height:24px;"></div>
+
+            <!-- Notifications -->
+            <button class="hrms-icon-btn btn border-0 d-flex align-items-center justify-content-center flex-shrink-0"
+                    title="Notifications" aria-label="Notifications">
+                <NotificationDrawer />
+            </button>
+
+            <!-- User menu -->
+            <div class="flex-shrink-0">
+                <SimpleUserMenu />
+            </div>
+        </div>
     </div>
+
+    <!-- ══ ROW 2: Clock bar — mobile & tablet only (< lg = < 992px) ══ -->
+    <AuthorizeView Roles="Employee">
+        <Authorized>
+            <div class="hrms-clock-bar d-flex d-lg-none align-items-center justify-content-center gap-2 px-3">
+                <ClockInAndOut />
+            </div>
+        </Authorized>
+    </AuthorizeView>
 
 </header>
 
 @code {
     [Parameter] public EventCallback OnToggleSidebar { get; set; }
+    [Parameter] public bool IsSidebarOpen { get; set; }
 
     private string Greeting = string.Empty;
 
@@ -71,6 +73,15 @@
     {
         await base.OnInitializedAsync();
         SetGreeting();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("hrmsSetHeaderHeight");
+        }
+        catch { }
     }
 
     private void SetGreeting()
@@ -86,7 +97,7 @@
     }
 
     private string GetDayLabel() =>
-        DateTime.Now.ToString("ddd, dd MMM");
+        DateTime.Now.ToString("ddd, dd MMM yyyy");
 
     private string GetInitials()
     {

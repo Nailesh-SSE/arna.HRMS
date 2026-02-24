@@ -1,22 +1,37 @@
-.toasting-container {
-    position: fixed !important;
-    right: 1rem !important;
-    pointer-events: none !important;
-    z-index: 1085 !important; /* above navbar, below modal */
+.sidebar-panel {
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: width 0.28s cubic-bezier(.4,0,.2,1);
+    background: #fff;
+    border-right: 1px solid #e9ecef;
+    z-index: 1020;
 }
 
-.main-scroll::-webkit-scrollbar {
-    width: 6px;
+.sidebar-open {
+    width: 260px;
 }
 
-.main-scroll {
-    scrollbar-width: thin;
+.sidebar-closed {
+    width: 0;
 }
+@media (max-width: 991.98px) {
+    .sidebar-panel {
+        position: fixed;
+        left: 0;
+        top: var(--hrms-header-h, 58px);
+        height: calc(100vh - var(--hrms-header-h, 58px));
+        z-index: 1045; /* below header (1055) */
+    }
 
-.sidebar {
-    transition: width .3s !important;
-    overflow: hidden !important;
-}
-.topbar-wrapper {
-    min-height: 74px; /* desktop default */
+    .sidebar-overlay {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: var(--hrms-header-h, 58px);
+        background: rgba(0, 0, 0, .45);
+        z-index: 1040;
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+    }
 }
