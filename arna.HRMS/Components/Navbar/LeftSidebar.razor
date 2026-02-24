@@ -1,0 +1,145 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@inherits AuthenticatedLayoutBase
+@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<div class="navmenu d-flex flex-column h-100 text-white">
+
+    <!-- ── Brand ── -->
+    <div class="navmenu-brand d-flex align-items-center justify-content-between
+                px-3 py-3 border-bottom border-white border-opacity-10">
+        <div class="d-flex align-items-center gap-2">
+            <img src="companyLogo/arna_logo.svg" alt="Arna HRMS" class="navmenu-logo" />
+        </div>
+        <button class="navmenu-close btn btn-sm text-white-50 d-lg-none border-0 p-1"
+                @onclick="OnClose" aria-label="Close sidebar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <!-- ── Navigation ── -->
+    <nav class="navmenu-scroll flex-grow-1 overflow-auto px-3 py-3">
+
+        <span class="navmenu-label">Main</span>
+
+        <button class="navmenu-item @IsActive("/", true)" @onclick='() => GoTo("/")'>
+            <span class="navmenu-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+            <span class="navmenu-text">Dashboard</span>
+            <span class="navmenu-indicator"></span>
+        </button>
+
+        <button class="navmenu-item @IsActive("/employee")" @onclick='() => GoTo("/employee")'>
+            <span class="navmenu-icon"><i class="bi bi-people-fill"></i></span>
+            <span class="navmenu-text">Employees</span>
+            <span class="navmenu-indicator"></span>
+        </button>
+
+        <button class="navmenu-item @IsActive("/attendance")" @onclick='() => GoTo("/attendance")'>
+            <span class="navmenu-icon"><i class="bi bi-calendar2-check-fill"></i></span>
+            <span class="navmenu-text">Attendance</span>
+            <span class="navmenu-indicator"></span>
+        </button>
+
+        @if (IsAdmin() || IsSuperAdmin())
+        {
+            <span class="navmenu-label navmenu-label-gap">Administration</span>
+
+            <button class="navmenu-item @IsActive("/admin-leave-management")" @onclick='() => GoTo("/admin-leave-management")'>
+                <span class="navmenu-icon"><i class="bi bi-calendar-x-fill"></i></span>
+                <span class="navmenu-text">Leave Management</span>
+                <span class="navmenu-indicator"></span>
+            </button>
+
+            <button class="navmenu-item @IsActive("/department")" @onclick='() => GoTo("/department")'>
+                <span class="navmenu-icon"><i class="bi bi-building-fill"></i></span>
+                <span class="navmenu-text">Department</span>
+                <span class="navmenu-indicator"></span>
+            </button>
+
+            <button class="navmenu-item @IsActive("/role")" @onclick='() => GoTo("/role")'>
+                <span class="navmenu-icon"><i class="bi bi-shield-fill-check"></i></span>
+                <span class="navmenu-text">Role</span>
+                <span class="navmenu-indicator"></span>
+            </button>
+
+            <button class="navmenu-item @IsActive("/user")" @onclick='() => GoTo("/user")'>
+                <span class="navmenu-icon"><i class="bi bi-person-fill-gear"></i></span>
+                <span class="navmenu-text">Users</span>
+                <span class="navmenu-indicator"></span>
+            </button>
+        }
+        else
+        {
+            <span class="navmenu-label navmenu-label-gap">Leave</span>
+
+            <button class="navmenu-item @IsActive("/emp-leave-management")" @onclick='() => GoTo("/emp-leave-management")'>
+                <span class="navmenu-icon"><i class="bi bi-calendar2-minus-fill"></i></span>
+                <span class="navmenu-text">Leave</span>
+                <span class="navmenu-indicator"></span>
+            </button>
+        }
+
+        <span class="navmenu-label navmenu-label-gap">Account</span>
+
+        <button class="navmenu-item @IsActive("/profile")" @onclick='() => GoTo("/profile")'>
+            <span class="navmenu-icon"><i class="bi bi-person-badge-fill"></i></span>
+            <span class="navmenu-text">My Profile</span>
+            <span class="navmenu-indicator"></span>
+        </button>
+
+    </nav>
+
+    <!-- ── Footer ── -->
+    <div class="navmenu-footer px-3 py-2 border-top border-white border-opacity-10 text-center">
+        <small class="text-white-50">© 2025 Arna HRMS</small>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string _currentPath = "";
+
+    protected override void OnInitialized()
+    {
+        _currentPath = GetRelativePath();
+        NavigationManager.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _currentPath = GetRelativePath();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string GetRelativePath()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        return uri.AbsolutePath.TrimEnd('/');
+    }
+
+    private string IsActive(string href, bool exact = false)
+    {
+        var current = _currentPath;
+        var target = href.TrimEnd('/');
+
+        if (exact)
+            return (current == target || (target == "" && current == "")) ? "active" : "";
+
+        if (string.IsNullOrEmpty(target))
+            return current == "" ? "active" : "";
+
+        return (current == target || current.StartsWith(target + "/")) ? "active" : "";
+    }
+
+    private void GoTo(string path)
+    {
+        NavigationManager.NavigateTo(path);
+        _ = OnClose.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+}

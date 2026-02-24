@@ -22,7 +22,7 @@
 
 @inherits AuthenticatedLayoutBase *@
 
-<FullPageLoader Visible="isLoading" />
+<Loader Visible="isLoading" Message="@loadingMessage" />
 
 @if (!isLoading)
 {
@@ -106,6 +106,7 @@
     private int leaveRequestCount;
     private int festivalCount;
 
+    private string loadingMessage = "Loading leavemanagement... ";
     private EmployeeLeaveTypes? leaveTab;
     // private FestivalHolidayType? festivalTab;
     

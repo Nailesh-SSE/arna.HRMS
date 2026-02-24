@@ -1,0 +1,28 @@
+﻿/* ── Trigger Button ── */
+.usermenu-trigger {
+    line-height: 1;
+}
+
+/* ── Avatar ── */
+.usermenu-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: .75rem;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+/* ── Name ── */
+.usermenu-name {
+    max-width: 110px;
+    font-size: .85rem;
+}
+
+/* ── Chevron ── */
+.usermenu-chevron {
+    font-size: .65rem;
+}
+
+/* ── Dropdown ── */
+.usermenu-dropdown {
+    min-width: 230px;
+}

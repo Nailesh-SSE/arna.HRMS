@@ -7,7 +7,7 @@
 
 @inherits AuthenticatedLayoutBase
 
-<FullPageLoader Visible="isLoading" />
+<Loader Visible="isLoading" Message="@loadingMessage" />
 
 @if (!isLoading)
 {
@@ -109,7 +109,7 @@
 @code {
 
     private bool isLoading = true;
-
+    private string loadingMessage = "Loading leavemanagement...";
     private enum Tab { LeaveTypes, Requests, Festivals }
     private Tab activeTab = Tab.LeaveTypes;
 

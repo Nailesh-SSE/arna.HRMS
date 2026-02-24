@@ -1,33 +1,32 @@
-﻿@using arna.HRMS.ClientServices.Common
+﻿@using Microsoft.AspNetCore.Components.Routing
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Navbar
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 
-<div class="d-flex vh-100 overflow-hidden">
+<div class="hrms-shell d-flex vh-100 overflow-hidden">
 
-    <!-- Overlay: covers page content below header on mobile/tablet -->
     @if (IsSidebarOpen)
     {
-        <div class="sidebar-overlay d-lg-none" @onclick="ToggleSidebar"></div>
+        <div class="hrms-overlay d-lg-none" @onclick="ToggleSidebar"></div>
     }
 
-    <!-- Sidebar -->
-    <div class="sidebar-panel @(IsSidebarOpen ? "sidebar-open" : "sidebar-closed")">
-        <NavMenu />
-    </div>
+    <aside class="hrms-sidebar @(IsSidebarOpen ? "open" : "")">
+        <LeftSidebar OnClose="ToggleSidebar" />
+    </aside>
 
-    <!-- Main -->
     <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-        <div class="flex-shrink-0 border-bottom bg-white">
-            <Header OnToggleSidebar="ToggleSidebar" IsSidebarOpen="IsSidebarOpen" />
-        </div>
-        <main class="flex-grow-1 overflow-auto bg-light p-3">
+        <Header OnToggleSidebar="ToggleSidebar" IsSidebarOpen="IsSidebarOpen" />
+
+        <main class="hrms-main flex-grow-1 overflow-auto p-3 p-lg-4">
             @Body
         </main>
     </div>
 </div>
 
-<div class="position-fixed top-0 start-50 mt-3" style="z-index:9999;">
+<div class="hrms-toast-wrapper position-fixed top-0 end-0 p-3">
     <Toasts Messages="NotificationService.Messages"
             Placement="ToastsPlacement.TopRight" Delay="4000" />
 </div>
@@ -38,15 +37,23 @@
     protected override void OnInitialized()
     {
         NotificationService.OnChange += StateHasChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private void ToggleSidebar()
+    private void ToggleSidebar() => IsSidebarOpen = !IsSidebarOpen;
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        IsSidebarOpen = !IsSidebarOpen;
+        if (IsSidebarOpen)
+        {
+            IsSidebarOpen = false;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     public void Dispose()
     {
         NotificationService.OnChange -= StateHasChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }

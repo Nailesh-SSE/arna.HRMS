@@ -13,7 +13,7 @@
 @inject NotificationService NotificationService
 @inherits AuthenticatedLayoutBase
 
-<FullPageLoader Visible="isLoading" /> 
+<Loader Visible="isLoading" Message="@loadingMessage"/> 
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -34,6 +34,7 @@
 @code {
     private List<DepartmentViewModel> departments = new();
     private bool isLoading = true;
+    private string loadingMessage = "Loading department...";
 
     protected override async Task OnInitializedAsync()
     {
