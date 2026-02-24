@@ -1,5 +1,4 @@
-﻿/* ── Backdrop ── */
-.loader-backdrop {
+﻿.loader-backdrop {
     position: fixed;
     inset: 0;
     z-index: 1080;
@@ -20,8 +19,6 @@
         opacity: 1;
     }
 }
-
-/* ── Card ── */
 .loader-card {
     display: flex;
     flex-direction: column;
@@ -45,8 +42,6 @@
         transform: scale(1);
     }
 }
-
-/* ── Ring Spinner ── */
 .loader-ring {
     position: relative;
     width: 44px;
@@ -78,8 +73,6 @@
         transform: rotate(-360deg);
     }
 }
-
-/* ── Message ── */
 .loader-msg {
     margin: 0;
     font-size: .84rem;
