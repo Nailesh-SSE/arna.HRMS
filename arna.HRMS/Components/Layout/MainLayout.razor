@@ -8,17 +8,20 @@
 
 <div class="hrms-shell d-flex vh-100 overflow-hidden">
 
-    @if (IsSidebarOpen)
+    <!-- Overlay — mobile/tablet only -->
+    @if (SidebarActive)
     {
         <div class="hrms-overlay d-lg-none" @onclick="ToggleSidebar"></div>
     }
 
-    <aside class="hrms-sidebar @(IsSidebarOpen ? "open" : "")">
-        <NavMenu OnClose="ToggleSidebar" />
+    <!-- Sidebar -->
+    <aside class="hrms-sidebar @(SidebarActive ? "active" : "")">
+        <NavMenu OnClose="CloseSidebar" />
     </aside>
 
+    <!-- Main content -->
     <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-        <Header OnToggleSidebar="ToggleSidebar" IsSidebarOpen="IsSidebarOpen" />
+        <Header OnToggleSidebar="ToggleSidebar" SidebarActive="SidebarActive" />
 
         <main class="hrms-main flex-grow-1 overflow-auto p-3 p-lg-4">
             @Body
@@ -32,7 +35,7 @@
 </div>
 
 @code {
-    private bool IsSidebarOpen = false;
+    private bool SidebarActive = false;
 
     protected override void OnInitialized()
     {
@@ -40,13 +43,21 @@
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private void ToggleSidebar() => IsSidebarOpen = !IsSidebarOpen;
+    private void ToggleSidebar() => SidebarActive = !SidebarActive;
+
+    private void CloseSidebar()
+    {
+        if (SidebarActive)
+        {
+            SidebarActive = false;
+        }
+    }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        if (IsSidebarOpen)
+        if (SidebarActive)
         {
-            IsSidebarOpen = false;
+            SidebarActive = false;
             InvokeAsync(StateHasChanged);
         }
     }

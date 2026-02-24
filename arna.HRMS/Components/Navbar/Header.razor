@@ -11,12 +11,17 @@
     <!-- Row 1 — always visible -->
     <div class="header-row d-flex align-items-center gap-2 px-3 px-lg-4">
 
-        <!-- Toggle -->
+        <!-- Toggle Button -->
         <button class="header-toggle btn btn-light border-0 rounded-circle
                        d-flex align-items-center justify-content-center flex-shrink-0"
                 @onclick="OnToggleSidebar"
                 aria-label="Toggle Sidebar">
-            <i class="bi @(IsSidebarOpen ? "bi-x-lg" : "bi-list") fs-5"></i>
+
+            <!-- Mobile icon: X when sidebar showing, hamburger when hidden -->
+            <i class="bi d-lg-none @(SidebarActive ? "bi-x-lg" : "bi-list") fs-5"></i>
+
+            <!-- Desktop icon: hamburger when sidebar hidden, sidebar-icon when visible -->
+            <i class="bi d-none d-lg-inline @(SidebarActive ? "bi-list" : "bi-layout-sidebar-inset") fs-5"></i>
         </button>
 
         <!-- Greeting -->
@@ -61,7 +66,7 @@
 
 @code {
     [Parameter] public EventCallback OnToggleSidebar { get; set; }
-    [Parameter] public bool IsSidebarOpen { get; set; }
+    [Parameter] public bool SidebarActive { get; set; }
 
     private string Greeting = string.Empty;
 
@@ -85,10 +90,10 @@
         var hour = DateTime.Now.Hour;
         Greeting = hour switch
         {
-            >= 5 and < 12  => "Good Morning",
+            >= 5 and < 12 => "Good Morning",
             >= 12 and < 17 => "Good Afternoon",
             >= 17 and < 21 => "Good Evening",
-            _              => "Good Night"
+            _ => "Good Night"
         };
     }
 
