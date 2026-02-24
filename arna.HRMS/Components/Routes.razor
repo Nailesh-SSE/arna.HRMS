@@ -1,5 +1,5 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
-@inject NavigationManager NavigationManager
+@inject NavigationManager Navigation
 
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(Program).Assembly">
@@ -8,15 +8,20 @@
             <AuthorizeRouteView RouteData="@routeData"
                                 DefaultLayout="@typeof(Layout.MainLayout)">
 
+                <!-- While checking auth -->
                 <Authorizing>
-                    <div class="d-flex justify-content-center align-items-center" style="height: 50vh;">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <span class="ms-2">Validating session...</span>
+                    <div class="d-flex justify-content-center align-items-center vh-100">
+                        <div class="spinner-border text-primary me-2"></div>
+                        <span>Validating session...</span>
                     </div>
                 </Authorizing>
 
+                <!-- If NOT authorized -->
                 <NotAuthorized>
-                    <RedirectToLogin CurrentUrl="@NavigationManager.Uri" />
+                    @if (!IsLoginPage())
+                    {
+                        <RedirectToLogin />
+                    }
                 </NotAuthorized>
 
             </AuthorizeRouteView>
@@ -25,7 +30,6 @@
         </Found>
 
         <NotFound>
-            <!-- NO layout here -->
             <PageTitle>Not Found</PageTitle>
 
             <div class="min-vh-100 d-flex flex-column justify-content-center align-items-center text-center bg-light">
@@ -37,3 +41,10 @@
 
     </Router>
 </CascadingAuthenticationState>
+
+@code {
+    private bool IsLoginPage()
+    {
+        return Navigation.Uri.Contains("/login", StringComparison.OrdinalIgnoreCase);
+    }
+}

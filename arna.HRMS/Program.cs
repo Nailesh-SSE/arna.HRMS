@@ -1,4 +1,4 @@
-using arna.HRMS.ClientServices.Admin.Department;
+﻿using arna.HRMS.ClientServices.Admin.Department;
 using arna.HRMS.ClientServices.Admin.Employee;
 using arna.HRMS.ClientServices.Admin.FestivalHolidays;
 using arna.HRMS.ClientServices.Admin.Role;
@@ -23,23 +23,11 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // ==========================
         // Razor Components
+        // ==========================
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
-
-        // ==========================
-        // HttpClient Configuration
-        // ==========================
-        builder.Services.AddHttpClient("Default", client =>
-        {
-            var baseUrl = builder.Configuration["ApiSettings:BaseUrl"] ?? string.Empty;
-            client.BaseAddress = new Uri(baseUrl!);
-        });
-
-        // Default HttpClient
-        builder.Services.AddScoped(sp =>
-            sp.GetRequiredService<IHttpClientFactory>().CreateClient("Default")
-        );
 
         // ==========================
         // Authentication (Blazor)
@@ -48,22 +36,50 @@ public class Program
         builder.Services.AddCascadingAuthenticationState();
 
         builder.Services.AddScoped<ProtectedLocalStorage>();
+
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
             sp.GetRequiredService<CustomAuthStateProvider>());
 
         // ==========================
-        // App Services
+        // HTTP CLIENTS
+        // ==========================
+
+        var baseUrl = builder.Configuration["ApiSettings:BaseUrl"]
+                      ?? throw new Exception("ApiSettings:BaseUrl not configured");
+
+        // 🔹 Client used for normal API calls (WITH token handler)
+        builder.Services.AddScoped<AuthHeaderHandler>();
+
+        builder.Services.AddHttpClient("AuthorizedClient", client =>
+        {
+            client.BaseAddress = new Uri(baseUrl);
+        })
+        .AddHttpMessageHandler<AuthHeaderHandler>();
+
+        // 🔹 Client used ONLY for refresh (NO handler attached)
+        builder.Services.AddHttpClient("RefreshClient", client =>
+        {
+            client.BaseAddress = new Uri(baseUrl);
+        });
+
+        // 🔹 Default injected HttpClient = AuthorizedClient
+        builder.Services.AddScoped(sp =>
+            sp.GetRequiredService<IHttpClientFactory>()
+                .CreateClient("AuthorizedClient"));
+
+        // ==========================
+        // Core App Services
         // ==========================
         builder.Services.AddScoped<NotificationService>();
 
         builder.Services.AddScoped<HttpService>();
+
         builder.Services.AddScoped<ApiClients>(sp =>
         {
             var httpService = sp.GetRequiredService<HttpService>();
             var apiClients = new ApiClients(httpService);
             httpService.SetApiClients(apiClients);
-
             return apiClients;
         });
 
@@ -83,7 +99,9 @@ public class Program
 
         builder.Services.AddScoped<AttendanceState>();
 
+        // ==========================
         // Other
+        // ==========================
         builder.Services.AddMemoryCache();
         builder.Services.AddBlazorBootstrap();
         builder.Services.AddGeolocationServices();
