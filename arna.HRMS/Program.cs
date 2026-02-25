@@ -35,7 +35,7 @@ public class Program
         builder.Services.AddAuthorizationCore();
         builder.Services.AddCascadingAuthenticationState();
 
-        builder.Services.AddScoped<ProtectedLocalStorage>();
+        //builder.Services.AddScoped<ProtectedLocalStorage>();
 
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
@@ -103,6 +103,9 @@ public class Program
         // Other
         // ==========================
         builder.Services.AddMemoryCache();
+        builder.Services.AddScoped<CustomAuthStateProvider>();
+        builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
+            sp.GetRequiredService<CustomAuthStateProvider>());
         builder.Services.AddBlazorBootstrap();
         builder.Services.AddGeolocationServices();
 
