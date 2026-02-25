@@ -15,7 +15,7 @@
 @inject NotificationService NotificationService
 @inject ILeaveService LeaveService
 
-<FullPageLoader Visible="isLoading" />
+<Loader Visible="isLoading" Message="@loadingMessage" />
 
 <div class="container mt-4">
 
@@ -38,6 +38,7 @@
 @code {
     private List<UserViewModel> users = new();
     private bool isLoading = true;
+    private string loadingMessage = "Loading leavemanagement...";
 
     protected override async Task OnInitializedAsync()
     {

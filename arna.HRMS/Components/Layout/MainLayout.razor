@@ -1,44 +1,70 @@
-﻿@using arna.HRMS.ClientServices.Common
+﻿@using Microsoft.AspNetCore.Components.Routing
+@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Navbar
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 
-<div class="d-flex vh-100 overflow-hidden">
-    <div class="flex-shrink-0 sidebar"
-         style="width:@(IsSidebarOpen ? "260px" : "0");">
-        <NavMenu />
-    </div>
+<div class="hrms-shell d-flex vh-100 overflow-hidden">
 
+    <!-- Overlay — mobile/tablet only -->
+    @if (SidebarActive)
+    {
+        <div class="hrms-overlay d-lg-none" @onclick="ToggleSidebar"></div>
+    }
+
+    <!-- Sidebar -->
+    <aside class="hrms-sidebar @(SidebarActive ? "active" : "")">
+        <NavMenu OnClose="CloseSidebar" />
+    </aside>
+
+    <!-- Main content -->
     <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-        <div class="flex-shrink-0 border-bottom bg-white topbar-wrapper">
-            <Header OnToggleSidebar="ToggleSidebar" />
-        </div>
-        <main class="flex-grow-1 overflow-auto bg-light p-3 main-scroll">
+        <Header OnToggleSidebar="ToggleSidebar" SidebarActive="SidebarActive" />
+
+        <main class="hrms-main flex-grow-1 overflow-auto p-3 p-lg-4">
             @Body
         </main>
     </div>
 </div>
 
-<div class="position-fixed top-0 start-50 mt-3 toasting-container">
+<div class="hrms-toast-wrapper position-fixed top-0 end-0 p-3">
     <Toasts Messages="NotificationService.Messages"
             Placement="ToastsPlacement.TopRight" Delay="4000" />
 </div>
 
 @code {
-    private bool IsSidebarOpen = true;
+    private bool SidebarActive = false;
 
     protected override void OnInitialized()
     {
         NotificationService.OnChange += StateHasChanged;
+        NavigationManager.LocationChanged += OnLocationChanged;
     }
 
-    private void ToggleSidebar()
+    private void ToggleSidebar() => SidebarActive = !SidebarActive;
+
+    private void CloseSidebar()
     {
-        IsSidebarOpen = !IsSidebarOpen;
+        if (SidebarActive)
+        {
+            SidebarActive = false;
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (SidebarActive)
+        {
+            SidebarActive = false;
+            InvokeAsync(StateHasChanged);
+        }
     }
 
     public void Dispose()
     {
         NotificationService.OnChange -= StateHasChanged;
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }

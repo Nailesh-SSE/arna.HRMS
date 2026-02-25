@@ -1,0 +1,75 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using arna.HRMS.ClientServices.Auth
+
+@inject IAuthService AuthService
+@inherits AuthenticatedLayoutBase
+
+<AuthorizeView>
+    <Authorized>
+        <div class="dropdown">
+            <button class="usermenu-trigger btn btn-light border rounded-pill
+                           d-flex align-items-center gap-2 px-2 py-1"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+
+                <!-- Avatar circle -->
+                <span class="usermenu-avatar d-flex align-items-center justify-content-center
+                             rounded-circle text-white fw-bold">
+                    @GetInitials()
+                </span>
+
+                <!-- Name (md+) -->
+                <span class="usermenu-name d-none d-md-inline text-truncate fw-medium">
+                    @GetUserName()
+                </span>
+                <i class="usermenu-chevron bi bi-chevron-down d-none d-md-inline"></i>
+            </button>
+
+            <ul class="usermenu-dropdown dropdown-menu dropdown-menu-end shadow-lg
+                       border-0 rounded-3 mt-2 py-2">
+                <li class="px-3 py-2">
+                    <small class="text-muted">Welcome back</small><br />
+                    <strong>@GetUserFullName()</strong>
+                </li>
+                <li><hr class="dropdown-divider mx-2" /></li>
+                <li>
+                    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3"
+                            @onclick="@(() => Navigation.NavigateTo("/change-password"))">
+                        <i class="bi bi-lock text-muted"></i> Change Password
+                    </button>
+                </li>
+                <li><hr class="dropdown-divider mx-2" /></li>
+                <li>
+                    <button class="dropdown-item d-flex align-items-center gap-2 py-2 px-3 text-danger"
+                            @onclick="HandleLogout">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </Authorized>
+
+    <NotAuthorized>
+        <button class="btn btn-primary btn-sm rounded-pill px-3"
+                @onclick="@(() => Navigation.NavigateTo("/login"))">
+            <i class="bi bi-person me-1"></i> Login
+        </button>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+
+    private string GetInitials()
+    {
+        var name = GetUserFullName();
+        if (string.IsNullOrWhiteSpace(name)) return "U";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : parts[0][0].ToString().ToUpper();
+    }
+}

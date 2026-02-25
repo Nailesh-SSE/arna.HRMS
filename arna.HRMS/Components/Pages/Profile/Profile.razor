@@ -14,11 +14,9 @@
 @inject NotificationService NotificationService
 @inherits AuthenticatedLayoutBase
 
-@if (profile == null)
-{
-    <FullPageLoader />
-}
-else
+<Loader Visible="isLoading" Message="@loadingMessage" />
+
+@if (!isLoading)
 {
     <div class="profile-page">
 
@@ -73,8 +71,8 @@ else
                     </div>
 
                     <button class="btn btn-outline-secondary btn-sm"
-                            disabled="@(activeTab != ProfileTab.Personal)"
-                            @onclick="ToggleEditMode">
+                    disabled="@(activeTab != ProfileTab.Personal)"
+                    @onclick="ToggleEditMode">
                         <i class="bi @(isEditMode ? "bi-check-lg" : "bi-pencil")"></i>
                         @(isEditMode ? "Save Profile" : "Edit Profile")
                     </button>
@@ -85,8 +83,8 @@ else
                     @foreach (ProfileTab tab in Enum.GetValues(typeof(ProfileTab)))
                     {
                         <button class="@(activeTab == tab ? "active" : "")"
-                                disabled="@isEditMode"
-                                @onclick="() => activeTab = tab">
+                        disabled="@isEditMode"
+                        @onclick="() => activeTab = tab">
                             @tab
                         </button>
                     }
@@ -102,38 +100,38 @@ else
                                 <div class="field">
                                     <label>First Name</label>
                                     <input @bind="profile.FirstName"
-                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
-                                           readonly="@(!isEditMode)" />
+                                    class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                    readonly="@(!isEditMode)" />
                                 </div>
 
                                 <div class="field">
                                     <label>Last Name</label>
                                     <input @bind="profile.LastName"
-                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
-                                           readonly="@(!isEditMode)" />
+                                    class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                    readonly="@(!isEditMode)" />
                                 </div>
 
                                 <div class="field">
                                     <label>Email</label>
                                     <input @bind="profile.Email"
-                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
-                                           readonly="@(!isEditMode)" />
+                                    class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                    readonly="@(!isEditMode)" />
                                 </div>
 
                                 <div class="field">
                                     <label>Phone</label>
                                     <input @bind="profile.PhoneNumber"
-                                           class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
-                                           readonly="@(!isEditMode)" />
+                                    class="profile-input @(isEditMode ? "edit-mode" : "read-mode")"
+                                    readonly="@(!isEditMode)" />
                                 </div>
 
                                 <div class="field full">
                                     <label>Address</label>
                                     <input value="123 Main Street, SF"
-                                           class="profile-input read-mode"
-                                           readonly />
+                                    class="profile-input read-mode"
+                                    readonly />
                                 </div>
-                            break;
+                                break;
 
                             case ProfileTab.Work:
                                 <div class="field"><label>Employee ID</label><input @bind="profile.EmployeeNumber" class="profile-input read-mode" readonly /></div>
@@ -141,14 +139,14 @@ else
                                 <div class="field"><label>Position</label><input @bind="profile.Position" class="profile-input read-mode" readonly /></div>
                                 <div class="field"><label>Manager</label><input @bind="profile.ManagerFullName" class="profile-input read-mode" readonly /></div>
                                 <div class="field"><label>Hire Date</label><input value="@profile.HireDate?.ToShortDateString()" class="profile-input read-mode" readonly /></div>
-                            break;
+                                break;
 
                             case ProfileTab.Others:
                                 <div class="field"><label>Company</label><input value="Arna Technosoft" class="profile-input read-mode" readonly /></div>
                                 <div class="field"><label>Status</label><input value="@(profile.IsActive ? "Active" : "Inactive")" class="profile-input read-mode" readonly /></div>
                                 <div class="field"><label>Experience</label><input value="@ExperienceString" class="profile-input read-mode" readonly /></div>
                                 <div class="field"><label>Created On</label><input value="@profile.CreatedOn.ToShortDateString()" class="profile-input read-mode" readonly /></div>
-                            break;
+                                break;
                         }
                     </div>
                 </div>
@@ -162,38 +160,52 @@ else
     private ProfileTab activeTab = ProfileTab.Personal;
     private bool isEditMode = false;
     private EmployeeViewModel? employee;
+    private bool isLoading = true;
+    private string loadingMessage = "Loading Your Profile...";
 
     private bool isFullEmployeeProfile => profile?.IsEmployee ?? false;
 
     protected override async Task OnInitializedAsync()
     {
-        await base.OnInitializedAsync();
-        var employeeId = GetEmployeeId();
-
-        if (employeeId > 0)
+        try
         {
-            var result = await EmployeeService.GetEmployeeByIdAsync(employeeId);
-            if (result.IsSuccess && result.Data != null)
-            {
-                employee = result.Data;
-                profile = new ProfileViewModel(result.Data);
+            await base.OnInitializedAsync();
+            var employeeId = GetEmployeeId();
 
-                var dept = await DepartmentService.GetDepartmentByIdAsync(result.Data.DepartmentId ?? 0);
-                if (dept?.Data != null)
+            if (employeeId > 0)
+            {
+                var result = await EmployeeService.GetEmployeeByIdAsync(employeeId);
+                if (result.IsSuccess && result.Data != null)
                 {
-                    profile.DepartmentName = dept.Data.Name;
-                    profile.DepartmentCode = dept.Data.Code;
+                    employee = result.Data;
+                    profile = new ProfileViewModel(result.Data);
+
+                    var dept = await DepartmentService.GetDepartmentByIdAsync(result.Data.DepartmentId ?? 0);
+                    if (dept?.Data != null)
+                    {
+                        profile.DepartmentName = dept.Data.Name;
+                        profile.DepartmentCode = dept.Data.Code;
+                    }
+                }
+            }
+            else
+            {
+                var userId = GetUserId();
+                var user = await UserService.GetUserByIdAsync(userId);
+                if (user?.Data != null)
+                {
+                    profile = new ProfileViewModel(user.Data);
                 }
             }
         }
-        else
+        catch(Exception ex)
         {
-            var userId = GetUserId();
-            var user = await UserService.GetUserByIdAsync(userId);
-            if (user?.Data != null)
-            {
-                profile = new ProfileViewModel(user.Data);
-            }
+            NotificationService?.Error(ex.Message ?? "Operation Failed.");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 

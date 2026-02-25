@@ -12,7 +12,7 @@
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
 
-<FullPageLoader Visible="isLoading" />
+<Loader Visible="isLoading" Message="@loadingMessage" />
 
 <div class="container mt-4">
 
@@ -34,6 +34,7 @@
 @code {
     private List<RoleViewModel> roles = new();
     private bool isLoading = true;
+    private string loadingMessage = "Loading Role...";
 
     protected override async Task OnInitializedAsync()
     {

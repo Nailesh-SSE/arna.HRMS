@@ -1,5 +1,6 @@
 ﻿@using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.ClientServices.Client.Clock
+@using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Enums
@@ -10,47 +11,57 @@
 @inject IClockService ClockService
 @inherits AuthenticatedLayoutBase
 
-<div class="d-flex align-items-center gap-2">
+<!-- Loader — only when IsLoading is explicitly true -->
+<Loader Visible="@IsLoading" Message="@LoaderMessage" />
+
+<!-- Main Controls -->
+<div class="d-flex align-items-center gap-2 flex-wrap">
 
     @if (IsEmployee())
     {
-        <span class="clock-pill">
-            <span class="status-dot"></span>
-            <i class="bi bi-clock"></i>
-            <span class="time-text">@CurrentTime</span>
+        <span class="clock-pill d-inline-flex align-items-center gap-1 rounded-pill
+                     bg-light border px-2 py-1">
+            <span class="clock-dot d-inline-block rounded-circle
+                         @(IsClockedIn ? "bg-success" : "bg-secondary")"></span>
+            <i class="bi bi-clock text-muted"></i>
+            <span class="clock-time font-monospace fw-medium">@CurrentTime</span>
         </span>
 
         @if (IsClockedIn)
         {
-            <AppButton ButtonClass="btn btn-danger btn-sm"
-                       Disabled="DisableClockOut"
+            <AppButton ButtonClass="btn btn-outline-danger btn-sm rounded-pill"
+                       Disabled="@DisableClockOut"
                        OnClick="ClockOutAsync">
-                <i class="bi bi-clock"></i>
+                <i class="bi bi-stop-circle"></i>
+                <span class="d-none d-sm-inline ms-1">Out</span>
             </AppButton>
         }
         else
         {
-            <AppButton ButtonClass="btn btn-success btn-sm"
-                       Disabled="DisableClockIn"
+            <AppButton ButtonClass="btn btn-success btn-sm rounded-pill"
+                       Disabled="@DisableClockIn"
                        OnClick="ClockInAsync">
-                <i class="bi bi-clock @(IsClockInOut ? "clock-alert" : "")"></i>
+                <i class="bi bi-play-circle @(IsClockInOut ? "clock-alert" : "")"></i>
+                <span class="d-none d-sm-inline ms-1">In</span>
             </AppButton>
         }
     }
 
     @if (!string.IsNullOrEmpty(ActionLabel))
     {
-        <span class="time-info-pill">
-            <span class="label">@ActionLabel</span>
-            <span>@ActionTime</span>
+        <span class="clock-info-pill d-none d-sm-inline-flex align-items-center
+                     gap-1 rounded-pill border px-2 py-1">
+            <span class="fw-semibold">@ActionLabel</span>
+            <span class="font-monospace">@ActionTime</span>
         </span>
     }
 </div>
 
 @if (ShowDynamicForm)
 {
-    <div class="popup-overlay">
-        <div class="popup-card">
+    <div class="clock-modal-overlay position-fixed top-0 start-0 w-100 h-100
+                d-flex align-items-center justify-content-center">
+        <div class="clock-modal-card bg-white rounded-3 shadow-lg mx-3 p-4">
             <ClockInAndOutMessage Model="attendanceViewModel"
                                   OnSubmit="SubmitClockInOutAsync"
                                   OnCancel="CloseForm" />
@@ -60,9 +71,12 @@
 
 @if (ShowToast)
 {
-    <div class="toast-container position-fixed bottom-0 end-0 p-4">
-        <div class="toast show shadow border-0">
-            <div class="toast-body">@ToastMessage</div>
+    <div class="clock-toast-wrapper position-fixed bottom-0 end-0 p-3">
+        <div class="toast show border-0 shadow-lg rounded-3 bg-white" role="alert">
+            <div class="toast-body d-flex align-items-center gap-2 py-3 px-3">
+                <i class="bi bi-check-circle-fill text-success fs-5"></i>
+                <span>@ToastMessage</span>
+            </div>
         </div>
     </div>
 }
@@ -96,7 +110,11 @@
     private double? CurrentLongitude;
     private bool IsGettingLocation;
 
-    public bool IsClockInOut=false;
+    public bool IsClockInOut = false;
+
+    // ── Loader — defaults to false, never touched during init ──
+    private bool IsLoading = false;
+    private string LoaderMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -114,8 +132,7 @@
 
         if (lastEntry.Data.ClockInTime != null
             && lastEntry.Data.ClockOutTime == null
-            && lastEntry.Data.Date.Date == DateTime.Today
-        )
+            && lastEntry.Data.Date.Date == DateTime.Today)
         {
             IsClockedIn = true;
 
@@ -139,7 +156,6 @@
         {
             IsClockedIn = false;
 
-            // Show red icon only if yesterday open
             if (lastEntry.Data.ClockInTime != null
                 && lastEntry.Data.ClockOutTime == null
                 && lastEntry.Data.Date.Date < DateTime.Today)
@@ -196,77 +212,88 @@
 
         ShowDynamicForm = false;
 
-        var employeeId = GetEmployeeId();
-        if (employeeId == 0)
-            return;
-
-        if (PendingClockIn == true)
+        try
         {
-            IsClockedIn = true;
-            In = TimeOnly.FromDateTime(DateTime.Now);
+            await SetLoading(true, PendingClockIn == true ? "Clocking in..." : "Clocking out...");
 
-            ActionLabel = "Clock In";
-            ActionTime = DateTime.Now.ToString("HH:mm:ss");
+            var employeeId = GetEmployeeId();
+            if (employeeId == 0)
+                return;
 
-            var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
+            if (PendingClockIn == true)
             {
-                EmployeeId = employeeId,
-                Date = DateTime.Today,
-                ClockInTime = new TimeSpan(In.Hour, In.Minute, In.Second),
-                StatusId = AttendanceStatuses.Present,
-                Notes = attendanceViewModel.Notes,
-                WorkingHours = TimeSpan.Zero,
-                Latitude = CurrentLatitude,
-                Longitude = CurrentLongitude
-            });
+                IsClockedIn = true;
+                In = TimeOnly.FromDateTime(DateTime.Now);
 
-            if (!result.IsSuccess)
+                ActionLabel = "Clock In";
+                ActionTime = DateTime.Now.ToString("HH:mm:ss");
+
+                var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
+                {
+                    EmployeeId = employeeId,
+                    Date = DateTime.Today,
+                    ClockInTime = new TimeSpan(In.Hour, In.Minute, In.Second),
+                    StatusId = AttendanceStatuses.Present,
+                    Notes = attendanceViewModel.Notes,
+                    WorkingHours = TimeSpan.Zero,
+                    Latitude = CurrentLatitude,
+                    Longitude = CurrentLongitude
+                });
+
+                if (!result.IsSuccess)
+                {
+                    IsClockedIn = false;
+                    DisableClockIn = false;
+                    await ShowNotification(result.Message ?? "Clock-In failed");
+                    return;
+                }
+
+                AccumulatedHours = new TimeOnly(0, 0);
+                _ = StartClockOutCooldownAsync(60);
+                await ShowNotification($"Clocked in at {ActionTime}");
+            }
+            else
             {
+                IsClockedIn = false;
                 DisableClockIn = false;
-                await ShowNotification(result.Message ?? "Clock-In failed");
-                return;
-            }
 
-            AccumulatedHours = new TimeOnly(0, 0);
-            _ = StartClockOutCooldownAsync(60);
-            await ShowNotification($"Clocked in at {ActionTime}");
+                Out = TimeOnly.FromDateTime(DateTime.Now);
+
+                ActionLabel = "Clock Out";
+                ActionTime = DateTime.Now.ToString("HH:mm:ss");
+
+                var worked = Out.ToTimeSpan() - In.ToTimeSpan();
+                AccumulatedHours = AccumulatedHours.Add(worked);
+
+                IsClockInOut = false;
+                var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
+                {
+                    EmployeeId = employeeId,
+                    Date = DateTime.Today,
+                    ClockOutTime = new TimeSpan(Out.Hour, Out.Minute, Out.Second),
+                    StatusId = AttendanceStatuses.Present,
+                    Notes = attendanceViewModel.Notes,
+                    WorkingHours = AccumulatedHours.ToTimeSpan(),
+                    Latitude = CurrentLatitude,
+                    Longitude = CurrentLongitude
+                });
+
+                if (!result.IsSuccess)
+                {
+                    await ShowNotification(result.Message ?? "Clock-Out failed");
+                    return;
+                }
+
+                await ShowNotification($"Clocked out | {new TimeSpan(Out.Hour, Out.Minute, Out.Second)}");
+            }
+            CurrentLatitude = null;
+            CurrentLongitude = null;
         }
-        else
+        finally
         {
-            IsClockedIn = false;
-            DisableClockIn = false;
-
-            Out = TimeOnly.FromDateTime(DateTime.Now);
-
-            ActionLabel = "Clock Out";
-            ActionTime = DateTime.Now.ToString("HH:mm:ss");
-
-            var worked = Out.ToTimeSpan() - In.ToTimeSpan();
-            AccumulatedHours = AccumulatedHours.Add(worked);
-
-            IsClockInOut = false;
-            var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
-            {
-                EmployeeId = employeeId,
-                Date = DateTime.Today,
-                ClockOutTime = new TimeSpan(Out.Hour, Out.Minute, Out.Second),
-                StatusId = AttendanceStatuses.Present,
-                Notes = attendanceViewModel.Notes,
-                WorkingHours = AccumulatedHours.ToTimeSpan(),
-                Latitude = CurrentLatitude,
-                Longitude = CurrentLongitude
-            });
-
-            if (!result.IsSuccess)
-            {
-                await ShowNotification(result.Message ?? "Clock-Out failed");
-                return;
-            }
-
-            await ShowNotification($"Clocked out | {new TimeSpan(Out.Hour, Out.Minute, Out.Second)}");
+            // ── Always hide loader no matter what ──
+            await SetLoading(false);
         }
-        CurrentLatitude = null;
-        CurrentLongitude = null;
     }
 
     private void StartClockLoop()
@@ -275,7 +302,6 @@
         _cts = new CancellationTokenSource();
         var ct = _cts.Token;
 
-        // Use PeriodicTimer to avoid System.Timers cross-thread callbacks.
         var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
         _ = Task.Run(async () =>
         {
@@ -344,24 +370,40 @@
 
     private async Task<bool> PrepareClockActionAsync()
     {
-        IsGettingLocation = true;
-
-        var location = await ClockService.GetCurrentLocationAsync();
-
-        IsGettingLocation = false;
-
-        if (location == null)
+        try
         {
-            DisableClockIn = false;
-            DisableClockOut = false;
-            await ShowNotification("Location permission is required");
-            return false;
+            await SetLoading(true, "Getting location...");
+
+            IsGettingLocation = true;
+            var location = await ClockService.GetCurrentLocationAsync();
+            IsGettingLocation = false;
+
+            if (location == null)
+            {
+                DisableClockIn = false;
+                DisableClockOut = false;
+                await ShowNotification("Location permission is required");
+                return false;
+            }
+
+            CurrentLatitude = location.Value.Latitude;
+            CurrentLongitude = location.Value.Longitude;
+
+            OpenNoteForm();
+            return true;
         }
+        finally
+        {
+            // ── Always hide loader ──
+            await SetLoading(false);
+        }
+    }
 
-        CurrentLatitude = location.Value.Latitude;
-        CurrentLongitude = location.Value.Longitude;
-
-        OpenNoteForm();
-        return true;
+    // ── Single safe method for loader state ──
+    private async Task SetLoading(bool show, string message = "")
+    {
+        IsLoading = show;
+        LoaderMessage = show ? message : "";
+        await InvokeAsync(StateHasChanged);
     }
 }

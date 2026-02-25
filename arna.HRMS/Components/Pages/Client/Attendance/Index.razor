@@ -27,7 +27,7 @@
 @inject IJSRuntime JsRuntime
 @inject IEmployeeService EmployeeService
 
-<FullPageLoader Visible="@isLoading" />
+<Loader Visible="@isLoading" Message="@loaderMessage"/>
 
 <div class="attendance-dashboard">
 
@@ -170,6 +170,7 @@
     private bool isDrawerOpen;
     public AttendanceRequestViewModel EditModel { get; set; } = new AttendanceRequestViewModel();
     private List<SelectOption> Employees = new();
+    private string loaderMessage = "Loading attendance information...";
 
     private void OpenDrawer() => isDrawerOpen = true;
 
