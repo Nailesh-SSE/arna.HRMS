@@ -37,9 +37,6 @@ public class Program
         // Add MemoryCache
         builder.Services.AddMemoryCache();
 
-        // Add logging
-        builder.Services.AddLogging();
-
         // Register CustomAuthStateProvider
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
