@@ -10,115 +10,221 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     private const string AccessTokenKey = "auth_access_token";
     private const string RefreshTokenKey = "auth_refresh_token";
     private const string UserIdKey = "auth_user_id";
-
     private const string AuthType = "jwt";
 
-    private readonly IMemoryCache _cache;
+    private readonly IMemoryCache _memoryCache;
+    private readonly ILogger<CustomAuthStateProvider> _logger;
 
-    private ClaimsPrincipal _cachedUser =
-        new(new ClaimsIdentity());
-
-    private static AuthenticationState Anonymous =>
+    private ClaimsPrincipal _cachedUser = new(new ClaimsIdentity());
+    private static readonly AuthenticationState Anonymous =
         new(new ClaimsPrincipal(new ClaimsIdentity()));
 
-    public string? CurrentAccessToken =>
-        _cache.TryGetValue(AccessTokenKey, out string? token) ? token : null;
-
-    public CustomAuthStateProvider(IMemoryCache cache)
+    public CustomAuthStateProvider(
+        IMemoryCache memoryCache,
+        ILogger<CustomAuthStateProvider> logger)
     {
-        _cache = cache;
+        _memoryCache = memoryCache;
+        _logger = logger;
     }
 
-    public override Task<AuthenticationState> GetAuthenticationStateAsync()
+    public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
-        if (!_cache.TryGetValue(AccessTokenKey, out string? accessToken) ||
-            string.IsNullOrWhiteSpace(accessToken))
-        {
-            return Task.FromResult(Anonymous);
-        }
-
-        JwtSecurityToken jwt;
-
         try
         {
-            jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+            var accessToken = await GetAccessTokenAsync();
+
+            if (string.IsNullOrWhiteSpace(accessToken))
+                return Anonymous;
+
+            JwtSecurityToken jwt;
+            try
+            {
+                jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to read JWT token");
+                 ClearAuthAsync();
+                return Anonymous;
+            }
+
+            var now = DateTime.UtcNow;
+            if (jwt.ValidTo < now.AddMinutes(-1))
+            {
+                 ClearAuthAsync();
+                return Anonymous;
+            }
+
+            var identity = new ClaimsIdentity(jwt.Claims, AuthType);
+            var user = new ClaimsPrincipal(identity);
+
+            _cachedUser = user;
+
+            return new AuthenticationState(user);
         }
-        catch
+        catch (Exception ex)
         {
-            ClearAuth();
-            return Task.FromResult(Anonymous);
+            _logger.LogError(ex, "Error in GetAuthenticationStateAsync");
+            return Anonymous;
         }
-
-        if (jwt.ValidTo < DateTime.UtcNow)
-        {
-            ClearAuth();
-            return Task.FromResult(Anonymous);
-        }
-
-        var identity = new ClaimsIdentity(jwt.Claims, AuthType);
-        var user = new ClaimsPrincipal(identity);
-
-        _cachedUser = user;
-
-        return Task.FromResult(new AuthenticationState(user));
     }
 
     public Task LoginAsync(int userId, string accessToken, string refreshToken)
     {
-        _cache.Set(UserIdKey, userId);
-        _cache.Set(AccessTokenKey, accessToken);
-        _cache.Set(RefreshTokenKey, refreshToken);
+        try
+        {
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+            var expiry = jwt.ValidTo;
 
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
-        var identity = new ClaimsIdentity(jwt.Claims, AuthType);
-        _cachedUser = new ClaimsPrincipal(identity);
+            // Store tokens in memory cache with appropriate expiration
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(expiry)
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30))
+                .SetPriority(CacheItemPriority.High);
 
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(new AuthenticationState(_cachedUser)));
+            var refreshOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromDays(7))
+                .SetPriority(CacheItemPriority.High);
 
-        return Task.CompletedTask;
+            _memoryCache.Set(AccessTokenKey, accessToken, cacheEntryOptions);
+            _memoryCache.Set(RefreshTokenKey, refreshToken, refreshOptions);
+            _memoryCache.Set(UserIdKey, userId, refreshOptions);
+
+            var identity = new ClaimsIdentity(jwt.Claims, AuthType);
+            _cachedUser = new ClaimsPrincipal(identity);
+
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+
+            _logger.LogInformation("User {UserId} logged in successfully", userId);
+
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during login");
+            throw;
+        }
     }
 
     public Task LogoutAsync()
     {
-        ClearAuth();
+        ClearAuthAsync();
+        _cachedUser = new ClaimsPrincipal(new ClaimsIdentity());
+        NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));
 
-        NotifyAuthenticationStateChanged(
-            Task.FromResult(Anonymous));
+        _logger.LogInformation("User logged out");
 
         return Task.CompletedTask;
     }
 
     public Task<string?> GetAccessTokenAsync()
     {
-        _cache.TryGetValue(AccessTokenKey, out string? token);
-        return Task.FromResult(token);
+        try
+        {
+            if (_memoryCache.TryGetValue(AccessTokenKey, out string? token))
+                return Task.FromResult(token);
+
+            return Task.FromResult<string?>(null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting access token");
+            return Task.FromResult<string?>(null);
+        }
     }
 
     public Task<(int userId, string? refreshToken)> GetRefreshDataAsync()
     {
-        _cache.TryGetValue(UserIdKey, out int userId);
-        _cache.TryGetValue(RefreshTokenKey, out string? refreshToken);
+        try
+        {
+            _memoryCache.TryGetValue(UserIdKey, out int userId);
+            _memoryCache.TryGetValue(RefreshTokenKey, out string? refreshToken);
 
-        return Task.FromResult((userId, refreshToken));
+            return Task.FromResult((userId, refreshToken));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting refresh data");
+            return null;
+        }
     }
 
-    public Task UpdateTokensAsync(string newAccessToken, string newRefreshToken)
+    public Task UpdateAccessTokenAsync(string newAccessToken)
     {
-        _cache.Set(AccessTokenKey, newAccessToken);
-        _cache.Set(RefreshTokenKey, newRefreshToken);
+        try
+        {
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(newAccessToken);
+            var expiry = jwt.ValidTo;
 
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(expiry)
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30))
+                .SetPriority(CacheItemPriority.High);
+
+            _memoryCache.Set(AccessTokenKey, newAccessToken, cacheEntryOptions);
+
+            var identity = new ClaimsIdentity(jwt.Claims, AuthType);
+            _cachedUser = new ClaimsPrincipal(identity);
+
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+
+            _logger.LogDebug("Access token updated");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating access token");
+        }
 
         return Task.CompletedTask;
     }
 
-    private void ClearAuth()
+    public Task UpdateTokensAsync(string newAccessToken, string newRefreshToken)
     {
-        _cache.Remove(UserIdKey);
-        _cache.Remove(AccessTokenKey);
-        _cache.Remove(RefreshTokenKey);
+        try
+        {
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(newAccessToken);
+            var expiry = jwt.ValidTo;
 
-        _cachedUser = new ClaimsPrincipal(new ClaimsIdentity());
+            var tokenOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(expiry)
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30))
+                .SetPriority(CacheItemPriority.High);
+
+            var refreshOptions = new MemoryCacheEntryOptions()
+                .SetAbsoluteExpiration(TimeSpan.FromDays(7))
+                .SetPriority(CacheItemPriority.High);
+
+            _memoryCache.Set(AccessTokenKey, newAccessToken, tokenOptions);
+            _memoryCache.Set(RefreshTokenKey, newRefreshToken, refreshOptions);
+
+            var identity = new ClaimsIdentity(jwt.Claims, AuthType);
+            _cachedUser = new ClaimsPrincipal(identity);
+
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+
+            _logger.LogDebug("Tokens updated");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating tokens");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void ClearAuthAsync()
+    {
+        try
+        {
+            _memoryCache.Remove(AccessTokenKey);
+            _memoryCache.Remove(RefreshTokenKey);
+            _memoryCache.Remove(UserIdKey);
+
+            _logger.LogDebug("Auth cache cleared");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error clearing auth cache");
+        }
     }
 }

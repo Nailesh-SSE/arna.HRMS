@@ -2,9 +2,7 @@
 using arna.HRMS.Core.Common.ServiceResult;
 using arna.HRMS.Models.Common;
 using arna.HRMS.Models.ViewModels;
-using arna.HRMS.Models.ViewModels.Auth;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -20,16 +18,12 @@ public sealed class HttpService
     private static readonly SemaphoreSlim _refreshLock = new(1, 1);
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
-    private readonly IHttpClientFactory _factory;
-
-    public HttpService(HttpClient http,
-                       IHttpClientFactory factory,
-                       CustomAuthStateProvider authProvider)
+    public HttpService(HttpClient http, CustomAuthStateProvider authProvider)
     {
-        _http = http; 
-        _factory = factory;
+        _http = http;
         _authProvider = authProvider;
     }
+
     public void SetApiClients(ApiClients apiClients)
         => _apiClients = apiClients;
 
@@ -76,16 +70,12 @@ public sealed class HttpService
             var request = requestFactory();
 
             var response = await _http.SendAsync(request);
-
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                response.Dispose();
-
                 var refreshed = await TrySilentRefreshAsync();
 
                 if (refreshed)
                 {
-                    // retry with new token
                     var retryRequest = requestFactory();
                     response = await _http.SendAsync(retryRequest);
                 }
@@ -113,6 +103,9 @@ public sealed class HttpService
 
     private async Task<bool> TrySilentRefreshAsync()
     {
+        if (_apiClients == null)
+            return false;
+
         await _refreshLock.WaitAsync();
 
         try
@@ -122,32 +115,22 @@ public sealed class HttpService
             if (userId <= 0 || string.IsNullOrWhiteSpace(refreshToken))
                 return false;
 
-            var refreshClient = _factory.CreateClient("RefreshClient");
-
-            var json = JsonSerializer.Serialize(new RefreshTokenViewModel
+            var refresh = await _apiClients.Auth.RefreshToken(new RefreshTokenViewModel
             {
                 UserId = userId,
                 RefreshToken = refreshToken
-            }, JsonOptions);
+            });
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/refresh");
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await refreshClient.SendAsync(request);
-
-            if (!response.IsSuccessStatusCode)
+            if (!refresh.IsSuccess || refresh.Data == null)
                 return false;
 
-            var raw = await response.Content.ReadAsStringAsync();
-
-            var wrapper = JsonSerializer.Deserialize<ServiceResult<AuthResponse>>(raw, JsonOptions);
-
-            if (wrapper == null || !wrapper.IsSuccess || wrapper.Data == null)
+            if (string.IsNullOrWhiteSpace(refresh.Data.AccessToken))
                 return false;
 
             await _authProvider.UpdateTokensAsync(
-                wrapper.Data.AccessToken,
-                wrapper.Data.RefreshToken);
+                refresh.Data.AccessToken,
+                refresh.Data.RefreshToken
+            );
 
             return true;
         }
