@@ -3,7 +3,6 @@ using arna.HRMS.Core.Common.ServiceResult;
 using arna.HRMS.Models.Common;
 using arna.HRMS.Models.ViewModels;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -70,13 +69,17 @@ public sealed class HttpService
         {
             var request = requestFactory();
 
-            using var response = await _http.SendAsync(request);
-
+            var response = await _http.SendAsync(request);
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
                 var refreshed = await TrySilentRefreshAsync();
 
-                if (!refreshed)
+                if (refreshed)
+                {
+                    var retryRequest = requestFactory();
+                    response = await _http.SendAsync(retryRequest);
+                }
+                else
                 {
                     await _authProvider.LogoutAsync();
                 }
