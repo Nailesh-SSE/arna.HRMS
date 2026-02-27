@@ -137,8 +137,6 @@ public class NavigationService
     public static string GetRouteForRole(NavMenuItem item, UserRole userRole)
     {
         var route = item.Route;
-
-        // Smart routing for leave management
         if (item.Id == "leave-management")
         {
             return userRole == UserRole.Employee 
