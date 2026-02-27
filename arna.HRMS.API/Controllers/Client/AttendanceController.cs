@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +18,14 @@ public class AttendanceController : ControllerBase
         _attendanceService = attendanceService;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAttendance()
+    [HttpGet("employee-attendance")]
+    public async Task<IActionResult> GetEmployeeAttendance(
+      AttendanceStatus? status,
+      int? employeeId)
     {
-        var result = await _attendanceService.GetAttendanceAsync();
+        var result = await _attendanceService
+            .GetEmployeeAttendanceByStatusAsync(status, employeeId);
+
         return Ok(result);
     }
 
@@ -50,9 +55,9 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpGet("monthly-attendance")]
-    public async Task<IActionResult> GetAttendanceByMonth([FromQuery] int year, [FromQuery] int month, [FromQuery] int? empId, [FromQuery] DateTime? date)
+    public async Task<IActionResult> GetAttendanceByMonth([FromQuery] int year, [FromQuery] int month, [FromQuery] int? empId, [FromQuery] DateTime? date, [FromQuery] AttendanceStatus? statusId)
     {
-        var result = await _attendanceService.GetAttendanceByMonthAsync(year, month, empId, date);
+        var result = await _attendanceService.GetAttendanceByMonthAsync(year, month, empId, date, statusId);
 
         if (!result.IsSuccess)
             return BadRequest(result.Message);

@@ -8,6 +8,7 @@
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
 
 @inject IEmployeeService EmployeeService
@@ -15,270 +16,408 @@
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 
-<FullPageLoader Visible="isLoading" />
+<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
 
-<div class="container py-4">
+    <!-- ═══════════ BACK + BREADCRUMB ═══════════ -->
+    <div class="d-flex align-items-center gap-2 mb-3 mb-md-4 flex-wrap">
+        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 emp-form-back-btn"
+                @onclick="GoBack">
+            <i class="bi bi-arrow-left me-1"></i>
+            <span class="d-none d-sm-inline">Back</span>
+        </button>
+        <nav>
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item">
+                    <a href="/employee" class="text-decoration-none text-primary">Employees</a>
+                </li>
+                <li class="breadcrumb-item active text-muted">
+                    @(IsEditMode ? "Edit" : "Create")
+                </li>
+            </ol>
+        </nav>
+    </div>
 
-    <AppCard Header="@(IsEditMode ? "Edit Employee" : "Create Employee")">
+    <!-- ═══════════ HEADER CARD ═══════════ -->
+    <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4 emp-form-header">
+        <div class="card-body py-3 px-3 px-md-4">
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
 
-        @if (!isLoading)
-        {
-            <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
-                <DataAnnotationsValidator />
+                <span class="emp-form-header-icon rounded-2 p-2 d-inline-flex
+                             align-items-center justify-content-center flex-shrink-0
+                             @(IsEditMode ? "bg-warning bg-opacity-10 text-warning" : "bg-success bg-opacity-10 text-success")">
+                    <i class="bi @(IsEditMode ? "bi-pencil-square" : "bi-person-plus-fill") fs-5"></i>
+                </span>
 
-                <div class="card employee-form-card">
-                    <div class="card-body p-4">
+                <div>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                        @(IsEditMode ? "Edit Employee" : "Add New Employee")
+                    </h5>
+                    <p class="text-muted mb-0 small d-none d-sm-block">
+                        @(IsEditMode
+                                                ? $"Update details for {_employee.FullName}"
+                                                : "Fill in the details below to add a new employee")
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <!-- HEADER -->
-                        <div class="mb-4">
-                            <h4 class="fw-semibold mb-1">
-                                @(IsEditMode ? "Edit Employee" : "Add New Employee")
-                            </h4>
-                            <p class="text-muted mt-3">
-                                Fill in the employee details below
-                            </p>
+    @if (_isLoading)
+    {
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body text-center py-4 py-md-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2 mb-0 small">Loading employee data…</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm EditContext="@_editContext" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+
+            <!-- ═══════════ PERSONAL INFORMATION ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="emp-form-section-icon bg-primary bg-opacity-10 text-primary
+                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-person-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-0 small">Personal Information</h6>
+                            <small class="text-muted d-none d-md-block">
+                                Basic employee identification details
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="row g-3">
+
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="First Name"
+                                      Value="@_employee.FirstName"
+                                      ValueChanged="v => _employee.FirstName = v"
+                                      ValidationExpression="@(() => _employee.FirstName)" />
                         </div>
 
-                        <!-- PERSONAL INFORMATION -->
-                        <AppFormGroup Title="Personal Information">
-                            <div class="row g-3 mt-3 mb-3">
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Last Name"
+                                      Value="@_employee.LastName"
+                                      ValueChanged="v => _employee.LastName = v"
+                                      ValidationExpression="@(() => _employee.LastName)" />
+                        </div>
 
-                                <div class="col-md-6">
-                                    <AppInput Label="First Name"
-                                              Value="@employee.FirstName"
-                                              ValueChanged="v => employee.FirstName = v"
-                                              ValidationExpression="@(() => employee.FirstName)" />
-                                   
-                                </div>
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Email"
+                                      Value="@_employee.Email"
+                                      ValueChanged="v => _employee.Email = v"
+                                      ValidationExpression="@(() => _employee.Email)" />
+                        </div>
 
-                                <div class="col-md-6">
-                                    <AppInput Label="Last Name"
-                                              Value="@employee.LastName"
-                                              ValueChanged="v => employee.LastName = v" 
-                                              ValidationExpression="@(() => employee.LastName)"/>
-                                   
-                                </div>
-
-                                <div class="col-md-6">
-                                    <AppInput Label="Email"
-                                              Value="@employee.Email"
-                                              ValueChanged="v => employee.Email = v"
-                                              ValidationExpression="@(() => employee.Email)" />
-                                    
-                                </div>
-
-                                <div class="col-md-6">
-                                    <AppInput Label="Phone Number"
-                                              Value="@employee.PhoneNumber"
-                                              ValueChanged="v => employee.PhoneNumber = v"
-                                              ValidationExpression="@(() => employee.PhoneNumber)" />
-                                    
-                                </div>
-
-                            </div>
-                        </AppFormGroup>
-
-                        <!-- JOB DETAILS -->
-                        <AppFormGroup Title="Job Details" SectionClass="mt-5">
-                            <div class="row g-3 mt-3 mb-3">
-
-                                <div class="col-md-6">
-                                    <AppInput Label="Position"
-                                              Value="@employee.Position"
-                                              ValueChanged="v => employee.Position = v"
-                                              ValidationExpression="@(() => employee.Position)">
-                                        
-                                    </AppInput>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <AppInput Label="Salary"
-                                              Type="number"
-                                              Value="@employee.Salary.ToString("0.##")"
-                                              ValueChanged="v =>
-                                              {
-                                                  if (decimal.TryParse(v, out var s))
-                                                      employee.Salary = s;
-                                              }"
-                                          ValidationExpression="@(() => employee.Salary)">
-                                    </AppInput>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <AppSelect Label="Department"
-                                               Options="@DepartmentsOptions"
-                                               Value="@employee.DepartmentId?.ToString()"
-                                               ValueChanged="v =>
-                                               {
-                                                   employee.DepartmentId =
-                                                       int.TryParse(v, out var d) ? d : null;
-                                               }"
-                                           ValidationExpression="@(() => employee.DepartmentId)" />
-                                          
-                                </div>
-
-                                <div class="col-md-6">
-                                    <AppSelect Label="Manager"
-                                               Options="@ManagersOptions"
-                                               Value="@employee.ManagerId?.ToString()"
-                                               ValueChanged="v =>
-                                               {
-                                                   employee.ManagerId =
-                                                       int.TryParse(v, out var m) ? m : null;
-                                               }"
-                                           ValidationExpression="@(() => employee.ManagerId)" />
-                                </div>
-
-                            </div>
-                        </AppFormGroup>
-
-                        <!-- OTHER DETAILS -->
-                        <AppFormGroup Title="Other Details" SectionClass="mt-5">
-                            <div class="row g-3 mt-3 mb-3">
-
-                                <div class="col-md-6">
-                                    <AppInput Label="Date of Birth"
-                                              Type="date"
-                                              Value="@(employee.DateOfBirth == DateTime.MinValue
-                                                  ? string.Empty
-                                                  : employee.DateOfBirth.ToString("yyyy-MM-dd"))"
-                                              ValueChanged="v =>
-                                              {
-                                                  if (DateTime.TryParse(v, out var d))
-                                                      employee.DateOfBirth = d;
-                                              }"
-                                          ValidationExpression="@(() => employee.DateOfBirth)">
-                                       
-                                    </AppInput>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <AppInput Label="Hire Date"
-                                              Type="date"
-                                              Value="@(employee.HireDate == DateTime.MinValue
-                                                  ? string.Empty
-                                                  : employee.HireDate.ToString("yyyy-MM-dd"))"
-                                              ValueChanged="v =>
-                                              {
-                                                  if (DateTime.TryParse(v, out var d))
-                                                      employee.HireDate = d;
-                                              }"
-                                          ValidationExpression="@(() => employee.HireDate)">
-                                        
-                                    </AppInput>
-                                </div>
-
-                            </div>
-                        </AppFormGroup>
-
-                        <!-- ACTION BUTTONS -->
-                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top">
-                            <AppButton Text="Back"
-                                       ButtonClass="btn btn-dark px-4"
-                                       OnClick="GoBack" />
-
-                            <AppButton Type="submit" ButtonClass="btn btn-primary px-4">
-                                @(IsEditMode ? "Update" : "Save")
-                            </AppButton>
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Phone Number"
+                                      Value="@_employee.PhoneNumber"
+                                      ValueChanged="v => _employee.PhoneNumber = v"
+                                      ValidationExpression="@(() => _employee.PhoneNumber)" />
                         </div>
 
                     </div>
                 </div>
-            </EditForm>
-        }
-    </AppCard>
+            </div>
+
+            <!-- ═══════════ JOB DETAILS ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="emp-form-section-icon bg-info bg-opacity-10 text-info
+                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-briefcase-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-0 small">Job Details</h6>
+                            <small class="text-muted d-none d-md-block">
+                                Position, department, and compensation
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="row g-3">
+
+                        <div class="col-12 col-md-6">
+                            <AppSelect Label="Position"
+                                       Options="@_designationOptions"
+                                       Value="@_employee.Designation.ToString()"
+                                       ValueChanged="OnPositionChanged"
+                                       ValidationExpression="@(() => _employee.Designation)" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Salary"
+                                      Type="number"
+                                      Value="@_employee.Salary.ToString("0.##")"
+                                      ValueChanged="OnSalaryChanged"
+                                      ValidationExpression="@(() => _employee.Salary)" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <AppSelect Label="Department"
+                                       Options="@_departmentOptions"
+                                       Value="@_employee.DepartmentId?.ToString()"
+                                       ValueChanged="v => _employee.DepartmentId = ParseNullableInt(v)"
+                                       ValidationExpression="@(() => _employee.DepartmentId)" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <AppSelect Label="Manager"
+                                       Options="@_managerOptions"
+                                       Value="@_employee.ManagerId?.ToString()"
+                                       ValueChanged="v => _employee.ManagerId = ParseNullableInt(v)"
+                                       ValidationExpression="@(() => _employee.ManagerId)" />
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════ OTHER DETAILS ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="emp-form-section-icon bg-warning bg-opacity-10 text-warning
+                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-calendar-event-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-0 small">Other Details</h6>
+                            <small class="text-muted d-none d-md-block">
+                                Important dates and additional information
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="row g-3">
+
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Date of Birth"
+                                      Type="date"
+                                      Value="@FormatDate(_employee.DateOfBirth)"
+                                      ValueChanged="v => _employee.DateOfBirth = ParseDate(v)"
+                                      ValidationExpression="@(() => _employee.DateOfBirth)" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Hire Date"
+                                      Type="date"
+                                      Value="@FormatDate(_employee.HireDate)"
+                                      ValueChanged="v => _employee.HireDate = ParseDate(v)"
+                                      ValidationExpression="@(() => _employee.HireDate)" />
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════ ACTION BUTTONS ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="d-flex flex-column-reverse flex-sm-row
+                                    justify-content-end gap-2 gap-sm-3">
+
+                        <button type="button"
+                                class="btn btn-outline-dark rounded-pill px-4 emp-form-action-btn"
+                                @onclick="GoBack">
+                            <i class="bi bi-arrow-left me-1 d-none d-sm-inline"></i>
+                            Back
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary rounded-pill px-4 emp-form-action-btn"
+                                disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            else
+                            {
+                                <i class="bi @(IsEditMode ? "bi-check-lg" : "bi-plus-lg") me-1"></i>
+                            }
+                            @(IsEditMode ? "Update Employee" : "Create Employee")
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+        </EditForm>
+    }
 </div>
 
+
 @code {
+
+    // ═══════════ PARAMETERS ═══════════
+
     [Parameter] public int? Id { get; set; }
 
-    private EmployeeViewModel employee = new();
-    private EditContext editContext;
+    // ═══════════ STATE ═══════════
 
-    private bool isLoading = true;
+    private EmployeeViewModel _employee = new();
+    private EditContext _editContext = default!;
+
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+
     private bool IsEditMode => Id.HasValue;
 
-    private List<DepartmentViewModel> departments = new();
-    private List<EmployeeViewModel> managers = new();
+    private List<SelectOption> _departmentOptions = new();
+    private List<SelectOption> _managerOptions = new();
+    private List<SelectOption> _designationOptions = new();
 
-    private List<SelectOption> DepartmentsOptions = new();
-    private List<SelectOption> ManagersOptions = new();
+    // ═══════════ LIFECYCLE ═══════════
 
     protected override async Task OnParametersSetAsync()
     {
-        isLoading = true;
+        _isLoading = true;
 
-        // Load departments
-        var deptResult = await DepartmentService.GetDepartmentsAsync();
-        if (deptResult.IsSuccess && deptResult.Data != null)
-        {
-            DepartmentsOptions = deptResult.Data.Select(d => new SelectOption
-            {
-                Value = d.Id.ToString(),
-                Text = d.Name
-            }).ToList();
-        }
+        await Task.WhenAll(
+            LoadDepartments(),
+            LoadManagers(),
+            LoadEmployeeIfEditing()
+        );
 
-        // Load managers
-        var empResult = await EmployeeService.GetEmployeesAsync();
-        if (empResult.IsSuccess && empResult.Data != null)
-        {
-            ManagersOptions = empResult.Data.Select(d => new SelectOption
-            {
-                Value = d.Id.ToString(),
-                Text = d.FullName
-            }).ToList();
-        }
+        LoadPositionOptions();
+        _editContext = new EditContext(_employee);
 
-        if (IsEditMode)
-        {
-            var result = await EmployeeService.GetEmployeeByIdAsync(Id!.Value);
-
-            if (result.IsSuccess && result.Data != null)
-            {
-                employee = result.Data;
-            }
-            else
-            {
-                NotificationService.Error(result.Message ?? "Employee not found.");
-                NavigationManager.NavigateTo("/employee");
-                return;
-            }
-        }
-
-        editContext = new EditContext(employee);
-        isLoading = false;
+        _isLoading = false;
     }
+
+    // ═══════════ DATA LOADING ═══════════
+
+    private async Task LoadDepartments()
+    {
+        var result = await DepartmentService.GetDepartmentsAsync();
+
+        _departmentOptions = result is { IsSuccess: true, Data: not null }
+            ? result.Data
+                .Select(d => new SelectOption { Value = d.Id.ToString(), Text = d.Name })
+                .ToList()
+            : new();
+    }
+
+    private async Task LoadManagers()
+    {
+        var result = await EmployeeService.GetEmployeesAsync();
+
+        _managerOptions = result is { IsSuccess: true, Data: not null }
+            ? result.Data
+                .Select(e => new SelectOption { Value = e.Id.ToString(), Text = e.FullName })
+                .ToList()
+            : new();
+    }
+
+    private async Task LoadEmployeeIfEditing()
+    {
+        if (!IsEditMode) return;
+
+        var result = await EmployeeService.GetEmployeeByIdAsync(Id!.Value);
+
+        if (result is not { IsSuccess: true, Data: not null })
+        {
+            NotificationService.Error(result?.Message ?? "Employee not found.");
+            NavigationManager.NavigateTo("/employee");
+            return;
+        }
+
+        _employee = result.Data;
+
+        if (!string.IsNullOrWhiteSpace(_employee.Position) &&
+            Enum.TryParse<EmployeePosition>(_employee.Position, out var position))
+        {
+            _employee.Designation = position;
+        }
+    }
+
+    private void LoadPositionOptions()
+    {
+        _designationOptions = Enum.GetValues<EmployeePosition>()
+            .Select(p => new SelectOption { Value = p.ToString(), Text = p.ToString() })
+            .ToList();
+    }
+
+    // ═══════════ FORM SUBMIT ═══════════
 
     private async Task HandleValidSubmit()
     {
-        if (IsEditMode)
-        {
-            var result = await EmployeeService.UpdateEmployeeAsync(Id!.Value, employee);
+        _isSubmitting = true;
+        StateHasChanged();
 
-            if (!result.IsSuccess)
+        try
+        {
+            _employee.Position = _employee.Designation.ToString();
+
+            bool isSuccess;
+            string? errorMessage;
+
+            if (IsEditMode)
             {
-                NotificationService.Error(result.Message ?? "Unable to update employee.");
+                var result = await EmployeeService.UpdateEmployeeAsync(Id!.Value, _employee);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+            else
+            {
+                var result = await EmployeeService.CreateEmployeeAsync(_employee);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+
+            if (!isSuccess)
+            {
+                NotificationService.Error(errorMessage ??
+                    (IsEditMode ? "Unable to update employee." : "Unable to create employee."));
                 return;
             }
 
-            NotificationService.Success("Employee updated successfully.");
+            NotificationService.Success(
+                IsEditMode ? "Employee updated successfully." : "Employee created successfully.");
+            NavigationManager.NavigateTo("/employee");
         }
-        else
+        finally
         {
-            var result = await EmployeeService.CreateEmployeeAsync(employee);
-
-            if (!result.IsSuccess)
-            {
-                NotificationService.Error(result.Message ?? "Unable to create employee.");
-                return;
-            }
-
-            NotificationService.Success("Employee created successfully.");
+            _isSubmitting = false;
         }
+    }
+    // ═══════════ EVENT HANDLERS ═══════════
 
-        NavigationManager.NavigateTo("/employee");
+    private void OnPositionChanged(string value)
+    {
+        if (Enum.TryParse<EmployeePosition>(value, out var position))
+        {
+            _employee.Designation = position;
+            _employee.Position = position.ToString();
+        }
+    }
+
+    private void OnSalaryChanged(string value)
+    {
+        if (decimal.TryParse(value, out var salary))
+            _employee.Salary = salary;
     }
 
     private void GoBack() => NavigationManager.NavigateTo("/employee");
+
+    // ═══════════ HELPERS ═══════════
+
+    private static int? ParseNullableInt(string? value)
+        => int.TryParse(value, out var result) ? result : null;
+
+    private static string FormatDate(DateTime date)
+        => date == DateTime.MinValue ? string.Empty : date.ToString("yyyy-MM-dd");
+
+    private static DateTime ParseDate(string? value)
+        => DateTime.TryParse(value, out var date) ? date : DateTime.MinValue;
 }

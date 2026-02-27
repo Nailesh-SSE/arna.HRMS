@@ -1,4 +1,7 @@
 ﻿@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.ClientServices.Navigation
+@using arna.HRMS.Models.Enums
+
 @inherits AuthenticatedLayoutBase
 @implements IDisposable
 @inject NavigationManager NavigationManager
@@ -20,72 +23,25 @@
     <!-- ── Navigation ── -->
     <nav class="navmenu-scroll flex-grow-1 overflow-auto px-3 py-3">
 
-        <span class="navmenu-label">Main</span>
-
-        <button class="navmenu-item @IsActive("/", true)" @onclick='() => GoTo("/")'>
-            <span class="navmenu-icon"><i class="bi bi-grid-1x2-fill"></i></span>
-            <span class="navmenu-text">Dashboard</span>
-            <span class="navmenu-indicator"></span>
-        </button>
-
-        <button class="navmenu-item @IsActive("/employee")" @onclick='() => GoTo("/employee")'>
-            <span class="navmenu-icon"><i class="bi bi-people-fill"></i></span>
-            <span class="navmenu-text">Employees</span>
-            <span class="navmenu-indicator"></span>
-        </button>
-
-        <button class="navmenu-item @IsActive("/attendance")" @onclick='() => GoTo("/attendance")'>
-            <span class="navmenu-icon"><i class="bi bi-calendar2-check-fill"></i></span>
-            <span class="navmenu-text">Attendance</span>
-            <span class="navmenu-indicator"></span>
-        </button>
-
-        @if (IsAdmin() || IsSuperAdmin())
+        @if (_menuItemsBySection != null && _menuItemsBySection.Count > 0)
         {
-            <span class="navmenu-label navmenu-label-gap">Administration</span>
+            @foreach (var menuSection in _menuItemsBySection)
+            {
+                <span class="navmenu-label @(menuSection.Key != "Main" ? "navmenu-label-gap" : "")">@menuSection.Key</span>
 
-            <button class="navmenu-item @IsActive("/admin-leave-management")" @onclick='() => GoTo("/admin-leave-management")'>
-                <span class="navmenu-icon"><i class="bi bi-calendar-x-fill"></i></span>
-                <span class="navmenu-text">Leave Management</span>
-                <span class="navmenu-indicator"></span>
-            </button>
+                @foreach (var item in menuSection.Value)
+                {
+                    var route = NavigationService.GetRouteForRole(item, _userRole);
+                    var isActive = IsActive(route, item.ExactMatch);
 
-            <button class="navmenu-item @IsActive("/department")" @onclick='() => GoTo("/department")'>
-                <span class="navmenu-icon"><i class="bi bi-building-fill"></i></span>
-                <span class="navmenu-text">Department</span>
-                <span class="navmenu-indicator"></span>
-            </button>
-
-            <button class="navmenu-item @IsActive("/role")" @onclick='() => GoTo("/role")'>
-                <span class="navmenu-icon"><i class="bi bi-shield-fill-check"></i></span>
-                <span class="navmenu-text">Role</span>
-                <span class="navmenu-indicator"></span>
-            </button>
-
-            <button class="navmenu-item @IsActive("/user")" @onclick='() => GoTo("/user")'>
-                <span class="navmenu-icon"><i class="bi bi-person-fill-gear"></i></span>
-                <span class="navmenu-text">Users</span>
-                <span class="navmenu-indicator"></span>
-            </button>
+                    <button class="navmenu-item @isActive" @onclick='() => GoTo(route)' title="@item.Label">
+                        <span class="navmenu-icon"><i class="@item.Icon"></i></span>
+                        <span class="navmenu-text">@item.Label</span>
+                        <span class="navmenu-indicator"></span>
+                    </button>
+                }
+            }
         }
-        else
-        {
-            <span class="navmenu-label navmenu-label-gap">Leave</span>
-
-            <button class="navmenu-item @IsActive("/emp-leave-management")" @onclick='() => GoTo("/emp-leave-management")'>
-                <span class="navmenu-icon"><i class="bi bi-calendar2-minus-fill"></i></span>
-                <span class="navmenu-text">Leave</span>
-                <span class="navmenu-indicator"></span>
-            </button>
-        }
-
-        <span class="navmenu-label navmenu-label-gap">Account</span>
-
-        <button class="navmenu-item @IsActive("/profile")" @onclick='() => GoTo("/profile")'>
-            <span class="navmenu-icon"><i class="bi bi-person-badge-fill"></i></span>
-            <span class="navmenu-text">My Profile</span>
-            <span class="navmenu-indicator"></span>
-        </button>
 
     </nav>
 
@@ -96,15 +52,30 @@
 </div>
 
 @code {
-    [Parameter] public EventCallback OnClose { get; set; }
+[Parameter] public EventCallback OnClose { get; set; }
 
-    private string _currentPath = "";
+private string _currentPath = "";
+private UserRole _userRole = UserRole.Employee;
+private Dictionary<string, List<NavMenuItem>>? _menuItemsBySection;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         _currentPath = GetRelativePath();
         NavigationManager.LocationChanged += HandleLocationChanged;
+        await base.OnInitializedAsync();
+        var roleString = GetUserRole();
+        if (Enum.TryParse<UserRole>(roleString, out var parsedRole))
+        {
+            _userRole = parsedRole;
+        }
+        InitializeMenuItems();
     }
+
+private void InitializeMenuItems()
+{
+    // Get menu items grouped by section for this user role
+    _menuItemsBySection = NavigationService.GetMenuItemsGroupedBySection(_userRole);
+}
 
     private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {

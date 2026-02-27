@@ -22,13 +22,41 @@ public class AttendanceRepository
         _festivalHolidayRepository = festivalHolidayRepository;
     }
 
-    public async Task<List<Attendance>> GetAttendenceAsync()
+    public async Task<List<Attendance>> GetEmployeeAttendanceByStatus(AttendanceStatus? status, int? empId )
     {
-        return await _baseRepository.Query()
-            .Include(x => x.Employee)
-            .Where(x => x.IsActive && !x.IsDeleted)
-            .OrderByDescending(x => x.Id)
-            .ToListAsync();
+        if (status.HasValue && empId == null)
+        {
+            var statusId = status.Value;
+            return await _baseRepository.Query()
+                .Include(x => x.Employee)
+                .Where(x => x.IsActive && !x.IsDeleted && x.StatusId == statusId && (!empId.HasValue || x.EmployeeId == empId.Value))
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
+        }
+        else if (empId.HasValue && status == null){
+            return await _baseRepository.Query()
+                .Include(x => x.Employee)
+                .Where(x => x.IsActive && !x.IsDeleted && x.EmployeeId == empId.Value)
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
+        }
+        else if(status.HasValue && empId.HasValue)
+        {
+            return await _baseRepository.Query()
+                .Include(x => x.Employee)
+                .Where(x => x.IsActive && !x.IsDeleted && x.StatusId == status.Value && x.EmployeeId == empId.Value)
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
+        }
+        else
+        {
+            return await _baseRepository.Query()
+                .Include(x => x.Employee)
+                .Where(x => x.IsActive && !x.IsDeleted)
+                .OrderByDescending(x => x.Id)
+                .ToListAsync();
+        }
+            
     }
 
     public async Task<Attendance?> GetAttendanceByIdAsync(int id)
@@ -46,7 +74,8 @@ public class AttendanceRepository
     int year,
     int month,
     int? empId,
-    DateTime? selectedDate)
+    DateTime? selectedDate,
+    AttendanceStatus? statusId)
     {
         var attendanceQuery = _baseRepository.Query()
             .Include(a => a.Employee)
@@ -73,6 +102,9 @@ public class AttendanceRepository
 
         if (empId.HasValue && empId > 0)
             attendanceQuery = attendanceQuery.Where(a => a.EmployeeId == empId.Value);
+
+        if(statusId.HasValue && statusId > 0)
+            attendanceQuery = attendanceQuery.Where(a => a.StatusId == statusId.Value);
 
         var attendances = await attendanceQuery.ToListAsync();
 

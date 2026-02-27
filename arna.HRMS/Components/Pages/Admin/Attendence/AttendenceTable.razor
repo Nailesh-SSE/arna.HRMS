@@ -1,0 +1,215 @@
+﻿@using arna.HRMS.ClientServices.Admin.Employee
+@using arna.HRMS.ClientServices.Client.Attendance
+@using arna.HRMS.ClientServices.Common
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.State.Attendance
+@using arna.HRMS.Models.ViewModels
+
+@inject AttendanceState State
+@inject IEmployeeService EmployeeService
+@inject NotificationService NotificationService
+
+@implements IDisposable
+
+@if (!showDetail)
+{
+    <div class="att-list-animate">
+
+        <!-- HEADER -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+            <div>
+                <h5 class="fw-bold mb-0">
+                    <i class="bi bi-people-fill text-primary me-2"></i>Employee Attendance
+                </h5>
+                <small class="text-muted">
+                    Click <strong>View</strong> to see detailed attendance for any employee
+                </small>
+            </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="card border-0 shadow-sm rounded-3 mb-3">
+            <div class="card-body py-2 px-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="att-list-search">
+                        <i class="bi bi-search att-list-search-icon"></i>
+                        <input type="text"
+                               class="form-control form-control-sm rounded-pill ps-5"
+                               placeholder="Search by name, number, position, or designation…"
+                               @bind="_searchText"
+                               @bind:event="oninput" />
+                        @if (!string.IsNullOrWhiteSpace(_searchText))
+                        {
+                            <button class="btn btn-link btn-sm att-list-search-clear"
+                                    @onclick="ClearSearch">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        }
+                    </div>
+                    <small class="text-muted ms-auto">
+                        Showing <span class="fw-semibold">@FilteredEmployees.Count</span>
+                        of @_allEmployees.Count employees
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- EMPLOYEE TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-0">
+                @if (!FilteredEmployees.Any())
+                {
+                    <div class="text-center py-4 py-md-5 px-3">
+                        <div class="bg-light rounded-circle d-inline-flex
+                                            align-items-center justify-content-center
+                                            mb-2 mb-md-3"
+                             style="width: 72px; height: 72px;">
+                            <i class="bi bi-person-slash fs-2 text-muted opacity-50"></i>
+                        </div>
+                        <h6 class="fw-semibold text-muted mb-1">No Employees Found</h6>
+                        <p class="text-muted small mb-3 mx-auto" style="max-width: 320px;">
+                            @if (!string.IsNullOrWhiteSpace(_searchText))
+                            {
+                                <span>
+                                    No employees match "<strong>@_searchText</strong>"
+                                </span>
+                            }
+                            else
+                            {
+                                <span>No employees available.</span>
+                            }
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(_searchText))
+                        {
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                                    @onclick="ClearSearch">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                                Clear Search
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <AppTable TItem="EmployeeViewModel"
+                              Items="FilteredEmployees"
+                              Columns="TableSchemas.EmployeeAttendanceOverview"
+                              EnablePagination="true"
+                              PageSize="10"
+                              WrapperClass="att-list-table">
+                        <ActionTemplate Context="emp">
+                            <AppButton ButtonClass="btn btn-sm btn-outline-primary
+                                                            rounded-pill px-3 att-list-view-btn"
+                                       OnClick="() => OpenDetail(emp)">
+                                <i class="bi bi-eye me-1"></i>
+                                <span class="d-none d-sm-inline">View</span>
+                            </AppButton>
+                        </ActionTemplate>
+                    </AppTable>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <AttendenceDetailTable Employee="selectedEmployee!"
+                           Year="State.Year"
+                           Month="State.Month"
+                           OnBackClicked="BackToList" />
+}
+
+@code {
+
+    // ═══════════ PARAMETERS ═══════════
+
+    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+
+    // ═══════════ STATE ═══════════
+
+    private bool showDetail;
+    private string _searchText = "";
+    private EmployeeViewModel? selectedEmployee;
+
+    private List<EmployeeViewModel> _allEmployees = new();
+
+    private CancellationTokenSource _cts = new();
+    private bool _isDisposed;
+
+    // ═══════════ COMPUTED ═══════════
+
+    private List<EmployeeViewModel> FilteredEmployees =>
+        string.IsNullOrWhiteSpace(_searchText)
+            ? _allEmployees
+            : _allEmployees.Where(e =>
+                MatchesSearch(e.FullName) ||
+                MatchesSearch(e.EmployeeNumber) ||
+                MatchesSearch(e.Position) ||
+                MatchesSearch(e.Designation.ToString())
+            ).ToList();
+
+    // ═══════════ LIFECYCLE ═══════════
+
+    protected override async Task OnInitializedAsync()
+    {
+        EnsureMonth();
+        await LoadEmployees();
+    }
+
+    // ═══════════ DATA ═══════════
+
+    private void EnsureMonth()
+    {
+        var now = DateTime.Today;
+        if (State.Year == 0) State.Year = now.Year;
+        if (State.Month == 0) State.Month = now.Month;
+        State.SelectedMonth = $"{State.Year}-{State.Month:D2}";
+    }
+
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            var result = await EmployeeService.GetEmployeesAsync();
+            if (_cts.IsCancellationRequested || _isDisposed) return;
+
+            _allEmployees = result?.IsSuccess == true
+                ? result.Data ?? new()
+                : new();
+
+            if (!_isDisposed)
+                await OnCountChanged.InvokeAsync(_allEmployees.Count);
+        }
+        catch
+        {
+            _allEmployees = new();
+        }
+    }
+
+    private void OpenDetail(EmployeeViewModel emp)
+    {
+        selectedEmployee = emp;
+        showDetail = true;
+    }
+
+    private void BackToList()
+    {
+        showDetail = false;
+        selectedEmployee = null;
+    }
+
+    private void ClearSearch() => _searchText = "";
+
+    private bool MatchesSearch(string? value)
+        => !string.IsNullOrWhiteSpace(value) &&
+           value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+        _isDisposed = true;
+        try { _cts.Cancel(); } catch { }
+        try { _cts.Dispose(); } catch { }
+    }
+}

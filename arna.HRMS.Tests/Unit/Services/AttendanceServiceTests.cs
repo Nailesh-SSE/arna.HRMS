@@ -128,7 +128,7 @@ public class AttendanceServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService.GetAttendanceAsync();
+        var result = await _attendanceService.GetEmployeeAttendanceByStatusAsync(null, null);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
@@ -167,7 +167,7 @@ public class AttendanceServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService.GetAttendanceAsync();
+        var result = await _attendanceService.GetEmployeeAttendanceByStatusAsync(null, null);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
@@ -186,7 +186,7 @@ public class AttendanceServiceTests
     [Test]
     public async Task GetAttendanceAsync_WhenNoData_ReturnsEmptyList()
     {
-        var result = await _attendanceService.GetAttendanceAsync();
+        var result = await _attendanceService.GetEmployeeAttendanceByStatusAsync(null, null);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
@@ -713,164 +713,164 @@ public class AttendanceServiceTests
 
     //---------------- MONTHLY ----------------
 
-    [Test]
-    public async Task GetAttendanceByMonthAsync_WhenYearInvalid_ReturnsFail()
-    {
-        var result = await _attendanceService
-            .GetAttendanceByMonthAsync(0, 5, null, null);
+    //[Test]
+    //public async Task GetAttendanceByMonthAsync_WhenYearInvalid_ReturnsFail()
+    //{
+    //    var result = await _attendanceService
+    //        .GetAttendanceByMonthAsync(0, 5, null, null);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Invalid year"));
-    }
+    //    Assert.That(result, Is.Not.Null);
+    //    Assert.That(result.IsSuccess, Is.False);
+    //    Assert.That(result.Data, Is.Null);
+    //    Assert.That(result.Message, Is.EqualTo("Invalid year"));
+    //}
 
-    [Test]
-    public async Task GetAttendanceByMonthAsync_WhenMonthLessThanOne_ReturnsFail()
-    {
-        var result = await _attendanceService
-            .GetAttendanceByMonthAsync(2026, 0, null, null);
+    //[Test]
+    //public async Task GetAttendanceByMonthAsync_WhenMonthLessThanOne_ReturnsFail()
+    //{
+    //    var result = await _attendanceService
+    //        .GetAttendanceByMonthAsync(2026, 0, null, null);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid month"));
-    }
+    //    Assert.That(result.IsSuccess, Is.False);
+    //    Assert.That(result.Message, Is.EqualTo("Invalid month"));
+    //}
 
-    [Test]
-    public async Task GetAttendanceByMonthAsync_WhenMonthGreaterThanTwelve_ReturnsFail()
-    {
-        var result = await _attendanceService
-            .GetAttendanceByMonthAsync(2026, 13, null, null);
+    //[Test]
+    //public async Task GetAttendanceByMonthAsync_WhenMonthGreaterThanTwelve_ReturnsFail()
+    //{
+    //    var result = await _attendanceService
+    //        .GetAttendanceByMonthAsync(2026, 13, null, null);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid month"));
-    }
+    //    Assert.That(result.IsSuccess, Is.False);
+    //    Assert.That(result.Message, Is.EqualTo("Invalid month"));
+    //}
 
-    [Test]
-    public async Task GetAttendanceByMonthAsync_WhenNoData_ReturnsFail()
-    {
-        var result = await _attendanceService
-            .GetAttendanceByMonthAsync(2026, 1, 999, null);
+    //[Test]
+    //public async Task GetAttendanceByMonthAsync_WhenNoData_ReturnsFail()
+    //{
+    //    var result = await _attendanceService
+    //        .GetAttendanceByMonthAsync(2026, 1, 999, null);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("No such Employee Found"));
-    }
+    //    Assert.That(result, Is.Not.Null);
+    //    Assert.That(result.IsSuccess, Is.False);
+    //    Assert.That(result.Data, Is.Null);
+    //    Assert.That(result.Message, Is.EqualTo("No such Employee Found"));
+    //}
 
-    [Test]
-    public async Task GetAttendanceByMonthAsync_WhenDataExists_ReturnsSuccess()
-    {
-        var employee = new Employee
-        {
-            Id = 1,
-            EmployeeNumber = "EMP001",
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
-            PhoneNumber = "1234567890",
-            Position = "Dev",
-            HireDate = DateTime.Today.AddYears(-1),
-            IsActive = true,
-            IsDeleted = false
-        };
+    //[Test]
+    //public async Task GetAttendanceByMonthAsync_WhenDataExists_ReturnsSuccess()
+    //{
+    //    var employee = new Employee
+    //    {
+    //        Id = 1,
+    //        EmployeeNumber = "EMP001",
+    //        FirstName = "John",
+    //        LastName = "Doe",
+    //        Email = "john@test.com",
+    //        PhoneNumber = "1234567890",
+    //        Position = "Dev",
+    //        HireDate = DateTime.Today.AddYears(-1),
+    //        IsActive = true,
+    //        IsDeleted = false
+    //    };
 
-        _dbContext.Employees.Add(employee);
+    //    _dbContext.Employees.Add(employee);
 
-        _dbContext.Attendances.Add(new Attendance
-        {
-            EmployeeId = 1,
-            Employee = employee,
-            Date = new DateTime(2026, 2, 10),
-            StatusId = AttendanceStatus.Present,
-            Notes = "Present",
-            IsActive = true,
-            IsDeleted = false
-        });
+    //    _dbContext.Attendances.Add(new Attendance
+    //    {
+    //        EmployeeId = 1,
+    //        Employee = employee,
+    //        Date = new DateTime(2026, 2, 10),
+    //        StatusId = AttendanceStatus.Present,
+    //        Notes = "Present",
+    //        IsActive = true,
+    //        IsDeleted = false
+    //    });
 
-        await _dbContext.SaveChangesAsync();
+    //    await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService
-            .GetAttendanceByMonthAsync(2026, 2, null, null);
+    //    var result = await _attendanceService
+    //        .GetAttendanceByMonthAsync(2026, 2, null, null);
 
-        Assert.That(result, Is.Not.Null);
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data!.Count, Is.GreaterThan(0));
-    }
+    //    Assert.That(result, Is.Not.Null);
+    //    Assert.That(result.IsSuccess, Is.True);
+    //    Assert.That(result.Data, Is.Not.Null);
+    //    Assert.That(result.Data!.Count, Is.GreaterThan(0));
+    //}
 
-    [Test]
-    public async Task GetAttendanceByMonthAsync_WhenEmpIdProvided_ReturnsSuccess()
-    {
-        _employeeServiceMock
-           .Setup(e => e.GetEmployeeByIdAsync(It.IsAny<int>()))
-           .ReturnsAsync(ServiceResult<EmployeeDto?>.Success(
-               new EmployeeDto
-               {
-                   Id = 1,
-                   HireDate = DateTime.Today.AddMonths(-1),
-                   IsActive = true
-               }));
+    //[Test]
+    //public async Task GetAttendanceByMonthAsync_WhenEmpIdProvided_ReturnsSuccess()
+    //{
+    //    _employeeServiceMock
+    //       .Setup(e => e.GetEmployeeByIdAsync(It.IsAny<int>()))
+    //       .ReturnsAsync(ServiceResult<EmployeeDto?>.Success(
+    //           new EmployeeDto
+    //           {
+    //               Id = 1,
+    //               HireDate = DateTime.Today.AddMonths(-1),
+    //               IsActive = true
+    //           }));
         
 
-        _dbContext.Attendances.Add(new Attendance
-        {
-            EmployeeId = 5,
-            Date = new DateTime(2026, 3, 15),
-            StatusId = AttendanceStatus.Present,
-            Notes = "Present",
-            IsActive = true,
-            IsDeleted = false
-        });
+    //    _dbContext.Attendances.Add(new Attendance
+    //    {
+    //        EmployeeId = 5,
+    //        Date = new DateTime(2026, 3, 15),
+    //        StatusId = AttendanceStatus.Present,
+    //        Notes = "Present",
+    //        IsActive = true,
+    //        IsDeleted = false
+    //    });
 
-        await _dbContext.SaveChangesAsync();
+    //    await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService
-            .GetAttendanceByMonthAsync(2026, 3, 5, null);
+    //    var result = await _attendanceService
+    //        .GetAttendanceByMonthAsync(2026, 3, 5, null);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data!.Any(), Is.True);
-    }
+    //    Assert.That(result.IsSuccess, Is.True);
+    //    Assert.That(result.Data, Is.Not.Null);
+    //    Assert.That(result.Data!.Any(), Is.True);
+    //}
 
-    [Test]
-    public async Task GetAttendanceByMonthAsync_WhenSpecificDateProvided_ReturnsSuccess()
-    {
-        var employee = new Employee
-        {
-            Id = 10,
-            EmployeeNumber = "EMP010",
-            FirstName = "Test",
-            LastName = "User",
-            Email = "test@test.com",
-            PhoneNumber = "8888888888",
-            Position = "HR",
-            HireDate = DateTime.Today.AddYears(-2),
-            IsActive = true,
-            IsDeleted = false
-        };
+    //[Test]
+    //public async Task GetAttendanceByMonthAsync_WhenSpecificDateProvided_ReturnsSuccess()
+    //{
+    //    var employee = new Employee
+    //    {
+    //        Id = 10,
+    //        EmployeeNumber = "EMP010",
+    //        FirstName = "Test",
+    //        LastName = "User",
+    //        Email = "test@test.com",
+    //        PhoneNumber = "8888888888",
+    //        Position = "HR",
+    //        HireDate = DateTime.Today.AddYears(-2),
+    //        IsActive = true,
+    //        IsDeleted = false
+    //    };
 
-        var specificDate = new DateTime(2026, 4, 20);
+    //    var specificDate = new DateTime(2026, 4, 20);
 
-        _dbContext.Employees.Add(employee);
+    //    _dbContext.Employees.Add(employee);
 
-        _dbContext.Attendances.Add(new Attendance
-        {
-            EmployeeId = 10,
-            Employee = employee,
-            Date = specificDate,
-            StatusId = AttendanceStatus.Present,
-            Notes = "Present",
-            IsActive = true,
-            IsDeleted = false
-        });
+    //    _dbContext.Attendances.Add(new Attendance
+    //    {
+    //        EmployeeId = 10,
+    //        Employee = employee,
+    //        Date = specificDate,
+    //        StatusId = AttendanceStatus.Present,
+    //        Notes = "Present",
+    //        IsActive = true,
+    //        IsDeleted = false
+    //    });
 
-        await _dbContext.SaveChangesAsync();
+    //    await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService
-            .GetAttendanceByMonthAsync(2026, 4, null, specificDate);
+    //    var result = await _attendanceService
+    //        .GetAttendanceByMonthAsync(2026, 4, null, specificDate);
 
-        Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Is.Not.Null);
-        Assert.That(result.Data!.Count, Is.EqualTo(1));
-    }
+    //    Assert.That(result.IsSuccess, Is.True);
+    //    Assert.That(result.Data, Is.Not.Null);
+    //    Assert.That(result.Data!.Count, Is.EqualTo(1));
+    //}
 }

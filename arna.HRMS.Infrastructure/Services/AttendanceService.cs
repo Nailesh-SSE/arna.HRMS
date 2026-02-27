@@ -39,9 +39,9 @@ public class AttendanceService : IAttendanceService
 
     #region Basic APIs
 
-    public async Task<ServiceResult<List<AttendanceDto>>> GetAttendanceAsync()
+    public async Task<ServiceResult<List<AttendanceDto>>> GetEmployeeAttendanceByStatusAsync(AttendanceStatus? status, int? EmployeeId)
     {
-        var data = await _attendanceRepository.GetAttendenceAsync();
+        var data = await _attendanceRepository.GetEmployeeAttendanceByStatus(status, EmployeeId);
         var list = _mapper.Map<List<AttendanceDto>>(data);
 
         return ServiceResult<List<AttendanceDto>>.Success(list);
@@ -92,7 +92,7 @@ public class AttendanceService : IAttendanceService
     #endregion
 
     #region Monthly Attendance Api
-    public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date)
+    public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId)
     {
         if (year <= 0)
             return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid year");
@@ -107,7 +107,7 @@ public class AttendanceService : IAttendanceService
                 return ServiceResult<List<MonthlyAttendanceDto>>.Fail("No such Employee Found");
         }
 
-        var attendances = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId, date);
+        var attendances = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId, date, statusId);
 
         return attendances.Any()
             ? ServiceResult<List<MonthlyAttendanceDto>>.Success((List<MonthlyAttendanceDto>)attendances)

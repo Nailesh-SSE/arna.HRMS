@@ -1,4 +1,25 @@
-﻿.attendance-table-scroll {
+﻿.app-table-wrapper {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     max-height: 420px; /* adjust as you want */
     overflow-y: auto;
+}
+
+::deep .pagination .page-link {
+    border: none;
+    color: #6c757d;
+    padding: 4px 10px;
+    font-size: .85rem;
+}
+
+::deep .pagination .page-item.active .page-link {
+    background: #4e73df;
+    color: #fff;
+    border-radius: 6px;
+}
+
+::deep .pagination .page-link:hover {
+    background: #e9ecef;
+    border-radius: 6px;
 }

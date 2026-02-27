@@ -1,4 +1,5 @@
 ﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace arna.HRMS.Models.ViewModels;
@@ -54,7 +55,9 @@ public class EmployeeViewModel : CommonViewModel
 
     [Required(ErrorMessage = "Position is required.")]
     [StringLength(100, ErrorMessage = "Position cannot exceed 100 characters.")]
-    public string Position { get; set; }
+    public string? Position { get; set; } 
+    public EmployeePosition? Designation { get; set; }
+
 
     [Required(ErrorMessage = "Salary is required.")]
     [Range(1, double.MaxValue, ErrorMessage = "Salary must be greater than 0.")]

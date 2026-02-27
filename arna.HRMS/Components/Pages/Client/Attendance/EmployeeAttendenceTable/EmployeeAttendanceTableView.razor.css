@@ -1,0 +1,58 @@
+﻿/* ─── Empty State ─── */
+.att-table-empty-icon {
+    width: 64px;
+    height: 64px;
+}
+
+.att-table-empty-text {
+    max-width: 300px;
+}
+
+/* ─── Scrollable Area ─── */
+.att-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ─── Row Highlights ─── */
+::deep .att-table-weekend {
+    background-color: rgba(var(--bs-secondary-rgb), 0.05) !important;
+}
+
+::deep .att-table-absent {
+    background-color: rgba(var(--bs-danger-rgb), 0.05) !important;
+}
+
+::deep .att-table-late {
+    background-color: rgba(var(--bs-warning-rgb), 0.05) !important;
+}
+
+::deep .att-table-holiday {
+    background-color: rgba(var(--bs-info-rgb), 0.05) !important;
+}
+
+/* ─── Mobile ─── */
+@media (max-width: 575.98px) {
+    .att-table-empty-icon {
+        width: 52px;
+        height: 52px;
+    }
+
+    .att-table-scroll {
+        max-height: 55vh;
+    }
+}
+
+/* ─── Tablet ─── */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .att-table-scroll {
+        max-height: 60vh;
+    }
+}
+
+/* ─── Desktop ─── */
+@media (min-width: 992px) {
+    .att-table-scroll {
+        max-height: 65vh;
+    }
+}

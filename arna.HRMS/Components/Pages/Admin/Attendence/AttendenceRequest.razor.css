@@ -1,0 +1,138 @@
+﻿.stat-card {
+    transition: all 0.2s ease;
+    border: 2px solid transparent !important;
+    cursor: pointer;
+}
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important;
+    }
+
+    .stat-card.active-all {
+        border-color: var(--bs-primary) !important;
+    }
+
+    .stat-card.active-pending {
+        border-color: var(--bs-warning) !important;
+    }
+
+    .stat-card.active-approved {
+        border-color: var(--bs-success) !important;
+    }
+
+    .stat-card.active-rejected {
+        border-color: var(--bs-danger) !important;
+    }
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+}
+
+.header-icon-box {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+}
+
+    .action-btn:hover {
+        transform: scale(1.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+
+.chip-close {
+    font-size: 0.5rem;
+}
+
+.empty-icon-circle {
+    width: 64px;
+    height: 64px;
+}
+
+.empty-text {
+    max-width: 300px;
+}
+
+.request-scroll-area {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+@@media (max-width: 575.98px) {
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-card .fs-4 {
+        font-size: 1.25rem !important;
+    }
+
+    .stat-label {
+        font-size: 0.65rem;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.85rem;
+    }
+
+    .header-icon-box {
+        width: 36px;
+        height: 36px;
+    }
+
+        .header-icon-box .fs-5 {
+            font-size: 0.9rem !important;
+        }
+
+    .request-scroll-area {
+        max-height: 55vh;
+    }
+
+    .empty-icon-circle {
+        width: 52px;
+        height: 52px;
+    }
+}
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .request-scroll-area {
+        max-height: 60vh;
+    }
+}
+
+@media (min-width: 992px) {
+    .request-scroll-area {
+        max-height: 65vh;
+    }
+}

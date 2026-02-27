@@ -18,86 +18,145 @@
 @inject NotificationService NotificationService
 @inject IRoleService RoleService
 
-<div class="container py-4">
-    <FullPageLoader Visible = "isLoading"/>
+<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
 
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">
-                @(IsEditMode ? "Edit User" : "Create User")
-            </h5>
+    <!-- ═══════════ BACK + BREADCRUMB ═══════════ -->
+    <div class="d-flex align-items-center gap-2 mb-3 mb-md-4 flex-wrap">
+        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 user-form-back-btn"
+                @onclick="GoBack">
+            <i class="bi bi-arrow-left me-1"></i>
+            <span class="d-none d-sm-inline">Back</span>
+        </button>
+        <nav>
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item">
+                    <a href="/user" class="text-decoration-none text-primary">Users</a>
+                </li>
+                <li class="breadcrumb-item active text-muted">
+                    @(IsEditMode ? "Edit" : "Create")
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- ═══════════ HEADER CARD ═══════════ -->
+    <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4 user-form-header">
+        <div class="card-body py-3 px-3 px-md-4">
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
+
+                <span class="user-form-header-icon rounded-2 p-2 d-inline-flex
+                             align-items-center justify-content-center flex-shrink-0
+                             @(IsEditMode ? "bg-warning bg-opacity-10 text-warning" : "bg-success bg-opacity-10 text-success")">
+                    <i class="bi @(IsEditMode ? "bi-pencil-square" : "bi-person-plus-fill") fs-5"></i>
+                </span>
+
+                <div>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                        @(IsEditMode ? "Edit User" : "Add New User")
+                    </h5>
+                    <p class="text-muted mb-0 small d-none d-sm-block">
+                        @(IsEditMode
+                                                ? $"Update details for {user.Username}"
+                                                : "Fill in the details below to add a new user")
+                    </p>
+                </div>
+            </div>
         </div>
+    </div>
 
-        <div class="card-body p-4">
+    @if (_isLoading)
+    {
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body text-center py-4 py-md-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2 mb-0 small">Loading user data…</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="user" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
 
-            @if (!isLoading)
-            {
-                <EditForm Model="user" OnValidSubmit="HandleValidSubmit" autocomplete="off">
-                    <DataAnnotationsValidator />
+            <!-- ═══════════ ACCOUNT INFORMATION ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="user-form-section-icon bg-primary bg-opacity-10 text-primary
+                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-person-badge-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-0 small">Account Information</h6>
+                            <small class="text-muted d-none d-md-block">
+                                User login and identification details
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="row g-3">
 
-                    <div class="row g-4">
-                        <!-- Username -->
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <AppInput Label="Username"
-                            Value="@user.Username"
-                            ValueChanged="v => user.Username = v"
-                            ValidationExpression="@(() => user.Username)">
-                            </AppInput>
+                                      Value="@user.Username"
+                                      ValueChanged="v => user.Username = v"
+                                      ValidationExpression="@(() => user.Username)" />
                         </div>
 
-                        <!-- Email -->
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <AppInput Label="Email"
-                            Type="email"
-                            Value="@user.Email"
-                            ValueChanged="@(v => user.Email = v)"
-                            ValidationExpression="@(() => user.Email)">
-                            </AppInput>
+                                      Type="email"
+                                      Value="@user.Email"
+                                      ValueChanged="@(v => user.Email = v)"
+                                      ValidationExpression="@(() => user.Email)" />
                         </div>
 
-                        <!-- First Name -->
-                        <div class="col-md-6">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════ PERSONAL DETAILS ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="user-form-section-icon bg-info bg-opacity-10 text-info
+                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-person-lines-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-0 small">Personal Details</h6>
+                            <small class="text-muted d-none d-md-block">
+                                Name and contact information
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="row g-3">
+
+                        <div class="col-12 col-md-6">
                             <AppInput Label="First Name"
-                            Value="@user.FirstName"
-                            ValueChanged="@(v => user.FirstName = v)"
-                            ValidationExpression="@(() => user.FirstName)">
-                            </AppInput>
+                                      Value="@user.FirstName"
+                                      ValueChanged="@(v => user.FirstName = v)"
+                                      ValidationExpression="@(() => user.FirstName)" />
                         </div>
 
-                        <!-- Last Name -->
-                        <div class="col-md-6">
-                            <AppInput Label="Last Name" 
-                            Value="@user.LastName" 
-                            ValueChanged="v => user.LastName=v"
-                            ValidationExpression="@(() => user.LastName)">
-                            </AppInput>
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Last Name"
+                                      Value="@user.LastName"
+                                      ValueChanged="v => user.LastName = v"
+                                      ValidationExpression="@(() => user.LastName)" />
                         </div>
 
-                        <!-- Phone -->
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <AppInput Label="Phone Number"
-                            Value="@user.PhoneNumber"
-                            ValueChanged="v => user.PhoneNumber = v"
-                            ValidationExpression="@(() => user.PhoneNumber)">
-                            </AppInput>
+                                      Value="@user.PhoneNumber"
+                                      ValueChanged="v => user.PhoneNumber = v"
+                                      ValidationExpression="@(() => user.PhoneNumber)" />
                         </div>
 
-                        <!-- Employee -->
-                        @* <div class="col-md-6">
-                            <label class="form-label">Employee</label>
-                            <InputSelect class="form-select"
-                            @bind-Value="user.EmployeeId">
-                                <option value="">Select Employee</option>
-                                @foreach (var emp in employees)
-                                {
-                                    <option value="@emp.Id">@emp.FullName</option>
-                                }
-                            </InputSelect>
-                            <ValidationMessage For="@(() => user.EmployeeId)" />
-                        </div> *@
-
-                        <!-- ROLE -->
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-6">
                             <AppSelect Label="Role"
                                        Options="roles"
                                        Value="@user.RoleId.ToString()"
@@ -105,135 +164,221 @@
                                        ValidationExpression="@(() => user.RoleId)" />
                         </div>
 
-                        <div class="col-md-6">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════ SECURITY ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="user-form-section-icon bg-warning bg-opacity-10 text-warning
+                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-lock-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-0 small">Security</h6>
+                            <small class="text-muted d-none d-md-block">
+                                Password and authentication settings
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="row g-3">
+
+                        <div class="col-12 col-md-6">
                             <AppPasswordInput Label="Password"
-                            IsRequired="true"
-                            Value="@user.Password"
-                            ValueChanged="v => user.Password = v"
-                            ValidationExpression="@(() => user.Password)" />
+                                              IsRequired="true"
+                                              Value="@user.Password"
+                                              ValueChanged="v => user.Password = v"
+                                              ValidationExpression="@(() => user.Password)" />
                         </div>
 
-                        <!-- Active (EDIT ONLY) -->
-                        @if (IsEditMode)
-                        {
-                            <div class="col-md-6 mt-4">
-                                <AppCheckBox Label="Active"
-                                Value="@user.IsActive"
-                                ValueChanged="@(v => user.IsActive = v)" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════ STATUS (EDIT ONLY) ═══════════ -->
+            @if (IsEditMode)
+            {
+                <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                    <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="user-form-section-icon bg-success bg-opacity-10 text-success
+                                                 rounded-2 d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-toggle-on"></i>
+                            </span>
+                            <div>
+                                <h6 class="fw-semibold mb-0 small">Status</h6>
+                                <small class="text-muted d-none d-md-block">
+                                    User account activation status
+                                </small>
                             </div>
-                        }
+                        </div>
                     </div>
-
-                    <div class="mt-5 d-flex justify-content-end gap-3">
-                        <AppButton Text="Back"
-                        ButtonClass="btn btn-outline-dark px-4"
-                        OnClick="GoBack" />
-
-                        <AppButton Text="@(IsEditMode ? "Update" : "Save")"
-                        Type="submit"
-                        ButtonClass="btn btn-primary px-5" />
+                    <div class="card-body px-3 px-md-4 py-3">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <AppCheckBox Label="Active"
+                                             Value="@user.IsActive"
+                                             ValueChanged="@(v => user.IsActive = v)" />
+                            </div>
+                        </div>
                     </div>
-                </EditForm>
+                </div>
             }
-        </div>
-    </div>
 
+            <!-- ═══════════ ACTION BUTTONS ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="d-flex flex-column-reverse flex-sm-row
+                                    justify-content-end gap-2 gap-sm-3">
+
+                        <button type="button"
+                                class="btn btn-outline-dark rounded-pill px-4 user-form-action-btn"
+                                @onclick="GoBack">
+                            <i class="bi bi-arrow-left me-1 d-none d-sm-inline"></i>
+                            Back
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary rounded-pill px-4 user-form-action-btn"
+                                disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            else
+                            {
+                                <i class="bi @(IsEditMode ? "bi-check-lg" : "bi-plus-lg") me-1"></i>
+                            }
+                            @(IsEditMode ? "Update User" : "Create User")
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+        </EditForm>
+    }
 </div>
 
 @code {
+
+    // ═══════════ PARAMETERS ═══════════
+
     [Parameter] public int? Id { get; set; }
+
+    // ═══════════ STATE ═══════════
+
     private UserViewModel user = new();
-    private bool isLoading = true;
+    private bool _isLoading = true;
+    private bool _isSubmitting;
     private bool IsEditMode => Id.HasValue;
     private List<EmployeeViewModel> employees = new();
     private List<SelectOption> roles = new();
 
+    // ═══════════ LIFECYCLE ═══════════
+
     protected override async Task OnParametersSetAsync()
     {
-        isLoading = true;
+        _isLoading = true;
 
-        // Employees
-        var employeeResult = await EmployeeService.GetEmployeesAsync();
-        if (employeeResult.IsSuccess && employeeResult.Data != null)
-        {
-            employees = employeeResult.Data.ToList();
-        }
-        else
-        {
-            employees = new(); 
-        }
+        await Task.WhenAll(
+            LoadEmployees(),
+            LoadRoles(),
+            LoadUserIfEditing()
+        );
 
-        // Roles
-        var roleResult = await RoleService.GetRolesAsync();
-        if (roleResult.IsSuccess && roleResult.Data != null)
-        {
-            roles = roleResult.Data
-                .Select(r => new SelectOption
-                    {
-                        Value = r.Id.ToString(),
-                        Text = r.Name.ToString()
-                    })
-                .ToList();
-        }
-        else
-        {
-            roles = new();
-        }
-
-        if (IsEditMode)
-        {
-            var result = await UsersService.GetUserByIdAsync(Id!.Value);
-
-            if (result.IsSuccess && result.Data != null)
-            {
-                user = result.Data;
-            }
-            else
-            {
-                NotificationService.Error($"{result.Message ?? "User not found."}");
-                NavigationManager.NavigateTo("/user");
-            }
-        }
-        else
-        {
-            user = new UserViewModel
-            {
-                IsActive = true
-            };
-        }
-
-        isLoading = false;
+        _isLoading = false;
     }
+
+    // ═══════════ DATA LOADING ═══════════
+
+    private async Task LoadEmployees()
+    {
+        var result = await EmployeeService.GetEmployeesAsync();
+
+        employees = result is { IsSuccess: true, Data: not null }
+            ? result.Data.ToList()
+            : new();
+    }
+
+    private async Task LoadRoles()
+    {
+        var result = await RoleService.GetRolesAsync();
+
+        roles = result is { IsSuccess: true, Data: not null }
+            ? result.Data
+                .Select(r => new SelectOption { Value = r.Id.ToString(), Text = r.Name.ToString() })
+                .ToList()
+            : new();
+    }
+
+    private async Task LoadUserIfEditing()
+    {
+        if (!IsEditMode)
+        {
+            user = new UserViewModel { IsActive = true };
+            return;
+        }
+
+        var result = await UsersService.GetUserByIdAsync(Id!.Value);
+
+        if (result is not { IsSuccess: true, Data: not null })
+        {
+            NotificationService.Error(result?.Message ?? "User not found.");
+            NavigationManager.NavigateTo("/user");
+            return;
+        }
+
+        user = result.Data;
+    }
+
+    // ═══════════ FORM SUBMIT ═══════════
 
     private async Task HandleValidSubmit()
     {
-        if (IsEditMode)
-        {
-            var result = await UsersService.UpdateUserAsync(Id!.Value, user);
+        _isSubmitting = true;
+        StateHasChanged();
 
-            if (!result.IsSuccess)
+        try
+        {
+            bool isSuccess;
+            string? errorMessage;
+
+            if (IsEditMode)
             {
-                NotificationService.Error($"{result.Message ?? "Unable to update user."}");
+                var result = await UsersService.UpdateUserAsync(Id!.Value, user);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+            else
+            {
+                var result = await UsersService.CreateUserAsync(user);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+
+            if (!isSuccess)
+            {
+                NotificationService.Error(errorMessage ??
+                    (IsEditMode ? "Unable to update user." : "Unable to create user."));
                 return;
             }
 
-            NotificationService.Success("User updated successfully.");
+            NotificationService.Success(
+                IsEditMode ? "User updated successfully." : "User created successfully.");
+            NavigationManager.NavigateTo("/user");
         }
-        else
+        finally
         {
-            var result = await UsersService.CreateUserAsync(user);
-
-            if (!result.IsSuccess)
-            {
-                NotificationService.Error($"{result.Message ?? "Unable to create user."}");
-                return;
-            }
-
-            NotificationService.Success("User created successfully.");
+            _isSubmitting = false;
         }
-
-        NavigationManager.NavigateTo("/user");
     }
+
+    // ═══════════ NAVIGATION ═══════════
 
     private void GoBack() => NavigationManager.NavigateTo("/user");
 }

@@ -190,7 +190,7 @@
         CalculationFinalWork();
         request.EmployeeId = GetEmployeeId();
 
-        if(request.Id > 0)
+        if (request.Id > 0)
         {
             var result = await AttendanceRequestService.UpdateAttendanceRequestAsync(request);
             if (result.IsSuccess)

@@ -1,0 +1,440 @@
+﻿@using arna.HRMS.ClientServices.Client.Attendance
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Components.lib.components.ui.Forms
+
+@inject IAttendanceService AttendanceService
+
+<div class="att-detail-animate">
+
+    <!-- BACK + BREADCRUMB -->
+    <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 att-detail-back-btn"
+                @onclick="HandleBack">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </button>
+        <nav>
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item">
+                    <a href="javascript:void(0)" @onclick="HandleBack"
+                       class="text-decoration-none text-primary">
+                        Employee Attendance
+                    </a>
+                </li>
+                <li class="breadcrumb-item active text-muted">@Employee.FullName</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- EMPLOYEE INFO CARD -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 att-detail-header">
+        <div class="card-body py-3 px-3 px-md-4">
+            <div class="row align-items-center g-3">
+
+                <!-- Avatar -->
+                <div class="col-12 col-md-auto text-center text-md-start">
+                    <div class="att-detail-avatar mx-auto mx-md-0"
+                         style="background:@GetColor(Employee.FullName)">
+                        @GetInitials(Employee.FullName)
+                    </div>
+                </div>
+
+                <!-- Name + Badges -->
+                <div class="col-12 col-md text-center text-md-start">
+                    <h5 class="fw-bold mb-1">@Employee.FullName</h5>
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill">
+                        @Employee.EmployeeNumber
+                    </span>
+                    @if (Employee.Designation != null)
+                    {
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill ms-1">
+                            @Employee.Designation.ToString()
+                        </span>
+                    }
+                </div>
+
+                <!-- FILTERS: Month + Year + Status -->
+                <div class="col-12 col-md-auto">
+                    <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-2 flex-wrap">
+
+                        <!-- Month & Year -->
+                        <div class="input-group input-group-sm att-detail-calendar">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="bi bi-calendar3 text-primary"></i>
+                            </span>
+                            <select class="form-select form-select-sm border-start-0 border-end-0"
+                                    value="@selectedMonth"
+                                    @onchange="OnMonthDropdownChanged">
+                                @for (int m = 1; m <= 12; m++)
+                                {
+                                    <option value="@m">@GetMonthName(m)</option>
+                                }
+                            </select>
+                            <select class="form-select form-select-sm border-start-0"
+                                    value="@selectedYear"
+                                    @onchange="OnYearDropdownChanged">
+                                @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 1; y++)
+                                {
+                                    <option value="@y">@y</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="input-group input-group-sm att-detail-status-filter">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="bi bi-funnel text-primary"></i>
+                            </span>
+                            <select class="form-select form-select-sm border-start-0"
+                                    value="@selectedStatusFilter"
+                                    @onchange="OnStatusFilterChanged">
+                                <option value="">All Status</option>
+                                <option value="Present">Present</option>
+                                <option value="Absent">Absent</option>
+                                <option value="Late">Late</option>
+                                <option value="Holiday">Holiday</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted mt-2 mb-0">Loading attendance data…</p>
+        </div>
+    }
+    else if (!MonthRecords.Any())
+    {
+        <!-- NO DATA FOR THIS MONTH -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body text-center py-5">
+                <div class="mb-3">
+                    <i class="bi bi-calendar-x att-detail-nodata-icon"></i>
+                </div>
+                <h5 class="fw-semibold text-muted mb-2">No Data Found</h5>
+                <p class="text-muted mb-3 small">
+                    No attendance records found for
+                    <strong>@Employee.FullName</strong>
+                    in <strong>@GetMonthName(selectedMonth) @selectedYear</strong>
+                </p>
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                        @onclick="ResetToCurrentMonth">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>
+                    Go to Current Month
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- STAT CARDS (always from MonthRecords, not affected by status filter) -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 att-detail-stat">
+                    <div class="card-body text-center py-3">
+                        <div class="att-detail-stat-icon bg-primary bg-opacity-10">
+                            <i class="bi bi-calendar-check text-primary"></i>
+                        </div>
+                        <div class="fs-3 fw-bold text-primary">@MonthRecords.Count</div>
+                        <small class="text-muted">Total Days</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 att-detail-stat">
+                    <div class="card-body text-center py-3">
+                        <div class="att-detail-stat-icon bg-success bg-opacity-10">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                        <div class="fs-3 fw-bold text-success">@presentCount</div>
+                        <small class="text-muted">Present</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 att-detail-stat">
+                    <div class="card-body text-center py-3">
+                        <div class="att-detail-stat-icon bg-danger bg-opacity-10">
+                            <i class="bi bi-x-circle-fill text-danger"></i>
+                        </div>
+                        <div class="fs-3 fw-bold text-danger">@absentCount</div>
+                        <small class="text-muted">Absent</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-3 att-detail-stat">
+                    <div class="card-body text-center py-3">
+                        <div class="att-detail-stat-icon bg-warning bg-opacity-10">
+                            <i class="bi bi-clock-fill text-warning"></i>
+                        </div>
+                        <div class="fs-3 fw-bold text-warning">@lateCount</div>
+                        <small class="text-muted">Late</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ATTENDANCE RATE -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body py-3 px-3 px-md-4">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <small class="text-muted fw-medium">
+                        Attendance Rate — @GetMonthName(selectedMonth) @selectedYear
+                    </small>
+                    <span class="fw-bold @GetRateTextColor(attendanceRate)">@attendanceRate%</span>
+                </div>
+                <div class="progress att-detail-progress">
+                    <div class="progress-bar rounded-pill @GetRateBarColor(attendanceRate)"
+                         role="progressbar"
+                         style="width:@attendanceRate%">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS FILTER ACTIVE INDICATOR -->
+        @if (!string.IsNullOrEmpty(selectedStatusFilter))
+        {
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                    <i class="bi bi-funnel-fill me-1"></i>
+                    Filtered: @selectedStatusFilter
+                    <button class="btn-close btn-close-sm ms-2"
+                            style="font-size:0.6rem;"
+                            @onclick="ClearStatusFilter"></button>
+                </span>
+                <small class="text-muted">
+                    Showing <strong>@FilteredRecords.Count</strong> of @MonthRecords.Count records
+                </small>
+            </div>
+        }
+
+        <!-- DAILY RECORDS TABLE -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3 px-3">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h6 class="fw-semibold mb-0">
+                        <i class="bi bi-table text-primary me-2"></i>Daily Records
+                    </h6>
+                    <small class="text-muted">
+                        <span class="fw-semibold">@FilteredRecords.Count</span> records
+                    </small>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @if (!FilteredRecords.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-funnel fs-1 d-block mb-2 text-muted opacity-50"></i>
+                        <p class="text-muted mb-0">
+                            No <strong>@selectedStatusFilter</strong> records in
+                            @GetMonthName(selectedMonth) @selectedYear
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <AppTable TItem="MonthlyAttendanceViewModel"
+                              Items="FilteredRecords"
+                              Columns="TableSchemas.GetAttendanceColumns(Employee.Id)"
+                              ShowActions="false"
+                              EnablePagination="true"
+                              PageSize="10"
+                              WrapperClass="att-detail-table"
+                              RowClassFunc="GetRowClass" />
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public EmployeeViewModel Employee { get; set; } = default!;
+
+    [Parameter] public int Year { get; set; }
+    [Parameter] public int Month { get; set; }
+    [Parameter] public EventCallback OnBackClicked { get; set; }
+
+    private bool isLoading;
+    private int selectedYear;
+    private int selectedMonth;
+    private string? selectedStatusFilter;
+
+    private List<MonthlyAttendanceViewModel> allRecords = new();
+    private int presentCount, absentCount, lateCount, attendanceRate;
+
+    private EmployeeDailyAttendanceViewModel? GetEmployeeRecord(MonthlyAttendanceViewModel day)
+        => day.Employees.FirstOrDefault(e => e.EmployeeId == Employee.Id);
+
+    private List<MonthlyAttendanceViewModel> MonthRecords => allRecords
+     .Where(r => r.Date.Year == selectedYear && r.Date.Month == selectedMonth)
+     .OrderBy(r => r.Date)
+     .ToList();
+
+    private List<MonthlyAttendanceViewModel> FilteredRecords =>
+    string.IsNullOrEmpty(selectedStatusFilter)
+        ? MonthRecords
+        : MonthRecords
+            .Where(r =>
+            {
+                var emp = GetEmployeeRecord(r);
+                return emp != null &&
+                       string.Equals(emp.Status, selectedStatusFilter, StringComparison.OrdinalIgnoreCase);
+            })
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        selectedYear = Year > 0 ? Year : DateTime.Today.Year;
+        selectedMonth = Month > 0 ? Month : DateTime.Today.Month;
+        await LoadAllData();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var newYear = Year > 0 ? Year : DateTime.Today.Year;
+        var newMonth = Month > 0 ? Month : DateTime.Today.Month;
+
+        if (selectedYear != newYear || selectedMonth != newMonth)
+        {
+            selectedYear = newYear;
+            selectedMonth = newMonth;
+            CalculateStats();
+        }
+    }
+
+    private async Task LoadAllData()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var empId = Employee.Id;
+            var result = await AttendanceService.GetAttendanceByMonthAsync(selectedYear, selectedMonth, empId, null, AttendanceStatuses.Present);
+            allRecords = result;
+            CalculateStats();
+        }
+        catch
+        {
+            allRecords = new();
+            presentCount = absentCount = lateCount = attendanceRate = 0;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CalculateStats()
+    {
+        var monthData = MonthRecords;
+
+        var employeeRecords = monthData
+            .Select(GetEmployeeRecord)
+            .Where(e => e != null)
+            .ToList();
+
+        presentCount = employeeRecords.Count(e =>
+            string.Equals(e!.Status, "Present", StringComparison.OrdinalIgnoreCase));
+        absentCount = employeeRecords.Count(e =>
+            string.Equals(e!.Status, "Absent", StringComparison.OrdinalIgnoreCase));
+        lateCount = employeeRecords.Count(e =>
+            string.Equals(e!.Status, "Late", StringComparison.OrdinalIgnoreCase));
+
+        var total = monthData.Count;
+        attendanceRate = total > 0
+            ? (int)Math.Round((presentCount + lateCount) * 100.0 / total)
+            : 0;
+
+        StateHasChanged();
+    }
+
+    private void OnMonthDropdownChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var month))
+        {
+            selectedMonth = month;
+            CalculateStats();
+        }
+    }
+
+    private void OnYearDropdownChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var year))
+        {
+            selectedYear = year;
+            CalculateStats();
+        }
+    }
+
+    private void OnStatusFilterChanged(ChangeEventArgs e)
+    {
+        selectedStatusFilter = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(selectedStatusFilter))
+            selectedStatusFilter = null;
+    }
+
+    private void ClearStatusFilter()
+    {
+        selectedStatusFilter = null;
+    }
+
+    private async Task ResetToCurrentMonth()
+    {
+        selectedYear = DateTime.Today.Year;
+        selectedMonth = DateTime.Today.Month;
+        selectedStatusFilter = null;
+        CalculateStats();
+    }
+
+    private async Task HandleBack()
+    {
+        await OnBackClicked.InvokeAsync();
+    }
+
+    private static string GetInitials(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
+            : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
+    }
+
+    private static string GetColor(string name)
+    {
+        string[] colors = {
+            "#4e73df", "#1cc88a", "#36b9cc", "#f6c23e",
+            "#e74a3b", "#6f42c1", "#fd7e14", "#20c997"
+        };
+        return colors[Math.Abs(name.GetHashCode()) % colors.Length];
+    }
+
+    private static string GetMonthName(int m) =>
+        System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m);
+
+    private static string GetRateBarColor(int r) =>
+        r >= 90 ? "bg-success" : r >= 70 ? "bg-warning" : "bg-danger";
+
+    private static string GetRateTextColor(int r) =>
+        r >= 90 ? "text-success" : r >= 70 ? "text-warning" : "text-danger";
+
+    private static string GetRowClass(MonthlyAttendanceViewModel r)
+    {
+        if (r.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday) return "att-detail-weekend";
+        return "";
+    }
+}

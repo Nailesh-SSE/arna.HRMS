@@ -1,0 +1,124 @@
+﻿/* ═══ ANIMATION ═══ */
+.att-detail-animate {
+    animation: detailSlideIn 0.3s ease-out;
+}
+
+@keyframes detailSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ═══ BACK BUTTON ═══ */
+.att-detail-back-btn {
+    transition: all 0.2s ease;
+}
+
+    .att-detail-back-btn:hover {
+        transform: translateX(-3px);
+    }
+
+/* ═══ HEADER CARD ═══ */
+.att-detail-header {
+    background: linear-gradient(135deg, rgba(78, 115, 223, 0.06) 0%, rgba(28, 200, 138, 0.04) 100%);
+}
+
+/* ═══ AVATAR ═══ */
+.att-detail-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* ═══ MONTH INPUT ═══ */
+.att-detail-month-input {
+    width: 170px;
+    border-color: rgba(78, 115, 223, 0.3);
+}
+
+    .att-detail-month-input:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 0.15rem rgba(78, 115, 223, 0.2);
+    }
+
+/* ═══ STAT CARDS ═══ */
+.att-detail-stat {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .att-detail-stat:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+    }
+
+.att-detail-stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+}
+
+/* ═══ PROGRESS BAR ═══ */
+.att-detail-progress {
+    height: 8px;
+    border-radius: 4px;
+    background: #e9ecef;
+}
+
+/* ═══ TABLE ROW HIGHLIGHTS ═══ */
+::deep .att-detail-today {
+    background: rgba(78, 115, 223, 0.06) !important;
+    border-left: 3px solid #4e73df;
+}
+
+::deep .att-detail-weekend {
+    background: rgba(0, 0, 0, 0.02) !important;
+}
+
+::deep .att-detail-table .table tbody tr:hover {
+    background: rgba(78, 115, 223, 0.04) !important;
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 767px) {
+    .att-detail-avatar {
+        width: 48px;
+        height: 48px;
+        font-size: 16px;
+    }
+
+    .att-detail-month-input {
+        width: 100%;
+    }
+
+    .att-detail-stat-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .att-detail-avatar {
+        width: 44px;
+        height: 44px;
+        font-size: 14px;
+    }
+}

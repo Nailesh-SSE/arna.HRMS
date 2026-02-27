@@ -1,5 +1,5 @@
 ﻿/* ══════════ FADE IN ══════════ */
-.leave-fade-in {
+.attendence-fade-in {
     animation: leaveFade 0.35s ease-out;
 }
 
@@ -16,12 +16,12 @@
 }
 
 /* ══════════ TAB STYLING ══════════ */
-.leave-tabs {
+.attendence-tabs {
     border-bottom: 2px solid #e9ecef;
     gap: 4px;
 }
 
-    .leave-tabs .nav-link {
+    .attendence-tabs .nav-link {
         border: none;
         border-bottom: 3px solid transparent;
         border-radius: 0;
@@ -31,21 +31,15 @@
         transition: all 0.2s ease;
     }
 
-        .leave-tabs .nav-link:hover {
+        .attendence-tabs .nav-link:hover {
             color: #0d6efd;
             background: #f8f9fa;
             border-bottom-color: #dee2e6;
         }
 
-        .leave-tabs .nav-link.active {
-            color: #0d6efd;
-            background: transparent;
-            border-bottom-color: #0d6efd;
-            font-weight: 600;
-        }
-
-/* ══════════ MODAL BACKDROP ══════════ */
-/*.leave-modal-backdrop {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(4px);
-}*/
+.attendence-tabs .nav-link.active {
+    color: #0d6efd;
+    background: transparent;
+    border-bottom-color: #0d6efd;
+    font-weight: 600;
+}

@@ -170,13 +170,17 @@ public sealed class ApiClients
     {
         public AttendanceApi(HttpService http) : base(http, "api/attendance") { }
 
+        public Task<ApiResult<List<AttendanceViewModel>>> GetByEmployeeOrStatus(AttendanceStatuses? status, int? employeeId) =>
+            Http.GetAsync<List<AttendanceViewModel>>(
+                $"{Url}/employee-attendance?status={status}&employeeId={employeeId}");
+
         public Task<ApiResult<AttendanceViewModel>> GetClockStatus(int employeeId) =>
             Http.GetAsync<AttendanceViewModel>($"{Url}/clockStatus/{employeeId}");
 
         public Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetByMonth(
-            int year, int month, int? empId, DateTime? date) =>
+            int year, int month, int? empId, DateTime? date, AttendanceStatuses? statusId) =>
             Http.GetAsync<List<MonthlyAttendanceViewModel>>(
-                $"{Url}/monthly-attendance?year={year}&month={month}&empId={empId}&date={date:yyyy-MM-dd}");
+                $"{Url}/monthly-attendance?year={year}&month={month}&empId={empId}&date={date:yyyy-MM-dd}&statusId={statusId}");
     }
 
     // ===================== ATTENDANCE REQUEST =====================

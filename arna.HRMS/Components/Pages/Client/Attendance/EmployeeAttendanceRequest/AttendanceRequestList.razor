@@ -1,0 +1,311 @@
+﻿@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Attendance
+
+@inherits AuthenticatedLayoutBase
+
+<div class="card border-0 shadow-sm rounded-3">
+
+    <!-- ═══════════ HEADER ═══════════ -->
+    <div class="card-header bg-white border-bottom py-2 py-md-3 px-2 px-md-3">
+        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
+                    justify-content-between gap-2">
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="req-list-header-icon bg-warning bg-opacity-10 text-warning
+                             rounded-2 d-inline-flex align-items-center justify-content-center
+                             flex-shrink-0">
+                    <i class="bi bi-inbox-fill"></i>
+                </span>
+                <div>
+                    <h6 class="fw-semibold mb-0 small">
+                        <span class="d-none d-sm-inline">Attendance Requests</span>
+                        <span class="d-sm-none">Requests</span>
+                    </h6>
+                    <small class="text-muted d-none d-md-block">
+                        Track your submitted attendance corrections
+                    </small>
+                </div>
+            </div>
+
+            <!-- Status Filter + Count -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                @foreach (var filter in StatusFilters)
+                {
+                    <button class="btn btn-sm rounded-pill px-2 px-md-3 req-list-filter-btn
+                                       @(IsActiveFilter(filter.Status)
+                                                                   ? filter.ActiveClass
+                                                                   : "btn-outline-secondary")"
+                                                                                             @onclick="() => ToggleFilter(filter.Status)">
+                                                                                         <span class="d-none d-md-inline">@filter.Label</span>
+                                                                                         <span class="d-md-none">@filter.ShortLabel</span>
+                                                                                         <span class="badge rounded-pill ms-1
+                                         @(IsActiveFilter(filter.Status)
+                                                                       ? "bg-white text-dark"
+                                                                       : "bg-secondary bg-opacity-25")">
+                        @filter.Count
+                    </span>
+                </button>
+                                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ ACTIVE FILTER INDICATOR ═══════════ -->
+    @if (_statusFilter.HasValue)
+    {
+        <div class="px-2 px-md-3 py-2 bg-light border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill
+                                 px-2 px-md-3 py-1">
+                    <i class="bi bi-funnel-fill me-1"></i>
+                    <span class="d-none d-sm-inline">Filtered: </span>
+                    <strong>@_statusFilter</strong>
+                    <button class="btn-close btn-close-sm ms-1 req-list-chip-close"
+                            @onclick="ClearFilter"></button>
+                </span>
+                <small class="text-muted">
+                    <strong>@FilteredRequests.Count</strong>
+                    of @Requests.Count
+                    <span class="d-none d-sm-inline">requests</span>
+                </small>
+            </div>
+        </div>
+    }
+
+    <!-- ═══════════ TABLE BODY ═══════════ -->
+    <div class="card-body p-0">
+        @if (!FilteredRequests.Any())
+        {
+            <div class="text-center py-4 py-md-5 px-3">
+                <div class="req-list-empty-icon bg-light rounded-circle d-inline-flex
+                                align-items-center justify-content-center mb-2 mb-md-3">
+                    <i class="bi bi-inbox fs-2 text-muted opacity-50"></i>
+                </div>
+                <h6 class="fw-semibold text-muted mb-1">No Requests Found</h6>
+                <p class="text-muted small mb-2 mb-md-3 mx-auto req-list-empty-text">
+                    @if (_statusFilter.HasValue)
+                    {
+                        <span>No <strong>@_statusFilter</strong> requests found.</span>
+                    }
+                    else
+                    {
+                        <span>You haven't submitted any attendance requests yet.</span>
+                    }
+                </p>
+                @if (_statusFilter.HasValue)
+                {
+                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                            @onclick="ClearFilter">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Show All
+                    </button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="req-list-table-scroll">
+                <AppTable TItem="AttendanceRequestViewModel"
+                          Items="FilteredRequests"
+                          Columns="TableSchemas.EmployeeAttendenceRequestTable"
+                          ShowActions="@HasAnyActions"
+                          EnablePagination="true"
+                          PageSize="10"
+                          WrapperClass="att-list-table"
+                          RowClassFunc="GetRowClass">
+
+                    <ActionTemplate Context="req">
+                        @if (req.StatusId == Status.Pending)
+                        {
+                            <div class="d-flex align-items-center gap-1 gap-md-2
+                                                justify-content-center flex-wrap">
+
+                                @* ── Admin Actions ── *@
+                                @if (HasAdminActions)
+                                {
+                                    <button class="req-list-action-btn btn btn-outline-success btn-sm
+                                                               rounded-pill"
+                                            title="Approve"
+                                            @onclick="() => ApproveClicked.InvokeAsync(req)">
+                                        <i class="bi bi-check-lg"></i>
+                                        <span class="d-none d-lg-inline ms-1">Approve</span>
+                                    </button>
+
+                                    <button class="req-list-action-btn btn btn-outline-danger btn-sm
+                                                               rounded-pill"
+                                            title="Reject"
+                                            @onclick="() => RejectClicked.InvokeAsync(req)">
+                                        <i class="bi bi-x-lg"></i>
+                                        <span class="d-none d-lg-inline ms-1">Reject</span>
+                                    </button>
+                                }
+
+                                @* ── Employee Actions ── *@
+                                @if (HasEmployeeActions)
+                                {
+                                    <button class="req-list-action-btn btn btn-outline-primary btn-sm
+                                                               rounded-pill"
+                                            title="Edit Request"
+                                            @onclick="() => EditClicked.InvokeAsync(req)">
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span class="d-none d-lg-inline ms-1">Edit</span>
+                                    </button>
+
+                                    <button class="req-list-action-btn btn btn-outline-warning btn-sm
+                                                               rounded-pill"
+                                            title="Cancel Request"
+                                            @onclick="() => CancelClicked.InvokeAsync(req)">
+                                        <i class="bi bi-x-circle"></i>
+                                        <span class="d-none d-lg-inline ms-1">Cancel</span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                        else if (req.StatusId == Status.Approved)
+                        {
+                            <span class="badge bg-success bg-opacity-10 text-success
+                                                 rounded-pill px-2 px-md-3 small">
+                                <i class="bi bi-check-circle-fill me-1 d-none d-sm-inline"></i>
+                                Approved
+                            </span>
+                        }
+                        else if (req.StatusId == Status.Rejected)
+                        {
+                            <span class="badge bg-danger bg-opacity-10 text-danger
+                                                 rounded-pill px-2 px-md-3 small">
+                                <i class="bi bi-x-circle-fill me-1 d-none d-sm-inline"></i>
+                                Rejected
+                            </span>
+                        }
+                        else if (req.StatusId == Status.Cancelled)
+                        {
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary
+                                                 rounded-pill px-2 px-md-3 small">
+                                <i class="bi bi-slash-circle me-1 d-none d-sm-inline"></i>
+                                Cancelled
+                            </span>
+                        }
+                    </ActionTemplate>
+
+                </AppTable>
+            </div>
+        }
+    </div>
+
+    <!-- ═══════════ FOOTER SUMMARY ═══════════ -->
+    @if (FilteredRequests.Any())
+    {
+        <div class="card-footer bg-white border-top py-2 px-2 px-md-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-1 gap-md-2 flex-wrap">
+                    @foreach (var summary in StatusSummary)
+                    {
+                        <span class="badge @summary.BadgeClass rounded-pill px-2 py-1 small">
+                            <i class="bi @summary.Icon me-1 d-none d-sm-inline"></i>
+                            @summary.Count
+                            <span class="d-none d-md-inline">@summary.Label</span>
+                        </span>
+                    }
+                </div>
+                <small class="text-muted">
+                    Total: <strong>@Requests.Count</strong>
+                    <span class="d-none d-sm-inline">requests</span>
+                </small>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+
+    // ═══════════ PARAMETERS ═══════════
+
+    [Parameter]
+    public List<AttendanceRequestViewModel> Requests { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<AttendanceRequestViewModel> ApproveClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<AttendanceRequestViewModel> RejectClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<AttendanceRequestViewModel> EditClicked { get; set; }
+
+    [Parameter]
+    public EventCallback<AttendanceRequestViewModel> CancelClicked { get; set; }
+
+    // ═══════════ STATE ═══════════
+
+    private Status? _statusFilter;
+
+    // ═══════════ COMPUTED ═══════════
+
+    private bool HasAdminActions
+        => ApproveClicked.HasDelegate || RejectClicked.HasDelegate;
+
+    private bool HasEmployeeActions
+        => EditClicked.HasDelegate || CancelClicked.HasDelegate;
+
+    private bool HasAnyActions
+        => HasAdminActions || HasEmployeeActions;
+
+    private List<AttendanceRequestViewModel> FilteredRequests
+        => _statusFilter.HasValue
+            ? Requests.Where(r => r.StatusId == _statusFilter).ToList()
+            : Requests;
+
+    private int PendingCount => Requests.Count(r => r.StatusId == Status.Pending);
+    private int ApprovedCount => Requests.Count(r => r.StatusId == Status.Approved);
+    private int RejectedCount => Requests.Count(r => r.StatusId == Status.Rejected);
+    private int CancelledCount => Requests.Count(r => r.StatusId == Status.Cancelled);
+
+    private IEnumerable<StatusFilterModel> StatusFilters => new[]
+    {
+        new StatusFilterModel(null,              "All",       "All", Requests.Count,  "btn-primary"),
+        new StatusFilterModel(Status.Pending,    "Pending",   "⏳",  PendingCount,    "btn-warning"),
+        new StatusFilterModel(Status.Approved,   "Approved",  "✅",  ApprovedCount,   "btn-success"),
+        new StatusFilterModel(Status.Rejected,   "Rejected",  "❌",  RejectedCount,   "btn-danger"),
+        new StatusFilterModel(Status.Cancelled,  "Cancelled", "🚫",  CancelledCount,  "btn-secondary"),
+    };
+
+    private IEnumerable<StatusSummaryModel> StatusSummary => new[]
+    {
+        new StatusSummaryModel("bi-hourglass-split",   PendingCount,   "Pending",   "bg-warning bg-opacity-10 text-warning"),
+        new StatusSummaryModel("bi-check-circle-fill", ApprovedCount,  "Approved",  "bg-success bg-opacity-10 text-success"),
+        new StatusSummaryModel("bi-x-circle-fill",     RejectedCount,  "Rejected",  "bg-danger bg-opacity-10 text-danger"),
+        new StatusSummaryModel("bi-slash-circle",      CancelledCount, "Cancelled", "bg-secondary bg-opacity-10 text-secondary"),
+    };
+
+    // ═══════════ EVENTS ═══════════
+
+    private void ToggleFilter(Status? status)
+    {
+        _statusFilter = _statusFilter == status ? null : status;
+    }
+
+    private void ClearFilter() => _statusFilter = null;
+
+    // ═══════════ HELPERS ═══════════
+
+    private bool IsActiveFilter(Status? status) => _statusFilter == status;
+
+    private static string GetRowClass(AttendanceRequestViewModel r) => r.StatusId switch
+    {
+        Status.Pending => "req-list-row-pending",
+        Status.Approved => "req-list-row-approved",
+        Status.Rejected => "req-list-row-rejected",
+        Status.Cancelled => "req-list-row-cancelled",
+        _ => ""
+    };
+
+    // ═══════════ INNER TYPES ═══════════
+
+    private record StatusFilterModel(
+        Status? Status, string Label, string ShortLabel, int Count, string ActiveClass);
+
+    private record StatusSummaryModel(
+        string Icon, int Count, string Label, string BadgeClass);
+}

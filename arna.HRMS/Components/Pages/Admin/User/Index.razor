@@ -13,84 +13,256 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
-@inject ILeaveService LeaveService
 
-<Loader Visible="isLoading" Message="@loadingMessage" />
+<Loader Visible="_isLoading" Message="@_loadingMessage" />
 
-<div class="container mt-4">
+<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-primary">Users</h3>
+    <!-- ═══════════ HEADER ═══════════ -->
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
+                justify-content-between gap-3 gap-sm-4 mb-4 mb-md-5">
+        <div class="d-flex align-items-start gap-3">
+            <div class="user-header-icon bg-primary bg-opacity-10 text-primary rounded-2
+                        d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                <i class="bi bi-person-fill-gear"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold mb-2 fs-5 fs-md-4">Users</h4>
+                <p class="text-muted mb-0 small d-none d-sm-block">
+                    Manage system users and their access
+                </p>
+            </div>
+        </div>
 
-        <AppButton cssclass="btn btn-success" Text="Add User" OnClick="@(() => NavigationManager.NavigateTo("/user/create"))">
-            <i class="bi bi-plus-lg"></i>
-        </AppButton>
+        <button class="btn btn-primary btn-sm rounded-pill px-4 user-add-btn w-100 w-sm-auto"
+                @onclick="@(() => NavigateTo("/user/create"))">
+            <i class="bi bi-plus-lg me-1"></i>
+            <span class="d-none d-sm-inline">Add User</span>
+            <span class="d-sm-none">Add</span>
+        </button>
     </div>
 
-    <AppTable TItem="UserViewModel"
-                 Items="users"
-                 Columns="TableSchemas.Users"
-                 OnEdit="EditUser"
-                 OnDelete="DeleteUser" />
+    <!-- ═══════════ STAT CARDS ═══════════ -->
+    <div class="row g-2 g-sm-3 mb-4 mb-md-5">
+        @foreach (var stat in StatCards)
+        {
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 user-stat-card h-100">
+                    <div class="card-body text-center py-3 py-md-4 px-3">
+                        <div class="user-stat-icon @stat.BgClass mx-auto mb-2">
+                            <i class="bi @stat.Icon @stat.TextClass"></i>
+                        </div>
+                        <div class="fs-4 fw-bold @stat.TextClass mb-2">@stat.Count</div>
+                        <small class="text-muted fw-semibold text-uppercase user-stat-label">
+                            @stat.Label
+                        </small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 
+    <!-- ═══════════ SEARCH BAR ═══════════ -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body py-3 px-3 px-md-4">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-search text-primary"></i>
+                    <span class="fw-medium text-muted small">Filter</span>
+                </div>
+
+                <div class="flex-grow-1" style="min-width: 250px;">
+                    <input type="text"
+                           class="form-control form-control-sm border-0 bg-light rounded-pill"
+                           placeholder="Search by username, email, or name..."
+                           @bind="_searchTerm"
+                           @bind:event="oninput" />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                {
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            @onclick="ClearSearch">
+                        <i class="bi bi-x-lg me-1"></i>
+                        <span class="d-none d-sm-inline">Clear</span>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ TABLE ═══════════ -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <h6 class="fw-semibold mb-0 small">
+                    <i class="bi bi-table text-primary me-2"></i>
+                    <span class="d-none d-sm-inline">User Directory</span>
+                    <span class="d-sm-none">Directory</span>
+                </h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                    @FilteredUsers.Count
+                    <span class="d-none d-sm-inline ms-1">users</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @if (_isLoading)
+            {
+                <div class="text-center py-5 py-md-6">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="text-muted mb-0 small">Loading users…</p>
+                </div>
+            }
+            else if (!FilteredUsers.Any())
+            {
+                <div class="text-center py-5 py-md-6 px-3">
+                    <div class="user-empty-icon bg-light rounded-3 d-inline-flex
+                                    align-items-center justify-content-center mx-auto mb-3">
+                        <i class="bi bi-inbox fs-1 text-muted opacity-50"></i>
+                    </div>
+                    <h6 class="fw-semibold text-muted mb-2">No Users Found</h6>
+                    <p class="text-muted small mb-4 user-empty-text mx-auto">
+                        @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                        {
+                            <span>No users match "<strong>@_searchTerm</strong>"</span>
+                        }
+                        else
+                        {
+                            <span>No users have been added yet.</span>
+                        }
+                    </p>
+                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                    {
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                                @onclick="ClearSearch">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Search
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-primary rounded-pill px-4"
+                                @onclick="@(() => NavigateTo("/user/create"))">
+                            <i class="bi bi-plus-lg me-1"></i>Add First User
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="user-table-scroll">
+                    <AppTable TItem="UserViewModel"
+                              Items="FilteredUsers"
+                              Columns="TableSchemas.Users"
+                              OnEdit="EditUser"
+                              OnDelete="DeleteUser" />
+                </div>
+            }
+        </div>
+    </div>
 </div>
 
 @code {
-    private List<UserViewModel> users = new();
-    private bool isLoading = true;
-    private string loadingMessage = "Loading leavemanagement...";
+
+    // ═══════════ STATE ═══════════
+
+    private List<UserViewModel> _users = new();
+    private bool _isLoading = true;
+    private string _loadingMessage = "Loading users...";
+    private string? _searchTerm;
+
+    // ═══════════ COMPUTED ═══════════
+
+    private List<UserViewModel> FilteredUsers
+        => string.IsNullOrWhiteSpace(_searchTerm)
+            ? _users
+            : _users
+                .Where(u =>
+                    MatchesSearch(u.Username) ||
+                    MatchesSearch(u.Email) ||
+                    MatchesSearch(u.FirstName) ||
+                    MatchesSearch(u.LastName))
+                .ToList();
+
+    private IEnumerable<StatCardModel> StatCards => new[]
+    {
+        new StatCardModel("bi-people-fill",       "bg-primary bg-opacity-10", "text-primary", _users.Count,                   "Total"),
+        new StatCardModel("bi-person-check-fill", "bg-success bg-opacity-10", "text-success", _users.Count(u => u.IsActive),  "Active"),
+        new StatCardModel("bi-person-x-fill",     "bg-danger bg-opacity-10",  "text-danger",  _users.Count(u => !u.IsActive), "Inactive"),
+    };
+
+    // ═══════════ LIFECYCLE ═══════════
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadUsers();
+        await LoadUsersAsync();
     }
 
-    private async Task LoadUsers()
+    // ═══════════ DATA ═══════════
+
+    private async Task LoadUsersAsync()
     {
-        isLoading = true;
+        _isLoading = true;
 
         var result = await UsersService.GetUsersAsync();
 
         if (result.IsSuccess && result.Data != null)
         {
-            users = result.Data;
+            _users = result.Data;
         }
         else if (!result.IsSuccess)
         {
-            NotificationService.Error($"Failed to load users ({result.StatusCode}): {result.Message}");
-            users = new List<UserViewModel>();
+            NotificationService.Error(
+                $"Failed to load users ({result.StatusCode}): {result.Message}");
+            _users = new List<UserViewModel>();
         }
         else
         {
-            users = new List<UserViewModel>();
+            _users = new List<UserViewModel>();
         }
-        isLoading = false;
+
+        _isLoading = false;
     }
 
+    // ═══════════ EVENTS ═══════════
+
+    private void NavigateTo(string route)
+        => NavigationManager.NavigateTo(route);
+
     private void EditUser(UserViewModel model)
-    {
-        NavigationManager.NavigateTo($"/user/edit/{model.Id}");
-    }
+        => NavigationManager.NavigateTo($"/user/edit/{model.Id}");
 
     private async Task DeleteUser(UserViewModel model)
     {
-        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
-            "confirm",
-            "Are you sure you want to delete this user?"
-        );
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm", "Are you sure you want to delete this user?");
 
-        if (!isConfirmed)
-            return;
+        if (!confirmed) return;
 
         var result = await UsersService.DeleteUserAsync(model.Id);
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
+            NotificationService.Error(
+                $"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
             return;
         }
 
         NotificationService.Success("User deleted successfully.");
-        await LoadUsers();
+        await LoadUsersAsync();
     }
+
+    private void ClearSearch() => _searchTerm = null;
+
+    // ═══════════ HELPERS ═══════════
+
+    private bool MatchesSearch(string? value)
+        => !string.IsNullOrWhiteSpace(value) &&
+           value.Contains(_searchTerm!, StringComparison.OrdinalIgnoreCase);
+
+    // ═══════════ INNER TYPES ═══════════
+
+    private record StatCardModel(
+        string Icon, string BgClass, string TextClass, int Count, string Label);
 }

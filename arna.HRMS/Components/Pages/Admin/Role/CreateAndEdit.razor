@@ -11,77 +11,186 @@
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 
-<div class="container py-4">
-    <FullPageLoader Visible="isLoading" />
+<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
 
-    <div class="card shadow-sm border-0 rounded-3">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">
-                @(IsEditMode ? "Edit Role" : "Create Role")
-            </h5>
-        </div>
+    <!-- ═══════════ BACK + BREADCRUMB ═══════════ -->
+    <div class="d-flex align-items-center gap-2 mb-3 mb-md-4 flex-wrap">
+        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 role-form-back-btn"
+                @onclick="GoBack">
+            <i class="bi bi-arrow-left me-1"></i>
+            <span class="d-none d-sm-inline">Back</span>
+        </button>
+        <nav>
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item">
+                    <a href="/role" class="text-decoration-none text-primary">Roles</a>
+                </li>
+                <li class="breadcrumb-item active text-muted">
+                    @(IsEditMode ? "Edit" : "Create")
+                </li>
+            </ol>
+        </nav>
+    </div>
 
-        <div class="card-body p-4">
+    <!-- ═══════════ HEADER CARD ═══════════ -->
+    <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4 role-form-header">
+        <div class="card-body py-3 px-3 px-md-4">
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
 
-            @if (!isLoading)
-            {
-                <EditForm Model="role" OnValidSubmit="HandleValidSubmit" autocomplete="off">
-                    <DataAnnotationsValidator />
+                <span class="role-form-header-icon rounded-2 p-2 d-inline-flex
+                             align-items-center justify-content-center flex-shrink-0
+                             @(IsEditMode ? "bg-warning bg-opacity-10 text-warning" : "bg-success bg-opacity-10 text-success")">
+                    <i class="bi @(IsEditMode ? "bi-pencil-square" : "bi-shield-plus") fs-5"></i>
+                </span>
 
-                    <div class="row g-4">
-                        <!-- Name -->
-                        <div class="col-md-6">
-                            <AppInput Label="Name"
-                                Value="@role.Name"
-                                ValueChanged="v => role.Name = v"
-                                ValidationExpression="@(() => role.Name)">
-                            </AppInput>
-                        </div>
-
-                        <!-- Description -->
-                        <div class="col-md-6">
-                            <AppInput Label="Description"
-                                Value="@role.Description"
-                                ValueChanged="@(v => role.Description = v)"
-                                ValidationExpression="@(() => role.Description)">
-                            </AppInput>
-                        </div>
-
-                        <!-- Active -->
-                        @if (IsEditMode)
-                        {
-                            <div class="col-md-6 mt-4">
-                                <AppCheckBox Label="Active"
-                                Value="@role.IsActive"
-                                ValueChanged="@(v => role.IsActive = v)" />
-                            </div>
-                        }
-                    </div>
-
-                    <div class="mt-5 d-flex justify-content-end gap-3">
-                        <AppButton Text="Back"
-                        ButtonClass="btn btn-outline-dark px-4"
-                        OnClick="GoBack" />
-
-                        <AppButton Text="@(IsEditMode ? "Update" : "Save")"
-                        Type="submit"
-                        ButtonClass="btn btn-primary px-5" />
-                    </div>
-                </EditForm>
-            }
+                <div>
+                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                        @(IsEditMode ? "Edit Role" : "Add New Role")
+                    </h5>
+                    <p class="text-muted mb-0 small d-none d-sm-block">
+                        @(IsEditMode
+                                                ? $"Update details for {role.Name}"
+                                                : "Fill in the details below to add a new role")
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
+
+    @if (_isLoading)
+    {
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body text-center py-4 py-md-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="text-muted mt-2 mb-0 small">Loading role data…</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="role" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+
+            <!-- ═══════════ ROLE DETAILS ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="role-form-section-icon bg-primary bg-opacity-10 text-primary
+                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                            <i class="bi bi-shield-fill"></i>
+                        </span>
+                        <div>
+                            <h6 class="fw-semibold mb-0 small">Role Details</h6>
+                            <small class="text-muted d-none d-md-block">
+                                Basic role identification information
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="row g-3">
+
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Name"
+                                      Value="@role.Name"
+                                      ValueChanged="v => role.Name = v"
+                                      ValidationExpression="@(() => role.Name)" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Description"
+                                      Value="@role.Description"
+                                      ValueChanged="@(v => role.Description = v)"
+                                      ValidationExpression="@(() => role.Description)" />
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════ STATUS (EDIT ONLY) ═══════════ -->
+            @if (IsEditMode)
+            {
+                <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                    <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="role-form-section-icon bg-warning bg-opacity-10 text-warning
+                                                 rounded-2 d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-toggle-on"></i>
+                            </span>
+                            <div>
+                                <h6 class="fw-semibold mb-0 small">Status</h6>
+                                <small class="text-muted d-none d-md-block">
+                                    Role activation status
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body px-3 px-md-4 py-3">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <AppCheckBox Label="Active"
+                                             Value="@role.IsActive"
+                                             ValueChanged="@(v => role.IsActive = v)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- ═══════════ ACTION BUTTONS ═══════════ -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body px-3 px-md-4 py-3">
+                    <div class="d-flex flex-column-reverse flex-sm-row
+                                    justify-content-end gap-2 gap-sm-3">
+
+                        <button type="button"
+                                class="btn btn-outline-dark rounded-pill px-4 role-form-action-btn"
+                                @onclick="GoBack">
+                            <i class="bi bi-arrow-left me-1 d-none d-sm-inline"></i>
+                            Back
+                        </button>
+
+                        <button type="submit"
+                                class="btn btn-primary rounded-pill px-4 role-form-action-btn"
+                                disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            }
+                            else
+                            {
+                                <i class="bi @(IsEditMode ? "bi-check-lg" : "bi-plus-lg") me-1"></i>
+                            }
+                            @(IsEditMode ? "Update Role" : "Create Role")
+                        </button>
+
+                    </div>
+                </div>
+            </div>
+
+        </EditForm>
+    }
 </div>
 
 @code {
+
+    // ═══════════ PARAMETERS ═══════════
+
     [Parameter] public int? Id { get; set; }
+
+    // ═══════════ STATE ═══════════
+
     private RoleViewModel role = new();
-    private bool isLoading = true;
+    private bool _isLoading = true;
+    private bool _isSubmitting;
     private bool IsEditMode => Id.HasValue;
+
+    // ═══════════ LIFECYCLE ═══════════
 
     protected override async Task OnParametersSetAsync()
     {
-        isLoading = true;
+        _isLoading = true;
 
         if (IsEditMode)
         {
@@ -102,38 +211,52 @@
             role = new RoleViewModel();
         }
 
-        isLoading = false;
+        _isLoading = false;
     }
+
+    // ═══════════ FORM SUBMIT ═══════════
 
     private async Task HandleValidSubmit()
     {
-        if (IsEditMode)
-        {
-            var result = await RoleService.UpdateRoleAsync(Id!.Value, role);
+        _isSubmitting = true;
+        StateHasChanged();
 
-            if (!result.IsSuccess)
+        try
+        {
+            bool isSuccess;
+            string? errorMessage;
+
+            if (IsEditMode)
             {
-                NotificationService.Error($"{result.Message ?? "Unable to update role."}");
+                var result = await RoleService.UpdateRoleAsync(Id!.Value, role);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+            else
+            {
+                var result = await RoleService.CreateRoleAsync(role);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+
+            if (!isSuccess)
+            {
+                NotificationService.Error(errorMessage ??
+                    (IsEditMode ? "Unable to update role." : "Unable to create role."));
                 return;
             }
 
-            NotificationService.Success("Role updated successfully.");
+            NotificationService.Success(
+                IsEditMode ? "Role updated successfully." : "Role created successfully.");
+            NavigationManager.NavigateTo("/role");
         }
-        else
+        finally
         {
-            var result = await RoleService.CreateRoleAsync(role);
-
-            if (!result.IsSuccess)
-            {
-                NotificationService.Error($"{result.Message ?? "Unable to create role."}");
-                return;
-            }
-
-            NotificationService.Success("Role created successfully.");
+            _isSubmitting = false;
         }
-
-        NavigationManager.NavigateTo("/role");
     }
+
+    // ═══════════ NAVIGATION ═══════════
 
     private void GoBack() => NavigationManager.NavigateTo("/role");
 }

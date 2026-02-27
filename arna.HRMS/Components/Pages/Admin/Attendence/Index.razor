@@ -1,0 +1,114 @@
+﻿@page "/admin-attendance-management"
+
+@using arna.HRMS.ClientServices.Auth
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Core.Entities
+@using arna.HRMS.Models.ViewModels.Attendance
+
+@inherits AuthenticatedLayoutBase
+
+<Loader Visible="isLoading" Message="@loadingMessage" />
+
+@if (!isLoading)
+{
+    <div class="container-fluid px-3 px-md-4 py-3 attendence-fade-in">
+
+        <!-- ══════════ HEADER ══════════ -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="fw-bold mb-1">
+                    <i class="bi bi-clock-history text-primary me-2"></i>
+                    Attendance Management
+                </h3>
+                <p class="text-muted mb-0">
+                    Monitor daily attendance, clock-in/out records & summaries
+                </p>
+            </div>
+        </div>
+
+        <!-- ══════════ TAB NAVIGATION ══════════ -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-0">
+                <ul class="nav nav-tabs attendence-tabs px-3 pt-3" role="tablist">
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link @(activeTab == Tab.DailyAttendance ? "active" : "")"
+                                @onclick="() => SetTab(Tab.DailyAttendance)">
+                            <i class="bi bi-calendar-day me-2"></i>
+                            Daily Attendance
+                            @if (dailyAttendanceCount > 0)
+                            {
+                                <span class="badge bg-primary bg-opacity-10 text-primary
+                                                     rounded-pill ms-2">
+                                    @dailyAttendanceCount
+                                </span>
+                            }
+                        </button>
+                    </li>
+
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link @(activeTab == Tab.AttendanceRequests ? "active" : "")"
+                                @onclick="() => SetTab(Tab.AttendanceRequests)">
+                            <i class="bi bi-inbox me-2"></i>
+                            Attendance Requests
+                            @if (pendingRequestCount > 0)
+                            {
+                                <span class="badge bg-warning text-dark
+                                                     rounded-pill ms-2">
+                                    @pendingRequestCount
+                                </span>
+                            }
+                        </button>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+
+        <!-- ══════════ TAB CONTENT ══════════ -->
+        <div class="tab-content">
+
+            @if (activeTab == Tab.DailyAttendance)
+            {
+                <AttendenceTable @ref="dailyAttendance"
+                                 OnCountChanged="c => { dailyAttendanceCount = c; StateHasChanged(); }" />
+            }
+
+            @if (activeTab == Tab.AttendanceRequests)
+            {
+                <AttendenceRequest @ref="attendanceRequest"
+                                   OnPendingCountChanged="c => { pendingRequestCount = c; StateHasChanged(); }" />
+            }
+
+        </div>
+
+    </div>
+}
+
+@code {
+
+    private bool isLoading = true;
+    private string loadingMessage = "Loading attendance management...";
+
+    private enum Tab { DailyAttendance, AttendanceRequests }
+    private Tab activeTab = Tab.DailyAttendance;
+
+    // ── Badge counts ──
+    private int dailyAttendanceCount;
+    private int pendingRequestCount;
+
+    // ── Tab refs ──
+    private AttendenceTable? dailyAttendance;
+    private AttendenceRequest? attendanceRequest;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        isLoading = false;
+    }
+
+    private void SetTab(Tab tab)
+    {
+        activeTab = tab;
+    }
+}

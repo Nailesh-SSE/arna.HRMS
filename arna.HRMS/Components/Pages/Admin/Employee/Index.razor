@@ -14,35 +14,195 @@
 @inject IJSRuntime JsRuntime
 @inherits AuthenticatedLayoutBase
 
-<Loader Visible="isLoading" Message="@loadingMessage" />
+<Loader Visible="_isLoading" Message="@_loadingMessage" />
 
-<div class="container mt-4">
+<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="fw-bold text-primary">Employees</h3>
+    <!-- ═══════════ HEADER ═══════════ -->
+    <!-- IMPROVED HEADER SECTION -->
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
+            justify-content-between gap-3 gap-sm-4 mb-4 mb-md-5">
+        <div class="d-flex align-items-start gap-3">
+            <div class="emp-header-icon bg-primary bg-opacity-10 text-primary rounded-2
+                   d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold mb-2 fs-5 fs-md-4">Employees</h4>
+                <p class="text-muted mb-0 small d-none d-sm-block">
+                    Manage your organization's employee directory
+                </p>
+            </div>
+        </div>
 
         @if (IsAdmin() || IsSuperAdmin())
         {
-            <AppButton ButtonClass="btn btn-primary" Text = "Add Employee" OnClick="@(() => NavigateTo("/employee/create"))">
-                <i class="bi bi-plus-lg"></i> 
-            </AppButton>
+            <button class="btn btn-primary btn-sm rounded-pill px-4 emp-add-btn w-100 w-sm-auto"
+                    @onclick="@(() => NavigateTo("/employee/create"))">
+                <i class="bi bi-plus-lg me-1"></i>
+                <span class="d-none d-sm-inline">Add Employee</span>
+                <span class="d-sm-none">Add</span>
+            </button>
         }
     </div>
 
-    <AppTable TItem="EmployeeViewModel"
-                 Items="employees"
-                 Columns="TableSchemas.Employees"
-                 OnEdit="EditEmployee"
-                 OnDelete="DeleteEmployee"
-                 ShowActions="IsAdmin() || IsSuperAdmin()" />
+    <!-- IMPROVED STAT CARDS SECTION -->
+    <div class="row g-2 g-sm-3 mb-4 mb-md-5">
+        @foreach (var stat in StatCards)
+        {
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 emp-stat-card h-100">
+                    <div class="card-body text-center py-3 py-md-4 px-3">
+                        <div class="emp-stat-icon @stat.BgClass mx-auto mb-2">
+                            <i class="bi @stat.Icon @stat.TextClass"></i>
+                        </div>
+                        <div class="fs-4 fw-bold @stat.TextClass mb-2">@stat.Count</div>
+                        <small class="text-muted fw-semibold text-uppercase emp-stat-label">
+                            @stat.Label
+                        </small>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
 
+    <!-- IMPROVED SEARCH & FILTER BAR -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body py-3 px-3 px-md-4">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-search text-primary"></i>
+                    <span class="fw-medium text-muted small">Filter</span>
+                </div>
+
+                <div class="flex-grow-1" style="min-width: 250px;">
+                    <input type="text"
+                           class="form-control form-control-sm border-0 bg-light rounded-pill"
+                           placeholder="Search by name, email, or employee number..."
+                           @bind="_searchTerm"
+                           @bind:event="oninput" />
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                {
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                            @onclick="ClearSearch">
+                        <i class="bi bi-x-lg me-1"></i>
+                        <span class="d-none d-sm-inline">Clear</span>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- IMPROVED TABLE SECTION -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <h6 class="fw-semibold mb-0 small">
+                    <i class="bi bi-table text-primary me-2"></i>
+                    <span class="d-none d-sm-inline">Employee Directory</span>
+                    <span class="d-sm-none">Directory</span>
+                </h6>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                    @FilteredEmployees.Count
+                    <span class="d-none d-sm-inline ms-1">employees</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @if (_isLoading)
+            {
+                <div class="text-center py-5 py-md-6">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="text-muted mb-0 small">Loading employees…</p>
+                </div>
+            }
+            else if (!FilteredEmployees.Any())
+            {
+                <div class="text-center py-5 py-md-6 px-3">
+                    <div class="emp-empty-icon bg-light rounded-3 d-inline-flex
+                                align-items-center justify-content-center mx-auto mb-3">
+                        <i class="bi bi-inbox fs-1 text-muted opacity-50"></i>
+                    </div>
+                    <h6 class="fw-semibold text-muted mb-2">No Employees Found</h6>
+                    <p class="text-muted small mb-4 emp-empty-text mx-auto">
+                        @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                        {
+                            <span>No employees match "<strong>@_searchTerm</strong>"</span>
+                        }
+                        else
+                        {
+                            <span>No employees have been added yet.</span>
+                        }
+                    </p>
+                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                    {
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                                @onclick="ClearSearch">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Search
+                        </button>
+                    }
+                    else if (IsAdmin() || IsSuperAdmin())
+                    {
+                        <button class="btn btn-sm btn-primary rounded-pill px-4"
+                                @onclick="@(() => NavigateTo("/employee/create"))">
+                            <i class="bi bi-plus-lg me-1"></i>Add First Employee
+                        </button>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="emp-table-scroll">
+                    <AppTable TItem="EmployeeViewModel"
+                              Items="FilteredEmployees"
+                              Columns="TableSchemas.Employees"
+                              EnablePagination="true"
+                              PageSize="10"
+                              WrapperClass="att-list-table"
+                              OnEdit="EditEmployee"
+                              OnDelete="DeleteEmployee"
+                              ShowActions="IsAdmin() || IsSuperAdmin()" />
+                </div>
+            }
+        </div>
+    </div>
 </div>
+
 
 @code {
 
-    private List<EmployeeViewModel> employees = new();
-    private bool isLoading = true;
-    private string loadingMessage = "Loading employee...";
+    // ═══════════ STATE ═══════════
+
+    private List<EmployeeViewModel> _employees = new();
+    private bool _isLoading = true;
+    private string _loadingMessage = "Loading employees...";
+    private string? _searchTerm;
+
+    // ═══════════ COMPUTED ═══════════
+
+    private List<EmployeeViewModel> FilteredEmployees
+        => string.IsNullOrWhiteSpace(_searchTerm)
+            ? _employees
+            : _employees
+                .Where(e =>
+                    MatchesSearch(e.FullName) ||
+                    MatchesSearch(e.Email) ||
+                    MatchesSearch(e.EmployeeNumber) ||
+                    MatchesSearch(e.Position))
+                .ToList();
+
+    private IEnumerable<StatCardModel> StatCards => new[]
+    {
+        new StatCardModel("bi-people-fill",      "bg-primary bg-opacity-10", "text-primary", _employees.Count,                                          "Total"),
+        new StatCardModel("bi-person-check-fill", "bg-success bg-opacity-10", "text-success", _employees.Count(e => e.Designation != null),               "Active"),
+        new StatCardModel("bi-building",          "bg-info bg-opacity-10",    "text-info",    _employees.Select(e => e.DepartmentId).Distinct().Count(),  "Departments"),
+        new StatCardModel("bi-star-fill",         "bg-warning bg-opacity-10", "text-warning", _employees.Count(e => e.ManagerId == null),                  "Managers"),
+    };
+
+    // ═══════════ LIFECYCLE ═══════════
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,17 +210,19 @@
         await LoadEmployeesAsync();
     }
 
+    // ═══════════ DATA ═══════════
+
     private async Task LoadEmployeesAsync()
     {
+        _isLoading = true;
+
         try
         {
-            isLoading = true;
-
             var result = await EmployeeService.GetEmployeesAsync();
 
             if (result.IsSuccess && result.Data != null)
             {
-                employees = result.Data;
+                _employees = result.Data;
             }
             else
             {
@@ -74,39 +236,47 @@
         }
         finally
         {
-            isLoading = false;
+            _isLoading = false;
         }
     }
 
+    // ═══════════ EVENTS ═══════════
+
     private void NavigateTo(string route)
-    {
-        NavigationManager.NavigateTo(route);
-    }
+        => NavigationManager.NavigateTo(route);
 
     private void EditEmployee(EmployeeViewModel model)
-    {
-        NavigationManager.NavigateTo($"/employee/edit/{model.Id}");
-    }
+        => NavigationManager.NavigateTo($"/employee/edit/{model.Id}");
 
     private async Task DeleteEmployee(EmployeeViewModel model)
     {
-        bool isConfirmed = await JsRuntime.InvokeAsync<bool>(
-            "confirm",
-            "Are you sure you want to delete this employee?"
-        );
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm", "Are you sure you want to delete this employee?");
 
-        if (!isConfirmed)
-            return;
+        if (!confirmed) return;
 
         var result = await EmployeeService.DeleteEmployeeAsync(model.Id);
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error($"{result.Message ?? "Unable to delete employee."}");
+            NotificationService.Error(result.Message ?? "Unable to delete employee.");
             return;
         }
 
         NotificationService.Success("Employee deleted successfully.");
         await LoadEmployeesAsync();
     }
+
+    private void ClearSearch() => _searchTerm = null;
+
+    // ═══════════ HELPERS ═══════════
+
+    private bool MatchesSearch(string? value)
+        => !string.IsNullOrWhiteSpace(value) &&
+           value.Contains(_searchTerm!, StringComparison.OrdinalIgnoreCase);
+
+    // ═══════════ INNER TYPES ═══════════
+
+    private record StatCardModel(
+        string Icon, string BgClass, string TextClass, int Count, string Label);
 }

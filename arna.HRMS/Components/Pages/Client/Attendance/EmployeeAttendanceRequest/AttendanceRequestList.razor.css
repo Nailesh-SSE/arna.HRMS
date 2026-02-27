@@ -1,0 +1,128 @@
+﻿/* ─── Header Icon ─── */
+.req-list-header-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+/* ─── Filter Buttons ─── */
+.req-list-filter-btn {
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+
+    .req-list-filter-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+/* ─── Chip Close ─── */
+.req-list-chip-close {
+    font-size: 0.45rem;
+    vertical-align: middle;
+}
+
+/* ─── Empty State ─── */
+.req-list-empty-icon {
+    width: 72px;
+    height: 72px;
+}
+
+.req-list-empty-text {
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+/* ─── Table Scroll ─── */
+.req-list-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .req-list-table-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .req-list-table-scroll::-webkit-scrollbar-track {
+        background: #f1f3f5;
+    }
+
+    .req-list-table-scroll::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 10px;
+    }
+
+        .req-list-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+
+/* ─── Action Buttons ─── */
+.req-list-action-btn {
+    transition: all 0.2s ease;
+    font-size: 0.78rem;
+    padding: 0.25rem 0.5rem;
+}
+
+    .req-list-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+
+/* ─── Row Status Highlights ─── */
+.req-list-row-pending {
+    border-left: 3px solid #ffc107;
+}
+
+.req-list-row-approved {
+    border-left: 3px solid #198754;
+}
+
+.req-list-row-rejected {
+    border-left: 3px solid #dc3545;
+}
+
+.req-list-row-cancelled {
+    border-left: 3px solid #6c757d;
+    opacity: 0.7;
+}
+
+/* ─── Mobile ─── */
+@media (max-width: 575.98px) {
+    .req-list-header-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .req-list-filter-btn {
+        font-size: 0.72rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .req-list-action-btn {
+        font-size: 0.72rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .req-list-empty-icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .req-list-table-scroll {
+        max-height: 50vh;
+    }
+}
+
+@media (min-width: 576px) and (max-width: 991.98px) {
+    .req-list-table-scroll {
+        max-height: 60vh;
+    }
+}
+
+@media (min-width: 992px) {
+    .req-list-table-scroll {
+        max-height: 65vh;
+    }
+}

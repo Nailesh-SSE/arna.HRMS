@@ -1,25 +1,25 @@
 ﻿/* ─── Back Button ─── */
-.emp-form-back-btn {
+.role-form-back-btn {
     transition: all 0.2s ease;
 }
 
-    .emp-form-back-btn:hover {
+    .role-form-back-btn:hover {
         transform: translateX(-2px);
     }
 
 /* ─── Header Card ─── */
-.emp-form-header {
+.role-form-header {
     border-left: 4px solid var(--bs-primary) !important;
 }
 
 /* ─── Header Icon ─── */
-.emp-form-header-icon {
+.role-form-header-icon {
     width: 42px;
     height: 42px;
 }
 
 /* ─── Section Icons ─── */
-.emp-form-section-icon {
+.role-form-section-icon {
     width: 32px;
     height: 32px;
     font-size: 0.85rem;
@@ -27,46 +27,46 @@
 }
 
 /* ─── Action Buttons ─── */
-.emp-form-action-btn {
+.role-form-action-btn {
     transition: all 0.2s ease;
     min-width: 140px;
 }
 
-    .emp-form-action-btn:hover {
+    .role-form-action-btn:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
 /* ─── Mobile (<576px) ─── */
 @media (max-width: 575.98px) {
-    .emp-form-header-icon {
+    .role-form-header-icon {
         width: 36px;
         height: 36px;
     }
 
-        .emp-form-header-icon .fs-5 {
+        .role-form-header-icon .fs-5 {
             font-size: 0.9rem !important;
         }
 
-    .emp-form-section-icon {
+    .role-form-section-icon {
         width: 28px;
         height: 28px;
         font-size: 0.75rem;
     }
 
-    .emp-form-action-btn {
+    .role-form-action-btn {
         min-width: unset;
         width: 100%;
     }
 
-    .emp-form-header {
+    .role-form-header {
         border-left-width: 3px !important;
     }
 }
 
 /* ─── Tablet (576px–991px) ─── */
 @media (min-width: 576px) and (max-width: 991.98px) {
-    .emp-form-action-btn {
+    .role-form-action-btn {
         min-width: 120px;
     }
 }
