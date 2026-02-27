@@ -29,6 +29,9 @@ public class AttendanceValidator
         if (string.IsNullOrWhiteSpace(dto.Notes))
             errors.Add("Note is Required.");
 
+        if (string.IsNullOrEmpty(dto.Device))
+            errors.Add("Device are required");
+
         if (dto.WorkingHours.HasValue && dto.WorkingHours.Value < TimeSpan.Zero)
             errors.Add("Working hours must be greater than or equal to zero");
 

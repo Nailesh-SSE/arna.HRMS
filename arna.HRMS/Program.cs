@@ -13,7 +13,6 @@ using arna.HRMS.ClientServices.Leave;
 using arna.HRMS.Components;
 using arna.HRMS.Models.State.Attendance;
 using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace arna.HRMS;
 
@@ -35,8 +34,10 @@ public class Program
         builder.Services.AddAuthorizationCore();
         builder.Services.AddCascadingAuthenticationState();
 
-        //builder.Services.AddScoped<ProtectedLocalStorage>();
+        // Add MemoryCache
+        builder.Services.AddMemoryCache();
 
+        // Register CustomAuthStateProvider
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
             sp.GetRequiredService<CustomAuthStateProvider>());
@@ -48,22 +49,27 @@ public class Program
         var baseUrl = builder.Configuration["ApiSettings:BaseUrl"]
                       ?? throw new Exception("ApiSettings:BaseUrl not configured");
 
-        // 🔹 Client used for normal API calls (WITH token handler)
+        // Register AuthHeaderHandler
         builder.Services.AddScoped<AuthHeaderHandler>();
 
+        // Authorized Client with token handler
         builder.Services.AddHttpClient("AuthorizedClient", client =>
         {
             client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromHours(2);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
         })
-        .AddHttpMessageHandler<AuthHeaderHandler>();
+        .AddHttpMessageHandler<AuthHeaderHandler>()
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Prevent handler caching issues
 
-        // 🔹 Client used ONLY for refresh (NO handler attached)
+        // Refresh Client (no token handler)
         builder.Services.AddHttpClient("RefreshClient", client =>
         {
             client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
         });
 
-        // 🔹 Default injected HttpClient = AuthorizedClient
+        // Default injected HttpClient = AuthorizedClient
         builder.Services.AddScoped(sp =>
             sp.GetRequiredService<IHttpClientFactory>()
                 .CreateClient("AuthorizedClient"));
@@ -72,7 +78,6 @@ public class Program
         // Core App Services
         // ==========================
         builder.Services.AddScoped<NotificationService>();
-
         builder.Services.AddScoped<HttpService>();
 
         builder.Services.AddScoped<ApiClients>(sp =>
@@ -102,10 +107,6 @@ public class Program
         // ==========================
         // Other
         // ==========================
-        builder.Services.AddMemoryCache();
-        builder.Services.AddScoped<CustomAuthStateProvider>();
-        builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
-            sp.GetRequiredService<CustomAuthStateProvider>());
         builder.Services.AddBlazorBootstrap();
         builder.Services.AddGeolocationServices();
 

@@ -2,7 +2,6 @@
 using arna.HRMS.Core.Common.ServiceResult;
 using arna.HRMS.Models.Common;
 using arna.HRMS.Models.ViewModels;
-using arna.HRMS.Models.ViewModels.Auth;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -15,21 +14,21 @@ public sealed class HttpService
 {
     private readonly HttpClient _http;
     private readonly CustomAuthStateProvider _authProvider;
+    private readonly ILogger<HttpService> _logger;
     private ApiClients? _apiClients;
 
     private static readonly SemaphoreSlim _refreshLock = new(1, 1);
     private static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
-    private readonly IHttpClientFactory _factory;
-
     public HttpService(HttpClient http,
-                       IHttpClientFactory factory,
-                       CustomAuthStateProvider authProvider)
+                       CustomAuthStateProvider authProvider,
+                       ILogger<HttpService> logger)
     {
-        _http = http; 
-        _factory = factory;
+        _http = http;
         _authProvider = authProvider;
+        _logger = logger;
     }
+
     public void SetApiClients(ApiClients apiClients)
         => _apiClients = apiClients;
 
@@ -73,25 +72,45 @@ public sealed class HttpService
     {
         try
         {
+            _logger.LogDebug("Sending request to {Url}", url);
+
             var request = requestFactory();
+
+            // Ensure token is set on request
+            var token = await _authProvider.GetAccessTokenAsync();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                _logger.LogDebug("Bearer token added to request");
+            }
 
             var response = await _http.SendAsync(request);
 
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                response.Dispose();
+                _logger.LogWarning("Received 401 Unauthorized, attempting token refresh");
 
                 var refreshed = await TrySilentRefreshAsync();
 
                 if (refreshed)
                 {
-                    // retry with new token
+                    _logger.LogInformation("Token refresh successful, retrying request");
+                    // Retry with new token
                     var retryRequest = requestFactory();
+                    var newToken = await _authProvider.GetAccessTokenAsync();
+                    if (!string.IsNullOrWhiteSpace(newToken))
+                    {
+                        retryRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
+                    }
+                    response.Dispose();
                     response = await _http.SendAsync(retryRequest);
                 }
                 else
                 {
+                    _logger.LogWarning("Token refresh failed, logging out user");
+                    response.Dispose();
                     await _authProvider.LogoutAsync();
+                    return ApiResult<T>.Fail("Session expired. Please login again.", 401);
                 }
             }
 
@@ -99,20 +118,29 @@ public sealed class HttpService
         }
         catch (HttpRequestException ex)
         {
+            _logger.LogError(ex, "Network error occurred");
             return ApiResult<T>.Fail($"Network error: {ex.Message}", 503);
         }
-        catch (TaskCanceledException)
+        catch (TaskCanceledException ex)
         {
+            _logger.LogError(ex, "Request timeout");
             return ApiResult<T>.Fail("Request timed out.", 408);
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Unexpected error occurred");
             return ApiResult<T>.Fail(ex.Message, 500);
         }
     }
 
     private async Task<bool> TrySilentRefreshAsync()
     {
+        if (_apiClients == null)
+        {
+            _logger.LogError("ApiClients not initialized");
+            return false;
+        }
+
         await _refreshLock.WaitAsync();
 
         try
@@ -120,36 +148,43 @@ public sealed class HttpService
             var (userId, refreshToken) = await _authProvider.GetRefreshDataAsync();
 
             if (userId <= 0 || string.IsNullOrWhiteSpace(refreshToken))
+            {
+                _logger.LogWarning("Invalid refresh data: UserId={UserId}, HasRefreshToken={HasToken}", userId, !string.IsNullOrWhiteSpace(refreshToken));
                 return false;
+            }
 
-            var refreshClient = _factory.CreateClient("RefreshClient");
+            _logger.LogDebug("Attempting silent refresh for user {UserId}", userId);
 
-            var json = JsonSerializer.Serialize(new RefreshTokenViewModel
+            var refresh = await _apiClients.Auth.RefreshToken(new RefreshTokenViewModel
             {
                 UserId = userId,
                 RefreshToken = refreshToken
-            }, JsonOptions);
+            });
 
-            var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/refresh");
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await refreshClient.SendAsync(request);
-
-            if (!response.IsSuccessStatusCode)
+            if (!refresh.IsSuccess || refresh.Data == null)
+            {
+                _logger.LogWarning("Refresh failed: IsSuccess={IsSuccess}, HasData={HasData}", refresh.IsSuccess, refresh.Data != null);
                 return false;
+            }
 
-            var raw = await response.Content.ReadAsStringAsync();
-
-            var wrapper = JsonSerializer.Deserialize<ServiceResult<AuthResponse>>(raw, JsonOptions);
-
-            if (wrapper == null || !wrapper.IsSuccess || wrapper.Data == null)
+            if (string.IsNullOrWhiteSpace(refresh.Data.AccessToken))
+            {
+                _logger.LogWarning("Refresh response missing access token");
                 return false;
+            }
 
             await _authProvider.UpdateTokensAsync(
-                wrapper.Data.AccessToken,
-                wrapper.Data.RefreshToken);
+                refresh.Data.AccessToken,
+                refresh.Data.RefreshToken ?? refreshToken
+            );
 
+            _logger.LogInformation("Token refresh successful");
             return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during token refresh");
+            return false;
         }
         finally
         {
@@ -163,42 +198,65 @@ public sealed class HttpService
 
     private async Task<ApiResult<T>> HandleResponseAsync<T>(HttpResponseMessage response)
     {
-        var statusCode = (int)response.StatusCode;
-
-        if (response.StatusCode == HttpStatusCode.NoContent)
-            return ApiResult<T>.Success(default!, statusCode);
-
-        var raw = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-            return ApiResult<T>.Fail(raw, statusCode);
-
-        if (string.IsNullOrWhiteSpace(raw))
-            return ApiResult<T>.Success(default!, statusCode);
-
-        try
+        using (response)
         {
-            var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
+            var statusCode = (int)response.StatusCode;
 
-            if (wrapper == null)
-                return ApiResult<T>.Fail("Invalid server response.", statusCode);
-
-            if (!wrapper.IsSuccess)
-                return ApiResult<T>.Fail(wrapper.Message ?? "Request failed.", statusCode);
-
-            if (wrapper.Data.ValueKind == JsonValueKind.Null ||
-                wrapper.Data.ValueKind == JsonValueKind.Undefined)
+            if (response.StatusCode == HttpStatusCode.NoContent)
+            {
+                _logger.LogDebug("Received 204 No Content");
                 return ApiResult<T>.Success(default!, statusCode);
+            }
 
-            var data = JsonSerializer.Deserialize<T>(
-                wrapper.Data.GetRawText(),
-                JsonOptions);
+            var raw = await response.Content.ReadAsStringAsync();
 
-            return ApiResult<T>.Success(data!, statusCode);
-        }
-        catch
-        {
-            return ApiResult<T>.Fail("Invalid JSON response.", statusCode);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Request failed with status {StatusCode}: {Response}", statusCode, raw);
+                return ApiResult<T>.Fail(raw, statusCode);
+            }
+
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                _logger.LogDebug("Response is empty");
+                return ApiResult<T>.Success(default!, statusCode);
+            }
+
+            try
+            {
+                var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
+
+                if (wrapper == null)
+                {
+                    _logger.LogError("Failed to deserialize response wrapper");
+                    return ApiResult<T>.Fail("Invalid server response.", statusCode);
+                }
+
+                if (!wrapper.IsSuccess)
+                {
+                    _logger.LogWarning("Server returned unsuccessful result: {Message}", wrapper.Message);
+                    return ApiResult<T>.Fail(wrapper.Message ?? "Request failed.", statusCode);
+                }
+
+                if (wrapper.Data.ValueKind == JsonValueKind.Null ||
+                    wrapper.Data.ValueKind == JsonValueKind.Undefined)
+                {
+                    _logger.LogDebug("Response data is null");
+                    return ApiResult<T>.Success(default!, statusCode);
+                }
+
+                var data = JsonSerializer.Deserialize<T>(
+                    wrapper.Data.GetRawText(),
+                    JsonOptions);
+
+                _logger.LogDebug("Response successfully deserialized");
+                return ApiResult<T>.Success(data!, statusCode);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deserializing response");
+                return ApiResult<T>.Fail("Invalid JSON response.", statusCode);
+            }
         }
     }
 
