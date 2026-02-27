@@ -10,6 +10,8 @@
 @implements IDisposable
 @inject IClockService ClockService
 @inherits AuthenticatedLayoutBase
+@inject IJSRuntime JS
+
 
 <!-- Loader — only when IsLoading is explicitly true -->
 <Loader Visible="@IsLoading" Message="@LoaderMessage" />
@@ -169,10 +171,18 @@
         }
     }
 
+    private async Task LogDeviceToConsole()
+    {
+        var device = await JS.InvokeAsync<string>("deviceHelper.getDeviceType");
+        await JS.InvokeVoidAsync("console.log", $"Device: {device}");
+    }
+
     private async Task ClockInAsync()
     {
         PendingClockIn = true;
         DisableClockIn = true;
+
+        await LogDeviceToConsole();
 
         var canProceed = await PrepareClockActionAsync();
         if (!canProceed)
@@ -182,9 +192,11 @@
     private async Task ClockOutAsync()
     {
         if (DisableClockOut)
-            return;
+            return;   
 
         PendingClockIn = false;
+
+        await LogDeviceToConsole();
 
         var canProceed = await PrepareClockActionAsync();
         if (!canProceed)
@@ -237,7 +249,8 @@
                     Notes = attendanceViewModel.Notes,
                     WorkingHours = TimeSpan.Zero,
                     Latitude = CurrentLatitude,
-                    Longitude = CurrentLongitude
+                    Longitude = CurrentLongitude,
+                    Device = await JS.InvokeAsync<string>("deviceHelper.getDeviceType")
                 });
 
                 if (!result.IsSuccess)
@@ -275,7 +288,8 @@
                     Notes = attendanceViewModel.Notes,
                     WorkingHours = AccumulatedHours.ToTimeSpan(),
                     Latitude = CurrentLatitude,
-                    Longitude = CurrentLongitude
+                    Longitude = CurrentLongitude,
+                    Device  = await JS.InvokeAsync<string>("deviceHelper.getDeviceType")
                 });
 
                 if (!result.IsSuccess)
