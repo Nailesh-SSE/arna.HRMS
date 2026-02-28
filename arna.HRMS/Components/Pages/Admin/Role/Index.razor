@@ -1,11 +1,11 @@
 ﻿@page "/role"
 
-@using arna.HRMS.ClientServices.Admin.Role
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject NavigationManager NavigationManager
 @inject IRoleService RoleService
@@ -209,7 +209,7 @@
         }
         else if (!result.IsSuccess)
         {
-            NotificationService.Error(result.Message ?? "Failed to load roles");
+            await NotificationService.Error(result.Message ?? "Failed to load roles");
             _roles = new List<RoleViewModel>();
         }
         else
@@ -239,11 +239,11 @@
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error(result.Message ?? "Unable to delete role.");
+            await NotificationService.Error(result.Message ?? "Unable to delete role.");
             return;
         }
 
-        NotificationService.Success("Role deleted successfully.");
+        await NotificationService.Success("Role deleted successfully.");
         await LoadRolesAsync();
     }
 

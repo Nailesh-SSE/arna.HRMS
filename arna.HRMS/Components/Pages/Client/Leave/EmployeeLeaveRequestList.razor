@@ -1,10 +1,10 @@
-﻿@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
 
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
@@ -146,7 +146,7 @@
     private async Task LoadRequestsAsync()
     {
         var employeeId = GetEmployeeId();
-        var result = await LeaveService.GetLeaveRequestByEmployee(employeeId);
+        var result = await LeaveService.GetLeaveRequestsByEmployeeAsync(employeeId);
 
         allRequests = result?.IsSuccess == true && result.Data != null
             ? result.Data
@@ -167,9 +167,16 @@
         var confirm = await JsRuntime.InvokeAsync<bool>("confirm", "Cancel this leave?");
         if (!confirm) return;
 
-        await LeaveService.UpadteLeaverequestStatusCancle(req.Id, req.EmployeeId);
+        var result = await LeaveService.CancelLeaveRequestAsync(req.Id, req.EmployeeId);
+        if(result?.IsSuccess != true)
+        {
+            await NotificationService.Error(result?.Message ?? "Failed to cancel leave.");
+            return;
+        }
         await RefreshAsync();
         await OnRequestChanged.InvokeAsync();
+        await NotificationService.Success("Cancel Leave Successfully.");
+
     }
 
     private static string GetStatusBadgeClass(Status status) => status switch

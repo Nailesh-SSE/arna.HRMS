@@ -1,5 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
+using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
@@ -13,25 +13,35 @@ public class FestivalHolidayRepository
         _baseRepository = baseRepository;
     }
 
-    public async Task<List<FestivalHoliday>> GetFestivalHolidayAsync()
+    public async Task<List<FestivalHoliday>> GetFestivalHolidaysAsync()
     {
         return await _baseRepository.Query()
             .Where(h => h.IsActive && !h.IsDeleted)
-            .OrderByDescending(x => x.Id).ToListAsync();
+            .OrderByDescending(h => h.Id)
+            .ToListAsync(); 
     }
 
     public async Task<FestivalHoliday?> GetFestivalHolidayByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .FirstOrDefaultAsync(h => h.Id == id && h.IsActive && !h.IsDeleted);
+            .Where(h => h.Id == id && h.IsActive && !h.IsDeleted)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<List<FestivalHoliday>> GetByMonthAsync(int year, int month)
     {
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1);
+
         return await _baseRepository.Query()
-            .Where(h => h.Date.Year == year && h.Date.Month == month && h.IsActive && !h.IsDeleted)
+            .Where(h =>
+                h.IsActive &&
+                !h.IsDeleted &&
+                h.Date >= startDate &&
+                h.Date < endDate)
             .ToListAsync();
     }
+
     public Task<FestivalHoliday> CreateFestivalHolidayAsync(FestivalHoliday festivalHoliday)
     {
         return _baseRepository.AddAsync(festivalHoliday);
@@ -44,7 +54,11 @@ public class FestivalHolidayRepository
 
     public async Task<bool> DeleteFestivalHolidayAsync(int id)
     {
-        var festivalHoliday = await GetFestivalHolidayByIdAsync(id);
+        var festivalHoliday = await _baseRepository.Query()
+            .FirstOrDefaultAsync(h =>
+                h.Id == id &&
+                h.IsActive &&
+                !h.IsDeleted);
 
         if (festivalHoliday == null)
             return false;
@@ -57,24 +71,39 @@ public class FestivalHolidayRepository
         return true;
     }
 
-    public async Task<List<FestivalHoliday?>> GetByNameAsync(string name)
+    public async Task<List<FestivalHoliday>> GetByNameAsync(string name)
     {
-        var existingHoliday = await _baseRepository.Query()
-            .Where(h => h.FestivalName.ToLower().Trim() == name.ToLower().Trim() && h.IsActive && !h.IsDeleted).ToListAsync();
-        return existingHoliday;
-    }
+        if (string.IsNullOrWhiteSpace(name))
+            return new List<FestivalHoliday>();
 
-    public async Task<List<FestivalHoliday?>> GetByNameAndDateAsync(string name, DateTime date, int id)
-    {
-        var existingHoliday = await _baseRepository.Query()
+        name = name.Trim().ToLower();
+
+        return await _baseRepository.Query()
             .Where(h =>
-                h.FestivalName.ToLower().Trim() == name.ToLower().Trim()
-                && h.IsActive
-                && !h.IsDeleted
-                && h.Date.Date == date.Date
-                && h.Id != id
-            ).ToListAsync();
-        return existingHoliday;
+                h.IsActive &&
+                !h.IsDeleted &&
+                h.FestivalName.Trim().ToLower() == name)
+            .ToListAsync();
     }
 
+    public async Task<List<FestivalHoliday>> GetByNameAndDateAsync(string name, DateTime date, int id)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return new List<FestivalHoliday>();
+
+        name = name.Trim().ToLower();
+
+        var start = date.Date;
+        var end = start.AddDays(1);
+
+        return await _baseRepository.Query()
+            .Where(h =>
+                h.IsActive &&
+                !h.IsDeleted &&
+                h.Id != id &&
+                h.FestivalName.Trim().ToLower() == name &&
+                h.Date >= start &&
+                h.Date < end)
+            .ToListAsync();
+    }
 }

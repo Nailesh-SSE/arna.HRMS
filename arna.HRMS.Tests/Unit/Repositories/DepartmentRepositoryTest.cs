@@ -1,7 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
@@ -58,7 +57,7 @@ public class DepartmentRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentRepository.GetDepartmentAsync();
+        var result = await _departmentRepository.GetDepartmentsAsync();
 
         Assert.That(result.Count(), Is.EqualTo(1));
         Assert.That(result.First().Name, Is.EqualTo("ActiveDept"));
@@ -67,7 +66,7 @@ public class DepartmentRepositoryTests
     [Test]
     public async Task GetDepartmentAsync_WhenNoDepartments_ReturnsEmpty()
     {
-        var result = await _departmentRepository.GetDepartmentAsync();
+        var result = await _departmentRepository.GetDepartmentsAsync();
 
         Assert.That(result, Is.Empty);
     }
@@ -96,7 +95,7 @@ public class DepartmentRepositoryTests
         _dbContext.Departments.AddRange(dept1, dept2);
         await _dbContext.SaveChangesAsync();
 
-        var result = (await _departmentRepository.GetDepartmentAsync()).ToList();
+        var result = (await _departmentRepository.GetDepartmentsAsync()).ToList();
 
         Assert.That(result[0].Id, Is.GreaterThan(result[1].Id));
     }
@@ -129,7 +128,7 @@ public class DepartmentRepositoryTests
         _dbContext.Departments.Add(child);
         await _dbContext.SaveChangesAsync();
 
-        var result = (await _departmentRepository.GetDepartmentAsync()).ToList();
+        var result = (await _departmentRepository.GetDepartmentsAsync()).ToList();
 
         var childFromDb = result.First(d => d.Name == "ChildDept");
 
@@ -165,7 +164,7 @@ public class DepartmentRepositoryTests
         _dbContext.Departments.Add(inactiveChild);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentRepository.GetDepartmentAsync();
+        var result = await _departmentRepository.GetDepartmentsAsync();
 
         Assert.That(result.Any(d => d.Name == "InactiveChild"), Is.False);
     }

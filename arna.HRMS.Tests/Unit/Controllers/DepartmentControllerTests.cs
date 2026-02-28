@@ -1,7 +1,7 @@
-﻿using arna.HRMS.API.Controllers.Admin;
-using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.API.Controllers;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
-using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
@@ -30,10 +30,10 @@ public class DepartmentControllerTests
             new DepartmentDto(){ Id = 2, Name = "HR" }
         };
         // Arrange
-        _departmentServiceMock.Setup(service => service.GetDepartmentAsync())
+        _departmentServiceMock.Setup(service => service.GetDepartmentsAsync())
             .ReturnsAsync(ServiceResult<List<DepartmentDto>>.Success(list));
         // Act
-        var result = await _departmentController.GetDepartment();
+        var result = await _departmentController.GetAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -42,10 +42,10 @@ public class DepartmentControllerTests
     public async Task GetDepartment_ShoulsSuccess_WhenNoDepartment()
     {
         // Arrange
-        _departmentServiceMock.Setup(service => service.GetDepartmentAsync())
+        _departmentServiceMock.Setup(service => service.GetDepartmentsAsync())
             .ReturnsAsync(ServiceResult<List<DepartmentDto>>.Success(new List<DepartmentDto>()));
         // Act
-        var result = await _departmentController.GetDepartment();
+        var result = await _departmentController.GetAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -58,7 +58,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.GetDepartmentByIdAsync(1))
             .ReturnsAsync(ServiceResult<DepartmentDto?>.Success(department));
         // Act
-        var result = await _departmentController.GetDepartmentById(1);
+        var result = await _departmentController.GetByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -70,7 +70,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.GetDepartmentByIdAsync(1))
             .ReturnsAsync(ServiceResult<DepartmentDto?>.Fail("Department not found"));
         // Act
-        var result = await _departmentController.GetDepartmentById(1);
+        var result = await _departmentController.GetByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Department not found"));
@@ -83,13 +83,13 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.GetDepartmentByIdAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<DepartmentDto?>.Fail("Invalid department ID"));
         // Act
-        var result = await _departmentController.GetDepartmentById(0);
+        var result = await _departmentController.GetByIdAsync(0);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid department ID"));
 
         // Act
-        result = await _departmentController.GetDepartmentById(-1);
+        result = await _departmentController.GetByIdAsync(-1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid department ID"));
@@ -104,7 +104,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.CreateDepartmentAsync(departmentDto))
             .ReturnsAsync(ServiceResult<DepartmentDto>.Success(createdDepartment));
         // Act
-        var result = await _departmentController.CreateDepartment(departmentDto);
+        var result = await _departmentController.CreateAsync(departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -117,7 +117,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.CreateDepartmentAsync(departmentDto))
             .ReturnsAsync(ServiceResult<DepartmentDto>.Fail("Failed to create department"));
         // Act
-        var result = await _departmentController.CreateDepartment(departmentDto);
+        var result = await _departmentController.CreateAsync(departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Failed to create department"));
@@ -129,7 +129,7 @@ public class DepartmentControllerTests
         var departmentDto = new DepartmentDto() { Name = "" }; // Invalid name
         _departmentController.ModelState.AddModelError("Name", "Name is required");
         // Act
-        var result = await _departmentController.CreateDepartment(departmentDto);
+        var result = await _departmentController.CreateAsync(departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         var badRequestResult = result as BadRequestObjectResult;
@@ -146,7 +146,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.UpdateDepartmentAsync(departmentDto))
             .ReturnsAsync(ServiceResult<DepartmentDto>.Success(departmentDto));
         // Act
-        var result = await _departmentController.UpdateDepartment(1, departmentDto);
+        var result = await _departmentController.UpdateAsync(1, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -159,7 +159,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.UpdateDepartmentAsync(departmentDto))
             .ReturnsAsync(ServiceResult<DepartmentDto>.Fail("Failed to update department"));
         // Act
-        var result = await _departmentController.UpdateDepartment(1, departmentDto);
+        var result = await _departmentController.UpdateAsync(1, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Failed to update department"));
@@ -171,7 +171,7 @@ public class DepartmentControllerTests
         var departmentDto = new DepartmentDto() { Id = 1, Name = "" }; // Invalid name
         _departmentController.ModelState.AddModelError("Name", "Name is required");
         // Act
-        var result = await _departmentController.UpdateDepartment(1, departmentDto);
+        var result = await _departmentController.UpdateAsync(1, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         var badRequestResult = result as BadRequestObjectResult;
@@ -190,7 +190,7 @@ public class DepartmentControllerTests
             .ReturnsAsync(ServiceResult<DepartmentDto>.Fail("Failed to update department"));
 
         // Act
-        var result = await _departmentController.UpdateDepartment(2, departmentDto);
+        var result = await _departmentController.UpdateAsync(2, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
@@ -204,12 +204,12 @@ public class DepartmentControllerTests
             .Setup(service => service.UpdateDepartmentAsync(departmentDto))
             .ReturnsAsync(ServiceResult<DepartmentDto>.Fail("Failed to update department"));
         // Act
-        var result = await _departmentController.UpdateDepartment(0, departmentDto);
+        var result = await _departmentController.UpdateAsync(0, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
         // Act
-        result = await _departmentController.UpdateDepartment(-1, departmentDto);
+        result = await _departmentController.UpdateAsync(-1, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
@@ -223,7 +223,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.DeleteDepartmentAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Success(true));
         // Act
-        var result = await _departmentController.DeleteDepartment(1);
+        var result = await _departmentController.DeleteAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -236,7 +236,7 @@ public class DepartmentControllerTests
             .Setup(service => service.DeleteDepartmentAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Fail("Failed to delete department"));
         // Act
-        var result = await _departmentController.DeleteDepartment(1);
+        var result = await _departmentController.DeleteAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Failed to delete department"));
@@ -249,12 +249,12 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.DeleteDepartmentAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid department ID"));
         // Act
-        var result = await _departmentController.DeleteDepartment(0);
+        var result = await _departmentController.DeleteAsync(0);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid department ID"));
         // Act
-        result = await _departmentController.DeleteDepartment(-1);
+        result = await _departmentController.DeleteAsync(-1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid department ID"));
@@ -268,7 +268,7 @@ public class DepartmentControllerTests
         _departmentServiceMock.Setup(service => service.DeleteDepartmentAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Fail("Department not found"));
         // Act
-        var result = await _departmentController.DeleteDepartment(1);
+        var result = await _departmentController.DeleteAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Department not found"));

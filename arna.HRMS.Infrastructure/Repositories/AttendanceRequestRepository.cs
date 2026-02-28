@@ -1,6 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
-using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
+using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
@@ -16,94 +16,106 @@ public class AttendanceRequestRepository
 
     public async Task<List<AttendanceRequest>> GetAttendanceRequests(int? employeeId, Status? status)
     {
-        var query = _baseRepository.Query().Where(ar => ar.IsActive && !ar.IsDeleted); 
+        var query = _baseRepository.Query()
+            .Where(ar => ar.IsActive && !ar.IsDeleted);
 
         if (employeeId.HasValue)
-        {
             query = query.Where(ar => ar.EmployeeId == employeeId.Value);
-        }
 
         if (status.HasValue)
-        {
             query = query.Where(ar => ar.StatusId == status.Value);
-        }
-         
+
         return await query
             .Include(ar => ar.Employee)
             .OrderByDescending(ar => ar.Id)
             .ToListAsync();
     }
 
-    public async Task<List<AttendanceRequest>> GetPandingAttendanceRequestes()
+    public async Task<List<AttendanceRequest>> GetPendingAttendanceRequests()
     {
         return await _baseRepository.Query()
-            .Where(ar => ar.StatusId == Status.Pending && ar.IsActive && !ar.IsDeleted)
-            .Include(d => d.Employee)
-            .OrderByDescending(d => d.Id)
+            .Where(ar =>
+                ar.IsActive &&
+                !ar.IsDeleted &&
+                ar.StatusId == Status.Pending)
+            .Include(ar => ar.Employee)
+            .OrderByDescending(ar => ar.Id)
             .ToListAsync();
     }
 
     public async Task<AttendanceRequest?> GetAttendanceRequestByIdAsync(int id)
     {
         return await _baseRepository.Query()
-                .Include(x => x.Employee)
-                .FirstOrDefaultAsync(x=> x.Id == id && x.IsActive && !x.IsDeleted);
+            .Where(ar => ar.Id == id && ar.IsActive && !ar.IsDeleted)
+            .Include(ar => ar.Employee)
+            .FirstOrDefaultAsync();
     }
 
-    public Task<AttendanceRequest> CreateAttendanceRequestAsync(AttendanceRequest attendance)
+    public async Task<AttendanceRequest> CreateAttendanceRequestAsync(AttendanceRequest entity)
     {
-        return _baseRepository.AddAsync(attendance);
+        return await _baseRepository.AddAsync(entity);
     }
 
-    public Task<AttendanceRequest> UpdateAttendanceRequestAsync(AttendanceRequest attendanceRequest)
+    public async Task<AttendanceRequest> UpdateAttendanceRequestAsync(AttendanceRequest entity)
     {
-        return _baseRepository.UpdateAsync(attendanceRequest);
+        return await _baseRepository.UpdateAsync(entity);
     }
 
     public async Task<bool> DeleteAttendanceRequestAsync(int id)
     {
-        var request = await GetAttendanceRequestByIdAsync(id);
-        if (request == null)
+        var entity = await _baseRepository.Query()
+            .FirstOrDefaultAsync(ar =>
+                ar.Id == id &&
+                ar.IsActive &&
+                !ar.IsDeleted);
+
+        if (entity == null)
             return false;
 
-        request.IsActive = false;
-        request.IsDeleted = true;
-        request.UpdatedOn = DateTime.Now;
-        await _baseRepository.UpdateAsync(request);
+        entity.IsActive = false;
+        entity.IsDeleted = true;
+        entity.UpdatedOn = DateTime.Now;
+
+        await _baseRepository.UpdateAsync(entity);
         return true;
     }
 
-    public async Task<bool> UpdateAttendanceRequestStatusAsync(int attendanceRequestId, Status status, int approvedBy)
+    public async Task<bool> UpdateAttendanceRequestStatusAsync(int id, Status status, int approvedBy)
     {
-        var request = await GetAttendanceRequestByIdAsync(attendanceRequestId);
+        var entity = await _baseRepository.Query()
+            .FirstOrDefaultAsync(ar =>
+                ar.Id == id &&
+                ar.IsActive &&
+                !ar.IsDeleted);
 
-        if (request == null)
+        if (entity == null)
             return false;
 
-        request.StatusId = status;
-        request.ApprovedBy = approvedBy;
-        request.ApprovedOn = DateTime.Now;
-        request.UpdatedOn = DateTime.Now;
+        entity.StatusId = status;
+        entity.ApprovedBy = approvedBy;
+        entity.ApprovedOn = DateTime.Now;
+        entity.UpdatedOn = DateTime.Now;
 
-        await _baseRepository.UpdateAsync(request);
+        await _baseRepository.UpdateAsync(entity);
         return true;
     }
 
-    public async Task<bool> GetAttendanceRequestCancelAsync(int id, int employeeId)
+    public async Task<bool> CancelAttendanceRequestAsync(int id, int employeeId)
     {
-        var attendanceRequest = await _baseRepository.Query()
-            .FirstOrDefaultAsync(ar => ar.Id == id && ar.EmployeeId == employeeId && ar.IsActive && !ar.IsDeleted);
+        var entity = await _baseRepository.Query()
+            .FirstOrDefaultAsync(ar =>
+                ar.Id == id &&
+                ar.EmployeeId == employeeId &&
+                ar.IsActive &&
+                !ar.IsDeleted);
 
-        if (attendanceRequest == null)
+        if (entity == null || entity.StatusId != Status.Pending)
             return false;
 
-        if (attendanceRequest.StatusId != Status.Pending)
-            return false;
+        entity.StatusId = Status.Cancelled;
+        entity.UpdatedOn = DateTime.Now;
 
-        attendanceRequest.StatusId = Status.Cancelled;
-        attendanceRequest.UpdatedOn = DateTime.Now;
-        await _baseRepository.UpdateAsync(attendanceRequest);
-
+        await _baseRepository.UpdateAsync(entity);
         return true;
     }
 }

@@ -1,9 +1,7 @@
-﻿using arna.HRMS.Core.DTOs;
-using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
@@ -51,7 +49,7 @@ public class LeaveRepositoryTests
         await _leaveRepository.CreateLeaveTypeAsync(leaveType1);
         await _leaveRepository.CreateLeaveTypeAsync(leaveType2);
         // Act
-        var leaveTypes = await _leaveRepository.GetLeaveTypeAsync();
+        var leaveTypes = await _leaveRepository.GetLeaveTypesAsync();
         // Assert
         Assert.That(leaveTypes.Count, Is.EqualTo(2));
         Assert.That(leaveTypes.Any(lm => lm.LeaveNameId == LeaveName.CasualLeave), Is.True);
@@ -65,7 +63,7 @@ public class LeaveRepositoryTests
     public async Task GetAllLeaveTypesAsync_WhenEmpty_ShouldReturnEmptyList()
     {
         // Act
-        var leaveTypes = await _leaveRepository.GetLeaveTypeAsync();
+        var leaveTypes = await _leaveRepository.GetLeaveTypesAsync();
         // Assert
         Assert.That(leaveTypes, Is.Not.Null);
         Assert.That(leaveTypes, Is.Empty);
@@ -135,12 +133,12 @@ public class LeaveRepositoryTests
         var deleteResult = await _leaveRepository.DeleteLeaveTypeAsync(0);
 
         Assert.That(deleteResult, Is.False);
-        Assert.That(await _leaveRepository.GetLeaveTypeAsync(), Is.Empty);
+        Assert.That(await _leaveRepository.GetLeaveTypesAsync(), Is.Empty);
 
         var deleteResultNegative = await _leaveRepository.DeleteLeaveTypeAsync(-5);
 
         Assert.That(deleteResultNegative, Is.False);
-        Assert.That(await _leaveRepository.GetLeaveTypeAsync(), Is.Empty);
+        Assert.That(await _leaveRepository.GetLeaveTypesAsync(), Is.Empty);
 
     }
 
@@ -192,7 +190,7 @@ public class LeaveRepositoryTests
         };
         await _leaveRepository.CreateLeaveTypeAsync(leaveType);
         // Act
-        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.PaternityLeave,null);
+        var exists = await _leaveRepository.LeaveTypeExistsAsync(LeaveName.PaternityLeave,null);
         // Assert
         Assert.That(exists, Is.EqualTo(true));
     }
@@ -201,7 +199,7 @@ public class LeaveRepositoryTests
     public async Task LeaveExistsAsync_ShouldReturnFalseIfLeaveDoesNotExist()
     {
         // Act
-        var exists = await _leaveRepository.LeaveExistsAsync(LeaveName.MaternityLeave, 1);
+        var exists = await _leaveRepository.LeaveTypeExistsAsync(LeaveName.MaternityLeave, 1);
         // Assert
         Assert.That(exists, Is.EqualTo(false));
     }
@@ -560,7 +558,7 @@ public class LeaveRepositoryTests
             }
         );
         await _dbContext.SaveChangesAsync();
-        var leaveRequests = await _leaveRepository.GetLeaveRequestAsync();
+        var leaveRequests = await _leaveRepository.GetLeaveRequestsAsync();
         Assert.That(leaveRequests, Is.Not.Null);
         Assert.That(leaveRequests.Count, Is.EqualTo(2));
         Assert.That(leaveRequests.All(lr => lr.IsActive && !lr.IsDeleted), Is.True);
@@ -594,7 +592,7 @@ public class LeaveRepositoryTests
     [Test]
     public async Task GetLeaveRequestAsync_WhenEmpty_ShouldReturnEmptyList()
     {
-        var leaveRequests = await _leaveRepository.GetLeaveRequestAsync();
+        var leaveRequests = await _leaveRepository.GetLeaveRequestsAsync();
         Assert.That(leaveRequests, Is.Not.Null);
         Assert.That(leaveRequests, Is.Empty);
     }

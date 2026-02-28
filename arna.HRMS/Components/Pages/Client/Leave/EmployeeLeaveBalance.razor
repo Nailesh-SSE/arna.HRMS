@@ -1,7 +1,7 @@
-@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Leave
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 
 @inject ILeaveService LeaveService
 @inherits AuthenticatedLayoutBase
@@ -116,12 +116,12 @@
         {
             var employeeId = GetEmployeeId();
 
-            var typeResult = await LeaveService.GetLeaveTypeAsync();
+            var typeResult = await LeaveService.GetLeaveTypesAsync();
             leaveTypes = typeResult?.IsSuccess == true && typeResult.Data != null
                 ? typeResult.Data
                 : new();
 
-            var reqResult = await LeaveService.GetLeaveRequestByEmployee(employeeId);
+            var reqResult = await LeaveService.GetLeaveRequestsByEmployeeAsync(employeeId);
             employeeRequests = reqResult?.IsSuccess == true && reqResult.Data != null
                 ? reqResult.Data
                 : new();

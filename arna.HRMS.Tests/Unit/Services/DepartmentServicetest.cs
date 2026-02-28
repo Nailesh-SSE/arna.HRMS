@@ -2,14 +2,12 @@
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Model;
 
 namespace arna.HRMS.Tests.Unit.Services;
 
@@ -78,7 +76,7 @@ public class DepartmentServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentService.GetDepartmentAsync();
+        var result = await _departmentService.GetDepartmentsAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(2));
@@ -88,7 +86,7 @@ public class DepartmentServiceTests
     [Test]
     public async Task GetDepartmentAsync_WhenNoDepartmentsExist_ReturnsEmptyList()
     {
-        var result = await _departmentService.GetDepartmentAsync();
+        var result = await _departmentService.GetDepartmentsAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
@@ -119,7 +117,7 @@ public class DepartmentServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentService.GetDepartmentAsync();
+        var result = await _departmentService.GetDepartmentsAsync();
 
         Assert.That(result.Data!.Count, Is.EqualTo(1));
         Assert.That(result.Data![0].Name, Is.EqualTo("ActiveDept"));
@@ -149,7 +147,7 @@ public class DepartmentServiceTests
         _dbContext.Departments.AddRange(dept1, dept2);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _departmentService.GetDepartmentAsync();
+        var result = await _departmentService.GetDepartmentsAsync();
 
         Assert.That(result.Data![0].Id, Is.GreaterThan(result.Data![1].Id));
     }

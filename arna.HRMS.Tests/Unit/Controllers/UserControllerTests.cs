@@ -1,7 +1,7 @@
-﻿using arna.HRMS.API.Controllers.Admin;
-using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.API.Controllers;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
-using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
@@ -31,10 +31,10 @@ public class UserControllerTests
         };
         // Arrange
         _mockUserServices
-            .Setup(s => s.GetUserAsync())
+            .Setup(s => s.GetUsersAsync())
             .ReturnsAsync(ServiceResult<List<UserDto>>.Success(users));
         // Act
-        var result = await _controller.GetUsers();
+        var result = await _controller.GetAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -43,10 +43,10 @@ public class UserControllerTests
     public async Task GetUsers_ShouldSuccess_WhenNoDataFound()
     {
         _mockUserServices
-            .Setup(s => s.GetUserAsync())
+            .Setup(s => s.GetUsersAsync())
             .ReturnsAsync(ServiceResult<List<UserDto>>.Success(null!));
         // Act
-        var result = await _controller.GetUsers();
+        var result = await _controller.GetAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -64,7 +64,7 @@ public class UserControllerTests
            .ReturnsAsync(ServiceResult<UserDto?>.Success(users.FirstOrDefault(u => u.Id == 1)));
 
         // Act
-        var result = await _controller.GetUserById(1);
+        var result = await _controller.GetByIdAsync(1);
 
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
@@ -77,7 +77,7 @@ public class UserControllerTests
             .Setup(s => s.GetUserByIdAsync(1))
             .ReturnsAsync(ServiceResult<UserDto?>.Fail("Notfound"));
         // Act
-        var result = await _controller.GetUserById(1);
+        var result = await _controller.GetByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -90,13 +90,13 @@ public class UserControllerTests
             .ReturnsAsync(ServiceResult<UserDto?>.Fail("Invalid User ID"));
 
         // Act
-        var result = await _controller.GetUserById(0);
+        var result = await _controller.GetByIdAsync(0);
 
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
 
         // Act
-        result = await _controller.GetUserById(-1);
+        result = await _controller.GetByIdAsync(-1);
 
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
@@ -113,7 +113,7 @@ public class UserControllerTests
             .ReturnsAsync(ServiceResult<UserDto>.Success(users, "User created successfully"));
 
         // Act
-        var result = await _controller.CreateUser(users);
+        var result = await _controller.CreateAsync(users);
 
         // Assert
 
@@ -125,7 +125,7 @@ public class UserControllerTests
     {
         _controller.ModelState.AddModelError("Email", "Email is required");
         // Act
-        var result = await _controller.CreateUser(new UserDto());
+        var result = await _controller.CreateAsync(new UserDto());
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -140,7 +140,7 @@ public class UserControllerTests
             .ReturnsAsync(ServiceResult<UserDto>.Fail("Failed to create user"));
 
         // Act
-        var result = await _controller.CreateUser(users);
+        var result = await _controller.CreateAsync(users);
 
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
@@ -153,7 +153,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.UpdateUserAsync(users))
             .ReturnsAsync(ServiceResult<UserDto>.Success(users, "User updated successfully"));
-        var result = await _controller.UpdateUser(2, users);
+        var result = await _controller.UpdateAsync(2, users);
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
 
@@ -164,7 +164,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.UpdateUserAsync(users))
             .ReturnsAsync(ServiceResult<UserDto>.Success(users, "User updated successfully"));
-        var result = await _controller.UpdateUser(3, users);
+        var result = await _controller.UpdateAsync(3, users);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -176,7 +176,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.UpdateUserAsync(users))
             .ReturnsAsync(ServiceResult<UserDto>.Success(users, "User updated successfully"));
-        var result = await _controller.UpdateUser(2, users);
+        var result = await _controller.UpdateAsync(2, users);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -188,7 +188,7 @@ public class UserControllerTests
             .Setup(s => s.UpdateUserAsync(users))
             .ReturnsAsync(ServiceResult<UserDto>.Fail("Failed to update user"));
 
-        var result = await _controller.UpdateUser(2, users);
+        var result = await _controller.UpdateAsync(2, users);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -199,7 +199,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.DeleteUserAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Success(true, "User deleted successfully"));
-        var result = await _controller.DeleteUser(1);
+        var result = await _controller.DeleteAsync(1);
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
 
@@ -209,7 +209,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.DeleteUserAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Fail("Failed to delete user"));
-        var result = await _controller.DeleteUser(1);
+        var result = await _controller.DeleteAsync(1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
@@ -220,7 +220,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.DeleteUserAsync(11))
             .ReturnsAsync(ServiceResult<bool>.Fail("User not found"));
-        var result = await _controller.DeleteUser(11);
+        var result = await _controller.DeleteAsync(11);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
@@ -230,9 +230,9 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.DeleteUserAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid User ID"));
-        var result = await _controller.DeleteUser(0);
+        var result = await _controller.DeleteAsync(0);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
-        result = await _controller.DeleteUser(-1);
+        result = await _controller.DeleteAsync(-1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
@@ -244,7 +244,7 @@ public class UserControllerTests
             .Setup(s => s.ChangeUserPasswordAsync(2, "newpassword"))
             .ReturnsAsync(ServiceResult<bool>.Success(true, "Password changed successfully"));
 
-        var result = await _controller.ChangeUserPassword(2, "newpassword");
+        var result = await _controller.ChangePasswordAsync(2, "newpassword");
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
 
@@ -254,7 +254,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.ChangeUserPasswordAsync(2, "newpassword"))
             .ReturnsAsync(ServiceResult<bool>.Fail("Failed to change password"));
-        var result = await _controller.ChangeUserPassword(2, "newpassword");
+        var result = await _controller.ChangePasswordAsync(2, "newpassword");
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -264,9 +264,9 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.ChangeUserPasswordAsync(It.Is<int>(id => id <= 0), "newpassword"))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid User ID"));
-        var result = await _controller.ChangeUserPassword(0, "newpassword");
+        var result = await _controller.ChangePasswordAsync(0, "newpassword");
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        result = await _controller.ChangeUserPassword(-1, "newpassword");
+        result = await _controller.ChangePasswordAsync(-1, "newpassword");
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -276,7 +276,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.ChangeUserPasswordAsync(2, "short"))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid new password"));
-        var result = await _controller.ChangeUserPassword(2, "short");
+        var result = await _controller.ChangePasswordAsync(2, "short");
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -286,7 +286,7 @@ public class UserControllerTests
         _mockUserServices
             .Setup(s => s.ChangeUserPasswordAsync(11, "newpassword"))
             .ReturnsAsync(ServiceResult<bool>.Fail("User not found"));
-        var result = await _controller.ChangeUserPassword(11, "newpassword");
+        var result = await _controller.ChangePasswordAsync(11, "newpassword");
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 }

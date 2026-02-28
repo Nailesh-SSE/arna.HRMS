@@ -1,9 +1,9 @@
-﻿@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
@@ -110,7 +110,7 @@
                 leaveType = result.Data;
             else
             {
-                NotificationService.Error("Leave type not found");
+                await NotificationService.Error("Leave type not found");
                 await Close();
             }
         }
@@ -149,7 +149,7 @@
             var result = await LeaveService.UpdateLeaveTypeAsync(EditId!.Value, leaveType);
             if (!result.IsSuccess)
             {
-                NotificationService.Error(result.Message ?? "");
+                await NotificationService.Error(result.Message ?? "");
                 return;
             }
         }
@@ -158,12 +158,12 @@
             var result = await LeaveService.CreateLeaveTypeAsync(leaveType);
             if (!result.IsSuccess)
             {
-                NotificationService.Error(result.Message ?? "");
+                await NotificationService.Error(result.Message ?? "");
                 return;
             }
         }
 
-        NotificationService.Success(IsEditMode ? "Leave type updated" : "Leave type created");
+        await NotificationService.Success(IsEditMode ? "Leave type updated" : "Leave type created");
         await OnSaved.InvokeAsync();
     }
 

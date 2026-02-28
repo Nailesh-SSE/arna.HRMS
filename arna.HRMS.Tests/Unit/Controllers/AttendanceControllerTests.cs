@@ -1,7 +1,7 @@
-﻿using arna.HRMS.API.Controllers.Client;
-using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.API.Controllers;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
-using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
@@ -34,7 +34,7 @@ public class AttendanceControllerTests
             .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null, 1))
             .ReturnsAsync(ServiceResult<List<AttendanceDto>>.Success(list));
         // Act
-        var result = await _controller.GetEmployeeAttendance(null, 1);
+        var result = await _controller.GetAsync(null, 1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -47,7 +47,7 @@ public class AttendanceControllerTests
             .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null , 1))
             .ReturnsAsync(ServiceResult<List<AttendanceDto>>.Success(null!, "No data found"));
         // Act
-        var result = await _controller.GetEmployeeAttendance(null, 1);
+        var result = await _controller.GetAsync(null, 1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -58,10 +58,10 @@ public class AttendanceControllerTests
         // Arrange
         var attendance = new AttendanceDto { Id = 1, EmployeeId = 1, Date = DateTime.Today, ClockInTime = DateTime.Now.AddHours(-2).TimeOfDay, ClockOutTime = null };
         _serviceMock
-            .Setup(s => s.GetAttendenceByIdAsync(1))!
+            .Setup(s => s.GetAttendanceByIdAsync(1))!
             .ReturnsAsync(ServiceResult<AttendanceDto>.Success(attendance));
         // Act
-        var result = await _controller.GetAttendanceById(1);
+        var result = await _controller.GetByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -71,10 +71,10 @@ public class AttendanceControllerTests
     {
         // Arrange
         _serviceMock
-            .Setup(s => s.GetAttendenceByIdAsync(1))!
+            .Setup(s => s.GetAttendanceByIdAsync(1))!
             .ReturnsAsync(ServiceResult<AttendanceDto>.Fail("Attendance not found"));
         // Act
-        var result = await _controller.GetAttendanceById(1);
+        var result = await _controller.GetByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -83,13 +83,13 @@ public class AttendanceControllerTests
     public async Task GetAttendanceById_ShouldTail_WhenIdIsZeroOrNegative()
     {
         _serviceMock
-            .Setup(s => s.GetAttendenceByIdAsync(It.Is<int>(id => id <= 0)))!
+            .Setup(s => s.GetAttendanceByIdAsync(It.Is<int>(id => id <= 0)))!
             .ReturnsAsync(ServiceResult<AttendanceDto>.Fail("Invalid ID"));
-        var result = await _controller.GetAttendanceById(0);
+        var result = await _controller.GetByIdAsync(0);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid ID"));
 
-        result = await _controller.GetAttendanceById(-1);
+        result = await _controller.GetByIdAsync(-1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid ID"));
     }
@@ -103,7 +103,7 @@ public class AttendanceControllerTests
             .Setup(s => s.CreateAttendanceAsync(attendanceDto))
             .ReturnsAsync(ServiceResult<AttendanceDto>.Success(attendanceDto));
         // Act
-        var result = await _controller.CreateAttendance(attendanceDto);
+        var result = await _controller.CreateAsync(attendanceDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -115,7 +115,7 @@ public class AttendanceControllerTests
 
         _controller.ModelState.AddModelError("Date", "Required");
 
-        var result = await _controller.CreateAttendance(dto);
+        var result = await _controller.CreateAsync(dto);
 
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -127,7 +127,7 @@ public class AttendanceControllerTests
         _serviceMock
             .Setup(s => s.CreateAttendanceAsync(attendanceDto))
             .ReturnsAsync(ServiceResult<AttendanceDto>.Fail("Creation failed"));
-        var result = await _controller.CreateAttendance(attendanceDto);
+        var result = await _controller.CreateAsync(attendanceDto);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Creation failed"));
     }
@@ -310,7 +310,7 @@ public class AttendanceControllerTests
                     }
                 )
             );
-        var result = await _controller.GetLastToday(1);
+        var result = await _controller.GetLastTodayAsync(1);
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
 
@@ -320,7 +320,7 @@ public class AttendanceControllerTests
         _serviceMock
             .Setup(s => s.GetTodayLastEntryAsync(1))!
             .ReturnsAsync(ServiceResult<AttendanceDto>.Fail("No entry found for today"));
-        var result = await _controller.GetLastToday(1);
+        var result = await _controller.GetLastTodayAsync(1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("No entry found for today"));
     }
@@ -331,10 +331,10 @@ public class AttendanceControllerTests
         _serviceMock
             .Setup(s => s.GetTodayLastEntryAsync(It.Is<int>(id => id <= 0)))!
             .ReturnsAsync(ServiceResult<AttendanceDto>.Fail("Invalid Employee ID"));
-        var result = await _controller.GetLastToday(0);
+        var result = await _controller.GetLastTodayAsync(0);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid Employee ID"));
-        result = await _controller.GetLastToday(-1);
+        result = await _controller.GetLastTodayAsync(-1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Invalid Employee ID"));
     }

@@ -1,9 +1,9 @@
-﻿@using arna.HRMS.ClientServices.Admin.FestivalHolidays
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
-@inject IFestivalHoliday FestivalHolidayService
+@inject IFestivalHolidayService FestivalHolidayService
 @inject NotificationService NotificationService
 
 @if (ShowModal)
@@ -120,13 +120,13 @@
                     model = result.Data;
                 else
                 {
-                    NotificationService.Error("Holiday not found");
+                    await NotificationService.Error("Holiday not found");
                     await Close();
                 }
             }
             catch
             {
-                NotificationService.Error("Error loading holiday");
+                await NotificationService.Error("Error loading holiday");
                 await Close();
             }
         }
@@ -145,30 +145,29 @@
             {
                 var result = await FestivalHolidayService
                     .UpdateFestivalHolidayAsync(EditId!.Value, model);
-                    if (result?.IsSuccess != true)
-                    {
-                        NotificationService.Error(result?.Message ?? "Update failed.");
-                        return;
+                if (result?.IsSuccess != true)
+                {
+                    await NotificationService.Error(result?.Message ?? "Update failed.");
+                    return;
                 }
             }
             else
             {
                 var result = await FestivalHolidayService
                     .CreateFestivalHolidayAsync(model);
-                    if (result?.IsSuccess != true)
-                    {
-                        NotificationService.Error(result?.Message ?? "Creation failed.");
-                        return;
-                    }
+                if (result?.IsSuccess != true)
+                {
+                    await NotificationService.Error(result?.Message ?? "Creation failed.");
+                    return;
+                }
             }
-                NotificationService.Success(
-                    IsEditMode ? "Holiday updated" : "Holiday created");
+            await NotificationService.Success(IsEditMode ? "Holiday updated" : "Holiday created");
 
-                await OnSaved.InvokeAsync();
+            await OnSaved.InvokeAsync();
         }
         catch (Exception ex)
         {
-            NotificationService.Error(ex.Message ?? "Error saving holiday.");
+            await NotificationService.Error(ex.Message ?? "Error saving holiday.");
         }
     }
 

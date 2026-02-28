@@ -2,7 +2,6 @@
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
@@ -197,7 +196,7 @@ public class AttendanceRequestRepositoryTests
     [Test]
     public async Task GetPandingAttendanceRequestes_WhenNoData_ReturnsEmpty()
     {
-        var result = await _repository.GetPandingAttendanceRequestes();
+        var result = await _repository.GetPendingAttendanceRequests();
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.Count, Is.EqualTo(0));
@@ -221,7 +220,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetPandingAttendanceRequestes();
+        var result = await _repository.GetPendingAttendanceRequests();
 
         Assert.That(result.Count, Is.EqualTo(1));
         Assert.That(result.All(x => x.StatusId == Status.Pending), Is.True);
@@ -244,7 +243,7 @@ public class AttendanceRequestRepositoryTests
         _dbContext.AttendanceRequest.AddRange(active, inactive, deleted);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetPandingAttendanceRequestes();
+        var result = await _repository.GetPendingAttendanceRequests();
 
         Assert.That(result.Count, Is.EqualTo(1));
         Assert.That(result.First().IsActive, Is.True);
@@ -263,7 +262,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetPandingAttendanceRequestes();
+        var result = await _repository.GetPendingAttendanceRequests();
 
         Assert.That(result.First().Employee, Is.Not.Null);
         Assert.That(result.First().Employee.Id, Is.EqualTo(3));
@@ -283,7 +282,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetPandingAttendanceRequestes();
+        var result = await _repository.GetPendingAttendanceRequests();
 
         Assert.That(result.Count, Is.EqualTo(3));
         Assert.That(result[0].Id, Is.EqualTo(5));
@@ -304,7 +303,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetPandingAttendanceRequestes();
+        var result = await _repository.GetPendingAttendanceRequests();
 
         Assert.That(result.Count, Is.EqualTo(0));
     }
@@ -324,7 +323,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetPandingAttendanceRequestes();
+        var result = await _repository.GetPendingAttendanceRequests();
 
         Assert.That(result.Count, Is.EqualTo(2));
         Assert.That(result.All(x => x.StatusId == Status.Pending), Is.True);
@@ -952,7 +951,7 @@ public class AttendanceRequestRepositoryTests
     [Test]
     public async Task GetAttendanceRequestCancelAsync_WhenNotFound_ReturnsFalse()
     {
-        var result = await _repository.GetAttendanceRequestCancelAsync(999, 1);
+        var result = await _repository.CancelAttendanceRequestAsync(999, 1);
 
         Assert.That(result, Is.False);
     }
@@ -968,7 +967,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetAttendanceRequestCancelAsync(1, 99);
+        var result = await _repository.CancelAttendanceRequestAsync(1, 99);
 
         Assert.That(result, Is.False);
     }
@@ -985,7 +984,7 @@ public class AttendanceRequestRepositoryTests
         _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetAttendanceRequestCancelAsync(2, 2);
+        var result = await _repository.CancelAttendanceRequestAsync(2, 2);
 
         Assert.That(result, Is.False);
     }
@@ -1002,7 +1001,7 @@ public class AttendanceRequestRepositoryTests
         _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetAttendanceRequestCancelAsync(3, 3);
+        var result = await _repository.CancelAttendanceRequestAsync(3, 3);
 
         Assert.That(result, Is.False);
     }
@@ -1018,7 +1017,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetAttendanceRequestCancelAsync(4, 4);
+        var result = await _repository.CancelAttendanceRequestAsync(4, 4);
 
         Assert.That(result, Is.False);
     }
@@ -1034,7 +1033,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _repository.GetAttendanceRequestCancelAsync(5, 5);
+        var result = await _repository.CancelAttendanceRequestAsync(5, 5);
 
         Assert.That(result, Is.True);
 
@@ -1056,7 +1055,7 @@ public class AttendanceRequestRepositoryTests
 
         var before = DateTime.Now;
 
-        await _repository.GetAttendanceRequestCancelAsync(6, 6);
+        await _repository.CancelAttendanceRequestAsync(6, 6);
 
         var updated = await _dbContext.AttendanceRequest.FirstAsync();
 
@@ -1075,7 +1074,7 @@ public class AttendanceRequestRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
-        await _repository.GetAttendanceRequestCancelAsync(7, 7);
+        await _repository.CancelAttendanceRequestAsync(7, 7);
 
         var saved = await _dbContext.AttendanceRequest.FirstAsync();
 

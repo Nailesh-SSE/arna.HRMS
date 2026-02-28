@@ -1,9 +1,5 @@
 ﻿@page "/emp-attendance-management"
 
-@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Client.Attendance
-@using arna.HRMS.ClientServices.Client.AttendanceRequest
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Client.Attendance.EmployeeAttendanceRequest
 @using arna.HRMS.Components.Pages.Client.Attendance.Calendar
@@ -17,6 +13,9 @@
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
 
 @inherits AuthenticatedLayoutBase
 
@@ -224,7 +223,7 @@
     {
         await base.OnInitializedAsync();
 
-        if (!IsAuthentication()) return;
+        if (!IsAuthenticated()) return;
 
         EnsureSelectedMonth();
         await LoadData();
@@ -260,16 +259,14 @@
         }
         catch (Exception ex)
         {
-            NotificationService.Error(ex.Message);
+            await NotificationService.Error(ex.Message);
         }
     }
 
     private async Task LoadAttendanceAsync(int empId)
     {
-        State.AttendanceList =
-            await AttendanceService.GetAttendanceByMonthAsync(
-                State.Year, State.Month, empId, State.SelectedDate, null)
-            ?? new();
+        var result = await AttendanceService.GetAttendanceByMonthAsync(State.Year, State.Month, empId, State.SelectedDate, null);
+        State.AttendanceList = result?.IsSuccess == true ? result.Data ?? new() : new();
     }
 
     private async Task LoadAttendanceRequests(int empId)
@@ -360,23 +357,21 @@
 
         try
         {
-            var result = await AttendanceRequestService
-                .UpdateRequestStatus(req.Id, Status.Cancelled);
+            var result = await AttendanceRequestService.CancelRequestAsync(req.Id);
 
             if (result?.IsSuccess == true)
             {
-                NotificationService.Success("Request cancelled successfully.");
+                await NotificationService.Success("Request cancelled successfully.");
                 await LoadData();
             }
             else
             {
-                NotificationService.Error(
-                    result?.Message ?? "Failed to cancel request.");
+                await NotificationService.Error(result?.Message ?? "Failed to cancel request.");
             }
         }
         catch (Exception ex)
         {
-            NotificationService.Error($"Error: {ex.Message}");
+            await NotificationService.Error($"Error: {ex.Message}");
         }
     }
 

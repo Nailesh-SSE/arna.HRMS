@@ -1,11 +1,11 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
-@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
 
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
@@ -158,7 +158,7 @@
         {
             var result = await LeaveService.UpdateLeaveRequestAsync(model.Id, model);
             if (result?.IsSuccess == true)
-                NotificationService.Success("Leave updated successfully.");
+                await NotificationService.Success("Leave updated successfully.");
         }
         else
         {
@@ -166,13 +166,13 @@
 
             if (result?.IsSuccess == true)
             {
-                NotificationService.Success("Leave submitted successfully.");
+                await NotificationService.Success("Leave submitted successfully.");
                 await Close();
                 await OnSaved.InvokeAsync();
             }
             else
             {
-                NotificationService.Error(result?.Message ?? "Failed to submit leave.");
+                await NotificationService.Error(result?.Message ?? "Failed to submit leave.");
             }
         }
 

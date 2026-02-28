@@ -1,6 +1,8 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
+using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace arna.HRMS.Infrastructure.Repositories;
 
@@ -13,12 +15,12 @@ public class UserRepository
         _baseRepository = baseRepository;
     }
 
-    public async Task<List<User>> GetUserAsync()
+    public async Task<List<User>> GetUsersAsync()
     {
         return await _baseRepository.Query()
+            .Where(x => x.IsActive && !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.Role)
-            .Where(x => x.IsActive && !x.IsDeleted)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
@@ -26,9 +28,10 @@ public class UserRepository
     public async Task<User?> GetUserByIdAsync(int id)
     {
         return await _baseRepository.Query()
+            .Where(x => x.Id == id && x.IsActive && !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.Role)
-            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
+            .FirstOrDefaultAsync();
     }
 
     public Task<User> CreateUserAsync(User user)
@@ -43,9 +46,14 @@ public class UserRepository
 
     public async Task<bool> DeleteUserAsync(int id)
     {
-        var user = await GetUserByIdAsync(id);
+        var user = await _baseRepository.Query()
+            .FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                x.IsActive &&
+                !x.IsDeleted);
+
         if (user == null)
-            return false;
+            return false; 
 
         user.IsActive = false;
         user.IsDeleted = true;
@@ -55,23 +63,25 @@ public class UserRepository
         return true;
     }
 
-    public async Task<bool> UserExistsAsync(string email, string phoneNumber, int? id)
+    public async Task<bool> UserExistsAsync(string? email, string? phoneNumber, int? id)
     {
-        email = (email ?? string.Empty).Trim().ToLower();
-        phoneNumber = (phoneNumber ?? string.Empty).Trim().ToLower();
+        if (string.IsNullOrWhiteSpace(email) &&
+            string.IsNullOrWhiteSpace(phoneNumber))
+            return false;
+
+        email = email?.Trim().ToLower();
+        phoneNumber = phoneNumber?.Trim();
 
         return await _baseRepository.Query()
-            .AnyAsync(u =>
-                u.IsActive &&
-                !u.IsDeleted &&
-                u.Id != id &&
+            .Where(x => x.IsActive && !x.IsDeleted)
+            .AnyAsync(x =>
+                x.Id != id &&
                 (
-                    u.Email.Trim().ToLower() == email ||
-                    u.PhoneNumber.Trim().ToLower() == phoneNumber
+                    (!string.IsNullOrEmpty(email) && x.Email.Trim().ToLower() == email) ||
+                    (!string.IsNullOrEmpty(phoneNumber) && x.PhoneNumber.Trim().ToLower() == phoneNumber)
                 )
             );
     }
-
 
     public async Task<User?> GetByUsernameOrEmailAsync(string usernameOrEmail)
     {
@@ -81,11 +91,12 @@ public class UserRepository
         usernameOrEmail = usernameOrEmail.Trim().ToLower();
 
         return await _baseRepository.Query()
+            .Where(x => x.IsActive && !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.Role)
-            .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted &&
-                (u.Username.Trim().ToLower() == usernameOrEmail ||
-                 u.Email.Trim().ToLower() == usernameOrEmail));
+            .FirstOrDefaultAsync(x =>
+                x.Username.Trim().ToLower() == usernameOrEmail ||
+                x.Email.Trim().ToLower() == usernameOrEmail);
     }
 
     public async Task<bool> ChangeUserPasswordAsync(int id, string newPassword)
@@ -93,7 +104,12 @@ public class UserRepository
         if (string.IsNullOrWhiteSpace(newPassword))
             return false;
 
-        var user = await GetUserByIdAsync(id);
+        var user = await _baseRepository.Query()
+            .FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                x.IsActive &&
+                !x.IsDeleted);
+
         if (user == null)
             return false;
 
@@ -107,8 +123,8 @@ public class UserRepository
 
     private static string HashPassword(string password)
     {
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(password);
+        using var sha = SHA256.Create();
+        var bytes = Encoding.UTF8.GetBytes(password);
         var hash = sha.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
     }

@@ -1,12 +1,12 @@
-﻿@using arna.HRMS.ClientServices.Admin.FestivalHolidays
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.Pages.Admin.LeaveManagement
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
-@inject IFestivalHoliday FestivalHolidayService
+@inject IFestivalHolidayService FestivalHolidayService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
 
@@ -414,17 +414,17 @@
             var result = await FestivalHolidayService.DeleteFestivalHolidayAsync(model.Id);
             if (result?.IsSuccess == true)
             {
-                NotificationService.Success("Holiday deleted successfully.");
+                await NotificationService.Success("Holiday deleted successfully.");
                 await LoadFestivals();
             }
             else
             {
-                NotificationService.Error(result?.Message ?? "Failed to delete.");
+                await NotificationService.Error(result?.Message ?? "Failed to delete.");
             }
         }
         catch (Exception ex)
         {
-            NotificationService.Error(ex.Message ?? "Error deleting holiday.");
+            await NotificationService.Error(ex.Message ?? "Error deleting holiday.");
         }
     }
 

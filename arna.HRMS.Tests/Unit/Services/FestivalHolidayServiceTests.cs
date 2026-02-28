@@ -3,7 +3,6 @@ using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
@@ -86,7 +85,7 @@ public class FestivalHolidayServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _festivalHolidayService.GetFestivalHolidayAsync();
+        var result = await _festivalHolidayService.GetFestivalHolidaysAsync();
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(3));
         Assert.That(result.Data![0].FestivalName, Is.EqualTo("Test3 Holiday"));
@@ -103,7 +102,7 @@ public class FestivalHolidayServiceTests
     [Test]
     public async Task GetAllFestivalHoliday_Empty()
     {
-        var result = await _festivalHolidayService.GetFestivalHolidayAsync();
+        var result = await _festivalHolidayService.GetFestivalHolidaysAsync();
         Assert.That(result.IsSuccess, Is.True);
     }
 
@@ -178,7 +177,7 @@ public class FestivalHolidayServiceTests
     [Test]
     public async Task GetFestivalHolidayByMonth_EmptyDB()
     {
-        var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(2024, 5);
+        var result = await _festivalHolidayService.GetFestivalHolidaysByMonthAsync(2024, 5);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
     }
@@ -221,7 +220,7 @@ public class FestivalHolidayServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(2024, 5);
+        var result = await _festivalHolidayService.GetFestivalHolidaysByMonthAsync(2024, 5);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
@@ -274,7 +273,7 @@ public class FestivalHolidayServiceTests
             }
         );
         await _dbContext.SaveChangesAsync();
-        var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(2024, 12);
+        var result = await _festivalHolidayService.GetFestivalHolidaysByMonthAsync(2024, 12);
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(2));
         Assert.That(result.Data![1].FestivalName, Is.EqualTo("Test4 Holiday"));
@@ -311,7 +310,7 @@ public class FestivalHolidayServiceTests
             }
         );
         await _dbContext.SaveChangesAsync();
-        var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(2024, 13);
+        var result = await _festivalHolidayService.GetFestivalHolidaysByMonthAsync(2024, 13);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid month"));
         Assert.That(result.Data, Is.Null);
@@ -343,7 +342,7 @@ public class FestivalHolidayServiceTests
             }
         );
         await _dbContext.SaveChangesAsync();
-        var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(2024, 0);
+        var result = await _festivalHolidayService.GetFestivalHolidaysByMonthAsync(2024, 0);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid month"));
         Assert.That(result.Data, Is.Null);
@@ -375,7 +374,7 @@ public class FestivalHolidayServiceTests
             }
         );
         await _dbContext.SaveChangesAsync();
-        var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(0, 5);
+        var result = await _festivalHolidayService.GetFestivalHolidaysByMonthAsync(0, 5);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid year"));
         Assert.That(result.Data, Is.Null);
@@ -407,7 +406,7 @@ public class FestivalHolidayServiceTests
             }
         );
         await _dbContext.SaveChangesAsync();
-        var result = await _festivalHolidayService.GetFestivalHolidayByMonthAsync(3000, 5);
+        var result = await _festivalHolidayService.GetFestivalHolidaysByMonthAsync(3000, 5);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
     }
@@ -860,7 +859,7 @@ public class FestivalHolidayServiceTests
         };
         _dbContext.FestivalHoliday.Add(holiday);
         await _dbContext.SaveChangesAsync();
-        var result = await _festivalHolidayService.GetFestivalHolidayByNameAsync("Unique Holiday");
+        var result = await _festivalHolidayService.GetFestivalHolidaysByNameAsync("Unique Holiday");
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
         Assert.That(result.Data![0]!.FestivalName, Is.EqualTo("Unique Holiday"));
@@ -870,7 +869,7 @@ public class FestivalHolidayServiceTests
     [Test]
     public async Task GetFestivalHolidayByName_whenNotFound()
     {
-        var result = await _festivalHolidayService.GetFestivalHolidayByNameAsync("Nonexistent Holiday");
+        var result = await _festivalHolidayService.GetFestivalHolidaysByNameAsync("Nonexistent Holiday");
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
@@ -889,7 +888,7 @@ public class FestivalHolidayServiceTests
         };
         _dbContext.FestivalHoliday.Add(holiday);
         await _dbContext.SaveChangesAsync();
-        var result = await _festivalHolidayService.GetFestivalHolidayByNameAsync("Deleted Holiday");
+        var result = await _festivalHolidayService.GetFestivalHolidaysByNameAsync("Deleted Holiday");
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
@@ -898,11 +897,11 @@ public class FestivalHolidayServiceTests
     [Test]
     public async Task GetFestivalHolidayByName_whenNameIsNullOrWhitespace()
     {
-        var resultNull = await _festivalHolidayService.GetFestivalHolidayByNameAsync(null!);
+        var resultNull = await _festivalHolidayService.GetFestivalHolidaysByNameAsync(null!);
         Assert.That(resultNull.IsSuccess, Is.False);
         Assert.That(resultNull.Message, Is.EqualTo("Festival name is required"));
 
-        var resultWhitespace = await _festivalHolidayService.GetFestivalHolidayByNameAsync(" ");
+        var resultWhitespace = await _festivalHolidayService.GetFestivalHolidaysByNameAsync(" ");
         Assert.That(resultWhitespace.IsSuccess, Is.False);
         Assert.That(resultWhitespace.Message, Is.EqualTo("Festival name is required"));
     }

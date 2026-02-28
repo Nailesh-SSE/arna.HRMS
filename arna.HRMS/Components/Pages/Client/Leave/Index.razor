@@ -1,26 +1,19 @@
 ﻿@page "/emp-leave-management"
 
-@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Admin.LeaveManagement
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Dropdown
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
 
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
-
 @inherits AuthenticatedLayoutBase
-
-@* @using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.Components.Loader
-@using arna.HRMS.Components.Pages.Employee.LeaveManagement
-
-@inherits AuthenticatedLayoutBase *@
 
 <Loader Visible="isLoading" Message="@loadingMessage" />
 

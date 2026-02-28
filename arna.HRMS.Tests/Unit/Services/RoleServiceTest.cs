@@ -1,11 +1,10 @@
 ﻿using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -65,7 +64,7 @@ public class RoleServiceTest
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _roleService.GetRoleAsync();
+        var result = await _roleService.GetRolesAsync();
 
         // Assert
         Assert.That(result.IsSuccess, Is.True);
@@ -85,7 +84,7 @@ public class RoleServiceTest
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _roleService.GetRoleAsync();
+        var result = await _roleService.GetRolesAsync();
 
         // Assert
         Assert.That(result.IsSuccess, Is.True);
@@ -100,7 +99,7 @@ public class RoleServiceTest
         // (No roles added to DB)
 
         // Act
-        var result = await _roleService.GetRoleAsync();
+        var result = await _roleService.GetRolesAsync();
 
         // Assert
         Assert.That(result.IsSuccess, Is.True);
@@ -120,7 +119,7 @@ public class RoleServiceTest
         });
         await _dbContext.SaveChangesAsync();
         // Act
-        var result = await _roleService.GetRoleAsync();
+        var result = await _roleService.GetRolesAsync();
         // Assert
         Assert.That(result.IsSuccess, Is.True);
         Assert.That( result.Data!.Count, Is.EqualTo(2));

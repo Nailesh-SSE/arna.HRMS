@@ -4,9 +4,10 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity.Data
-@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Layout
+@using arna.HRMS.Models.ViewModels.Auth
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
 
 @inject NavigationManager NavigationManager
 @inject IAuthService AuthService
@@ -50,12 +51,12 @@
                 <DataAnnotationsValidator />
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Username</label>
-                    <InputText @bind-Value="loginModel.Username"
+                    <label class="form-label fw-semibold">UserName</label>
+                    <InputText @bind-Value="loginModel.UserName"
                                class="form-control"
-                               placeholder="Enter username"
+                               placeholder="Enter UserName"
                                autofocus />
-                    <ValidationMessage For="@(() => loginModel.Username)" class="text-danger small" />
+                    <ValidationMessage For="@(() => loginModel.UserName)" class="text-danger small" />
                 </div>
 
                 <div class="mb-4">
@@ -90,7 +91,7 @@
 </div>
 
 @code {
-    private LoginModel loginModel = new();
+    private LoginViewModel loginModel = new();
     private string? errorMessage;
     private bool isLoading;
     private bool showPassword;
@@ -113,11 +114,7 @@
 
         try
         {
-            var success = await AuthService.LoginAsync(new LoginRequest
-            {
-                Email = loginModel.Username,
-                Password = loginModel.Password
-            });
+            var success = await AuthService.LoginAsync(loginModel);
 
             if (!success)
             {
@@ -125,7 +122,7 @@
                 return;
             }
 
-            NotificationService.Success("User Login Successfully!");
+            await NotificationService.Success("User Login Successfully!");
             NavigationManager.NavigateTo("/", true);
         }
         finally
@@ -137,11 +134,5 @@
     private void TogglePasswordVisibility()
     {
         showPassword = !showPassword;
-    }
-
-    public class LoginModel
-    {
-        [Required] public string Username { get; set; } = string.Empty;
-        [Required] public string Password { get; set; } = string.Empty;
     }
 }

@@ -1,17 +1,9 @@
-﻿using arna.HRMS.ClientServices.Admin.Department;
-using arna.HRMS.ClientServices.Admin.Employee;
-using arna.HRMS.ClientServices.Admin.FestivalHolidays;
-using arna.HRMS.ClientServices.Admin.Role;
-using arna.HRMS.ClientServices.Admin.User;
-using arna.HRMS.ClientServices.Auth;
-using arna.HRMS.ClientServices.Client.Attendance;
-using arna.HRMS.ClientServices.Client.AttendanceRequest;
-using arna.HRMS.ClientServices.Client.Clock;
-using arna.HRMS.ClientServices.Common;
-using arna.HRMS.ClientServices.Http;
-using arna.HRMS.ClientServices.Leave;
-using arna.HRMS.Components;
+﻿using arna.HRMS.Components;
 using arna.HRMS.Models.State.Attendance;
+using arna.HRMS.Services;
+using arna.HRMS.Services.Auth;
+using arna.HRMS.Services.Common;
+using arna.HRMS.Services.Http;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace arna.HRMS;
@@ -95,12 +87,12 @@ public class Program
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
         builder.Services.AddScoped<IClockService, ClockService>();
-        builder.Services.AddScoped<IUsersService, UsersService>();
+        builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
         builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();
         builder.Services.AddScoped<ILeaveService, LeaveService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
-        builder.Services.AddScoped<IFestivalHoliday, FestivalHolidayService>();
+        builder.Services.AddScoped<IFestivalHolidayService, FestivalHolidayService>();
 
         builder.Services.AddScoped<AttendanceState>();
 

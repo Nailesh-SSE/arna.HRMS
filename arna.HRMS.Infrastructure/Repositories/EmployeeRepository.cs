@@ -1,5 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
+using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
@@ -16,19 +16,20 @@ public class EmployeeRepository
     public async Task<List<Employee>> GetEmployeesAsync()
     {
         return await _baseRepository.Query()
+            .Where(e => e.IsActive && !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
-            .Where(e => e.IsActive && !e.IsDeleted)
-            .OrderByDescending(x => x.Id)
+            .OrderByDescending(e => e.Id)
             .ToListAsync();
     }
 
     public async Task<Employee?> GetEmployeeByIdAsync(int id)
     {
         return await _baseRepository.Query()
+            .Where(e => e.Id == id && e.IsActive && !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
-            .FirstOrDefaultAsync(e => e.Id == id && e.IsActive && !e.IsDeleted);
+            .FirstOrDefaultAsync();
     }
 
     public Task<Employee> CreateEmployeeAsync(Employee employee)
@@ -43,7 +44,12 @@ public class EmployeeRepository
 
     public async Task<bool> DeleteEmployeeAsync(int id)
     {
-        var employee = await GetEmployeeByIdAsync(id);
+        var employee = await _baseRepository.Query()
+            .FirstOrDefaultAsync(e =>
+                e.Id == id &&
+                e.IsActive &&
+                !e.IsDeleted);
+
         if (employee == null)
             return false;
 
@@ -55,18 +61,24 @@ public class EmployeeRepository
         return true;
     }
 
-    public async Task<bool> EmployeeExistsAsync(string email, string phoneNumber, int? employeeId = 0)
+    public async Task<bool> EmployeeExistsAsync(string? email, string? phoneNumber, int? employeeId = 0)
     {
-        if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(phoneNumber))
+        if (string.IsNullOrWhiteSpace(email) &&
+            string.IsNullOrWhiteSpace(phoneNumber))
             return false;
 
-        email = email?.Trim().ToLower() ?? string.Empty;
-        phoneNumber = phoneNumber?.Trim() ?? string.Empty;
+        email = email?.Trim().ToLower();
+        phoneNumber = phoneNumber?.Trim().ToLower();
 
-        return await _baseRepository.Query().FirstOrDefaultAsync(e =>
-            (e.Email.ToLower() == email || e.PhoneNumber == phoneNumber) &&
-             e.Id != employeeId &&
-            e.IsActive && !e.IsDeleted) != null;
+        return await _baseRepository.Query()
+            .Where(e => e.IsActive && !e.IsDeleted)
+            .AnyAsync(e =>
+               e.Id != employeeId &&
+                (
+                    (!string.IsNullOrEmpty(email) && e.Email.Trim().ToLower() == email) ||
+                    (!string.IsNullOrEmpty(phoneNumber) && e.PhoneNumber.Trim().ToLower() == phoneNumber)
+                )
+            );
     }
 
     public async Task<string?> GetLastEmployeeNumberAsync()

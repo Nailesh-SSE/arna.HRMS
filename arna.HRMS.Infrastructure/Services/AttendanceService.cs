@@ -1,9 +1,9 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 
@@ -18,8 +18,7 @@ public class AttendanceService : IAttendanceService
     private readonly ILeaveService _leaveService;
     private readonly AttendanceValidator _validator;
 
-
-    private static readonly DateTime SystemStartDate = DateTime.Now;
+    private static readonly DateTime SystemStartDate = DateTime.UtcNow;
 
     public AttendanceService(
         AttendanceRepository attendanceRepository,
@@ -37,120 +36,118 @@ public class AttendanceService : IAttendanceService
         _validator = validator;
     }
 
-    #region Basic APIs
-
-    public async Task<ServiceResult<List<AttendanceDto>>> GetEmployeeAttendanceByStatusAsync(AttendanceStatus? status, int? EmployeeId)
+    public async Task<ServiceResult<List<AttendanceDto>>> GetEmployeeAttendanceByStatusAsync(AttendanceStatus? status, int? employeeId)
     {
-        var data = await _attendanceRepository.GetEmployeeAttendanceByStatus(status, EmployeeId);
-        var list = _mapper.Map<List<AttendanceDto>>(data);
+        var data = await _attendanceRepository.GetEmployeeAttendanceByStatus(status, employeeId);
 
-        return ServiceResult<List<AttendanceDto>>.Success(list);
+        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(data));
     }
 
-    public async Task<ServiceResult<AttendanceDto?>> GetAttendenceByIdAsync(int id)
+    public async Task<ServiceResult<AttendanceDto?>> GetAttendanceByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<AttendanceDto?>.Fail("Invalid Attendance ID");
+            return ServiceResult<AttendanceDto?>.Fail("Invalid Attendance ID.");
 
         var attendance = await _attendanceRepository.GetAttendanceByIdAsync(id);
 
         if (attendance == null)
-            return ServiceResult<AttendanceDto?>.Fail("Attendance not found");
+            return ServiceResult<AttendanceDto?>.Fail("Attendance not found.");
 
-        var dto = _mapper.Map<AttendanceDto>(attendance);
-        return dto!=null
-            ? ServiceResult<AttendanceDto?>.Success(dto)
-            : ServiceResult<AttendanceDto?>.Fail("Fail to find Attendance");
+        return ServiceResult<AttendanceDto?>.Success(_mapper.Map<AttendanceDto>(attendance));
     }
 
     public async Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto)
     {
         if (attendanceDto == null)
-            return ServiceResult<AttendanceDto>.Fail("Invalid request");
+            return ServiceResult<AttendanceDto>.Fail("Invalid request.");
 
         var validation = await _validator.ValidateCreateAsync(attendanceDto);
         if (!validation.IsValid)
             return ServiceResult<AttendanceDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        var entity = _mapper.Map<Attendance>(attendanceDto);
-
-        var employeeResult = await _employeeService.GetEmployeeByIdAsync(entity.EmployeeId);
+        var employeeResult = await _employeeService.GetEmployeeByIdAsync(attendanceDto.EmployeeId);
 
         if (!employeeResult.IsSuccess || employeeResult.Data == null)
-            return ServiceResult<AttendanceDto>.Fail("Employee not found");
+            return ServiceResult<AttendanceDto>.Fail("Employee not found.");
+
+        var entity = _mapper.Map<Attendance>(attendanceDto);
 
         await CreateAbsentAndHolidayAsync(entity.EmployeeId, entity.Date, employeeResult.Data.HireDate);
 
         var created = await _attendanceRepository.CreateAttendanceAsync(entity);
 
-        var resultDto = _mapper.Map<AttendanceDto>(created);
-        return resultDto!=null
-            ? ServiceResult<AttendanceDto>.Success(resultDto, "Attendance created successfully")
-            : ServiceResult<AttendanceDto>.Fail("Fail to Create Attendance");
+        return ServiceResult<AttendanceDto>.Success(_mapper.Map<AttendanceDto>(created), "Attendance created successfully.");
     }
 
-    #endregion
-
-    #region Monthly Attendance Api
-    public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId)
+    public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? employeeId, DateTime? date, AttendanceStatus? status)
     {
         if (year <= 0)
-            return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid year");
+            return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid year.");
 
         if (month < 1 || month > 12)
-            return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid month");
+            return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid month.");
 
-        if (empId > 0)
+        if (employeeId.HasValue && employeeId > 0)
         {
-            var exist = await _employeeService.GetEmployeeByIdAsync(empId.Value);
-            if(exist==null)
-                return ServiceResult<List<MonthlyAttendanceDto>>.Fail("No such Employee Found");
+            var exist = await _employeeService.GetEmployeeByIdAsync(employeeId.Value);
+
+            if (!exist.IsSuccess || exist.Data == null)
+                return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Employee not found.");
         }
 
-        var attendances = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, empId, date, statusId);
+        var result = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, employeeId, date, status);
 
-        return attendances.Any()
-            ? ServiceResult<List<MonthlyAttendanceDto>>.Success((List<MonthlyAttendanceDto>)attendances)
-            : ServiceResult<List<MonthlyAttendanceDto>>.Fail("Data Not Found");
-
+        return result.Any()
+            ? ServiceResult<List<MonthlyAttendanceDto>>.Success(result)
+            : ServiceResult<List<MonthlyAttendanceDto>>.Fail("Data not found.");
     }
-    #endregion
 
-    #region Auto Absent & Holiday Creation
-
-    private async Task CreateAbsentAndHolidayAsync(
-        int employeeId,
-        DateTime newAttendanceDate,
-        DateTime hireDate)
+    public async Task<ServiceResult<AttendanceDto?>> GetTodayLastEntryAsync(int employeeId)
     {
-        var lastAttendanceDate =
-            await _attendanceRepository.GetLastAttendanceDateAsync(employeeId);
+        if (employeeId <= 0)
+            return ServiceResult<AttendanceDto?>.Fail("Invalid Employee ID.");
+
+        var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
+
+        if (!exist.IsSuccess || exist.Data == null)
+            return ServiceResult<AttendanceDto?>.Fail("Employee not found.");
+
+        var last = await _attendanceRepository.GetLastAttendanceTodayAsync(employeeId);
+
+        if (last == null)
+            return ServiceResult<AttendanceDto?>.Fail("Attendance not found.");
+
+        return ServiceResult<AttendanceDto?>.Success(_mapper.Map<AttendanceDto>(last));
+    }
+
+    private async Task CreateAbsentAndHolidayAsync(int employeeId, DateTime newAttendanceDate, DateTime hireDate)
+    {
+        var lastAttendanceDate = await _attendanceRepository.GetLastAttendanceDateAsync(employeeId);
 
         var effectiveStartDate =
             lastAttendanceDate?.Date
-            ?? MaxDate(hireDate.Date, SystemStartDate);
+            ?? (hireDate.Date > SystemStartDate.Date
+                ? hireDate.Date
+                : SystemStartDate.Date);
 
         if (effectiveStartDate >= newAttendanceDate.Date)
             return;
 
-        var festivalDates = new HashSet<DateTime>();
-        var leaveDates = new HashSet<DateTime>();
+        var festivalDates = (await _festivalHolidayService
+            .GetFestivalHolidaysAsync())
+            .Data?
+            .Select(f => f.Date.Date)
+            .ToHashSet() ?? new HashSet<DateTime>();
 
-        var festivalResult = await _festivalHolidayService.GetFestivalHolidayAsync();
-        if (festivalResult.IsSuccess && festivalResult.Data != null)
-        {
-            festivalDates = festivalResult.Data.Select(f => f.Date.Date).ToHashSet();
-        }
-
-        var leaveResult = await _leaveService.GetLeaveRequestAsync();
-        if (leaveResult.IsSuccess && leaveResult.Data != null)
-        {
-            leaveDates = leaveResult.Data
-                .Where(l => l.EmployeeId == employeeId && l.StatusId == Status.Approved)
-                .SelectMany(l => Enumerable.Range(0, (l.EndDate.Date - l.StartDate.Date).Days + 1)
-                    .Select(offset => l.StartDate.Date.AddDays(offset)))
-                .ToHashSet();
-        }
+        var leaveDates = (await _leaveService
+            .GetLeaveRequestsAsync())
+            .Data?
+            .Where(l => l.EmployeeId == employeeId && l.StatusId == Status.Approved)
+            .SelectMany(l => Enumerable.Range(
+                0,
+                (l.EndDate.Date - l.StartDate.Date).Days + 1)
+                .Select(offset => l.StartDate.Date.AddDays(offset)))
+            .ToHashSet() ?? new HashSet<DateTime>();
 
         var missingDates = Enumerable
             .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
@@ -158,8 +155,8 @@ public class AttendanceService : IAttendanceService
 
         foreach (var date in missingDates)
         {
-            bool isHoliday = IsWeekend(date) || festivalDates.Contains(date.Date);
-            bool isLeave = leaveDates.Contains(date.Date);
+            bool isHoliday = IsWeekend(date) || festivalDates.Contains(date);
+            bool isLeave = leaveDates.Contains(date);
 
             if (!isLeave && !isHoliday)
             {
@@ -170,56 +167,16 @@ public class AttendanceService : IAttendanceService
                     ClockIn = null,
                     ClockOut = null,
                     TotalHours = TimeSpan.Zero,
-                    StatusId = isHoliday
-                    ? AttendanceStatus.Holiday
-                    : AttendanceStatus.Absent,
-                    Notes = isHoliday
-                    ? "Holiday"
-                    : "Absent",
+                    StatusId = AttendanceStatus.Absent,
+                    Notes = "Absent",
                     Latitude = null,
-                    Longitude = null
-
+                    Longitude = null,
+                    CreatedOn = DateTime.UtcNow
                 });
             }
         }
     }
 
-    #endregion
-
-    #region Today
-
-    public async Task<ServiceResult<AttendanceDto?>> GetTodayLastEntryAsync(int employeeId)
-    {
-        if (employeeId <= 0)
-            return ServiceResult<AttendanceDto?>.Fail("Invalid Employee ID");
-        var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
-        if (exist == null)
-            return ServiceResult<AttendanceDto?>.Fail("No such Employee Found");
-
-        var last =
-            await _attendanceRepository.GetLastAttendanceTodayAsync(employeeId);
-
-        if (last == null)
-            return ServiceResult<AttendanceDto?>.Fail("Attendance not found");
-
-        var dto = _mapper.Map<AttendanceDto>(last);
-        return dto!=null
-            ? ServiceResult<AttendanceDto?>.Success(dto)
-            : ServiceResult<AttendanceDto?>.Fail("No data found");
-    }
-
-    #endregion
-
-    #region Helpers
-
-    private static bool IsWeekend(DateOnly date) =>
-        date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-
     private static bool IsWeekend(DateTime date) =>
         date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-
-    private static DateTime MaxDate(DateTime a, DateTime b) =>
-        a > b ? a : b;
-
-    #endregion
 }

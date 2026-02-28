@@ -1,7 +1,7 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
-using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
@@ -31,10 +31,10 @@ public class LeaveControllerTest
         };
 
         _leaveServiceMock
-            .Setup(s => s.GetLeaveTypeAsync())
+            .Setup(s => s.GetLeaveTypesAsync())
             .ReturnsAsync(ServiceResult<List<LeaveTypeDto>>.Success(leaveTypes));
         // Act
-        var result = await _controller.GetLeaveTypes();
+        var result = await _controller.GetTypesAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -48,10 +48,10 @@ public class LeaveControllerTest
     {
         // Arrange
         _leaveServiceMock
-            .Setup(s => s.GetLeaveTypeAsync())
+            .Setup(s => s.GetLeaveTypesAsync())
             .ReturnsAsync(ServiceResult<List<LeaveTypeDto>>.Success(null!));
         // Act
-        var result = await _controller.GetLeaveTypes();
+        var result = await _controller.GetTypesAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var notFoundResult = result as NotFoundObjectResult;
@@ -67,7 +67,7 @@ public class LeaveControllerTest
             .Setup(s => s.GetLeaveTypeByIdAsync(1))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Success(leaveType));
         // Act
-        var result = await _controller.GetLeaveTypesById(1);
+        var result = await _controller.GetTypeByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -84,7 +84,7 @@ public class LeaveControllerTest
             .Setup(s => s.GetLeaveTypeByIdAsync(1))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Fail(null!));
         // Act
-        var result = await _controller.GetLeaveTypesById(1);
+        var result = await _controller.GetTypeByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -96,11 +96,11 @@ public class LeaveControllerTest
             .Setup(s => s.GetLeaveTypeByIdAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Fail("Invalid Id"));
 
-        var result = await _controller.GetLeaveTypesById(0);
+        var result = await _controller.GetTypeByIdAsync(0);
 
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
 
-        result = await _controller.GetLeaveTypesById(-1);
+        result = await _controller.GetTypeByIdAsync(-1);
 
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -114,7 +114,7 @@ public class LeaveControllerTest
             .Setup(s => s.CreateLeaveTypeAsync(leaveTypeDto))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Success(leaveTypeDto));
         // Act
-        var result = await _controller.CreateLeaveType(leaveTypeDto);
+        var result = await _controller.CreateTypeAsync(leaveTypeDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -130,7 +130,7 @@ public class LeaveControllerTest
         _controller.ModelState.AddModelError("LeaveNameId", "LeaveNameId is required");
         var leaveTypeDto = new LeaveTypeDto { Id = 1, Description = "Used for illness", MaxPerYear = 10 };
         // Act
-        var result = await _controller.CreateLeaveType(leaveTypeDto);
+        var result = await _controller.CreateTypeAsync(leaveTypeDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -142,7 +142,7 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.CreateLeaveTypeAsync(dto))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Fail("Create failed"));
-        var result = await _controller.CreateLeaveType(dto);
+        var result = await _controller.CreateTypeAsync(dto);
 
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -156,7 +156,7 @@ public class LeaveControllerTest
             .Setup(s => s.UpdateLeaveTypeAsync(leaveTypeDto))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Success(leaveTypeDto));
         // Act
-        var result = await _controller.UpdateLeaveType(1, leaveTypeDto);
+        var result = await _controller.UpdateTypeAsync(1, leaveTypeDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -172,7 +172,7 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.UpdateLeaveTypeAsync(dto))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Fail("Update failed"));
-        var result = await _controller.UpdateLeaveType(1, dto);
+        var result = await _controller.UpdateTypeAsync(1, dto);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -183,7 +183,7 @@ public class LeaveControllerTest
         _controller.ModelState.AddModelError("LeaveNameId", "LeaveNameId is required");
         var leaveTypeDto = new LeaveTypeDto { Id = 1, Description = "Used for illness", MaxPerYear = 10 };
         // Act
-        var result = await _controller.UpdateLeaveType(1, leaveTypeDto);
+        var result = await _controller.UpdateTypeAsync(1, leaveTypeDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -194,7 +194,7 @@ public class LeaveControllerTest
         // Arrange
         var leaveTypeDto = new LeaveTypeDto { Id = 1, LeaveNameId = LeaveName.SickLeave, Description = "Used for illness", MaxPerYear = 10 };
         // Act
-        var result = await _controller.UpdateLeaveType(2, leaveTypeDto);
+        var result = await _controller.UpdateTypeAsync(2, leaveTypeDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -206,10 +206,10 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.UpdateLeaveTypeAsync(dto))
             .ReturnsAsync(ServiceResult<LeaveTypeDto>.Fail("Invalid Id"));
-        var result = await _controller.UpdateLeaveType(0, dto);
+        var result = await _controller.UpdateTypeAsync(0, dto);
 
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        result = await _controller.UpdateLeaveType(-1, dto);
+        result = await _controller.UpdateTypeAsync(-1, dto);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -222,7 +222,7 @@ public class LeaveControllerTest
             .Setup(s => s.DeleteLeaveTypeAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Success(true));
         // Act
-        var result = await _controller.DeleteLeaveType(1);
+        var result = await _controller.DeleteTypeAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkResult>());
     }
@@ -235,7 +235,7 @@ public class LeaveControllerTest
             .Setup(s => s.DeleteLeaveTypeAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Fail("Delete failed"));
         // Act
-        var result = await _controller.DeleteLeaveType(1);
+        var result = await _controller.DeleteTypeAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -246,10 +246,10 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.DeleteLeaveTypeAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid Id"));
-        var result = await _controller.DeleteLeaveType(0);
+        var result = await _controller.DeleteTypeAsync(0);
 
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
-        result = await _controller.DeleteLeaveType(-1);
+        result = await _controller.DeleteTypeAsync(-1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
@@ -263,10 +263,10 @@ public class LeaveControllerTest
             new LeaveRequestDto { Id = 2, EmployeeId = 2, LeaveTypeId = 2, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(3), StatusId = Status.Approved }
         };
         _leaveServiceMock
-            .Setup(s => s.GetLeaveRequestAsync())
+            .Setup(s => s.GetLeaveRequestsAsync())
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Success(leaveRequests));
         // Act
-        var result = await _controller.GetLeaveRequests();
+        var result = await _controller.GetRequestsAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -280,10 +280,10 @@ public class LeaveControllerTest
     {
         // Arrange
         _leaveServiceMock
-            .Setup(s => s.GetLeaveRequestAsync())
+            .Setup(s => s.GetLeaveRequestsAsync())
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Success(null!));
         // Act
-        var result = await _controller.GetLeaveRequests();
+        var result = await _controller.GetRequestsAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -301,7 +301,7 @@ public class LeaveControllerTest
             .Setup(s => s.GetLeaveRequestByIdAsync(1))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Success(leaveRequest));
         // Act
-        var result = await _controller.GetLeaveRequestById(1);
+        var result = await _controller.GetTypeByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -318,7 +318,7 @@ public class LeaveControllerTest
             .Setup(s => s.GetLeaveRequestByIdAsync(1))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Fail(null!));
         // Act
-        var result = await _controller.GetLeaveRequestById(1);
+        var result = await _controller.GetTypeByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -329,10 +329,10 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.GetLeaveRequestByIdAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Fail("Invalid Id"));
-        var result = await _controller.GetLeaveRequestById(0);
+        var result = await _controller.GetRequestByIdAsync(0);
 
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
-        result = await _controller.GetLeaveRequestById(-1);
+        result = await _controller.GetRequestByIdAsync(-1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
@@ -345,7 +345,7 @@ public class LeaveControllerTest
             .Setup(s => s.CreateLeaveRequestAsync(leaveRequestDto))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Success(leaveRequestDto));
         // Act
-        var result = await _controller.CreateLeaveRequest(leaveRequestDto);
+        var result = await _controller.CreateRequestAsync(leaveRequestDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -361,7 +361,7 @@ public class LeaveControllerTest
         _controller.ModelState.AddModelError("EmployeeId", "EmployeeId is required");
         var leaveRequestDto = new LeaveRequestDto { Id = 1, LeaveTypeId = 1, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(5), StatusId = Status.Pending };
         // Act
-        var result = await _controller.CreateLeaveRequest(leaveRequestDto);
+        var result = await _controller.CreateRequestAsync(leaveRequestDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -373,7 +373,7 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.CreateLeaveRequestAsync(dto))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Fail("Create failed"));
-        var result = await _controller.CreateLeaveRequest(dto);
+        var result = await _controller.CreateRequestAsync(dto);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -386,7 +386,7 @@ public class LeaveControllerTest
             .Setup(s => s.UpdateLeaveRequestAsync(leaveRequestDto))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Success(leaveRequestDto));
         // Act
-        var result = await _controller.UpdateLeaveRequest(1, leaveRequestDto);
+        var result = await _controller.UpdateRequestAsync(1, leaveRequestDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -402,7 +402,7 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.UpdateLeaveRequestAsync(dto))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Fail("Update failed"));
-        var result = await _controller.UpdateLeaveRequest(1, dto);
+        var result = await _controller.UpdateRequestAsync(1, dto);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -413,7 +413,7 @@ public class LeaveControllerTest
         _controller.ModelState.AddModelError("EmployeeId", "EmployeeId is required");
         var leaveRequestDto = new LeaveRequestDto { Id = 1, LeaveTypeId = 1, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(5), StatusId = Status.Pending };
         // Act
-        var result = await _controller.UpdateLeaveRequest(1, leaveRequestDto);
+        var result = await _controller.UpdateRequestAsync(1, leaveRequestDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -424,7 +424,7 @@ public class LeaveControllerTest
         // Arrange
         var leaveRequestDto = new LeaveRequestDto { Id = 1, EmployeeId = 1, LeaveTypeId = 1, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(5), StatusId = Status.Pending };
         // Act
-        var result = await _controller.UpdateLeaveRequest(2, leaveRequestDto);
+        var result = await _controller.UpdateRequestAsync(2, leaveRequestDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -435,7 +435,7 @@ public class LeaveControllerTest
         // Arrange
         var leaveRequestDto = new LeaveRequestDto { Id = 1, EmployeeId = 1, LeaveTypeId = 1, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(5), StatusId = Status.Approved };
         // Act
-        var result = await _controller.UpdateLeaveRequest(1, leaveRequestDto);
+        var result = await _controller.UpdateRequestAsync(1, leaveRequestDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -448,7 +448,7 @@ public class LeaveControllerTest
             .Setup(s => s.DeleteLeaveRequestAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Success(true));
         // Act
-        var result = await _controller.DeleteLeaveRequest(1);
+        var result = await _controller.DeleteRequestAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkResult>());
     }
@@ -461,7 +461,7 @@ public class LeaveControllerTest
             .Setup(s => s.DeleteLeaveRequestAsync(1))
             .ReturnsAsync(ServiceResult<bool>.Fail("Delete failed"));
         // Act
-        var result = await _controller.DeleteLeaveRequest(1);
+        var result = await _controller.DeleteRequestAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -472,9 +472,9 @@ public class LeaveControllerTest
         _leaveServiceMock
             .Setup(s => s.DeleteLeaveRequestAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid Id"));
-        var result = await _controller.DeleteLeaveRequest(0);
+        var result = await _controller.DeleteRequestAsync(0);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
-        result = await _controller.DeleteLeaveRequest(-1);
+        result = await _controller.DeleteRequestAsync(-1);
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
@@ -488,10 +488,10 @@ public class LeaveControllerTest
             new LeaveRequestDto { Id = 2, EmployeeId = 1, LeaveTypeId = 2, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(3), StatusId = Status.Approved }
         };
         _leaveServiceMock
-            .Setup(s => s.GetLeaveRequestByEmployeeIdAsync(1))
+            .Setup(s => s.GetLeaveRequestsByEmployeeIdAsync(1))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Success(leaveRequests));
         // Act
-        var result = await _controller.GetEmployeeLeaveRequest(1);
+        var result = await _controller.GetByEmployeeAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -505,10 +505,10 @@ public class LeaveControllerTest
     {
         // Arrange
         _leaveServiceMock
-            .Setup(s => s.GetLeaveRequestByEmployeeIdAsync(1))
+            .Setup(s => s.GetLeaveRequestsByEmployeeIdAsync(1))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Success(null!));
         // Act
-        var result = await _controller.GetEmployeeLeaveRequest(1);
+        var result = await _controller.GetByEmployeeAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -521,11 +521,11 @@ public class LeaveControllerTest
     public async Task GetLeaveRequestsByEmployeeId_ShouldFail_WhenIdIsZeroOrNegative()
     {
         _leaveServiceMock
-            .Setup(s => s.GetLeaveRequestByEmployeeIdAsync(It.Is<int>(id => id <= 0)))
+            .Setup(s => s.GetLeaveRequestsByEmployeeIdAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("Invalid Id"));
-        var result = await _controller.GetEmployeeLeaveRequest(0);
+        var result = await _controller.GetByEmployeeAsync(0);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        result = await _controller.GetEmployeeLeaveRequest(-1);
+        result = await _controller.GetByEmployeeAsync(-1);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -539,10 +539,10 @@ public class LeaveControllerTest
             new LeaveRequestDto { Id = 2, EmployeeId = 2, LeaveTypeId = 2, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(3), StatusId = Status.Pending }
         };
         _leaveServiceMock
-            .Setup(s => s.GetByFilterAsync(Status.Pending, null))
+            .Setup(s => s.GetLeaveRequestsByFilterAsync(Status.Pending, null))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Success(leaveRequests));
         // Act
-        var result = await _controller.GetLeaveRequestsByFilter(Status.Pending, null);
+        var result = await _controller.FilterAsync(Status.Pending, null);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -556,10 +556,10 @@ public class LeaveControllerTest
     {
         // Arrange
         _leaveServiceMock
-            .Setup(s => s.GetByFilterAsync(Status.Pending, null))
+            .Setup(s => s.GetLeaveRequestsByFilterAsync(Status.Pending, null))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Success(null!));
         // Act
-        var result = await _controller.GetLeaveRequestsByFilter(Status.Pending, null);
+        var result = await _controller.FilterAsync(Status.Pending, null);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -572,9 +572,9 @@ public class LeaveControllerTest
     public async Task GetLeaveRequestsByStatus_ShouldFail_WhenStatusIsInvalid()
     {
         _leaveServiceMock
-            .Setup(s => s.GetByFilterAsync(It.Is<Status>(status => !Enum.IsDefined(typeof(Status), status)), null))
+            .Setup(s => s.GetLeaveRequestsByFilterAsync(It.Is<Status>(status => !Enum.IsDefined(typeof(Status), status)), null))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("Invalid Status"));
-        var result = await _controller.GetLeaveRequestsByFilter((Status)999, null);
+        var result = await _controller.FilterAsync((Status)999, null);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -582,11 +582,11 @@ public class LeaveControllerTest
     public async Task GetLeaveRequestsByStatus_ShouldFail_WhenEmployeeIdIsZeroOrNegative()
     {
         _leaveServiceMock
-            .Setup(s => s.GetByFilterAsync(Status.Pending, It.Is<int?>(id => id <= 0)))
+            .Setup(s => s.GetLeaveRequestsByFilterAsync(Status.Pending, It.Is<int?>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("Invalid Employee Id"));
-        var result = await _controller.GetLeaveRequestsByFilter(Status.Pending, 0);
+        var result = await _controller.FilterAsync(Status.Pending, 0);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        result = await _controller.GetLeaveRequestsByFilter(Status.Pending, -1);
+        result = await _controller.FilterAsync(Status.Pending, -1);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -594,9 +594,9 @@ public class LeaveControllerTest
     public async Task GetLeaveRequestsByStatus_ShouldFail_WhenBothFiltersAreNull()
     {
         _leaveServiceMock
-            .Setup(s => s.GetByFilterAsync(null, null))
+            .Setup(s => s.GetLeaveRequestsByFilterAsync(null, null))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("At least one filter must be provided"));
-        var result = await _controller.GetLeaveRequestsByFilter(null, null);
+        var result = await _controller.FilterAsync(null, null);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
@@ -604,9 +604,9 @@ public class LeaveControllerTest
     public async Task GetLeaveRequestsByStatus_ShouldFail_WhenBothFiltersAreProvided()
     {
         _leaveServiceMock
-            .Setup(s => s.GetByFilterAsync(Status.Pending, 1))
+            .Setup(s => s.GetLeaveRequestsByFilterAsync(Status.Pending, 1))
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>.Fail("Only one filter can be provided"));
-        var result = await _controller.GetLeaveRequestsByFilter(Status.Pending, 1);
+        var result = await _controller.FilterAsync(Status.Pending, 1);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 }

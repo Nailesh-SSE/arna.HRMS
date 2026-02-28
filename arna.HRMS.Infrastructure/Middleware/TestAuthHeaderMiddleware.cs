@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+﻿using arna.HRMS.Core.DTOs.Auth;
 using Microsoft.AspNetCore.Http;
 
 namespace arna.HRMS.Infrastructure.Middleware;

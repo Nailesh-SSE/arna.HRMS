@@ -1,11 +1,10 @@
 ﻿using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -116,7 +115,7 @@ public class UserServiceTest
     public async Task GetUserAsync_WhenNoUsers_ReturnsEmptyList()
     {
         // Act
-        var result = await _userService.GetUserAsync();
+        var result = await _userService.GetUsersAsync();
         // Assert
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
@@ -166,7 +165,7 @@ public class UserServiceTest
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _userService.GetUserAsync();
+        var result = await _userService.GetUsersAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
@@ -1312,7 +1311,7 @@ public class UserServiceTest
     [Test]
     public async Task GetUserByUserNameAndEmail_Whitespace_ReturnsNull()
     {
-        var result = await _userService.GetUserByUserNameAndEmail("   ");
+        var result = await _userService.GetUserByUserNameOrEmailAsync("   ");
 
         Assert.That(result, Is.Null);
     }
@@ -1323,7 +1322,7 @@ public class UserServiceTest
         // Arrange
         string invalidUsername = "nonexistentuser";
         // Act
-        var result = await _userService.GetUserByUserNameAndEmail(invalidUsername);
+        var result = await _userService.GetUserByUserNameOrEmailAsync(invalidUsername);
 
         // Assert
         Assert.That(result, Is.Null);
@@ -1355,7 +1354,7 @@ public class UserServiceTest
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _userService.GetUserByUserNameAndEmail("testuser");
+        var result = await _userService.GetUserByUserNameOrEmailAsync("testuser");
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -1388,7 +1387,7 @@ public class UserServiceTest
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _userService.GetUserByUserNameAndEmail("testUser.com");
+        var result = await _userService.GetUserByUserNameOrEmailAsync("testUser.com");
 
         // Assert
         Assert.That(result, Is.Not.Null);

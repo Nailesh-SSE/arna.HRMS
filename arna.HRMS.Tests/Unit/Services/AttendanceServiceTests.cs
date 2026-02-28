@@ -1,12 +1,11 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -211,7 +210,7 @@ public class AttendanceServiceTests
         _dbContext.Attendances.Add(attendance);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService.GetAttendenceByIdAsync(attendance.Id);
+        var result = await _attendanceService.GetAttendanceByIdAsync(attendance.Id);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.EmployeeId, Is.EqualTo(1));
@@ -219,7 +218,7 @@ public class AttendanceServiceTests
     [Test]
     public async Task GetAttendenceByIdAsync_WhenIdIsZero_ReturnsInvalidIdFail()
     {
-        var result = await _attendanceService.GetAttendenceByIdAsync(0);
+        var result = await _attendanceService.GetAttendanceByIdAsync(0);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
@@ -230,7 +229,7 @@ public class AttendanceServiceTests
     [Test]
     public async Task GetAttendenceByIdAsync_WhenIdIsNegative_ReturnsInvalidIdFail()
     {
-        var result = await _attendanceService.GetAttendenceByIdAsync(-5);
+        var result = await _attendanceService.GetAttendanceByIdAsync(-5);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
@@ -281,7 +280,7 @@ public class AttendanceServiceTests
         );
 
         // Act
-        var result = await service.GetAttendenceByIdAsync(50);
+        var result = await service.GetAttendanceByIdAsync(50);
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -293,7 +292,7 @@ public class AttendanceServiceTests
     [Test]
     public async Task GetAttendenceByIdAsync_ReturnsFail_WhenNotFound()
     {
-        var result = await _attendanceService.GetAttendenceByIdAsync(999);
+        var result = await _attendanceService.GetAttendanceByIdAsync(999);
 
         Assert.That(result.IsSuccess, Is.False);
     }
@@ -346,14 +345,14 @@ public class AttendanceServiceTests
         };
 
         _festivalHolidayServiceMock
-            .Setup(f => f.GetFestivalHolidayAsync())
+            .Setup(f => f.GetFestivalHolidaysAsync())
             .ReturnsAsync(
                 ServiceResult<List<FestivalHolidayDto>>
                     .Success(new List<FestivalHolidayDto>())
             );
 
         _leaveServiceMock
-            .Setup(l => l.GetLeaveRequestAsync())
+            .Setup(l => l.GetLeaveRequestsAsync())
             .ReturnsAsync(
                 ServiceResult<List<LeaveRequestDto>>
                     .Success(new List<LeaveRequestDto>())
@@ -527,12 +526,12 @@ public class AttendanceServiceTests
         // VERY IMPORTANT: mock services used inside CreateAbsentAndHolidayAsync
 
         _festivalHolidayServiceMock
-            .Setup(f => f.GetFestivalHolidayAsync())
+            .Setup(f => f.GetFestivalHolidaysAsync())
             .ReturnsAsync(ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>()));
 
         _leaveServiceMock
-            .Setup(l => l.GetLeaveRequestAsync())
+            .Setup(l => l.GetLeaveRequestsAsync())
             .ReturnsAsync(ServiceResult<List<LeaveRequestDto>>
                 .Success(new List<LeaveRequestDto>()));
 

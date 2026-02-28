@@ -1,62 +1,60 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace arna.HRMS.Infrastructure.Services;
 
 public class LeaveService : ILeaveService
 {
     private readonly LeaveRepository _leaveRepository;
-    private readonly IFestivalHolidayService _festivalHoliday;
-    private readonly AttendanceRepository _attendanceService;
+    private readonly IFestivalHolidayService _festivalHolidayService;
+    private readonly AttendanceRepository _attendanceRepository;
     private readonly IMapper _mapper;
     private readonly LeaveValidator _validator;
 
     public LeaveService(
         LeaveRepository leaveRepository,
+        IFestivalHolidayService festivalHolidayService,
+        AttendanceRepository attendanceRepository,
         IMapper mapper,
-        IFestivalHolidayService festivalHoliday,
-        AttendanceRepository attendanceService,
         LeaveValidator validator)
     {
         _leaveRepository = leaveRepository;
+        _festivalHolidayService = festivalHolidayService;
+        _attendanceRepository = attendanceRepository;
         _mapper = mapper;
-        _festivalHoliday = festivalHoliday;
-        _attendanceService = attendanceService;
         _validator = validator;
     }
 
-    // ============================
+    // =========================================================
     // LEAVE TYPE METHODS
-    // ============================
+    // =========================================================
 
-    public async Task<ServiceResult<List<LeaveTypeDto>>> GetLeaveTypeAsync()
+    public async Task<ServiceResult<List<LeaveTypeDto>>> GetLeaveTypesAsync()
     {
-        var leave = await _leaveRepository.GetLeaveTypeAsync();
-        var list = _mapper.Map<List<LeaveTypeDto>>(leave);
+        var entities = await _leaveRepository.GetLeaveTypesAsync();
 
-        return ServiceResult<List<LeaveTypeDto>>.Success(list);
+        var dtos = _mapper.Map<List<LeaveTypeDto>>(entities);
+
+        return ServiceResult<List<LeaveTypeDto>>.Success(dtos);
     }
 
-    public async Task<ServiceResult<LeaveTypeDto>> GetLeaveTypeByIdAsync(int id)
+    public async Task<ServiceResult<LeaveTypeDto?>> GetLeaveTypeByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<LeaveTypeDto>.Fail("Invalid ID");
+            return ServiceResult<LeaveTypeDto?>.Fail("Invalid leave type ID.");
 
-        var leave = await _leaveRepository.GetLeaveTypeByIdAsync(id);
+        var entity = await _leaveRepository.GetLeaveTypeByIdAsync(id);
 
-        if (leave == null)
-            return ServiceResult<LeaveTypeDto>.Fail("Leave not found");
-        var dto = _mapper.Map<LeaveTypeDto>(leave);
-        return dto != null
-            ? ServiceResult<LeaveTypeDto>.Success(dto)
-            : ServiceResult<LeaveTypeDto>.Fail("Fail to find Leave Type") ;
+        if (entity == null)
+            return ServiceResult<LeaveTypeDto?>.Fail("Leave type not found.");
+
+        return ServiceResult<LeaveTypeDto?>.Success(_mapper.Map<LeaveTypeDto>(entity));
     }
 
     public async Task<ServiceResult<LeaveTypeDto>> CreateLeaveTypeAsync(LeaveTypeDto dto)
@@ -65,11 +63,11 @@ public class LeaveService : ILeaveService
         if (!validation.IsValid)
             return ServiceResult<LeaveTypeDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        var created = await _leaveRepository.CreateLeaveTypeAsync(_mapper.Map<LeaveType>(dto));
-        var data = _mapper.Map<LeaveTypeDto>(created);
-        return data != null
-            ? ServiceResult<LeaveTypeDto>.Success(data, "Leave type created successfully")
-            : ServiceResult<LeaveTypeDto>.Fail("Fail to Create Leave Type");
+        var entity = _mapper.Map<LeaveType>(dto);
+
+        var created = await _leaveRepository.CreateLeaveTypeAsync(entity);
+
+        return ServiceResult<LeaveTypeDto>.Success(_mapper.Map<LeaveTypeDto>(created), "Leave type created successfully.");
     }
 
     public async Task<ServiceResult<LeaveTypeDto>> UpdateLeaveTypeAsync(LeaveTypeDto dto)
@@ -78,76 +76,67 @@ public class LeaveService : ILeaveService
         if (!validation.IsValid)
             return ServiceResult<LeaveTypeDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        var updated = await _leaveRepository.UpdateLeaveTypeAsync(_mapper.Map<LeaveType>(dto));
+        var entity = _mapper.Map<LeaveType>(dto);
+
+        var updated = await _leaveRepository.UpdateLeaveTypeAsync(entity);
+
         if (updated == null)
-            return ServiceResult<LeaveTypeDto>.Fail("Leave Type not found");
-        var data = _mapper.Map<LeaveTypeDto>(updated);
-        return data!=null
-            ? ServiceResult<LeaveTypeDto>.Success(data, "Leave type updated successfully")
-            : ServiceResult<LeaveTypeDto>.Fail("Fail to Update Leave Type");
+            return ServiceResult<LeaveTypeDto>.Fail("Leave type not found.");
+
+        return ServiceResult<LeaveTypeDto>.Success(_mapper.Map<LeaveTypeDto>(updated), "Leave type updated successfully.");
     }
 
     public async Task<ServiceResult<bool>> DeleteLeaveTypeAsync(int id)
     {
-        var leave = await GetLeaveTypeByIdAsync(id);
-        if (!leave.IsSuccess)
-            return ServiceResult<bool>.Fail("Leave Type not found");
+        if (id <= 0)
+            return ServiceResult<bool>.Fail("Invalid leave type ID.");
 
         var deleted = await _leaveRepository.DeleteLeaveTypeAsync(id);
 
         return deleted
-            ? ServiceResult<bool>.Success(true, "Leave type deleted successfully")
-            : ServiceResult<bool>.Fail("Leave Type not found");
+            ? ServiceResult<bool>.Success(true, "Leave type deleted successfully.")
+            : ServiceResult<bool>.Fail("Leave type not found.");
     }
 
-    // ============================
+    // =========================================================
     // LEAVE REQUEST METHODS
-    // ============================
+    // =========================================================
 
-    public async Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestAsync()
+    public async Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestsAsync()
     {
-        var leave = await _leaveRepository.GetLeaveRequestAsync();
-        var list = _mapper.Map<List<LeaveRequestDto>>(leave);
+        var entities = await _leaveRepository.GetLeaveRequestsAsync();
 
-        return ServiceResult<List<LeaveRequestDto>>.Success(list);
+        return ServiceResult<List<LeaveRequestDto>>.Success(_mapper.Map<List<LeaveRequestDto>>(entities));
     }
 
-    public async Task<ServiceResult<List<LeaveRequestDto>>> GetByFilterAsync(Status? status, int? employeeId)
+    public async Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestsByFilterAsync(Status? status, int? employeeId)
     {
-        var leave = await _leaveRepository.GetLeaveRequestsByFilterAsync(status, employeeId);
-        var list = _mapper.Map<List<LeaveRequestDto>>(leave);
+        var entities = await _leaveRepository.GetLeaveRequestsByFilterAsync(status, employeeId);
 
-        return list.Any()
-            ? ServiceResult<List<LeaveRequestDto>>.Success(list)
-            : ServiceResult<List<LeaveRequestDto>>.Fail("No Data Found");
+        return ServiceResult<List<LeaveRequestDto>>.Success(_mapper.Map<List<LeaveRequestDto>>(entities));
     }
 
-    public async Task<ServiceResult<LeaveRequestDto>> GetLeaveRequestByIdAsync(int id)
+    public async Task<ServiceResult<LeaveRequestDto?>> GetLeaveRequestByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<LeaveRequestDto>.Fail("Invalid ID");
+            return ServiceResult<LeaveRequestDto?>.Fail("Invalid leave request ID.");
 
-        var leave = await _leaveRepository.GetLeaveRequestByIdAsync(id);
+        var entity = await _leaveRepository.GetLeaveRequestByIdAsync(id);
 
-        if (leave == null)
-            return ServiceResult<LeaveRequestDto>.Fail("Leave request not found");
-        var dto = _mapper.Map<LeaveRequestDto>(leave);
-        return dto != null
-            ? ServiceResult<LeaveRequestDto>.Success(dto)
-            : ServiceResult<LeaveRequestDto>.Fail("Fail to Find Leave") ;
+        if (entity == null)
+            return ServiceResult<LeaveRequestDto?>.Fail("Leave request not found.");
+
+        return ServiceResult<LeaveRequestDto?>.Success(_mapper.Map<LeaveRequestDto>(entity));
     }
 
-    public async Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestByEmployeeIdAsync(int employeeId)
+    public async Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestsByEmployeeIdAsync(int employeeId)
     {
         if (employeeId <= 0)
-            return ServiceResult<List<LeaveRequestDto>>.Fail("Invalid Employee Id");
+            return ServiceResult<List<LeaveRequestDto>>.Fail("Invalid employee ID.");
 
-        var leave = await _leaveRepository.GetLeaveRequestByEmployeeIdAsync(employeeId);
-        var list = _mapper.Map<List<LeaveRequestDto>>(leave);
+        var entities = await _leaveRepository.GetLeaveRequestByEmployeeIdAsync(employeeId);
 
-        return list.Any()
-            ? ServiceResult<List<LeaveRequestDto>>.Success(list)
-            : ServiceResult<List<LeaveRequestDto>>.Fail("Leave requests not found for this employee");
+        return ServiceResult<List<LeaveRequestDto>>.Success(_mapper.Map<List<LeaveRequestDto>>(entities));
     }
 
     public async Task<ServiceResult<LeaveRequestDto>> CreateLeaveRequestAsync(LeaveRequestDto dto)
@@ -156,20 +145,13 @@ public class LeaveService : ILeaveService
         if (!validation.IsValid)
             return ServiceResult<LeaveRequestDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
-            .Data?
-            .Select(f => f.Date.Date)
-            .ToHashSet()
-            ?? new HashSet<DateTime>();
+        dto.LeaveDays = await CalculateActualLeaveDaysAsync(dto.StartDate, dto.EndDate);
 
-        dto.LeaveDays = CalculateActualLeaveDays(dto.StartDate, dto.EndDate, festivalDates);
+        var entity = _mapper.Map<LeaveRequest>(dto);
 
-        var created = await _leaveRepository.CreateLeaveRequestAsync(_mapper.Map<LeaveRequest>(dto));
+        var created = await _leaveRepository.CreateLeaveRequestAsync(entity);
 
-        var data = _mapper.Map<LeaveRequestDto>(created);
-        return data!=null
-            ? ServiceResult<LeaveRequestDto>.Success(data, "Leave created successfully")
-            : ServiceResult<LeaveRequestDto>.Fail("Fail to Create Leave");
+        return ServiceResult<LeaveRequestDto>.Success(_mapper.Map<LeaveRequestDto>(created), "Leave request created successfully.");
     }
 
     public async Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto dto)
@@ -178,118 +160,117 @@ public class LeaveService : ILeaveService
         if (!validation.IsValid)
             return ServiceResult<LeaveRequestDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
-            .Data?
-            .Select(f => f.Date.Date)
-            .ToHashSet()
-            ?? new HashSet<DateTime>();
+        dto.LeaveDays = await CalculateActualLeaveDaysAsync(dto.StartDate, dto.EndDate);
 
-        dto.LeaveDays = CalculateActualLeaveDays(dto.StartDate, dto.EndDate, festivalDates);
+        var entity = _mapper.Map<LeaveRequest>(dto);
 
-        var updated = await _leaveRepository.UpdateLeaveRequestAsync(_mapper.Map<LeaveRequest>(dto));
+        var updated = await _leaveRepository.UpdateLeaveRequestAsync(entity);
+
         if (updated == null)
-            return ServiceResult<LeaveRequestDto>.Fail("Leave request not found");
-        var data = _mapper.Map<LeaveRequestDto>(updated);
-        return data!=null
-            ? ServiceResult<LeaveRequestDto>.Success(data, "Leave updated successfully")
-            : ServiceResult<LeaveRequestDto>.Fail("Fail to Update Leave");
+            return ServiceResult<LeaveRequestDto>.Fail("Leave request not found.");
+
+        return ServiceResult<LeaveRequestDto>.Success(_mapper.Map<LeaveRequestDto>(updated), "Leave request updated successfully.");
     }
 
     public async Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id)
     {
-        var leave = await GetLeaveRequestByIdAsync(id);
-        if (!leave.IsSuccess)
-            return ServiceResult<bool>.Fail("Leave request not found");
+        if (id <= 0)
+            return ServiceResult<bool>.Fail("Invalid leave request ID.");
 
         var deleted = await _leaveRepository.DeleteLeaveRequestAsync(id);
 
         return deleted
-            ? ServiceResult<bool>.Success(true, "Leave deleted successfully")
-            : ServiceResult<bool>.Fail("Leave not found");
+            ? ServiceResult<bool>.Success(true, "Leave request deleted successfully.")
+            : ServiceResult<bool>.Fail("Leave request not found.");
     }
 
-    // ============================
-    // STATUS / ATTENDANCE LOGIC
-    // ============================
+    // =========================================================
+    // STATUS & ATTENDANCE LOGIC
+    // =========================================================
 
-    public async Task<ServiceResult<bool>> UpdateStatusLeaveAsync(int leaveRequestId, Status status, int approvedBy)
+    public async Task<ServiceResult<bool>> UpdateLeaveRequestStatusAsync(int leaveRequestId, Status status, int approvedBy)
     {
         if (leaveRequestId <= 0)
-            return ServiceResult<bool>.Fail("Invalid Leave Request Id");
+            return ServiceResult<bool>.Fail("Invalid leave request ID."); 
 
-        var updated = await _leaveRepository.UpdateLeaveStatusAsync(leaveRequestId, status, approvedBy);
+        var updated = await _leaveRepository.UpdateLeaveRequestStatusAsync(leaveRequestId, status, approvedBy);
 
-        if (status == Status.Approved && updated)
-        {
-            var leaveRequest = await _leaveRepository.GetLeaveRequestByIdAsync(leaveRequestId);
+        if (!updated)
+            return ServiceResult<bool>.Fail("Failed to update leave status.");
 
-            if (leaveRequest == null)
-                return ServiceResult<bool>.Fail("Failed to find Leave Request");
+        if (status == Status.Approved)
+            await HandleApprovedLeaveAsync(leaveRequestId);
 
-            var festivalDates = (await _festivalHoliday.GetFestivalHolidayAsync())
-                .Data?
-                .Select(f => f.Date.Date)
-                .ToHashSet()
-                ?? new HashSet<DateTime>();
-
-            var leaveDates = Enumerable
-                .Range(0, (leaveRequest.EndDate.Date - leaveRequest.StartDate.Date).Days + 1)
-                .Select(offset => leaveRequest.StartDate.Date.AddDays(offset));
-
-            var workingLeaveDates = leaveDates.Where(date =>
-                date.DayOfWeek != DayOfWeek.Saturday &&
-                date.DayOfWeek != DayOfWeek.Sunday &&
-                !festivalDates.Contains(date));
-
-            foreach (var date in workingLeaveDates)
-            {
-                var attendance = new AttendanceDto
-                {
-                    EmployeeId = leaveRequest.EmployeeId,
-                    Date = date,
-                    WorkingHours = TimeSpan.Zero,
-                    StatusId = AttendanceStatus.Leave,
-                    Notes = leaveRequest.Reason
-                };
-
-                var entity = _mapper.Map<Attendance>(attendance);
-                await _attendanceService.CreateAttendanceAsync(entity);
-            }
-        }
-
-        return updated
-            ? ServiceResult<bool>.Success(true, "Leave status updated successfully")
-            : ServiceResult<bool>.Fail("Failed to update leave status or status is not approved.");
+        return ServiceResult<bool>.Success(true, "Leave status updated successfully.");
     }
 
-    public async Task<ServiceResult<bool>> UpdateLeaveRequestStatusCancelAsync(int id, int employeeId)
+    public async Task<ServiceResult<bool>> CancelLeaveRequestAsync(int id, int employeeId)
     {
         if (id <= 0 || employeeId <= 0)
-            return ServiceResult<bool>.Fail("Invalid Id");
+            return ServiceResult<bool>.Fail("Invalid request.");
 
-        var leaveRequest = await GetLeaveRequestByIdAsync(id);
-        if (leaveRequest?.Data == null)
-            return ServiceResult<bool>.Fail("Leave Request not found");
+        var leave = await _leaveRepository.GetLeaveRequestByIdAsync(id);
 
-        if (leaveRequest.Data?.EmployeeId != employeeId)
-            return ServiceResult<bool>.Fail("Unauthorized");
+        if (leave == null)
+            return ServiceResult<bool>.Fail("Leave request not found.");
 
-        if (leaveRequest.Data.StatusId is Status.Approved or Status.Cancelled or Status.Rejected)
-            return ServiceResult<bool>.Fail("Cannot cancel this leave request");
+        if (leave.EmployeeId != employeeId)
+            return ServiceResult<bool>.Fail("Unauthorized action.");
 
-        var updated = await _leaveRepository.UpdateLeaveRequestStatusCancel(id, employeeId);
+        if (leave.StatusId is Status.Approved or Status.Rejected or Status.Cancelled)
+            return ServiceResult<bool>.Fail("Leave cannot be cancelled.");
 
-        return updated
-            ? ServiceResult<bool>.Success(true, "Leave cancelled successfully")
-            : ServiceResult<bool>.Fail("Not Found");
+        var cancelled = await _leaveRepository.CancelLeaveRequestAsync(id, employeeId);
+
+        return cancelled
+            ? ServiceResult<bool>.Success(true, "Leave cancelled successfully.")
+            : ServiceResult<bool>.Fail("Failed to cancel leave.");
     }
 
-    // ============================
-    // HELPER
-    // ============================
+    // =========================================================
+    // PRIVATE HELPERS
+    // =========================================================
 
-    private static int CalculateActualLeaveDays(DateTime startDate, DateTime endDate, HashSet<DateTime> festivalDates)
+    private async Task HandleApprovedLeaveAsync(int leaveRequestId)
     {
+        var leaveRequest = await _leaveRepository.GetLeaveRequestByIdAsync(leaveRequestId);
+        if (leaveRequest == null) return;
+
+        var festivalDates = await GetFestivalDatesAsync();
+
+        var leaveDates = Enumerable
+            .Range(0, (leaveRequest.EndDate.Date - leaveRequest.StartDate.Date).Days + 1)
+            .Select(offset => leaveRequest.StartDate.Date.AddDays(offset))
+            .Where(date =>
+                date.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) &&
+                !festivalDates.Contains(date));
+
+        foreach (var date in leaveDates)
+        {
+            await _attendanceRepository.CreateAttendanceAsync(new Attendance
+            {
+                EmployeeId = leaveRequest.EmployeeId,
+                Date = date,
+                StatusId = AttendanceStatus.Leave,
+                TotalHours = TimeSpan.Zero,
+                Notes = leaveRequest.Reason
+            });
+        }
+    }
+
+    private async Task<HashSet<DateTime>> GetFestivalDatesAsync()
+    {
+        var result = await _festivalHolidayService.GetFestivalHolidaysAsync();
+
+        return result.Data?
+            .Select(f => f.Date.Date)
+            .ToHashSet()
+            ?? new HashSet<DateTime>();
+    }
+
+    private async Task<int> CalculateActualLeaveDaysAsync(DateTime startDate, DateTime endDate)
+    {
+        var festivalDates = await GetFestivalDatesAsync();
         int leaveDays = 0;
 
         for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))

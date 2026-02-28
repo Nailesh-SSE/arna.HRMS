@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
@@ -48,7 +48,7 @@ public class LeaveValidator
         if (dto.MaxPerYear <= 0)
             errors.Add("Leave days must be greater than 0");
 
-        var exists = await _repository.LeaveExistsAsync(dto.LeaveNameId, dto.Id);
+        var exists = await _repository.LeaveTypeExistsAsync(dto.LeaveNameId, dto.Id);
         if (exists)
             errors.Add($"Leave '{dto.LeaveNameId}' already exists");
         return errors.Any()
@@ -99,12 +99,6 @@ public class LeaveValidator
 
         if (dto.StartDate.Date < DateTime.Today.Date || dto.EndDate.Date < DateTime.Today.Date)
             errors.Add("Leave dates cannot be in the past");
-
-        /*    if ((LeaveName)dto.LeaveTypeId != LeaveName.SickLeave)
-            {
-                if (dto.StartDate.Date == DateTime.Today.Date || dto.EndDate.Date == DateTime.Today.Date)
-                    errors.Add("Leave dates cannot be toDays date");
-            }*/
 
         return Task.FromResult(
             errors.Any()

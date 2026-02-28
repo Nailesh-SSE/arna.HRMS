@@ -1,5 +1,5 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Repositories.Common.Interfaces;
+using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
@@ -23,12 +23,22 @@ public class RoleRepository
 
     public async Task<Role?> GetRoleByIdAsync(int id)
     {
-        return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
+        return await _baseRepository.Query()
+            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
     }
 
     public async Task<Role?> GetRoleByNameAsync(string name)
-    { 
-        return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Name == name && x.IsActive && !x.IsDeleted);
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        name = name.Trim().ToLower();
+
+        return await _baseRepository.Query()
+            .FirstOrDefaultAsync(x =>
+                x.Name.Trim().ToLower() == name &&
+                x.IsActive &&
+                !x.IsDeleted);
     }
 
     public Task<Role> CreateRoleAsync(Role role)
@@ -43,20 +53,34 @@ public class RoleRepository
 
     public async Task<bool> DeleteRoleAsync(int id)
     {
-        var role = await GetRoleByIdAsync(id);
+        var role = await _baseRepository.Query()
+            .FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                x.IsActive &&
+                !x.IsDeleted);
+
         if (role == null)
-            return false;
+            return false; 
 
         role.IsActive = false;
         role.IsDeleted = true;
         role.UpdatedOn = DateTime.Now;
+
         await _baseRepository.UpdateAsync(role);
         return true;
     }
 
     public async Task<bool> RoleExistsAsync(string name, int? id)
     {
-        name = (name ?? string.Empty).Trim().ToLower();
-        return await _baseRepository.Query().FirstOrDefaultAsync(x => x.Name.ToLower() == name && x.IsActive && !x.IsDeleted && x.Id != id) != null;
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        name = name.Trim().ToLower();
+
+        return await _baseRepository.Query()
+            .Where(x => x.IsActive && !x.IsDeleted)
+            .AnyAsync(x =>
+                x.Id != id &&
+                x.Name.Trim().ToLower() == name);
     }
 }

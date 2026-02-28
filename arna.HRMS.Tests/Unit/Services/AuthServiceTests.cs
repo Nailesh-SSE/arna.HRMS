@@ -1,14 +1,12 @@
-﻿using arna.HRMS.Core.Common.Token;
-using arna.HRMS.Core.DTOs;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs.Auth;
 using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Configuration;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Data;
+using arna.HRMS.Infrastructure.Dependency.Identity;
 using arna.HRMS.Infrastructure.Mapping;
-using arna.HRMS.Infrastructure.Services.Authentication;
-using arna.HRMS.Infrastructure.Services.Authentication.Interfaces;
-using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Infrastructure.Services;
 using AutoMapper;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -69,9 +67,9 @@ public class AuthServiceTests
     [Test]
     public async Task LoginAsync_ShouldFail_WhenEmailIsEmpty()
     {
-        var request = new LoginRequest
+        var request = new LoginDto
         {
-            Email = "",
+            UserName = "",
             Password = "123456"
         };
 
@@ -84,9 +82,9 @@ public class AuthServiceTests
     [Test]
     public async Task LoginAsync_ShouldFail_WhenPasswordIsEmpty()
     {
-        var request = new LoginRequest
+        var request = new LoginDto
         {
-            Email = "test@test.com",
+            UserName = "test@test.com",
             Password = ""
         };
 
@@ -99,14 +97,14 @@ public class AuthServiceTests
     [Test]
     public async Task LoginAsync_ShouldFail_WhenUserNotFound()
     {
-        var request = new LoginRequest
+        var request = new LoginDto
         {
-            Email = "test@test.com",
+            UserName = "test@test.com",
             Password = "123456"
         };
 
         _userServicesMock
-            .Setup(x => x.GetUserByUserNameAndEmail(request.Email))
+            .Setup(x => x.GetUserByUserNameOrEmailAsync(request.UserName))
             .ReturnsAsync((User)null!);
 
         var result = await _authService.LoginAsync(request);
@@ -118,21 +116,21 @@ public class AuthServiceTests
     [Test]
     public async Task LoginAsync_ShouldFail_WhenPasswordIsIncorrect()
     {
-        var request = new LoginRequest
+        var request = new LoginDto
         {
-            Email = "test@test.com",
+            UserName = "test@test.com",
             Password = "wrongpassword"
         };
 
         var user = new User
         {
             Id = 1,
-            Email = request.Email,
+            Email = request.UserName,
             Password = "correctpassword"
         };
 
         _userServicesMock
-            .Setup(x => x.GetUserByUserNameAndEmail(request.Email))
+            .Setup(x => x.GetUserByUserNameOrEmailAsync(request.UserName))
             .ReturnsAsync(user);
 
         var result = await _authService.LoginAsync(request);
@@ -144,23 +142,23 @@ public class AuthServiceTests
     [Test]
     public async Task LoginAsync_ShouldReturnSuccess_WhenCredentialsAreValid()
     {
-        var request = new LoginRequest
+        var request = new LoginDto
         {
-            Email = "test@test.com",
+            UserName = "test@test.com",
             Password = "123456"
         };
 
         var user = new User
         {
             Id = 1,
-            Email = request.Email,
+            Email = request.UserName,
             Password = "123456",
             Username = "testuser",
             Role = new Role { Name = "Admin" }
         };
 
         _userServicesMock
-            .Setup(x => x.GetUserByUserNameAndEmail(request.Email))
+            .Setup(x => x.GetUserByUserNameOrEmailAsync(request.UserName))
             .ReturnsAsync(user);
 
         _jwtServiceMock

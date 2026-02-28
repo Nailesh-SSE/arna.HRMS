@@ -1,7 +1,7 @@
-﻿using arna.HRMS.API.Controllers.Admin;
-using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.API.Controllers;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
-using arna.HRMS.Infrastructure.Services.Interfaces;
+using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
@@ -30,10 +30,10 @@ public class RoleControllerTests
                 new RoleDto { Id = 2, Name = "User" }
             };
         // Arrange
-        _mockRoleServices.Setup(service => service.GetRoleAsync())
+        _mockRoleServices.Setup(service => service.GetRolesAsync())
             .ReturnsAsync(ServiceResult<List<RoleDto>>.Success(Data));
         // Act
-        var result = await _controller.GetRoles();
+        var result = await _controller.GetAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -42,10 +42,10 @@ public class RoleControllerTests
     public async Task GetRoles_ShouldSuccess_WhenNoDataFound()
     {
         // Arrange
-        _mockRoleServices.Setup(service => service.GetRoleAsync())
+        _mockRoleServices.Setup(service => service.GetRolesAsync())
             .ReturnsAsync(ServiceResult<List<RoleDto>>.Success(new List<RoleDto>()));
         // Act
-        var result = await _controller.GetRoles();
+        var result = await _controller.GetAsync();
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -59,7 +59,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.GetRoleByIdAsync(roleId))
             .ReturnsAsync(ServiceResult<RoleDto?>.Success(role));
         // Act
-        var result = await _controller.GetRoleById(roleId);
+        var result = await _controller.GetByIdAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -72,7 +72,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.GetRoleByIdAsync(roleId))
             .ReturnsAsync(ServiceResult<RoleDto?>.Fail("No data Found"));
         // Act
-        var result = await _controller.GetRoleById(roleId);
+        var result = await _controller.GetByIdAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -85,13 +85,13 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.GetRoleByIdAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<RoleDto?>.Fail("Invalid Id"));
         // Act
-        var result = await _controller.GetRoleById(roleId);
+        var result = await _controller.GetByIdAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
 
         //Act with zero Id
         roleId = 0;
-        result = await _controller.GetRoleById(roleId);
+        result = await _controller.GetByIdAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
 
@@ -105,7 +105,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.CreateRoleAsync(roleDto))
             .ReturnsAsync(ServiceResult<RoleDto>.Success(roleDto));
         // Act
-        var result = await _controller.CreateRole(roleDto);
+        var result = await _controller.CreateAsync(roleDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -117,7 +117,7 @@ public class RoleControllerTests
         var roleDto = new RoleDto { Id = 1 };
         _controller.ModelState.AddModelError("Name", "Name is required");
         // Act
-        var result = await _controller.CreateRole(roleDto);
+        var result = await _controller.CreateAsync(roleDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -130,7 +130,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.CreateRoleAsync(roleDto))
             .ReturnsAsync(ServiceResult<RoleDto>.Fail("Failed to create role"));
         // Act
-        var result = await _controller.CreateRole(roleDto);
+        var result = await _controller.CreateAsync(roleDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -144,7 +144,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.UpdateRoleAsync(roleDto))
             .ReturnsAsync(ServiceResult<RoleDto>.Success(roleDto));
         // Act
-        var result = await _controller.UpdateRole(roleId, roleDto);
+        var result = await _controller.UpdateAsync(roleId, roleDto);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -157,7 +157,7 @@ public class RoleControllerTests
         var roleDto = new RoleDto { Id = roleId };
         _controller.ModelState.AddModelError("Name", "Name is required");
         // Act
-        var result = await _controller.UpdateRole(roleId, roleDto);
+        var result = await _controller.UpdateAsync(roleId, roleDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -169,7 +169,7 @@ public class RoleControllerTests
         var roleId = 1;
         var roleDto = new RoleDto { Id = 2, Name = "Admin" };
         // Act
-        var result = await _controller.UpdateRole(roleId, roleDto);
+        var result = await _controller.UpdateAsync(roleId, roleDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -183,7 +183,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.UpdateRoleAsync(roleDto))
             .ReturnsAsync(ServiceResult<RoleDto>.Fail("Failed to update role"));
         // Act
-        var result = await _controller.UpdateRole(roleId, roleDto);
+        var result = await _controller.UpdateAsync(roleId, roleDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -196,7 +196,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.DeleteRoleAsync(roleId))
             .ReturnsAsync(ServiceResult<bool>.Success(true));
         // Act
-        var result = await _controller.DeleteRole(roleId);
+        var result = await _controller.DeleteAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -209,7 +209,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.DeleteRoleAsync(roleId))
             .ReturnsAsync(ServiceResult<bool>.Fail("No data Found"));
         // Act
-        var result = await _controller.DeleteRole(roleId);
+        var result = await _controller.DeleteAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -222,7 +222,7 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.DeleteRoleAsync(roleId))
             .ReturnsAsync(ServiceResult<bool>.Fail("Failed to delete role"));
         // Act
-        var result = await _controller.DeleteRole(roleId);
+        var result = await _controller.DeleteAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -235,12 +235,12 @@ public class RoleControllerTests
         _mockRoleServices.Setup(service => service.DeleteRoleAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid Id"));
         // Act
-        var result = await _controller.DeleteRole(roleId);
+        var result = await _controller.DeleteAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         //Act with zero Id
         roleId = 0;
-        result = await _controller.DeleteRole(roleId);
+        result = await _controller.DeleteAsync(roleId);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }

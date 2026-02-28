@@ -20,7 +20,7 @@ public enum AttendanceReasonType
 }
 
 
-public enum AttendanceStatuses
+public enum AttendanceStatus
 {
     Present = 1,
     Absent = 2,

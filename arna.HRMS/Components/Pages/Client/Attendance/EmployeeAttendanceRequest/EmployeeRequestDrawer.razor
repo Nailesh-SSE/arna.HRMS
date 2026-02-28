@@ -1,11 +1,11 @@
-﻿@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Client.AttendanceRequest
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Dropdown
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
 
 @inject IAttendanceRequestService AttendanceRequestService
 @inject NotificationService NotificationService
@@ -195,12 +195,12 @@
             var result = await AttendanceRequestService.UpdateAttendanceRequestAsync(request);
             if (result.IsSuccess)
             {
-                NotificationService.Success("Updated successfully.");
+                await NotificationService.Success("Updated successfully.");
                 await CloseDrawer();
             }
             else
             {
-                NotificationService.Error(result.Message ?? "Operation failed.");
+                await NotificationService.Error(result.Message ?? "Operation failed.");
             }
         }
         else
@@ -208,12 +208,12 @@
             var result = await AttendanceRequestService.CreateAttendanceRequestAsync(request);
             if (result.IsSuccess)
             {
-                NotificationService.Success("Submitted successfully.");
+                await NotificationService.Success("Submitted successfully.");
                 await CloseDrawer();
             }
             else
             {
-                NotificationService.Error(result.Message ?? "Operation failed.");
+                await NotificationService.Error(result.Message ?? "Operation failed.");
             }
         }
 

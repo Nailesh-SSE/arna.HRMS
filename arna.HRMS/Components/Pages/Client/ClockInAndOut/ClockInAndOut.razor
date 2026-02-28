@@ -1,17 +1,15 @@
-﻿@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Client.Clock
-@using arna.HRMS.Components.Loader
+﻿@using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Attendance
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Enums
-@using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 
 @implements IDisposable
 @inject IClockService ClockService
 @inherits AuthenticatedLayoutBase
 @inject IJSRuntime JS
-
 
 <!-- Loader — only when IsLoading is explicitly true -->
 <Loader Visible="@IsLoading" Message="@LoaderMessage" />
@@ -127,7 +125,7 @@
         if (employeeId == 0)
             return;
 
-        var lastEntry = await ClockService.GetClockStatus(employeeId);
+        var lastEntry = await ClockService.GetClockStatusAsync(employeeId);
 
         if (!lastEntry.IsSuccess || lastEntry.Data == null)
             return;
@@ -245,7 +243,7 @@
                     EmployeeId = employeeId,
                     Date = DateTime.Today,
                     ClockInTime = new TimeSpan(In.Hour, In.Minute, In.Second),
-                    StatusId = AttendanceStatuses.Present,
+                    StatusId = AttendanceStatus.Present,
                     Notes = attendanceViewModel.Notes,
                     WorkingHours = TimeSpan.Zero,
                     Latitude = CurrentLatitude,
@@ -284,7 +282,7 @@
                     EmployeeId = employeeId,
                     Date = DateTime.Today,
                     ClockOutTime = new TimeSpan(Out.Hour, Out.Minute, Out.Second),
-                    StatusId = AttendanceStatuses.Present,
+                    StatusId = AttendanceStatus.Present,
                     Notes = attendanceViewModel.Notes,
                     WorkingHours = AccumulatedHours.ToTimeSpan(),
                     Latitude = CurrentLatitude,

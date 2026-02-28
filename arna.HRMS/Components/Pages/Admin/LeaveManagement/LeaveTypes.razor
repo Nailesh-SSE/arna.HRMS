@@ -1,10 +1,10 @@
-﻿@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.Pages.Admin.LeaveManagement
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
@@ -175,7 +175,7 @@ else
     {
         try
         {
-            var result = await LeaveService.GetLeaveTypeAsync();
+            var result = await LeaveService.GetLeaveTypesAsync();
             leaveTypes = result?.IsSuccess == true && result.Data != null
                 ? result.Data : new();
 
@@ -218,7 +218,7 @@ else
         if (!ok) return;
 
         await LeaveService.DeleteLeaveTypeAsync(model.Id);
-        NotificationService.Success("Leave type deleted.");
+        await NotificationService.Success("Leave type deleted.");
         await LoadLeaveTypes();
     }
 

@@ -1,9 +1,9 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 
@@ -11,128 +11,134 @@ namespace arna.HRMS.Infrastructure.Services;
 
 public class EmployeeService : IEmployeeService
 {
-    private readonly EmployeeRepository _employeeRepository;
+    private readonly EmployeeRepository _repository;
     private readonly IUserServices _userServices;
-    private readonly IMapper _mapper;
     private readonly IRoleService _roleService;
+    private readonly IMapper _mapper;
     private readonly EmployeeValidator _validator;
 
     public EmployeeService(
-        EmployeeRepository employeeRepository,
-        IMapper mapper,
+        EmployeeRepository repository,
         IUserServices userServices,
         IRoleService roleService,
+        IMapper mapper,
         EmployeeValidator validator)
     {
-        _employeeRepository = employeeRepository;
-        _mapper = mapper;
+        _repository = repository;
         _userServices = userServices;
         _roleService = roleService;
+        _mapper = mapper;
         _validator = validator;
     }
 
     public async Task<ServiceResult<List<EmployeeDto>>> GetEmployeesAsync()
     {
-        var employees = await _employeeRepository.GetEmployeesAsync();
+        var employees = await _repository.GetEmployeesAsync();
+
         return ServiceResult<List<EmployeeDto>>.Success(_mapper.Map<List<EmployeeDto>>(employees));
     }
 
     public async Task<ServiceResult<EmployeeDto?>> GetEmployeeByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<EmployeeDto?>.Fail("Invalid Employee ID");
+            return ServiceResult<EmployeeDto?>.Fail("Invalid employee ID.");
 
-        var employee = await _employeeRepository.GetEmployeeByIdAsync(id);
+        var employee = await _repository.GetEmployeeByIdAsync(id);
 
         if (employee == null)
-            return ServiceResult<EmployeeDto?>.Fail("Employee not found");
+            return ServiceResult<EmployeeDto?>.Fail("Employee not found.");
 
-        var dto = _mapper.Map<EmployeeDto>(employee);
-        return dto != null
-            ? ServiceResult<EmployeeDto?>.Success(dto)
-            : ServiceResult<EmployeeDto?>.Fail("Fail to Find Employee");
+        return ServiceResult<EmployeeDto?>.Success(_mapper.Map<EmployeeDto>(employee));
     }
 
     public async Task<ServiceResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto)
     {
         var validation = await _validator.ValidateCreateAsync(dto);
+
         if (!validation.IsValid)
             return ServiceResult<EmployeeDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
         var employee = _mapper.Map<Employee>(dto);
 
-        var lastEmployeeNumber = await _employeeRepository.GetLastEmployeeNumberAsync();
-        employee.EmployeeNumber = GenerateEmployeeNumber(lastEmployeeNumber);
+        var lastNumber = await _repository.GetLastEmployeeNumberAsync();
+        employee.EmployeeNumber = GenerateEmployeeNumber(lastNumber);
 
-        var createdEmployee = await _employeeRepository.CreateEmployeeAsync(employee);
+        var created = await _repository.CreateEmployeeAsync(employee);
 
-        if (createdEmployee != null)
-        {
-            var role = await _roleService.GetRoleByNameAsync(UserRole.Employee.ToString());
-            if (role == null || !role.IsSuccess || role.Data == null)
-                return ServiceResult<EmployeeDto>.Fail("Employee role not found");
+        if (created == null)
+            return ServiceResult<EmployeeDto>.Fail("Failed to create employee.");
 
-            var userDto = new UserDto
-            {
-                Username = createdEmployee.FirstName,
-                Email = createdEmployee.Email,
-                FirstName = createdEmployee.FirstName,
-                LastName = createdEmployee.LastName,
-                EmployeeName = createdEmployee.FirstName + " " + createdEmployee.LastName,
-                RoleId = role.Data.Id,
-                PhoneNumber = createdEmployee.PhoneNumber,
-                EmployeeId = createdEmployee.Id,
-                Password = $"{Guid.NewGuid().ToString("N")[..6]}"
-            };
+        await CreateUserForEmployeeAsync(created);
 
-            await _userServices.CreateUserAsync(userDto);
-        }
-        var Data = _mapper.Map<EmployeeDto>(createdEmployee);
-        return Data != null
-            ? ServiceResult<EmployeeDto>.Success(Data, "Employee created successfully")
-            : ServiceResult<EmployeeDto>.Fail("Fail to create employee") ;
+        return ServiceResult<EmployeeDto>.Success(_mapper.Map<EmployeeDto>(created), "Employee created successfully.");
     }
 
     public async Task<ServiceResult<EmployeeDto>> UpdateEmployeeAsync(EmployeeDto dto)
     {
         var validation = await _validator.ValidateUpdateAsync(dto);
+
         if (!validation.IsValid)
             return ServiceResult<EmployeeDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
 
-        var employee = _mapper.Map<Employee>(dto);
-        var updated = await _employeeRepository.UpdateEmployeeAsync(employee);
-        var Data = _mapper.Map<EmployeeDto>(updated);
-        return Data!=null 
-            ? ServiceResult<EmployeeDto>.Success(Data, "Employee updated successfully")
-            : ServiceResult<EmployeeDto>.Fail("Fail to Update employee");
+        var entity = _mapper.Map<Employee>(dto);
+
+        var updated = await _repository.UpdateEmployeeAsync(entity);
+
+        return ServiceResult<EmployeeDto>.Success(_mapper.Map<EmployeeDto>(updated), "Employee updated successfully.");
     }
 
     public async Task<ServiceResult<bool>> DeleteEmployeeAsync(int id)
     {
-        var employee = await GetEmployeeByIdAsync(id);
-        if (!employee.IsSuccess || employee.Data == null)
-            return ServiceResult<bool>.Fail("Employee not found");
+        if (id <= 0)
+            return ServiceResult<bool>.Fail("Invalid employee ID.");
 
-        var deleted = await _employeeRepository.DeleteEmployeeAsync(id);
+        var deleted = await _repository.DeleteEmployeeAsync(id);
 
         return deleted
-            ? ServiceResult<bool>.Success(deleted, "Employee deleted successfully")
-            : ServiceResult<bool>.Fail("Fail to Delete employee");
+            ? ServiceResult<bool>.Success(true, "Employee deleted successfully.")
+            : ServiceResult<bool>.Fail("Employee not found.");
     }
 
-    private static string GenerateEmployeeNumber(string? lastEmployeeNumber)
+    private async Task CreateUserForEmployeeAsync(Employee employee)
+    {
+        var roleResult = await _roleService.GetRoleByNameAsync(UserRole.Employee.ToString());
+
+        if (!roleResult.IsSuccess || roleResult.Data == null)
+            return;
+
+        var password = GenerateRandomPassword();
+
+        var userDto = new UserDto
+        {
+            Username = employee.FirstName,
+            Email = employee.Email,
+            FirstName = employee.FirstName,
+            LastName = employee.LastName,
+            EmployeeName = $"{employee.FirstName} {employee.LastName}",
+            RoleId = roleResult.Data.Id,
+            PhoneNumber = employee.PhoneNumber,
+            EmployeeId = employee.Id,
+            Password = password
+        };
+
+        await _userServices.CreateUserAsync(userDto);
+    }
+
+    private static string GenerateEmployeeNumber(string? lastNumber)
     {
         int next = 1;
 
-        if (!string.IsNullOrWhiteSpace(lastEmployeeNumber))
+        if (!string.IsNullOrWhiteSpace(lastNumber))
         {
-            var numberPart = lastEmployeeNumber
-                .Replace("EMP", "", StringComparison.OrdinalIgnoreCase);
+            var numericPart = new string(lastNumber.Where(char.IsDigit).ToArray());
 
-            if (int.TryParse(numberPart, out int current))
+            if (int.TryParse(numericPart, out int current))
                 next = current + 1;
         }
 
-        return $"Emp{next:D3}";
+        return $"EMP{next:D4}";
     }
+
+    private static string GenerateRandomPassword()
+        => Guid.NewGuid().ToString("N")[..8];
 }

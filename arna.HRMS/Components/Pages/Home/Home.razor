@@ -1,8 +1,8 @@
 ﻿@page "/"
 
-@using arna.HRMS.ClientServices.Auth
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Services.Auth
 
 @inherits AuthenticatedLayoutBase
 @inject NavigationManager Nav
@@ -32,7 +32,7 @@
         {
             await base.OnInitializedAsync();
 
-            if (!IsAuthentication())
+            if (!IsAuthenticated())
             {
                 Nav.NavigateTo("/login");
                 return;

@@ -1,18 +1,15 @@
 ﻿@page "/user/create"
 @page "/user/edit/{Id:int}"
 
-@using arna.HRMS.ClientServices.Admin.Employee
-@using arna.HRMS.ClientServices.Admin.Role
-@using arna.HRMS.ClientServices.Admin.User
-@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
-@inject IUsersService UsersService
+@inject IUserService UsersService
 @inject IEmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
@@ -328,7 +325,7 @@
 
         if (result is not { IsSuccess: true, Data: not null })
         {
-            NotificationService.Error(result?.Message ?? "User not found.");
+            await NotificationService.Error(result?.Message ?? "User not found.");
             NavigationManager.NavigateTo("/user");
             return;
         }
@@ -363,13 +360,12 @@
 
             if (!isSuccess)
             {
-                NotificationService.Error(errorMessage ??
-                    (IsEditMode ? "Unable to update user." : "Unable to create user."));
+                await NotificationService.Error(errorMessage ??
+                (IsEditMode ? "Unable to update user." : "Unable to create user."));
                 return;
             }
 
-            NotificationService.Success(
-                IsEditMode ? "User updated successfully." : "User created successfully.");
+            await NotificationService.Success(IsEditMode ? "User updated successfully." : "User created successfully.");
             NavigationManager.NavigateTo("/user");
         }
         finally

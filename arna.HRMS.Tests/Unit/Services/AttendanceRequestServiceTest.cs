@@ -1,12 +1,11 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -388,7 +387,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequests(null, null);
+        var result = await _service.GetAttendanceRequestsAsync(null, null);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
@@ -397,7 +396,7 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task GetAttendanceRequests_WhenNoData_ReturnsEmptySuccess()
     {
-        var result = await _service.GetAttendanceRequests(null, null);
+        var result = await _service.GetAttendanceRequestsAsync(null, null);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
@@ -454,7 +453,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequests(null, null);
+        var result = await _service.GetAttendanceRequestsAsync(null, null);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
@@ -528,7 +527,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequests(2, null);
+        var result = await _service.GetAttendanceRequestsAsync(2, null);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
@@ -584,7 +583,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequests(null, Status.Rejected);
+        var result = await _service.GetAttendanceRequestsAsync(null, Status.Rejected);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
@@ -640,7 +639,7 @@ public class AttendanceRequestServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequests(7, Status.Approved);
+        var result = await _service.GetAttendanceRequestsAsync(7, Status.Approved);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
@@ -656,7 +655,7 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task GetAttendenceRequestByIdAsync_WhenIdZero_ReturnsFail()
     {
-        var result = await _service.GetAttendenceRequestByIdAsync(0);
+        var result = await _service.GetAttendanceRequestByIdAsync(0);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
@@ -667,7 +666,7 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task GetAttendenceRequestByIdAsync_WhenIdNegative_ReturnsFail()
     {
-        var result = await _service.GetAttendenceRequestByIdAsync(-10);
+        var result = await _service.GetAttendanceRequestByIdAsync(-10);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
@@ -716,7 +715,7 @@ public class AttendanceRequestServiceTests
         _dbContext.AttendanceRequest.Add(entity);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendenceRequestByIdAsync(entity.Id);
+        var result = await _service.GetAttendanceRequestByIdAsync(entity.Id);
         var dto = result.Data!;
 
         Assert.That(result.IsSuccess, Is.True);
@@ -791,7 +790,7 @@ public class AttendanceRequestServiceTests
         );
 
         // Act
-        var result = await service.GetAttendenceRequestByIdAsync(entity.Id);
+        var result = await service.GetAttendanceRequestByIdAsync(entity.Id);
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -835,7 +834,7 @@ public class AttendanceRequestServiceTests
         _dbContext.AttendanceRequest.Add(entity);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendenceRequestByIdAsync(entity.Id);
+        var result = await _service.GetAttendanceRequestByIdAsync(entity.Id);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.EmployeeId, Is.EqualTo(2));
@@ -847,7 +846,7 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task GetAttendanceRequestByIdAsync_WhenNotFound_ReturnsFail()
     {
-        var result = await _service.GetAttendenceRequestByIdAsync(999);
+        var result = await _service.GetAttendanceRequestByIdAsync(999);
 
         Assert.That(result.IsSuccess, Is.False);
     }
@@ -1282,9 +1281,9 @@ public async Task UpdateAttendanceRequestStatusAsync_WhenRepositoryReturnsFalse_
             }
         );
         await _dbContext.SaveChangesAsync();
-        var result2 = await _service.GetAttendanceRequests(null, null);
+        var result2 = await _service.GetAttendanceRequestsAsync(null, null);
         var count = result2.Data!.Count;
-        var result = await _service.GetPendingAttendanceRequestesAsync();
+        var result = await _service.GetPendingAttendanceRequestsAsync();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(2));
@@ -1330,7 +1329,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     _dbContext.AttendanceRequest.Add(entity);
     await _dbContext.SaveChangesAsync();
 
-    var result = await _service.GetPendingAttendanceRequestesAsync();
+    var result = await _service.GetPendingAttendanceRequestsAsync();
     var dto = result.Data!.First();
 
     Assert.That(dto.Id, Is.EqualTo(entity.Id));
@@ -1386,7 +1385,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
         _dbContext.AttendanceRequest.Add(entity);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetPendingAttendanceRequestesAsync();
+        var result = await _service.GetPendingAttendanceRequestsAsync();
 
         var dto = result.Data!.First();
 
@@ -1403,7 +1402,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     [Test]
     public async Task GetPendingAttendanceRequestesAsync_WhenNoData_ReturnsEmptySuccess()
     {
-        var result = await _service.GetPendingAttendanceRequestesAsync();
+        var result = await _service.GetPendingAttendanceRequestsAsync();
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
@@ -2138,7 +2137,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
         await _dbContext.SaveChangesAsync();
 
         // ---------- ACT ----------
-        var result = await _service.UpdateAttendanceRequestStatusCancleAsync(
+        var result = await _service.CancelAttendanceRequestAsync(
             pendingToCancel.Id,
             5
         );
@@ -2242,7 +2241,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     [Test]
     public async Task UpdateAttendanceRequestStatusCancleAsync_WhenIdInvalid_ReturnsFail()
     {
-        var result = await _service.UpdateAttendanceRequestStatusCancleAsync(0, 1);
+        var result = await _service.CancelAttendanceRequestAsync(0, 1);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
@@ -2252,7 +2251,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     [Test]
     public async Task UpdateAttendanceRequestStatusCancleAsync_WhenEmployeeIdInvalid_ReturnsFail()
     {
-        var result = await _service.UpdateAttendanceRequestStatusCancleAsync(1, 0);
+        var result = await _service.CancelAttendanceRequestAsync(1, 0);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
@@ -2263,7 +2262,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     [Test]
     public async Task UpdateAttendanceRequestStatusCancleAsync_WhenRequestNotFound_ReturnsFail()
     {
-        var result = await _service.UpdateAttendanceRequestStatusCancleAsync(999, 1);
+        var result = await _service.CancelAttendanceRequestAsync(999, 1);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
@@ -2306,7 +2305,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
 
         var requestId = _dbContext.AttendanceRequest.First().Id;
 
-        var result = await _service.UpdateAttendanceRequestStatusCancleAsync(requestId, 1);
+        var result = await _service.CancelAttendanceRequestAsync(requestId, 1);
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Failed to cancel attendance request"));
@@ -2348,7 +2347,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
 
         var request = _dbContext.AttendanceRequest.First();
 
-        var result = await _service.UpdateAttendanceRequestStatusCancleAsync(request.Id, 1);
+        var result = await _service.CancelAttendanceRequestAsync(request.Id, 1);
 
         var updated = await _dbContext.AttendanceRequest.FindAsync(request.Id);
 

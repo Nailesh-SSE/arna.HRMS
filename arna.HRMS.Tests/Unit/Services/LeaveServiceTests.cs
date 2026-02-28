@@ -1,13 +1,12 @@
-﻿using arna.HRMS.Core.Common.ServiceResult;
+﻿using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using arna.HRMS.Infrastructure.Services;
-using arna.HRMS.Infrastructure.Services.Interfaces;
 using arna.HRMS.Infrastructure.Validators;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
@@ -64,9 +63,9 @@ public class LeaveServiceTests
 
         _leaveService = new LeaveService(
             leaveRepository,
-            _mapper,
             _festivalHolidayServiceMock.Object,
             _attendanceRepository,
+            _mapper,
             leaveValidator
         );
     }
@@ -74,7 +73,7 @@ public class LeaveServiceTests
     [Test]
     public async Task GetLeaveTypeAsync_ShouldSuccess_WhenDbEmpty()
     {
-        var result = await _leaveService.GetLeaveTypeAsync();
+        var result = await _leaveService.GetLeaveTypesAsync();
         Assert.That(result.Data, Is.Empty);
         Assert.That(result.IsSuccess, Is.True);
     }
@@ -93,7 +92,7 @@ public class LeaveServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _leaveService.GetLeaveTypeAsync();
+        var result = await _leaveService.GetLeaveTypesAsync();
 
         Assert.That(result.Data!.Count, Is.EqualTo(6));
         Assert.That(result.Data[5].LeaveNameId, Is.EqualTo(LeaveName.SickLeave));
@@ -603,7 +602,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
 
-        var result = await _leaveService.GetLeaveRequestAsync();
+        var result = await _leaveService.GetLeaveRequestsAsync();
         Assert.That(result.Data!.Count, Is.EqualTo(4));
         Assert.That(result.Data[0].EmployeeId, Is.EqualTo(104));
         Assert.That(result.Data[2].Reason, Is.EqualTo("Vacation"));
@@ -705,7 +704,7 @@ public class LeaveServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _leaveService.GetByFilterAsync(Status.Pending, null);
+        var result = await _leaveService.GetLeaveRequestsByFilterAsync(Status.Pending, null);
 
         Assert.That(result.Data!.Count, Is.EqualTo(2));
         Assert.That(result.Data[0].EmployeeId, Is.EqualTo(104));
@@ -909,7 +908,7 @@ public class LeaveServiceTests
         // -------------------------------
 
         _festivalHolidayServiceMock
-            .Setup(x => x.GetFestivalHolidayAsync())
+            .Setup(x => x.GetFestivalHolidaysAsync())
             .ReturnsAsync(
                 ServiceResult<List<FestivalHolidayDto>>.Success(new List<FestivalHolidayDto>())
             );
@@ -971,7 +970,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenLeaveTypeNotFound()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -996,7 +995,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenStartDateAfterEndDate()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1022,7 +1021,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenStartDateInPast()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1048,7 +1047,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenEndDateEqualCurrentDate()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1074,7 +1073,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenStartDateIsMissing()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1099,7 +1098,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenEndDateIsMissing()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1124,7 +1123,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenResoneIsMissing()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1149,7 +1148,7 @@ public class LeaveServiceTests
     public async Task CreateLeaveRequest_WhenEmployeeNotFound()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1174,7 +1173,7 @@ public class LeaveServiceTests
     public async Task GetLeaveRequestByEmployeeId_whenfoumnd()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1231,7 +1230,7 @@ public class LeaveServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _leaveService.GetLeaveRequestByEmployeeIdAsync(101);
+        var result = await _leaveService.GetLeaveRequestsByEmployeeIdAsync(101);
 
         Assert.That(result.Data!.Count, Is.EqualTo(3));
         Assert.That(result.Data[0].EmployeeId, Is.EqualTo(101));
@@ -1256,7 +1255,7 @@ public class LeaveServiceTests
     [Test]
     public async Task GetLeaveRequestByEmployeeId_whenNotfoumnd()
     {
-        var result = await _leaveService.GetLeaveRequestByEmployeeIdAsync(999);
+        var result = await _leaveService.GetLeaveRequestsByEmployeeIdAsync(999);
         Assert.That(result.Data, Is.Null);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Leave requests not found for this employee"));
@@ -1265,10 +1264,10 @@ public class LeaveServiceTests
     [Test]
     public async Task GetLeaveRequestByEmployeeId_whenIsZeroOrNegative()
     {
-        var result = await _leaveService.GetLeaveRequestByEmployeeIdAsync(0);
+        var result = await _leaveService.GetLeaveRequestsByEmployeeIdAsync(0);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid Employee Id"));
-        var result2 = await _leaveService.GetLeaveRequestByEmployeeIdAsync(-99);
+        var result2 = await _leaveService.GetLeaveRequestsByEmployeeIdAsync(-99);
         Assert.That(result2.IsSuccess, Is.False);
         Assert.That(result2.Message, Is.EqualTo("Invalid Employee Id"));
     }
@@ -1315,7 +1314,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
 
-        var result = await _leaveService.GetLeaveRequestByEmployeeIdAsync(101);
+        var result = await _leaveService.GetLeaveRequestsByEmployeeIdAsync(101);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Leave requests not found for this employee"));
     }
@@ -1426,7 +1425,7 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequest_WhenAlreadyDeleted()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1691,7 +1690,7 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequest_WhenFounc()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1758,7 +1757,7 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequest_WhenStartDateIsCurrentDate()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1941,7 +1940,7 @@ public class LeaveServiceTests
     public async Task UpdateLeaveRequestStatus_WhenApproved()
     {
         _festivalHolidayServiceMock
-        .Setup(f => f.GetFestivalHolidayAsync())
+        .Setup(f => f.GetFestivalHolidaysAsync())
         .ReturnsAsync(
             ServiceResult<List<FestivalHolidayDto>>
                 .Success(new List<FestivalHolidayDto>())
@@ -1983,7 +1982,7 @@ public class LeaveServiceTests
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EmployeeId, Is.EqualTo(101));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Id, Is.EqualTo(1));
 
-        var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Approved, 99);
+        var result = await _leaveService.UpdateLeaveRequestStatusAsync(1, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.True);
 
         var leaveRequest = await _dbContext.LeaveRequests.FindAsync(1);
@@ -2005,7 +2004,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Approved, 99);
+        var result = await _leaveService.UpdateLeaveRequestStatusAsync(1, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Failed to update leave status or status is not approved."));
     }
@@ -2018,7 +2017,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Approved, 99);
+        var result = await _leaveService.UpdateLeaveRequestStatusAsync(1, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Failed to update leave status or status is not approved."));
     }
@@ -2031,7 +2030,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Approved, 99);
+        var result = await _leaveService.UpdateLeaveRequestStatusAsync(1, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Failed to update leave status or status is not approved."));
     }
@@ -2044,7 +2043,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Approved, 99);
+        var result = await _leaveService.UpdateLeaveRequestStatusAsync(1, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Failed to update leave status or status is not approved."));
     }
@@ -2088,7 +2087,7 @@ public class LeaveServiceTests
 
         _dbContext.ChangeTracker.Clear();
 
-        var result = await _leaveService.UpdateStatusLeaveAsync(1, Status.Rejected, 99);
+        var result = await _leaveService.UpdateLeaveRequestStatusAsync(1, Status.Rejected, 99);
         Assert.That(result.IsSuccess, Is.True);
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Rejected));
     }
@@ -2096,7 +2095,7 @@ public class LeaveServiceTests
     [Test]
     public async Task UpdateLeaveRequestStatus_WhenNotFound()
     {
-        var result = await _leaveService.UpdateStatusLeaveAsync(0, Status.Approved, 99);
+        var result = await _leaveService.UpdateLeaveRequestStatusAsync(0, Status.Approved, 99);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid Leave Request Id"));
     }
@@ -2139,7 +2138,7 @@ public class LeaveServiceTests
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.EmployeeId, Is.EqualTo(101));
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.Id, Is.EqualTo(1));
 
-        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
+        var result = await _leaveService.CancelLeaveRequestAsync(1, 101);
         Assert.That(result.IsSuccess, Is.True);
         Assert.That((await _dbContext.LeaveRequests.FindAsync(1))!.StatusId, Is.EqualTo(Status.Cancelled));
     }
@@ -2147,11 +2146,11 @@ public class LeaveServiceTests
     [Test]
     public async Task UpdateLeaveRequestStatusCancel_WhenIsZeroOrNegative()
     {
-        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(0, 101);
+        var result = await _leaveService.CancelLeaveRequestAsync(0, 101);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid Id"));
 
-        var result2 = await _leaveService.UpdateLeaveRequestStatusCancelAsync(-2, 101);
+        var result2 = await _leaveService.CancelLeaveRequestAsync(-2, 101);
         Assert.That(result2.IsSuccess, Is.False);
         Assert.That(result2.Message, Is.EqualTo("Invalid Id"));
     }
@@ -2164,7 +2163,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 0);
+        var result = await _leaveService.CancelLeaveRequestAsync(1, 0);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Invalid Id"));
     }
@@ -2201,7 +2200,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
+        var result = await _leaveService.CancelLeaveRequestAsync(1, 101);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Cannot cancel this leave request"));
     }
@@ -2238,7 +2237,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
+        var result = await _leaveService.CancelLeaveRequestAsync(1, 101);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Cannot cancel this leave request"));
     }
@@ -2275,7 +2274,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
+        var result = await _leaveService.CancelLeaveRequestAsync(1, 101);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Cannot cancel this leave request"));
     }
@@ -2312,7 +2311,7 @@ public class LeaveServiceTests
         );
         await _dbContext.SaveChangesAsync();
         _dbContext.ChangeTracker.Clear();
-        var result = await _leaveService.UpdateLeaveRequestStatusCancelAsync(1, 101);
+        var result = await _leaveService.CancelLeaveRequestAsync(1, 101);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Leave Request not found"));
     }

@@ -1,6 +1,8 @@
-﻿@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Navigation
-@using arna.HRMS.Models.Enums
+﻿@using arna.HRMS.Models.Enums
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Helper.Navigation
+@using System.Collections.Generic
+@using System.Linq
 
 @inherits AuthenticatedLayoutBase
 @implements IDisposable
@@ -31,7 +33,7 @@
 
                 @foreach (var item in menuSection.Value)
                 {
-                    var route = NavigationService.GetRouteForRole(item, _userRole);
+                    var route = NavigationHelper.GetRouteForRole(item, _userRole);
                     var isActive = IsActive(route, item.ExactMatch);
 
                     <button class="navmenu-item @isActive" @onclick='() => GoTo(route)' title="@item.Label">
@@ -52,11 +54,12 @@
 </div>
 
 @code {
-[Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
 
-private string _currentPath = "";
-private UserRole _userRole = UserRole.Employee;
-private Dictionary<string, List<NavMenuItem>>? _menuItemsBySection;
+    private string _currentPath = "";
+    private UserRole _userRole = UserRole.Employee;
+    private IReadOnlyDictionary<string, List<NavMenuItem>> _menuItemsBySection = new Dictionary<string, List<NavMenuItem>>();
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -71,11 +74,10 @@ private Dictionary<string, List<NavMenuItem>>? _menuItemsBySection;
         InitializeMenuItems();
     }
 
-private void InitializeMenuItems()
-{
-    // Get menu items grouped by section for this user role
-    _menuItemsBySection = NavigationService.GetMenuItemsGroupedBySection(_userRole);
-}
+    private void InitializeMenuItems()
+    {
+        _menuItemsBySection = NavigationHelper.GetMenuItemsGroupedBySection(_userRole);
+    }
 
     private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {

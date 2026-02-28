@@ -1,11 +1,11 @@
 ﻿@page "/role/create"
 @page "/role/edit/{Id:int}"
 
-@using arna.HRMS.ClientServices.Admin.Role
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject IRoleService RoleService
 @inject NavigationManager NavigationManager
@@ -202,7 +202,7 @@
             }
             else
             {
-                NotificationService.Error($"{result.Message ?? "Role not found."}");
+                await NotificationService.Error($"{result.Message ?? "Role not found."}");
                 NavigationManager.NavigateTo("/role");
             }
         }
@@ -241,13 +241,11 @@
 
             if (!isSuccess)
             {
-                NotificationService.Error(errorMessage ??
-                    (IsEditMode ? "Unable to update role." : "Unable to create role."));
+                await NotificationService.Error(errorMessage ?? (IsEditMode ? "Unable to update role." : "Unable to create role."));
                 return;
             }
 
-            NotificationService.Success(
-                IsEditMode ? "Role updated successfully." : "Role created successfully.");
+            await NotificationService.Success(IsEditMode ? "Role updated successfully." : "Role created successfully.");
             NavigationManager.NavigateTo("/role");
         }
         finally

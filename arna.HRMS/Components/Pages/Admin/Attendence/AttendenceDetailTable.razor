@@ -1,9 +1,9 @@
-﻿@using arna.HRMS.ClientServices.Client.Attendance
-@using arna.HRMS.Models.Common.Table
+﻿@using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Services
 
 @inject IAttendanceService AttendanceService
 
@@ -322,8 +322,8 @@
         try
         {
             var empId = Employee.Id;
-            var result = await AttendanceService.GetAttendanceByMonthAsync(selectedYear, selectedMonth, empId, null, AttendanceStatuses.Present);
-            allRecords = result;
+            var result = await AttendanceService.GetAttendanceByMonthAsync(selectedYear, selectedMonth, empId, null, AttendanceStatus.Present);
+            allRecords = result.Data ?? new List<MonthlyAttendanceViewModel>();
             CalculateStats();
         }
         catch

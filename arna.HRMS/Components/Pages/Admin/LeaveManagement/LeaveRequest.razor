@@ -1,13 +1,12 @@
-﻿@using arna.HRMS.ClientServices.Admin.Employee
-@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.ClientServices.Common
+﻿@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject AttendanceState State
 @inject ILeaveService LeaveService
@@ -172,7 +171,7 @@
     {
         try
         {
-            var result = await LeaveService.GetLeaveRequestAsync();
+            var result = await LeaveService.GetLeaveRequestsAsync();
             allRequests = result?.IsSuccess == true && result.Data != null
                 ? result.Data : new();
 
@@ -242,17 +241,17 @@
             "confirm", $"Are you sure you want to {newStatus} this leave request?");
         if (!confirmed) return;
 
-        var result = await LeaveService.UpdateStatusLeaveAsync(req.Id, newStatus);
+        var result = await LeaveService.UpdateLeaveStatusAsync(req.Id, newStatus);
         if (result?.IsSuccess == true)
         {
             req.StatusId = newStatus;
             req.ApprovedDate = DateTime.Now;
-            NotificationService.Success($"Leave {newStatus.ToString().ToLower()} successfully.");
+            await NotificationService.Success($"Leave {newStatus.ToString().ToLower()} successfully.");
             await LoadRequests();
         }
         else
         {
-            NotificationService.Error(result?.Message ?? "Operation failed.");
+            await NotificationService.Error(result?.Message ?? "Operation failed.");
         }
     }
 

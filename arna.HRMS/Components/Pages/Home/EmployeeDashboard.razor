@@ -1,7 +1,7 @@
-﻿@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Models.ViewModels.Leave
+﻿@using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject NavigationManager Nav
 @inject ILeaveService LeaveService
@@ -332,7 +332,7 @@
     {
         try
         {
-            var res = await LeaveService.GetLeaveTypeAsync();
+            var res = await LeaveService.GetLeaveTypesAsync();
             leaveTypes = res?.IsSuccess == true && res.Data != null ? res.Data : new();
             leaveTypeNames = leaveTypes.ToDictionary(
                 t => t.Id,
@@ -349,7 +349,7 @@
     {
         try
         {
-            var res = await LeaveService.GetLeaveRequestByEmployee(EmployeeId);
+            var res = await LeaveService.GetLeaveRequestsByEmployeeAsync(EmployeeId);
             myRequests = res?.IsSuccess == true && res.Data != null ? res.Data : new();
 
             pendingCount = myRequests.Count(r => r.StatusId == Status.Pending);
@@ -366,8 +366,7 @@
     {
         try
         {
-            var res = await LeaveService.GetLeaveRequestByFilterAsync(
-                Status.Approved, EmployeeId);
+            var res = await LeaveService.GetLeaveRequestsByFilterAsync(Status.Approved, EmployeeId);
 
             var approved = res?.IsSuccess == true && res.Data != null
                 ? res.Data : new();

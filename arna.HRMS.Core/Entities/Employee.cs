@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common;
+﻿using arna.HRMS.Core.Common.Base;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace arna.HRMS.Core.Entities;

@@ -1,7 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
@@ -37,7 +36,7 @@ public class FestivalHolidayRepositoryTests
         );
         _dbContext.SaveChanges();
         // Act
-        var result = await _festivalHolidayRepository.GetFestivalHolidayAsync();
+        var result = await _festivalHolidayRepository.GetFestivalHolidaysAsync();
         // Assert
 
         Assert.That(result.Count, Is.EqualTo(1));
@@ -50,7 +49,7 @@ public class FestivalHolidayRepositoryTests
     public async Task GetFestivalHolidayAsync_WhenEmpty()
     {
         // Act
-        var result = await _festivalHolidayRepository.GetFestivalHolidayAsync();
+        var result = await _festivalHolidayRepository.GetFestivalHolidaysAsync();
         // Assert
         Assert.That(result.Count, Is.EqualTo(0));
     }

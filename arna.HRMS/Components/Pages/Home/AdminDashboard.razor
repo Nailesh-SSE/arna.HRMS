@@ -1,10 +1,9 @@
-﻿@using arna.HRMS.ClientServices.Admin.Employee
-@using arna.HRMS.ClientServices.Leave
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject NavigationManager Nav
 @inject IEmployeeService EmployeeService
@@ -198,7 +197,7 @@
                                     <li class="list-group-item d-flex
                                                        align-items-center gap-3 px-3">
                                         <div class="avatar-sm avatar-green">
-                                            @GetInitials(r.EmployeeName)
+                                            @GetInitials(r.EmployeeName ?? string.Empty)
                                         </div>
                                         <div class="flex-grow-1">
                                             <div class="fw-medium small">@r.EmployeeName</div>
@@ -242,7 +241,7 @@
                                     <li class="list-group-item d-flex
                                                        align-items-center gap-3 px-3">
                                         <div class="avatar-sm avatar-red">
-                                            @GetInitials(r.EmployeeName)
+                                            @GetInitials(r.EmployeeName ?? string.Empty)
                                         </div>
                                         <div class="flex-grow-1">
                                             <div class="fw-medium small">@r.EmployeeName</div>
@@ -365,7 +364,7 @@
     {
         try
         {
-            var res = await LeaveService.GetLeaveTypeAsync();
+            var res = await LeaveService.GetLeaveTypesAsync();
             leaveTypes = res?.IsSuccess == true && res.Data != null ? res.Data : new();
             leaveTypeNames = leaveTypes.ToDictionary(
                 t => t.Id,
@@ -392,7 +391,7 @@
     {
         try
         {
-            var res = await LeaveService.GetLeaveRequestAsync();
+            var res = await LeaveService.GetLeaveRequestsAsync();
             allLeaveRequests = res?.IsSuccess == true && res.Data != null
                 ? res.Data : new();
 
@@ -450,19 +449,19 @@
 
         try
         {
-            var res = await LeaveService.UpdateStatusLeaveAsync(req.Id, Status.Approved);
+            var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Approved);
             if (res?.IsSuccess == true)
             {
-                NotificationService.Success("Leave approved successfully.");
+                await NotificationService.Success("Leave approved successfully.");
                 await LoadLeaveRequests();
                 BuildOverview();
             }
             else
-                NotificationService.Error(res?.Message ?? "Failed to approve.");
+                await NotificationService.Error(res?.Message ?? "Failed to approve.");
         }
         catch (Exception ex)
         {
-            NotificationService.Error(ex.Message ?? "Error approving leave.");
+            await NotificationService.Error(ex.Message ?? "Error approving leave.");
         }
     }
 
@@ -473,19 +472,19 @@
 
         try
         {
-            var res = await LeaveService.UpdateStatusLeaveAsync(req.Id, Status.Rejected);
+            var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Rejected);
             if (res?.IsSuccess == true)
             {
-                NotificationService.Success("Leave rejected.");
+                await NotificationService.Success("Leave rejected.");
                 await LoadLeaveRequests();
                 BuildOverview();
             }
             else
-                NotificationService.Error(res?.Message ?? "Failed to reject.");
+                await NotificationService.Error(res?.Message ?? "Failed to reject.");
         }
         catch (Exception ex)
         {
-            NotificationService.Error(ex.Message ?? "Error rejecting leave.");
+            await NotificationService.Error(ex.Message ?? "Error rejecting leave.");
         }
     }
 

@@ -1,16 +1,13 @@
 ﻿@page "/profile"
-
-@using arna.HRMS.ClientServices.Admin.Department
-@using arna.HRMS.ClientServices.Admin.Employee
-@using arna.HRMS.ClientServices.Admin.User
-@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
 
 @inject IEmployeeService EmployeeService
 @inject IDepartmentService DepartmentService
-@inject IUsersService UserService
+@inject IUserService UserService
 @inject NotificationService NotificationService
 @inherits AuthenticatedLayoutBase
 
@@ -200,7 +197,7 @@
         }
         catch(Exception ex)
         {
-            NotificationService?.Error(ex.Message ?? "Operation Failed.");
+            await NotificationService.Error(ex.Message ?? "Operation Failed.");
         }
         finally
         {
@@ -223,11 +220,11 @@
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error(result.Message ?? "Unable to update profile.");
+            await NotificationService.Error(result.Message ?? "Unable to update profile.");
             return;
         }
 
-        NotificationService.Success("Profile updated successfully.");
+        await NotificationService.Success("Profile updated successfully.");
         isEditMode = false;
     }
 

@@ -1,12 +1,12 @@
 ﻿@page "/department/create"
 @page "/department/edit/{Id:int?}"
 
-@using arna.HRMS.ClientServices.Admin.Department
-@using arna.HRMS.ClientServices.Common
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject IDepartmentService DepartmentService
 @inject NavigationManager NavigationManager
@@ -244,7 +244,7 @@
 
         if (result is not { IsSuccess: true, Data: not null })
         {
-            NotificationService.Error(result?.Message ?? "Department not found.");
+            await NotificationService.Error(result?.Message ?? "Department not found.");
             NavigationManager.NavigateTo("/department");
             return;
         }
@@ -279,13 +279,11 @@
 
             if (!isSuccess)
             {
-                NotificationService.Error(errorMessage ??
-                    (IsEditMode ? "Unable to update department." : "Unable to create department."));
+                await NotificationService.Error(errorMessage ?? (IsEditMode ? "Unable to update department." : "Unable to create department."));
                 return;
             }
 
-            NotificationService.Success(
-                IsEditMode ? "Department updated successfully." : "Department created successfully.");
+            await NotificationService.Success(IsEditMode ? "Department updated successfully." : "Department created successfully.");
             NavigationManager.NavigateTo("/department");
         }
         finally

@@ -1,7 +1,4 @@
-﻿@using arna.HRMS.ClientServices.Admin.Employee
-@using arna.HRMS.ClientServices.Client.AttendanceRequest
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.Components.Loader
+﻿@using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Model
@@ -10,6 +7,8 @@
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
 @inject AttendanceState State
 @inject IAttendanceRequestService AttendanceRequestService
@@ -283,7 +282,7 @@
         }
         catch (Exception ex)
         {
-            NotificationService.Error($"Failed to load data: {ex.Message}");
+            await NotificationService.Error($"Failed to load data: {ex.Message}");
         }
         finally
         {
@@ -423,16 +422,16 @@
         try
         {
             var result = await AttendanceRequestService
-                .UpdateRequestStatus(req.Id, newStatus);
+                .UpdateRequestStatusAsync(req.Id, newStatus);
 
             if (result?.IsSuccess == true)
             {
-                NotificationService.Success($"Request {action}d successfully.");
+                await NotificationService.Success($"Request {action}d successfully.");
                 await LoadRequests();
             }
             else
             {
-                NotificationService.Error(result?.Message ?? "Operation failed.");
+                await NotificationService.Error(result?.Message ?? "Operation failed.");
             }
         }
         finally

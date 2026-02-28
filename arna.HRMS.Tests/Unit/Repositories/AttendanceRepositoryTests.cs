@@ -2,7 +2,6 @@
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Repositories.Common;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 

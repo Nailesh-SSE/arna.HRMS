@@ -1,15 +1,13 @@
 ﻿@page "/user"
 
-@using arna.HRMS.ClientServices.Admin.User
-@using arna.HRMS.ClientServices.Auth
-@using arna.HRMS.ClientServices.Common
-@using arna.HRMS.ClientServices.Leave
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
 
-@inject IUsersService UsersService
+@inject IUserService UsersService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
@@ -213,8 +211,7 @@
         }
         else if (!result.IsSuccess)
         {
-            NotificationService.Error(
-                $"Failed to load users ({result.StatusCode}): {result.Message}");
+            await NotificationService.Error($"Failed to load users ({result.StatusCode}): {result.Message}");
             _users = new List<UserViewModel>();
         }
         else
@@ -244,12 +241,11 @@
 
         if (!result.IsSuccess)
         {
-            NotificationService.Error(
-                $"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
+            await NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
             return;
         }
 
-        NotificationService.Success("User deleted successfully.");
+        await NotificationService.Success("User deleted successfully.");
         await LoadUsersAsync();
     }
 
