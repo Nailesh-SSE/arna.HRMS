@@ -8,7 +8,6 @@ namespace arna.HRMS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class AttendanceRequestController : ControllerBase
 {
     private readonly IAttendanceRequestService _service;

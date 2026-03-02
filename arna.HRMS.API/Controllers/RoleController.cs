@@ -7,7 +7,6 @@ namespace arna.HRMS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class RoleController : ControllerBase
 {
     private readonly IRoleService _service;

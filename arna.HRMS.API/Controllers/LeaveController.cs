@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class LeaveController : ControllerBase
 {
     private readonly ILeaveService _service;
