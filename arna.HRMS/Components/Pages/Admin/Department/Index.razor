@@ -1,6 +1,7 @@
 ﻿@page "/department"
 
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
@@ -41,24 +42,16 @@
     </div>
 
     <!-- ═══════════ STAT CARDS ═══════════ -->
-    <div class="row g-2 g-sm-3 mb-4 mb-md-5">
-        @foreach (var stat in StatCards)
-        {
-            <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-3 dept-stat-card h-100">
-                    <div class="card-body text-center py-3 py-md-4 px-3">
-                        <div class="dept-stat-icon @stat.BgClass mx-auto mb-2">
-                            <i class="bi @stat.Icon @stat.TextClass"></i>
-                        </div>
-                        <div class="fs-4 fw-bold @stat.TextClass mb-2">@stat.Count</div>
-                        <small class="text-muted fw-semibold text-uppercase dept-stat-label">
-                            @stat.Label
-                        </small>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
+    <div class="row g-3 mb-4">
+    @foreach (var stat in StatCards)
+    {
+        <AppStatCard Icon="@stat.Icon"
+                     BgClass="@stat.BgClass"
+                     TextClass="@stat.TextClass"
+                     Label="@stat.Label"
+                     Count="@stat.Count" />
+    }
+</div>
 
     <!-- ═══════════ SEARCH BAR ═══════════ -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
@@ -186,7 +179,6 @@
     {
         new StatCardModel("bi-diagram-3-fill", "bg-primary bg-opacity-10", "text-primary", _departments.Count,                    "Total"),
         new StatCardModel("bi-check-circle-fill", "bg-success bg-opacity-10", "text-success", _departments.Count(d => d.IsActive),  "Active"),
-        new StatCardModel("bi-x-circle-fill",  "bg-danger bg-opacity-10",  "text-danger",  _departments.Count(d => !d.IsActive),  "Inactive"),
         new StatCardModel("bi-diagram-2-fill", "bg-info bg-opacity-10",    "text-info",    _departments.Count(d => d.ParentDepartmentId == null), "Root"),
     };
 

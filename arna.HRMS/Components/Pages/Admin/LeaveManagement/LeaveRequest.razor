@@ -27,46 +27,16 @@
 
 <!-- STATUS SUMMARY CARDS -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
-                    @(statusFilter == null ? "border-primary border-2" : "")"
-             @onclick="() => FilterByStatus(null)">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-primary">@allRequests.Count</div>
-                <small class="text-muted fw-medium">All</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
-                    @(statusFilter == Status.Pending ? "border-warning border-2" : "")"
-             @onclick="() => FilterByStatus(Status.Pending)">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-warning">@pendingCount</div>
-                <small class="text-muted fw-medium">Pending</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
-                    @(statusFilter == Status.Approved ? "border-success border-2" : "")"
-             @onclick="() => FilterByStatus(Status.Approved)">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-success">@approvedCount</div>
-                <small class="text-muted fw-medium">Approved</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 cursor-pointer
-                    @(statusFilter == Status.Rejected ? "border-danger border-2" : "")"
-             @onclick="() => FilterByStatus(Status.Rejected)">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-danger">@rejectedCount</div>
-                <small class="text-muted fw-medium">Rejected</small>
-            </div>
-        </div>
-    </div>
+    @foreach (var stat in StatCards)
+    {
+        <AppStatCard Icon="@stat.Icon"
+                     BgClass="@stat.BgClass"
+                     TextClass="@stat.TextClass"
+                     Label="@stat.Label"
+                     Count="@stat.Count"
+                     CardClass="@(statusFilter == stat.Status ? stat.ActiveClass : "")"
+                     OnClick="() => FilterByStatus(stat.Status)" />
+    }
 </div>
 
 <!-- FILTER BAR -->
@@ -109,19 +79,26 @@
                 <ActionTemplate Context="req">
                     @if (req.StatusId != Status.Cancelled)
                     {
-                        <AppButton ButtonClass="@GetApproveClass(req)"
-                                   OnClick="() => UpdateStatus(req, Status.Approved)">
-                            <i class="bi bi-check-circle"></i>
-                        </AppButton>
+                        <div class="d-flex align-items-center gap-1 gap-md-2
+                                                            justify-content-center">
+                            <AppButton ButtonClass="@GetApproveClass(req)"
+                                       OnClick="() => UpdateStatus(req, Status.Approved)">
+                                <i class="bi bi-check-lg"></i>
+                            </AppButton>
 
-                        <AppButton ButtonClass="@GetRejectClass(req)"
-                                   OnClick="() => UpdateStatus(req, Status.Rejected)">
-                            <i class="bi bi-x-circle"></i>
-                        </AppButton>
+                            <AppButton ButtonClass="@GetRejectClass(req)"
+                                       OnClick="() => UpdateStatus(req, Status.Rejected)">
+                                <i class="bi bi-x-lg"></i>
+                            </AppButton>
+                        </div>
                     }
                     else
                     {
-                        <span class="badge bg-secondary">Cancelled</span>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary
+                                                                 rounded-pill px-2 px-md-3 small">
+                            <i class="bi bi-slash-circle me-1 d-none d-sm-inline"></i>
+                            Cancelled
+                        </span>
                     }
                 </ActionTemplate>
 
@@ -166,6 +143,45 @@
         }
         catch { Employees = new(); }
     }
+
+    private IEnumerable<StatCardModel> StatCards => new[]
+{
+    new StatCardModel(
+        null,
+        "bi-grid-fill",
+        "bg-primary bg-opacity-10",
+        "text-primary",
+        "active-all",
+        allRequests.Count,
+        "All"),
+
+    new StatCardModel(
+        Status.Pending,
+        "bi-hourglass-split",
+        "bg-warning bg-opacity-10",
+        "text-warning",
+        "active-pending",
+        pendingCount,
+        "Pending"),
+
+    new StatCardModel(
+        Status.Approved,
+        "bi-check-circle-fill",
+        "bg-success bg-opacity-10",
+        "text-success",
+        "active-approved",
+        approvedCount,
+        "Approved"),
+
+    new StatCardModel(
+        Status.Rejected,
+        "bi-x-circle-fill",
+        "bg-danger bg-opacity-10",
+        "text-danger",
+        "active-rejected",
+        rejectedCount,
+        "Rejected")
+};
 
     private async Task LoadRequests()
     {
@@ -256,11 +272,24 @@
     }
 
     private string GetApproveClass(LeaveRequestViewModel r) =>
-        r.StatusId == Status.Approved ? "btn btn-sm btn-success" : "btn btn-sm btn-outline-success";
+        r.StatusId == Status.Approved
+            ? "action-btn btn btn-success shadow-sm"
+            : "action-btn btn btn-outline-success";
 
     private string GetRejectClass(LeaveRequestViewModel r) =>
-        r.StatusId == Status.Rejected ? "btn btn-sm btn-danger" : "btn btn-sm btn-outline-danger";
+        r.StatusId == Status.Rejected
+            ? "action-btn btn btn-danger shadow-sm"
+            : "action-btn btn btn-outline-danger";
 
     private string GetEmployeeValue() =>
         State.SelectedEmployeeId?.ToString() ?? "0";
+
+    private record StatCardModel(
+    Status? Status,
+    string Icon,
+    string BgClass,
+    string TextClass,
+    string ActiveClass,
+    int Count,
+    string Label);
 }

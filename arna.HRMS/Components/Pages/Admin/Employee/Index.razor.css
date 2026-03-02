@@ -1,5 +1,5 @@
 ﻿/* ═══════════════════════════════════════════════════════════
-   EMPLOYEE PAGE STYLES - ENHANCED
+   EMPLOYEE PAGE STYLES (CLEAN VERSION)
    ═══════════════════════════════════════════════════════════ */
 
 /* ─── Header Icon ─── */
@@ -26,46 +26,6 @@
     .emp-add-btn:active {
         transform: translateY(0);
     }
-
-/* ─── Stat Cards ─── */
-.emp-stat-card {
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 16px !important;
-    overflow: hidden;
-}
-
-    .emp-stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08) !important;
-    }
-
-    .emp-stat-card:active {
-        transform: translateY(-2px);
-    }
-
-.emp-stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    margin-bottom: 0.75rem;
-    transition: all 0.2s ease;
-}
-
-.emp-stat-card:hover .emp-stat-icon {
-    transform: scale(1.08);
-}
-
-.emp-stat-label {
-    font-size: 0.75rem;
-    letter-spacing: 0.6px;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #6c757d;
-}
 
 /* ─── Empty State ─── */
 .emp-empty-icon {
@@ -109,19 +69,20 @@
         }
 
 /* ─── Search Bar ─── */
-.form-control-sm:focus {
-    border-color: var(--bs-primary);
-    box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.1);
-}
-
 .form-control-sm {
     transition: all 0.2s ease;
 }
+
+    .form-control-sm:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.1);
+    }
 
 /* ═══════════════════════════════════════════════════════════
    MOBILE (<576px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 575.98px) {
+
     .emp-header-icon {
         width: 40px;
         height: 40px;
@@ -130,24 +91,6 @@
         .emp-header-icon i {
             font-size: 1.1rem !important;
         }
-
-    .emp-stat-icon {
-        width: 44px;
-        height: 44px;
-        font-size: 1.25rem;
-        border-radius: 10px;
-        margin-bottom: 0.5rem;
-    }
-
-    .emp-stat-card .fs-4 {
-        font-size: 1.5rem !important;
-        font-weight: 700;
-    }
-
-    .emp-stat-label {
-        font-size: 0.7rem;
-        letter-spacing: 0.4px;
-    }
 
     .emp-table-scroll {
         max-height: 50vh;
@@ -167,39 +110,20 @@
         padding: 0.5rem 1rem !important;
         font-size: 0.9rem;
     }
-
-    /* Stat card spacing on mobile */
-    .emp-stat-card {
-        margin-bottom: 0.5rem;
-    }
-
-        .emp-stat-card .card-body {
-            padding: 1rem 0.75rem !important;
-        }
 }
 
 /* ═══════════════════════════════════════════════════════════
    TABLET (576px–991px)
    ═══════════════════════════════════════════════════════════ */
 @media (min-width: 576px) and (max-width: 991.98px) {
+
     .emp-table-scroll {
         max-height: 60vh;
-    }
-
-    .emp-stat-card .fs-4 {
-        font-size: 1.75rem !important;
-        font-weight: 700;
     }
 
     .emp-header-icon {
         width: 44px;
         height: 44px;
-    }
-
-    .emp-stat-icon {
-        width: 50px;
-        height: 50px;
-        font-size: 1.35rem;
     }
 }
 
@@ -207,13 +131,9 @@
    DESKTOP (≥992px)
    ═══════════════════════════════════════════════════════════ */
 @media (min-width: 992px) {
+
     .emp-table-scroll {
         max-height: 65vh;
-    }
-
-    .emp-stat-card .fs-4 {
-        font-size: 2rem !important;
-        font-weight: 700;
     }
 
     .emp-header-icon {
@@ -224,20 +144,11 @@
         .emp-header-icon i {
             font-size: 1.5rem !important;
         }
-
-    .emp-stat-icon {
-        width: 56px;
-        height: 56px;
-        font-size: 1.5rem;
-    }
-
-    /* Add hover effect to entire stat card area */
-    .emp-stat-card:hover {
-        cursor: pointer;
-    }
 }
 
+/* ─── Print Mode ─── */
 @media print {
+
     .emp-add-btn,
     .form-control-sm,
     .btn-outline-secondary {

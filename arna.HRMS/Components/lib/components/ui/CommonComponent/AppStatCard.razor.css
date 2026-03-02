@@ -1,0 +1,29 @@
+﻿/* ═════════ COMMON STAT CARD ═════════ */
+
+.stat-card {
+    border-radius: 16px !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+    }
+
+/* same icon used everywhere */
+.stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* desktop height */
+@media (min-width: 992px) {
+    .stat-card {
+        min-height: 110px;
+    }
+}

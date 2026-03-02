@@ -52,46 +52,15 @@
 
 <!-- ══════════ STATS ══════════ -->
 <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-primary">@allFestivals.Count</div>
-                <small class="text-muted fw-medium">Total</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-success">@filteredFestivals.Count</div>
-                <small class="text-muted fw-medium">
-                    @GetMonthName(selectedMonth) @selectedYear
-                </small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-warning">
-                    @allFestivals.Count(f => f.Date >= DateTime.Today)
-                </div>
-                <small class="text-muted fw-medium">Upcoming</small>
-            </div>
-        </div>
-    </div>
-    <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-body text-center py-3">
-                <div class="fs-3 fw-bold text-secondary">
-                    @allFestivals.Count(f => f.Date < DateTime.Today)
-                </div>
-                <small class="text-muted fw-medium">Past</small>
-            </div>
-        </div>
-    </div>
+    @foreach (var stat in FestivalStats)
+    {
+        <AppStatCard Icon="@stat.Icon"
+                     BgClass="@stat.BgClass"
+                     TextClass="@stat.TextClass"
+                     Label="@stat.Label"
+                     Count="@stat.Count" />
+    }
 </div>
-
 <!-- ══════════ FILTER BAR ══════════ -->
 <div class="card border-0 shadow-sm rounded-3 mb-4">
     <div class="card-body py-2 px-3">
@@ -190,15 +159,15 @@
                     <p class="text-muted mb-2">
                         No festival holidays for
                         @(selectedMonth > 0
-                            ? $"{GetMonthName(selectedMonth)} {selectedYear}"
-                            : selectedYear.ToString())
-                    </p>
-                    <button class="btn btn-outline-primary rounded-pill"
-                            @onclick="OpenCreateModal">
-                        <i class="bi bi-plus me-1"></i> Add Holiday
-                    </button>
-                </div>
-            }
+                                        ? $"{GetMonthName(selectedMonth)} {selectedYear}"
+                                        : selectedYear.ToString())
+            </p>
+            <button class="btn btn-outline-primary rounded-pill"
+                    @onclick="OpenCreateModal">
+                <i class="bi bi-plus me-1"></i> Add Holiday
+            </button>
+        </div>
+                }
         </div>
     </div>
 }
@@ -278,6 +247,43 @@
     {
         await LoadFestivals();
     }
+
+    private IEnumerable<FestivalStatModel> FestivalStats => new[]
+    {
+        new FestivalStatModel(
+            FestivalStatType.Total,
+            "bi-calendar-event-fill",
+            "bg-primary bg-opacity-10",
+            "text-primary",
+            allFestivals.Count,
+            "Total"),
+
+        new FestivalStatModel(
+            FestivalStatType.SelectedMonth,
+            "bi-calendar-check-fill",
+            "bg-success bg-opacity-10",
+            "text-success",
+            filteredFestivals.Count,
+            upcomingHoliday != null
+                ? upcomingHoliday.Date.ToString("MMMM yyyy")
+                : "No Upcoming"),
+
+        new FestivalStatModel(
+            FestivalStatType.Upcoming,
+            "bi-clock-history",
+            "bg-warning bg-opacity-10",
+            "text-warning",
+            allFestivals.Count(f => f.Date >= DateTime.Today),
+            "Upcoming"),
+
+        new FestivalStatModel(
+            FestivalStatType.Past,
+            "bi-calendar-x-fill",
+            "bg-secondary bg-opacity-10",
+            "text-secondary",
+            allFestivals.Count(f => f.Date < DateTime.Today),
+            "Past")
+    };
 
     // ═══════════ DATA ═══════════
 
@@ -438,4 +444,21 @@
 
     private static string GetMonthName(int month) =>
         month > 0 ? new DateTime(2000, month, 1).ToString("MMMM") : "All Months";
+
+    public enum FestivalStatType
+    {
+        Total,
+        SelectedMonth,
+        Upcoming,
+        Past
+    }
+
+    private record FestivalStatModel(
+        FestivalStatType Type,
+        string Icon,
+        string BgClass,
+        string TextClass,
+        int Count,
+        string Label
+    );
 }
