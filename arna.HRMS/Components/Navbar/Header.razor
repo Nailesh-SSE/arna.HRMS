@@ -2,7 +2,7 @@
 @using arna.HRMS.Components.Pages.Client.ClockInAndOut
 @using arna.HRMS.Services.Auth
 
-
+@implements IDisposable
 @inject IJSRuntime JS
 @inherits AuthenticatedLayoutBase
 
@@ -16,18 +16,16 @@
                        d-flex align-items-center justify-content-center flex-shrink-0"
                 @onclick="OnToggleSidebar"
                 aria-label="Toggle Sidebar">
-
-            <!-- Mobile icon: X when sidebar showing, hamburger when hidden -->
             <i class="bi d-lg-none @(SidebarActive ? "bi-x-lg" : "bi-list") fs-5"></i>
-
-            <!-- Desktop icon: hamburger when sidebar hidden, sidebar-icon when visible -->
             <i class="bi d-none d-lg-inline @(SidebarActive ? "bi-list" : "bi-layout-sidebar-inset") fs-5"></i>
         </button>
 
-        <!-- Greeting -->
-        <div class="header-greeting d-flex flex-column lh-sm me-auto overflow-hidden">
-            <small class="header-day text-muted">@GetDayLabel()</small>
-            <span class="header-hello fw-semibold text-truncate">
+        <div class="d-flex flex-column lh-sm me-auto overflow-hidden">
+            <div class="d-flex align-items-baseline gap-2">
+                <span class="fs-6 fw-semibold">@CurrentTime</span>
+                <span class="text-muted">@GetDayLabel()</span>
+            </div>
+            <span class="text-muted small d-none d-md-inline fw-medium text-truncate">
                 @Greeting@(!string.IsNullOrEmpty(GetUserFullName()) ? $", {GetUserFullName()}" : "")
             </span>
         </div>
@@ -68,20 +66,45 @@
     [Parameter] public bool SidebarActive { get; set; }
 
     private string Greeting = string.Empty;
+    private string CurrentTime = "";
+
+    private CancellationTokenSource? _cts;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         SetGreeting();
+        CurrentTime = DateTime.Now.ToString("hh:mm:ss tt");
+        StartHeaderClock();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        try
-        {
-            await JS.InvokeVoidAsync("hrmsSetHeaderHeight");
-        }
+        try { await JS.InvokeVoidAsync("hrmsSetHeaderHeight"); }
         catch { }
+    }
+
+    // ── Running clock (ticks every second) ──
+    private void StartHeaderClock()
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+        var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (await timer.WaitForNextTickAsync(ct))
+                {
+                    CurrentTime = DateTime.Now.ToString("hh:mm:ss tt");
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch (OperationCanceledException) { }
+            finally { timer.Dispose(); }
+        }, ct);
     }
 
     private void SetGreeting()
@@ -99,13 +122,9 @@
     private string GetDayLabel() =>
         DateTime.Now.ToString("ddd, dd MMM yyyy");
 
-    private string GetInitials()
+    public void Dispose()
     {
-        var name = GetUserFullName();
-        if (string.IsNullOrWhiteSpace(name)) return "U";
-        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length >= 2
-            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
-            : parts[0][0].ToString().ToUpper();
+        _cts?.Cancel();
+        _cts?.Dispose();
     }
 }

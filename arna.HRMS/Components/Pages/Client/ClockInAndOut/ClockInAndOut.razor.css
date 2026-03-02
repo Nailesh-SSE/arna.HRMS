@@ -55,3 +55,54 @@
 .clock-toast-wrapper {
     z-index: 1070;
 }
+/* ── Status Dot ── */
+.clock-status-dot {
+    width: 7px;
+    height: 7px;
+}
+
+/* ── Clock IN / OUT Label ── */
+.clock-label-text {
+    font-size: .65rem;
+    letter-spacing: .5px;
+}
+
+/* ── Stopwatch Icon ── */
+.clock-stopwatch-icon {
+    font-size: .75rem;
+}
+
+/* ── Modal Overlay ── */
+.clock-modal-overlay {
+    z-index: 1050;
+    background: rgba(0, 0, 0, .4);
+}
+
+/* ── Modal Card ── */
+.clock-modal-card {
+    max-width: 480px;
+    width: 100%;
+}
+
+/* ── Toast Wrapper ── */
+.clock-toast-wrapper {
+    z-index: 1060;
+}
+
+/* ── Disabled button wrapper — lets tooltip show on hover ── */
+.clock-btn-cooldown {
+    display: inline-block;
+    cursor: not-allowed;
+}
+
+    .clock-btn-cooldown > * {
+        pointer-events: none;
+    }
+
+/* ── Countdown badge inside button ── */
+.clock-countdown-badge {
+    font-size: .7rem;
+    padding: 1px 5px;
+    border-radius: 10px;
+    margin-left: 4px;
+}

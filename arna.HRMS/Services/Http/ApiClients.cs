@@ -187,7 +187,7 @@ public sealed class ApiClients
 
         public async Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetMonthlyAttendanceAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId)
         {
-            return await Http.GetAsync<List<MonthlyAttendanceViewModel>>($"{Url}/monthly-attendance?year={year}&month={month}&empId={empId}&date={date:yyyy-MM-dd}&statusId={statusId}");
+            return await Http.GetAsync<List<MonthlyAttendanceViewModel>>($"{Url}/monthly?year={year}&month={month}&empId={empId}&date={date:yyyy-MM-dd}&statusId={statusId}");
         }
     }
 
