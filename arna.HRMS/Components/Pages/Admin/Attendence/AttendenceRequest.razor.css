@@ -25,16 +25,6 @@
         border-color: var(--bs-danger) !important;
     }
 
-.stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-}
 
 .stat-label {
     font-size: 0.7rem;
@@ -85,14 +75,6 @@
 }
 
 @@media (max-width: 575.98px) {
-    .stat-icon {
-        width: 36px;
-        height: 36px;
-        font-size: 1rem;
-        border-radius: 8px;
-        margin-bottom: 0.25rem;
-    }
-
     .stat-card .fs-4 {
         font-size: 1.25rem !important;
     }
@@ -136,3 +118,31 @@
         max-height: 65vh;
     }
 }
+
+::deep .stat-card {
+    border: 2px solid transparent !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+    ::deep .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+    }
+
+    /* Active Borders */
+    ::deep .stat-card.active-all {
+        border-color: var(--bs-primary) !important;
+    }
+
+    ::deep .stat-card.active-pending {
+        border-color: var(--bs-warning) !important;
+    }
+
+    ::deep .stat-card.active-approved {
+        border-color: var(--bs-success) !important;
+    }
+
+    ::deep .stat-card.active-rejected {
+        border-color: var(--bs-danger) !important;
+    }

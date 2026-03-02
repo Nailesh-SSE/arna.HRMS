@@ -160,6 +160,8 @@
     private bool isLoading = true;
     private string loadingMessage = "Loading Your Profile...";
 
+    private ProfileSnapshot? originalSnapshot;
+
     private bool isFullEmployeeProfile => profile?.IsEmployee ?? false;
 
     protected override async Task OnInitializedAsync()
@@ -195,7 +197,7 @@
                 }
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             await NotificationService.Error(ex.Message ?? "Operation Failed.");
         }
@@ -210,12 +212,17 @@
     {
         if (!isEditMode)
         {
+            originalSnapshot = new ProfileSnapshot(profile!);
             isEditMode = true;
+            return;
+        }
+        if (!HasChanges())
+        {
+            isEditMode = false;
             return;
         }
 
         var updatedEmployee = MapProfileToEmployee(profile!, employee!);
-
         var result = await EmployeeService.UpdateEmployeeAsync(updatedEmployee.Id, updatedEmployee);
 
         if (!result.IsSuccess)
@@ -224,8 +231,36 @@
             return;
         }
 
+        originalSnapshot = new ProfileSnapshot(profile!);
         await NotificationService.Success("Profile updated successfully.");
         isEditMode = false;
+    }
+
+    private bool HasChanges()
+    {
+        if (originalSnapshot == null || profile == null)
+            return false;
+
+        return originalSnapshot.FirstName != profile.FirstName?.Trim()
+            || originalSnapshot.LastName != profile.LastName?.Trim()
+            || originalSnapshot.Email != profile.Email?.Trim()
+            || originalSnapshot.PhoneNumber != profile.PhoneNumber?.Trim();
+    }
+
+    private record ProfileSnapshot
+    {
+        public string? FirstName { get; init; }
+        public string? LastName { get; init; }
+        public string? Email { get; init; }
+        public string? PhoneNumber { get; init; }
+
+        public ProfileSnapshot(ProfileViewModel profile)
+        {
+            FirstName = profile.FirstName?.Trim();
+            LastName = profile.LastName?.Trim();
+            Email = profile.Email?.Trim();
+            PhoneNumber = profile.PhoneNumber?.Trim();
+        }
     }
 
     private string Initials =>

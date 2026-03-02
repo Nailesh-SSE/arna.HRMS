@@ -48,22 +48,13 @@
     <div class="row g-2 g-md-3 mb-3 mb-md-4">
         @foreach (var stat in StatCards)
         {
-            <div class="col-6 col-md-3">
-                <div class="card border-0 shadow-sm rounded-3 stat-card h-100
-                                    @(IsStatActive(stat.Status) ? stat.ActiveClass : "")"
-                     role="button"
-                     @onclick="() => FilterByStatus(stat.Status)">
-                    <div class="card-body text-center py-2 py-md-3 px-2">
-                        <div class="stat-icon @stat.BgClass mx-auto">
-                            <i class="bi @stat.Icon @stat.TextClass"></i>
-                        </div>
-                        <div class="fs-4 fw-bold @stat.TextClass">@stat.Count</div>
-                        <small class="text-muted fw-medium text-uppercase stat-label">
-                            @stat.Label
-                        </small>
-                    </div>
-                </div>
-            </div>
+            <AppStatCard Icon="@stat.Icon"
+                         BgClass="@stat.BgClass"
+                         TextClass="@stat.TextClass"
+                         Label="@stat.Label"
+                         Count="@stat.Count"
+                         CardClass="@(IsStatActive(stat.Status) ? stat.ActiveClass : "")"
+                         OnClick="() => FilterByStatus(stat.Status)" />
         }
     </div>
 
@@ -296,17 +287,7 @@
     {
         try
         {
-            var result = (State.SelectedEmployeeId, _statusFilter) switch
-            {
-                (int empId, Status status) =>
-                    await AttendanceRequestService.GetAllAsync(empId, status),
-                (int empId, null) =>
-                    await AttendanceRequestService.GetAllAsync(empId),
-                (null, Status status) =>
-                    await AttendanceRequestService.GetAllAsync(status),
-                _ =>
-                    await AttendanceRequestService.GetAllAsync()
-            };
+            var result = await AttendanceRequestService.GetAllAsync();
 
             _allRequests = result?.IsSuccess == true
                 ? result.Data ?? new()
@@ -356,7 +337,7 @@
     private async Task FilterByStatus(Status? status)
     {
         _statusFilter = status;
-        await LoadRequests();
+        //await LoadRequests();
     }
 
     private async Task ClearFilters()
@@ -428,6 +409,8 @@
             {
                 await NotificationService.Success($"Request {action}d successfully.");
                 await LoadRequests();
+                RecalculateCounts();      // 🔥 update counts
+                StateHasChanged();
             }
             else
             {

@@ -31,10 +31,10 @@ public class AttendanceControllerTests
             new AttendanceDto { Id = 2, EmployeeId = 2, Date = DateTime.Today, ClockInTime = null, ClockOutTime=DateTime.Now.TimeOfDay }
         };
         _serviceMock
-            .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null, 1))
+            .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null, null))
             .ReturnsAsync(ServiceResult<List<AttendanceDto>>.Success(list));
         // Act
-        var result = await _controller.GetAsync(null, 1);
+        var result = await _controller.GetAsync(null, null);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -44,10 +44,10 @@ public class AttendanceControllerTests
     {
         // Arrange
         _serviceMock
-            .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null , 1))
+            .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null, null))
             .ReturnsAsync(ServiceResult<List<AttendanceDto>>.Success(null!, "No data found"));
         // Act
-        var result = await _controller.GetAsync(null, 1);
+        var result = await _controller.GetAsync(null, null);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -131,170 +131,170 @@ public class AttendanceControllerTests
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Creation failed"));
     }
-    //private List<MonthlyAttendanceDto> MonthlyDetails()
-    //{
-    //    return new List<MonthlyAttendanceDto>
-    //    {
-    //        new MonthlyAttendanceDto
-    //        {
-    //            Date = new DateOnly(2026, 02, 10),
-    //            Day = new DateOnly(2026, 02, 10).DayOfWeek.ToString(),
-    //            Employees = new List<EmployeeDailyAttendanceDto>
-    //            {
-    //                new EmployeeDailyAttendanceDto
-    //                {
-    //                    EmployeeId = 1,
-    //                    EmployeeNumber = "EMP001",
-    //                    EmployeeName = "John Doe",
-    //                    ClockIn = new TimeSpan(9, 0, 0),
-    //                    ClockOut = new TimeSpan(18, 0, 0),
-    //                    WorkingHours = new TimeSpan(8, 0, 0),
-    //                    BreakDuration = new TimeSpan(1, 0, 0),
-    //                    TotalHours = new TimeSpan(9, 0, 0),
-    //                    Status = "Present"
-    //                },
-    //                new EmployeeDailyAttendanceDto
-    //                {
-    //                    EmployeeId = 2,
-    //                    EmployeeNumber = "EMP002",
-    //                    EmployeeName = "Jane Smith",
-    //                    ClockIn = new TimeSpan(9, 30, 0),
-    //                    ClockOut = new TimeSpan(18, 30, 0),
-    //                    WorkingHours = new TimeSpan(8, 0, 0),
-    //                    BreakDuration = new TimeSpan(1, 0, 0),
-    //                    TotalHours = new TimeSpan(9, 0, 0),
-    //                    Status = "Present"
-    //                }
-    //            }
-    //        },
+    private List<MonthlyAttendanceDto> MonthlyDetails()
+    {
+        return new List<MonthlyAttendanceDto>
+        {
+            new MonthlyAttendanceDto
+            {
+                Date = new DateOnly(2026, 02, 10),
+                Day = new DateOnly(2026, 02, 10).DayOfWeek.ToString(),
+                Employees = new List<EmployeeDailyAttendanceDto>
+                {
+                    new EmployeeDailyAttendanceDto
+                    {
+                        EmployeeId = 1,
+                        EmployeeNumber = "EMP001",
+                        EmployeeName = "John Doe",
+                        ClockIn = new TimeSpan(9, 0, 0),
+                        ClockOut = new TimeSpan(18, 0, 0),
+                        WorkingHours = new TimeSpan(8, 0, 0),
+                        BreakDuration = new TimeSpan(1, 0, 0),
+                        TotalHours = new TimeSpan(9, 0, 0),
+                        Status = "Present"
+                    },
+                    new EmployeeDailyAttendanceDto
+                    {
+                        EmployeeId = 2,
+                        EmployeeNumber = "EMP002",
+                        EmployeeName = "Jane Smith",
+                        ClockIn = new TimeSpan(9, 30, 0),
+                        ClockOut = new TimeSpan(18, 30, 0),
+                        WorkingHours = new TimeSpan(8, 0, 0),
+                        BreakDuration = new TimeSpan(1, 0, 0),
+                        TotalHours = new TimeSpan(9, 0, 0),
+                        Status = "Present"
+                    }
+                }
+            },
 
-    //        new MonthlyAttendanceDto
-    //        {
-    //            Date = new DateOnly(2026, 02, 11),
-    //            Day = new DateOnly(2026, 02, 11).DayOfWeek.ToString(),
-    //            Employees = new List<EmployeeDailyAttendanceDto>
-    //            {
-    //                new EmployeeDailyAttendanceDto
-    //                {
-    //                    EmployeeId = 1,
-    //                    EmployeeNumber = "EMP001",
-    //                    EmployeeName = "John Doe",
-    //                    ClockIn = new TimeSpan(9, 15, 0),
-    //                    ClockOut = new TimeSpan(17, 45, 0),
-    //                    WorkingHours = new TimeSpan(7, 30, 0),
-    //                    BreakDuration = new TimeSpan(1, 0, 0),
-    //                    TotalHours = new TimeSpan(8, 30, 0),
-    //                    Status = "Late"
-    //                }
-    //            }
-    //        },
+            new MonthlyAttendanceDto
+            {
+                Date = new DateOnly(2026, 02, 11),
+                Day = new DateOnly(2026, 02, 11).DayOfWeek.ToString(),
+                Employees = new List<EmployeeDailyAttendanceDto>
+                {
+                    new EmployeeDailyAttendanceDto
+                    {
+                        EmployeeId = 1,
+                        EmployeeNumber = "EMP001",
+                        EmployeeName = "John Doe",
+                        ClockIn = new TimeSpan(9, 15, 0),
+                        ClockOut = new TimeSpan(17, 45, 0),
+                        WorkingHours = new TimeSpan(7, 30, 0),
+                        BreakDuration = new TimeSpan(1, 0, 0),
+                        TotalHours = new TimeSpan(8, 30, 0),
+                        Status = "Late"
+                    }
+                }
+            },
 
-    //        new MonthlyAttendanceDto
-    //        {
-    //            Date = new DateOnly(2026, 02, 12),
-    //            Day = new DateOnly(2026, 02, 12).DayOfWeek.ToString(),
-    //            Employees = new List<EmployeeDailyAttendanceDto>
-    //            {
-    //                new EmployeeDailyAttendanceDto
-    //                {
-    //                    EmployeeId = 2,
-    //                    EmployeeNumber = "EMP002",
-    //                    EmployeeName = "Jane Smith",
-    //                    ClockIn = null,
-    //                    ClockOut = null,
-    //                    WorkingHours = TimeSpan.Zero,
-    //                    BreakDuration = TimeSpan.Zero,
-    //                    TotalHours = TimeSpan.Zero,
-    //                    Status = "Absent"
-    //                }
-    //            }
-    //        }
-    //    };
-    //}
+            new MonthlyAttendanceDto
+            {
+                Date = new DateOnly(2026, 02, 12),
+                Day = new DateOnly(2026, 02, 12).DayOfWeek.ToString(),
+                Employees = new List<EmployeeDailyAttendanceDto>
+                {
+                    new EmployeeDailyAttendanceDto
+                    {
+                        EmployeeId = 2,
+                        EmployeeNumber = "EMP002",
+                        EmployeeName = "Jane Smith",
+                        ClockIn = null,
+                        ClockOut = null,
+                        WorkingHours = TimeSpan.Zero,
+                        BreakDuration = TimeSpan.Zero,
+                        TotalHours = TimeSpan.Zero,
+                        Status = "Absent"
+                    }
+                }
+            }
+        };
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldOk_WhenDataFound()
-    //{
-    //    var list = MonthlyDetails();
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldOk_WhenDataFound()
+    {
+        var list = MonthlyDetails();
 
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, 1, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Success(list));
-    //    var result = await _controller.GetAttendanceByMonth(2024, 6, 1, null);
-    //    Assert.That(result, Is.TypeOf<OkObjectResult>());
-    //}
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, 1, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Success(list));
+        var result = await _controller.GetMonthlyAsync(2024, 6, 1, null, null);
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldBadRequest_WhenServiceFails()
-    //{
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, 1, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("Failed to retrieve data"));
-    //    var result = await _controller.GetAttendanceByMonth(2024, 6, 1, null);
-    //    Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-    //    Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Failed to retrieve data"));
-    //}
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldBadRequest_WhenServiceFails()
+    {
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, 1, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("Failed to retrieve data"));
+        var result = await _controller.GetMonthlyAsync(2024, 6, 1, null, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Failed to retrieve data"));
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldBadRequest_WhenInvalidParameters()
-    //{
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(2024, 13, 1, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("invalid Month"));
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldBadRequest_WhenInvalidParameters()
+    {
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(2024, 13, 1, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("invalid Month"));
 
-    //    var result = await _controller.GetAttendanceByMonth(2024, 13, 1, null);
-    //    Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-    //}
+        var result = await _controller.GetMonthlyAsync(2024, 13, 1, null, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldBadRequest_WhenYearIsInvalid()
-    //{
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(1899, 6, 1, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("invalid Year"));
-    //    var result = await _controller.GetAttendanceByMonth(1899, 6, 1, null);
-    //    Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-    //}
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldBadRequest_WhenYearIsInvalid()
+    {
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(1899, 6, 1, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("invalid Year"));
+        var result = await _controller.GetMonthlyAsync(1899, 6, 1, null, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldBadRequest_WhenEmpIdIsInvalid()
-    //{
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, -1, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("invalid Employee ID"));
-    //    var result = await _controller.GetAttendanceByMonth(2024, 6, -1, null);
-    //    Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-    //}
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldBadRequest_WhenEmpIdIsInvalid()
+    {
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, -1, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("invalid Employee ID"));
+        var result = await _controller.GetMonthlyAsync(2024, 6, -1, null, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldFail_WhenDataNotFound()
-    //{
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, 1, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Success(null!, "No data found"));
-    //    var result = await _controller.GetAttendanceByMonth(2024, 6, 1, null);
-    //    Assert.That(result, Is.TypeOf<OkObjectResult>());
-    //}
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldFail_WhenDataNotFound()
+    {
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(2024, 6, 1, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Success(null!, "No data found"));
+        var result = await _controller.GetMonthlyAsync(2024, 6, 1, null, null);
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldFail_WhenAllIsZero()
-    //{
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(0, 0, 0, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("No data found"));
-    //    var result = await _controller.GetAttendanceByMonth(0, 0, 0, null);
-    //    Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-    //}
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldFail_WhenAllIsZero()
+    {
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(0, 0, 0, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("No data found"));
+        var result = await _controller.GetMonthlyAsync(0, 0, 0, null, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
 
-    //[Test]
-    //public async Task GetAttendanceByMonth_ShouldFail_WhenYearAndMonthIsZero()
-    //{
-    //    _serviceMock
-    //        .Setup(s => s.GetAttendanceByMonthAsync(0, 0, 1, null))
-    //        .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("No data found"));
-    //    var result = await _controller.GetAttendanceByMonth(0, 0, 1, null);
-    //    Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-    //}
+    [Test]
+    public async Task GetAttendanceByMonth_ShouldFail_WhenYearAndMonthIsZero()
+    {
+        _serviceMock
+            .Setup(s => s.GetAttendanceByMonthAsync(0, 0, 1, null, null))
+            .ReturnsAsync(ServiceResult<List<MonthlyAttendanceDto>>.Fail("No data found"));
+        var result = await _controller.GetMonthlyAsync(0, 0, 1, null, null);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
     [Test]
     public async Task GetLastToday_ShouldSuccess_WhenFound()
     {
@@ -302,11 +302,13 @@ public class AttendanceControllerTests
             .Setup(s => s.GetTodayLastEntryAsync(1))!
             .ReturnsAsync(
                 ServiceResult<AttendanceDto>.Success(
-                    new AttendanceDto { 
-                        Id = 1, EmployeeId = 1, 
-                        Date = DateTime.Today, 
-                        ClockInTime = DateTime.Now.AddHours(-2).TimeOfDay, 
-                        ClockOutTime = null 
+                    new AttendanceDto
+                    {
+                        Id = 1,
+                        EmployeeId = 1,
+                        Date = DateTime.Today,
+                        ClockInTime = DateTime.Now.AddHours(-2).TimeOfDay,
+                        ClockOutTime = null
                     }
                 )
             );

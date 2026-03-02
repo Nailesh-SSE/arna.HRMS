@@ -7,7 +7,6 @@ namespace arna.HRMS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class EmployeesController : ControllerBase
 {
     private readonly IEmployeeService _service;

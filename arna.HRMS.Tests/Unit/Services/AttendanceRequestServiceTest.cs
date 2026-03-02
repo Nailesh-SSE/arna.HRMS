@@ -79,7 +79,7 @@ public class AttendanceRequestServiceTests
             ClockOut = DateTime.Today.AddDays(-1).AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
             TotalHours = TimeSpan.FromHours(8),
-            StatusId=Status.Pending,
+            StatusId = Status.Pending,
             Description = "Valid"
         };
     }
@@ -455,7 +455,7 @@ public class AttendanceRequestServiceTests
 
         var result = await _service.GetAttendanceRequestsAsync(null, null);
 
-        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.IsSuccess, Is.True); 
         Assert.That(result.Data, Is.Not.Null);
         Assert.That(result.Data!.Count, Is.EqualTo(2));
         Assert.That(result.Data.All(x => x.EmployeeId == 10), Is.True);
@@ -859,7 +859,7 @@ public class AttendanceRequestServiceTests
     {
         // ---------- MOCK DEPENDENCIES ----------
         _attendanceServiceMock
-            .Setup(x => x.GetEmployeeAttendanceByStatusAsync(null , null))
+            .Setup(x => x.GetEmployeeAttendanceByStatusAsync(null, null))
             .ReturnsAsync(
                 ServiceResult<List<AttendanceDto>>.Success(new List<AttendanceDto>())
             );
@@ -1008,73 +1008,73 @@ public class AttendanceRequestServiceTests
     }
 
     [Test]
-public async Task UpdateAttendanceRequestStatusAsync_WhenRepositoryReturnsFalse_ReturnsFail()
-{
-    // ---------- Arrange ----------
-
-    _dbContext.Employees.Add(new Employee
+    public async Task UpdateAttendanceRequestStatusAsync_WhenRepositoryReturnsFalse_ReturnsFail()
     {
-        Id = 1,
-        FirstName = "Test",
-        LastName = "User",
-        Email = "test@test.com",
-        PhoneNumber = "9999999999",
-        HireDate = DateTime.Today.AddYears(-1),
-        DateOfBirth = DateTime.Today.AddYears(-25),
-        Position = "Developer",
-        Salary = 50000,
-        DepartmentId = 1,
-        EmployeeNumber = "Emp001",
-        IsActive = true,
-        IsDeleted = false
-    });
+        // ---------- Arrange ----------
 
-    await _dbContext.SaveChangesAsync();
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 1,
+            FirstName = "Test",
+            LastName = "User",
+            Email = "test@test.com",
+            PhoneNumber = "9999999999",
+            HireDate = DateTime.Today.AddYears(-1),
+            DateOfBirth = DateTime.Today.AddYears(-25),
+            Position = "Developer",
+            Salary = 50000,
+            DepartmentId = 1,
+            EmployeeNumber = "Emp001",
+            IsActive = true,
+            IsDeleted = false
+        });
 
-    var request = new AttendanceRequest
-    {
-        EmployeeId = 1,
-        FromDate = DateTime.Today.AddDays(-2),
-        ToDate = DateTime.Today.AddDays(-2),
-        ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
-        LocationId = AttendanceLocation.Office,
-        ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-        ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
-        BreakDuration = TimeSpan.FromHours(1),
-        TotalHours = TimeSpan.FromHours(8),
-        Description = "Old",
-        StatusId = Status.Pending,
-        IsActive = true,
-        IsDeleted = false
-    };
+        await _dbContext.SaveChangesAsync();
 
-    _dbContext.AttendanceRequest.Add(request);
-    await _dbContext.SaveChangesAsync();
+        var request = new AttendanceRequest
+        {
+            EmployeeId = 1,
+            FromDate = DateTime.Today.AddDays(-2),
+            ToDate = DateTime.Today.AddDays(-2),
+            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
+            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
+            BreakDuration = TimeSpan.FromHours(1),
+            TotalHours = TimeSpan.FromHours(8),
+            Description = "Old",
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false
+        };
 
-    var id = request.Id;
+        _dbContext.AttendanceRequest.Add(request);
+        await _dbContext.SaveChangesAsync();
 
-    // Detach so we simulate separate DB call
-    _dbContext.Entry(request).State = EntityState.Detached;
+        var id = request.Id;
 
-    // NOW make it inactive directly in DB BEFORE update
-    var record = await _dbContext.AttendanceRequest.FindAsync(id);
-    record!.IsActive = false;
-    record.IsDeleted = true;
-    await _dbContext.SaveChangesAsync();
+        // Detach so we simulate separate DB call
+        _dbContext.Entry(request).State = EntityState.Detached;
 
-    // ---------- Act ----------
-    var result = await _service.UpdateAttendanceRequestStatusAsync(
-        id,
-        Status.Approved,
-        99
-    );
+        // NOW make it inactive directly in DB BEFORE update
+        var record = await _dbContext.AttendanceRequest.FindAsync(id);
+        record!.IsActive = false;
+        record.IsDeleted = true;
+        await _dbContext.SaveChangesAsync();
 
-    // ---------- Assert ----------
-    Assert.That(result, Is.Not.Null);
-    Assert.That(result.IsSuccess, Is.False);
-    Assert.That(result.Data, Is.False);
-    Assert.That(result.Message, Is.EqualTo("Invalid Attendance Request ID"));
-}
+        // ---------- Act ----------
+        var result = await _service.UpdateAttendanceRequestStatusAsync(
+            id,
+            Status.Approved,
+            99
+        );
+
+        // ---------- Assert ----------
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Data, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid Attendance Request ID"));
+    }
 
 
 
@@ -1133,7 +1133,7 @@ public async Task UpdateAttendanceRequestStatusAsync_WhenRepositoryReturnsFalse_
         _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.UpdateAttendanceRequestStatusAsync(request.Id, Status.Rejected, approvedBy:99);
+        var result = await _service.UpdateAttendanceRequestStatusAsync(request.Id, Status.Rejected, approvedBy: 99);
 
         var updated = await _dbContext.AttendanceRequest.FindAsync(request.Id);
 
@@ -1291,57 +1291,57 @@ public async Task UpdateAttendanceRequestStatusAsync_WhenRepositoryReturnsFalse_
     }
 
     [Test]
-public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
-{
-    _dbContext.Employees.Add(new Employee
+    public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     {
-        Id = 5,
-        FirstName = "Alice",
-        LastName = "Smith",
-        Email = "alice@test.com",
-        PhoneNumber = "5555555555",
-        IsActive = true,
-        IsDeleted = false,
-        HireDate = DateTime.Today,
-        DateOfBirth = DateTime.Today,
-        Position = "Developer",
-        Salary = 50000,
-        DepartmentId = 1,
-        EmployeeNumber = "EMP005"
-    });
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 5,
+            FirstName = "Alice",
+            LastName = "Smith",
+            Email = "alice@test.com",
+            PhoneNumber = "5555555555",
+            IsActive = true,
+            IsDeleted = false,
+            HireDate = DateTime.Today,
+            DateOfBirth = DateTime.Today,
+            Position = "Developer",
+            Salary = 50000,
+            DepartmentId = 1,
+            EmployeeNumber = "EMP005"
+        });
 
-    await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
-    var entity = new AttendanceRequest
-    {
-        EmployeeId = 5,
-        FromDate = DateTime.Today,
-        ToDate = DateTime.Today,
-        ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
-        LocationId = AttendanceLocation.Office,
-        Description = "Forgot punch",
-        TotalHours = TimeSpan.FromHours(8),
-        StatusId = Status.Pending,
-        IsActive = true,
-        IsDeleted = false
-    };
+        var entity = new AttendanceRequest
+        {
+            EmployeeId = 5,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+            LocationId = AttendanceLocation.Office,
+            Description = "Forgot punch",
+            TotalHours = TimeSpan.FromHours(8),
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false
+        };
 
-    _dbContext.AttendanceRequest.Add(entity);
-    await _dbContext.SaveChangesAsync();
+        _dbContext.AttendanceRequest.Add(entity);
+        await _dbContext.SaveChangesAsync();
 
-    var result = await _service.GetPendingAttendanceRequestsAsync();
-    var dto = result.Data!.First();
+        var result = await _service.GetPendingAttendanceRequestsAsync();
+        var dto = result.Data!.First();
 
-    Assert.That(dto.Id, Is.EqualTo(entity.Id));
-    Assert.That(dto.EmployeeId, Is.EqualTo(5));
-    Assert.That(dto.FromDate!.Value.Date, Is.EqualTo(DateTime.Today));
-    Assert.That(dto.ToDate!.Value.Date, Is.EqualTo(DateTime.Today));
-    Assert.That(dto.ReasonTypeId, Is.EqualTo(AttendanceReasonType.ForgotToClockIn));
-    Assert.That(dto.LocationId, Is.EqualTo(AttendanceLocation.Office));
-    Assert.That(dto.Description, Is.EqualTo("Forgot punch"));
-    Assert.That(dto.TotalHours, Is.EqualTo(TimeSpan.FromHours(8)));
-    Assert.That(dto.StatusId, Is.EqualTo(Status.Pending));
-}
+        Assert.That(dto.Id, Is.EqualTo(entity.Id));
+        Assert.That(dto.EmployeeId, Is.EqualTo(5));
+        Assert.That(dto.FromDate!.Value.Date, Is.EqualTo(DateTime.Today));
+        Assert.That(dto.ToDate!.Value.Date, Is.EqualTo(DateTime.Today));
+        Assert.That(dto.ReasonTypeId, Is.EqualTo(AttendanceReasonType.ForgotToClockIn));
+        Assert.That(dto.LocationId, Is.EqualTo(AttendanceLocation.Office));
+        Assert.That(dto.Description, Is.EqualTo("Forgot punch"));
+        Assert.That(dto.TotalHours, Is.EqualTo(TimeSpan.FromHours(8)));
+        Assert.That(dto.StatusId, Is.EqualTo(Status.Pending));
+    }
 
     [Test]
     public async Task GetPendingAttendanceRequestesAsync_ShouldMapAllFields()
@@ -1516,7 +1516,7 @@ public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     [Test]
     public async Task UpdateAttendanceRequestAsync_WhenEmployeeIdInvalid_ReturnsFail()
     {
-       _dbContext.Add(new AttendanceRequest
+        _dbContext.Add(new AttendanceRequest
         {
             Id = 1,
             EmployeeId = 1,

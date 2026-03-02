@@ -1,17 +1,22 @@
-﻿.cursor-pointer {
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+﻿
+/* Add ::deep before the class name */
+::deep .action-btn {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important; /* This creates the circle */
+    transition: all 0.2s ease;
+    font-size: 1rem;
 }
 
-    .cursor-pointer:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+    ::deep .action-btn:hover {
+        transform: scale(1.15);
+        box-shadow: 0 4px 12px rgba(0,0,0,.15);
     }
 
-.border-2 {
-    border-width: 2px !important;
-    border-style: solid !important;
-}
 
 .request-scroll-area {
     max-height: 500px;
@@ -33,6 +38,34 @@
     }
 
 .request-scroll-area {
-    scrollbar-width: thin;
-    scrollbar-color: #d1d5db transparent;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
+
+::deep .stat-card {
+    border: 2px solid transparent !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+    ::deep .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+    }
+
+    /* Active Borders */
+    ::deep .stat-card.active-all {
+        border-color: var(--bs-primary) !important;
+    }
+
+    ::deep .stat-card.active-pending {
+        border-color: var(--bs-warning) !important;
+    }
+
+    ::deep .stat-card.active-approved {
+        border-color: var(--bs-success) !important;
+    }
+
+    ::deep .stat-card.active-rejected {
+        border-color: var(--bs-danger) !important;
+    }

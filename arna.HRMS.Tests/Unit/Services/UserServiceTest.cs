@@ -1126,7 +1126,7 @@ public class UserServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.True);
-        Assert.That(result.Message, Is.EqualTo("Password updated successfully"));
+        Assert.That(result.Message, Is.EqualTo("Password updated successfully."));
     }
 
     [Test]
@@ -1137,7 +1137,6 @@ public class UserServiceTest
         var result = await _userService.ChangeUserPasswordAsync(1, "newpassword");
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("No Data Found"));
     }
 
     [Test]

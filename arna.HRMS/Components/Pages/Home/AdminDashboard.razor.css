@@ -15,17 +15,6 @@
     }
 }
 
-/* ══════════ STAT ICON ══════════ */
-.stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
 /* ══════════ AVATAR ══════════ */
 .avatar-sm {
     width: 36px;
@@ -125,16 +114,6 @@
 
 /* ══════════ RESPONSIVE ══════════ */
 @media (max-width: 576px) {
-    .stat-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-    }
-
-        .stat-icon .fs-4 {
-            font-size: 1rem !important;
-        }
-
     .action-icon-circle {
         width: 40px;
         height: 40px;

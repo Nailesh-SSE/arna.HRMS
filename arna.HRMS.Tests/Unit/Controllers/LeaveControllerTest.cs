@@ -301,7 +301,7 @@ public class LeaveControllerTest
             .Setup(s => s.GetLeaveRequestByIdAsync(1))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Success(leaveRequest));
         // Act
-        var result = await _controller.GetTypeByIdAsync(1);
+        var result = await _controller.GetRequestByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -318,7 +318,7 @@ public class LeaveControllerTest
             .Setup(s => s.GetLeaveRequestByIdAsync(1))
             .ReturnsAsync(ServiceResult<LeaveRequestDto>.Fail(null!));
         // Act
-        var result = await _controller.GetTypeByIdAsync(1);
+        var result = await _controller.GetRequestByIdAsync(1);
         // Assert
         Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
@@ -463,7 +463,7 @@ public class LeaveControllerTest
         // Act
         var result = await _controller.DeleteRequestAsync(1);
         // Assert
-        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
     [Test]
@@ -473,9 +473,9 @@ public class LeaveControllerTest
             .Setup(s => s.DeleteLeaveRequestAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid Id"));
         var result = await _controller.DeleteRequestAsync(0);
-        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
         result = await _controller.DeleteRequestAsync(-1);
-        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
     [Test]

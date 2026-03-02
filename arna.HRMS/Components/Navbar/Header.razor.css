@@ -22,3 +22,7 @@
 .header-clock-bar {
     background: #f8f9fb;
 }
+.header-clock-text {
+    font-size: 1.15rem;
+    letter-spacing: .5px;
+}
