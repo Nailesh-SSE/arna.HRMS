@@ -177,6 +177,24 @@ public class AttendanceService : IAttendanceService
         }
     }
 
+    public async Task<ServiceResult<AttendanceDto>> GetEmployeeTodayFirstClockInAsync(int employeeId)
+    {
+        if (employeeId <= 0)
+            return ServiceResult<AttendanceDto>.Fail("Invalid Employee ID.");
+
+        var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
+        if (!exist.IsSuccess || exist.Data == null)
+            return ServiceResult<AttendanceDto>.Fail("Employee not found.");
+
+        var firstClockIn = await _attendanceRepository.GetTodayFirstClockInAsync(employeeId);
+
+        if (firstClockIn == null)
+            return ServiceResult<AttendanceDto>.Fail("Attendance not found.");
+
+        return ServiceResult<AttendanceDto>.Success(_mapper.Map<AttendanceDto>(firstClockIn));
+
+    }
+
     private static bool IsWeekend(DateTime date) =>
         date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
 }

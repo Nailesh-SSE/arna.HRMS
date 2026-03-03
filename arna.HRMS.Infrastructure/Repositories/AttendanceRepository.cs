@@ -240,6 +240,20 @@ public class AttendanceRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<Attendance?> GetTodayFirstClockInAsync(int empId)
+    {
+        var today = DateTime.Today;
+
+        return await _baseRepository.Query()
+            .Where(a =>
+                a.IsActive &&
+                !a.IsDeleted &&
+                a.EmployeeId == empId &&
+                a.Date.Date == today)
+            .OrderBy(a => a.ClockIn) 
+            .FirstOrDefaultAsync();
+    }
+
     #region Helpers
 
     private static string CalculateStatus(

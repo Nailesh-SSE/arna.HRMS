@@ -11,4 +11,5 @@ public interface IAttendanceService
     Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto);
     Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? employeeId, DateTime? date, AttendanceStatus? status);
     Task<ServiceResult<AttendanceDto?>> GetTodayLastEntryAsync(int employeeId);
+    Task<ServiceResult<AttendanceDto>> GetEmployeeTodayFirstClockInAsync(int employeeId);
 }

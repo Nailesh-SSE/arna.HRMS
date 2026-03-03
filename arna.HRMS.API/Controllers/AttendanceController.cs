@@ -60,4 +60,12 @@ public class AttendanceController : ControllerBase
 
         return result.IsSuccess ? Ok(result) : NotFound(result.Message);
     }
+
+    [HttpGet("employees/{employeeId:int}/today/first-clock-in")]
+    public async Task<IActionResult> GetTodayFirstClockIn(int employeeId)
+    {
+        var result = await _attendanceService.GetEmployeeTodayFirstClockInAsync(employeeId);
+
+        return result.IsSuccess ? Ok(result) : NotFound(result.Message);
+    }
 }

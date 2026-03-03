@@ -3,6 +3,7 @@ using arna.HRMS.Models.State.Attendance;
 using arna.HRMS.Services;
 using arna.HRMS.Services.Auth;
 using arna.HRMS.Services.Common;
+using arna.HRMS.Services.Dashboard;
 using arna.HRMS.Services.Http;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -83,10 +84,10 @@ public class Program
         // ==========================
         // Feature Services
         // ==========================
+        builder.Services.AddScoped<IDashboardService, DashboardService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
         builder.Services.AddScoped<IDepartmentService, DepartmentService>();
-        builder.Services.AddScoped<IClockService, ClockService>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IAttendanceService, AttendanceService>();
         builder.Services.AddScoped<IAttendanceRequestService, AttendanceRequestService>();

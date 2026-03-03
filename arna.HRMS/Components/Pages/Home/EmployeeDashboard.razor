@@ -1,10 +1,11 @@
-﻿@using arna.HRMS.Models.ViewModels.Leave
+﻿@using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
-@using arna.HRMS.Services
+@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Services.Dashboard
 @using arna.HRMS.Services.Common
 
 @inject NavigationManager Nav
-@inject ILeaveService LeaveService
+@inject IDashboardService dashboardService
 @inject NotificationService NotificationService
 
 <div class="container-fluid px-3 px-md-4 py-3 dash-fade-in">
@@ -274,49 +275,59 @@
 
     private string greeting = "";
 
-    // ── Data ──
+    // ─────────────────────────────────────
+    // Dashboard Data
+    // ─────────────────────────────────────
+    private DashboardViewModel dashboard = new();
+
     private List<LeaveTypeViewModel> leaveTypes = new();
-    private Dictionary<int, string> leaveTypeNames = new();
     private List<LeaveRequestViewModel> myRequests = new();
     private List<LeaveRequestViewModel> recentRequests = new();
     private List<LeaveBalanceViewModel> leaveBalances = new();
+    private Dictionary<int, string> leaveTypeNames = new();
 
-    // ── Stats ──
+    // ─────────────────────────────────────
+    // Stats
+    // ─────────────────────────────────────
     private int totalBalance;
     private int totalUsed;
     private int totalAllowed;
     private int pendingCount;
 
-    // ── Monthly Summary ──
+    // ─────────────────────────────────────
+    // Monthly Summary
+    // ─────────────────────────────────────
     private record SummaryItem(string Label, int Count, string Color);
     private List<SummaryItem> monthlySummary = new();
 
-    // ── Quick Actions ──
+    // ─────────────────────────────────────
+    // Quick Actions
+    // ─────────────────────────────────────
     private record QuickAction(string Label, string Icon, string Route,
                                string Bg, string TextColor);
 
     private readonly List<QuickAction> quickActions = new()
     {
-         new("Employee",    "bi bi-journal-text", "/employee",  "bg-warning bg-opacity-25", "text-warning"),
-        new("Attendance",   "bi bi-clock-history", "/attendance",   "bg-success bg-opacity-10", "text-success"),
-        new("My Profile",   "bi bi-person-circle", "/profile",      "bg-info bg-opacity-10",    "text-info"),
-        new("LeaveMangement",  "bi bi-calendar-plus", "/emp-leave-management", "bg-primary bg-opacity-10", "text-primary"),
+        new("Employee",       "bi bi-journal-text",   "/employee",             "bg-warning bg-opacity-25", "text-warning"),
+        new("Attendance",     "bi bi-clock-history",  "/emp-attendance-management",           "bg-success bg-opacity-10", "text-success"),
+        new("My Profile",     "bi bi-person-circle",  "/profile",              "bg-info bg-opacity-10",    "text-info"),
+        new("Leave Management","bi bi-calendar-plus", "/emp-leave-management", "bg-primary bg-opacity-10", "text-primary"),
     };
 
-    // ═══════════ LIFECYCLE ═══════════
+    // ═════════════════════════════════════
+    // LIFECYCLE
+    // ═════════════════════════════════════
 
     protected override async Task OnInitializedAsync()
     {
         SetGreeting();
-        await LoadLeaveTypes();
-        await LoadMyRequests();
-        await LoadBalances();
-        BuildMonthlySummary();
+        await LoadDashboardAsync();
     }
 
     private void SetGreeting()
     {
         var h = DateTime.Now.Hour;
+
         greeting = h switch
         {
             >= 5 and < 12 => "Good Morning",
@@ -326,72 +337,78 @@
         };
     }
 
-    // ═══════════ LOADERS ═══════════
+    // ═════════════════════════════════════
+    // LOAD DASHBOARD (Single API Call)
+    // ═════════════════════════════════════
 
-    private async Task LoadLeaveTypes()
+    private async Task LoadDashboardAsync()
     {
         try
         {
-            var res = await LeaveService.GetLeaveTypesAsync();
-            leaveTypes = res?.IsSuccess == true && res.Data != null ? res.Data : new();
-            leaveTypeNames = leaveTypes.ToDictionary(
-                t => t.Id,
-                t => FormatName(t.LeaveNameId.ToString()));
+            var response = await dashboardService.GetAllAsync(null, EmployeeId);
+
+            if (response?.IsSuccess == true && response.Data != null)
+            {
+                dashboard = response.Data;
+                ProcessDashboardData();
+            }
+            else
+            {
+                ResetData();
+            }
         }
         catch
         {
-            leaveTypes = new();
-            leaveTypeNames = new();
+            ResetData();
         }
     }
 
-    private async Task LoadMyRequests()
+    private void ProcessDashboardData()
     {
-        try
-        {
-            var res = await LeaveService.GetLeaveRequestsByEmployeeAsync(EmployeeId);
-            myRequests = res?.IsSuccess == true && res.Data != null ? res.Data : new();
+        leaveTypes = dashboard.LeaveTypes ?? new();
+        myRequests = dashboard.Requests ?? new();
 
-            pendingCount = myRequests.Count(r => r.StatusId == Status.Pending);
+        leaveTypeNames = leaveTypes.ToDictionary(
+            t => t.Id,
+            t => FormatName(t.LeaveNameId.ToString()));
 
-            recentRequests = myRequests
-                .OrderByDescending(r => r.StartDate)
-                .Take(6)
-                .ToList();
-        }
-        catch { myRequests = new(); }
+        pendingCount = myRequests.Count(r => r.StatusId == Status.Pending);
+
+        recentRequests = myRequests
+            .OrderByDescending(r => r.StartDate)
+            .Take(6)
+            .ToList();
+
+        BuildBalances();
+        BuildMonthlySummary();
     }
 
-    private async Task LoadBalances()
+    private void BuildBalances()
     {
-        try
+        var approved = myRequests
+            .Where(r => r.StatusId == Status.Approved)
+            .ToList();
+
+        var usedByType = approved
+            .GroupBy(x => x.LeaveTypeId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.LeaveDays));
+
+        leaveBalances = leaveTypes.Select(t =>
         {
-            var res = await LeaveService.GetLeaveRequestsByFilterAsync(Status.Approved, EmployeeId);
+            usedByType.TryGetValue(t.Id, out var used);
 
-            var approved = res?.IsSuccess == true && res.Data != null
-                ? res.Data : new();
-
-            var usedByType = approved
-                .GroupBy(x => x.LeaveTypeId)
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.LeaveDays));
-
-            leaveBalances = leaveTypes.Select(t =>
+            return new LeaveBalanceViewModel
             {
-                usedByType.TryGetValue(t.Id, out var used);
-                return new LeaveBalanceViewModel
-                {
-                    LeaveTypeId = t.Id,
-                    LeaveTypeName = t.LeaveNameId.ToString(),
-                    TotalDays = t.MaxPerYear,
-                    UsedDays = used
-                };
-            }).ToList();
+                LeaveTypeId = t.Id,
+                LeaveTypeName = t.LeaveNameId.ToString(),
+                TotalDays = t.MaxPerYear,
+                UsedDays = used
+            };
+        }).ToList();
 
-            totalBalance = leaveBalances.Sum(b => b.RemainingDays);
-            totalUsed = leaveBalances.Sum(b => b.UsedDays);
-            totalAllowed = leaveBalances.Sum(b => b.TotalDays);
-        }
-        catch { leaveBalances = new(); }
+        totalBalance = leaveBalances.Sum(b => b.RemainingDays);
+        totalUsed = leaveBalances.Sum(b => b.UsedDays);
+        totalAllowed = leaveBalances.Sum(b => b.TotalDays);
     }
 
     private void BuildMonthlySummary()
@@ -407,13 +424,34 @@
         };
     }
 
-    // ═══════════ HELPERS ═══════════
+    private void ResetData()
+    {
+        dashboard = new();
+        leaveTypes = new();
+        myRequests = new();
+        recentRequests = new();
+        leaveBalances = new();
+        leaveTypeNames = new();
+        totalBalance = 0;
+        totalUsed = 0;
+        totalAllowed = 0;
+        pendingCount = 0;
+        monthlySummary = new();
+    }
+
+    // ═════════════════════════════════════
+    // HELPERS
+    // ═════════════════════════════════════
 
     private string GetLeaveTypeName(int id) =>
-        leaveTypeNames.TryGetValue(id, out var n) ? n : $"Leave #{id}";
+        leaveTypeNames.TryGetValue(id, out var n)
+            ? n
+            : $"Leave #{id}";
 
     private static string FormatName(string name) =>
-        System.Text.RegularExpressions.Regex.Replace(name ?? "", "([A-Z])", " $1").Trim();
+        System.Text.RegularExpressions.Regex
+            .Replace(name ?? "", "([A-Z])", " $1")
+            .Trim();
 
     private static string GetColor(int idx) => (idx % 5) switch
     {
@@ -439,6 +477,7 @@
         Status.Approved => "req-approved",
         Status.Pending => "req-pending",
         Status.Rejected => "req-rejected",
+        Status.Cancelled => "req-cancelled",
         _ => "req-cancelled"
     };
 
