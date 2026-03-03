@@ -9,6 +9,10 @@ namespace arna.HRMS.Services.Http;
 
 public sealed class ApiClients
 {
+    // ===================== Dashboard =======================
+
+    public DashboardApi Dashboard { get; }
+
     // ===================== AUTH & ACCESS =====================
 
     public AuthApi Auth { get; }
@@ -34,6 +38,8 @@ public sealed class ApiClients
     public ApiClients(HttpService http)
     {
         http.SetApiClients(this);
+
+        Dashboard = new DashboardApi(http);
 
         Auth = new AuthApi(http);
         Users = new UserApi(http);
@@ -95,6 +101,41 @@ public sealed class ApiClients
             return await Http.DeleteAsync<bool>($"{Url}/{id}");
         }
     }
+
+    // =========================================================
+    // =================== Dashboard ===========================
+    // =========================================================
+
+    public sealed class DashboardApi
+    {
+        private const string Url = "api/dashboard";
+        private readonly HttpService _http;
+
+        public DashboardApi(HttpService http)
+        {
+            _http = http;
+        }
+
+        public async Task<ApiResult<DashboardViewModel>> GetDashboardAsync(
+            Status? status,
+            int? employeeId)
+        {
+            var query = new List<string>();
+
+            if (status.HasValue)
+                query.Add($"status={status}");
+
+            if (employeeId.HasValue)
+                query.Add($"employeeId={employeeId}");
+
+            var queryString = query.Any()
+                ? "?" + string.Join("&", query)
+                : string.Empty;
+
+            return await _http.GetAsync<DashboardViewModel>($"{Url}{queryString}");
+        }
+    }
+
 
     // =========================================================
     // ===================== AUTH ==============================
@@ -188,6 +229,11 @@ public sealed class ApiClients
         public async Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetMonthlyAttendanceAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId)
         {
             return await Http.GetAsync<List<MonthlyAttendanceViewModel>>($"{Url}/monthly?year={year}&month={month}&empId={empId}&date={date:yyyy-MM-dd}&statusId={statusId}");
+        }
+
+        public async Task<ApiResult<AttendanceViewModel>> GetTodayFirstClockInAsync(int employeeId)
+        {
+            return await Http.GetAsync<AttendanceViewModel>($"{Url}/employees/{employeeId}/today/first-clock-in");
         }
     }
 

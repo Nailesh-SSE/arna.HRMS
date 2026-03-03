@@ -1,14 +1,16 @@
 ﻿@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
-@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
+@using arna.HRMS.Services.Dashboard
 @using arna.HRMS.Services.Common
 
 @inject NavigationManager Nav
-@inject IEmployeeService EmployeeService
 @inject ILeaveService LeaveService
+@inject IDashboardService DashboardService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
 
@@ -275,7 +277,9 @@
 
     private string greeting = "";
 
-    // ── Data ──
+    // ── Dashboard Data ──
+    private DashboardViewModel? _dashboard;
+
     private List<LeaveTypeViewModel> leaveTypes = new();
     private Dictionary<int, string> leaveTypeNames = new();
     private List<LeaveRequestViewModel> allLeaveRequests = new();
@@ -292,32 +296,32 @@
     private int rejectedTotal;
     private int cancelledTotal;
 
-    // ── Overview items ──
+    // ── Overview ──
     private record OverviewItem(string Label, int Count, string DotClass, string BarClass);
     private List<OverviewItem> overviewItems = new();
 
     // ── Quick Actions ──
-    private record QuickAction(string Label, string Icon, string Route,
-                               string Bg, string TextColor);
+    private record QuickAction(string Label, string Icon, string Route, string Bg, string TextColor);
 
     private readonly List<QuickAction> quickActions = new()
     {
         new("Employees",   "bi bi-people-fill",    "/employee",   "bg-primary bg-opacity-10",   "text-primary"),
-        new("Departments", "bi bi-building",        "/department", "bg-success bg-opacity-10",   "text-success"),
-        new("Leave Types", "bi bi-calendar-range",  "/admin-leave-management", "bg-warning bg-opacity-25",   "text-warning"),
-        new("Attendance",  "bi bi-clipboard-data",  "/attendance", "bg-info bg-opacity-10",      "text-info"),
-        new("Roles",       "bi bi-shield-lock",     "/role",       "bg-danger bg-opacity-10",    "text-danger"),
-        new("Users",       "bi bi-person-gear",     "/user",       "bg-secondary bg-opacity-10", "text-secondary"),
+        new("Departments", "bi bi-building",       "/department", "bg-success bg-opacity-10",   "text-success"),
+        new("Leave Types", "bi bi-calendar-range", "/admin-leave-management", "bg-warning bg-opacity-25", "text-warning"),
+        new("Attendance",  "bi bi-clipboard-data", "/admin-attendance-management", "bg-info bg-opacity-10",      "text-info"),
+        new("Roles",       "bi bi-shield-lock",    "/role",       "bg-danger bg-opacity-10",    "text-danger"),
+        new("Users",       "bi bi-person-gear",    "/user",       "bg-secondary bg-opacity-10", "text-secondary"),
     };
 
-    // ═══════════ LIFECYCLE ═══════════
+    // ═══════════════════════════════════════════════
+    // LIFECYCLE
+    // ═══════════════════════════════════════════════
 
     protected override async Task OnInitializedAsync()
     {
         SetGreeting();
-        await LoadLeaveTypes();
-        await LoadEmployees();
-        await LoadLeaveRequests();
+        await LoadDashboard();
+        ProcessDashboardData();
         BuildOverview();
     }
 
@@ -333,75 +337,70 @@
         };
     }
 
-    // ═══════════ LOADERS ═══════════
+    // ═══════════════════════════════════════════════
+    // DASHBOARD LOADING (ONE API CALL ONLY)
+    // ═══════════════════════════════════════════════
 
-    private async Task LoadLeaveTypes()
+    private async Task LoadDashboard()
     {
-        try
-        {
-            var res = await LeaveService.GetLeaveTypesAsync();
-            leaveTypes = res?.IsSuccess == true && res.Data != null ? res.Data : new();
-            leaveTypeNames = leaveTypes.ToDictionary(
-                t => t.Id,
-                t => FormatName(t.LeaveNameId.ToString()));
-        }
-        catch
+        var res = await DashboardService.GetAllAsync(null, null);
+        _dashboard = res?.IsSuccess == true ? res.Data : null;
+    }
+
+    private void ProcessDashboardData()
+    {
+        if (_dashboard == null)
         {
             leaveTypes = new();
             leaveTypeNames = new();
+            allLeaveRequests = new();
+            totalEmployees = 0;
+            return;
         }
-    }
 
-    private async Task LoadEmployees()
-    {
-        try
-        {
-            var res = await EmployeeService.GetEmployeesAsync();
-            totalEmployees = res?.IsSuccess == true ? res.Data?.Count ?? 0 : 0;
-        }
-        catch { totalEmployees = 0; }
-    }
+        // Employees
+        totalEmployees = _dashboard.TotalEmployees;
 
-    private async Task LoadLeaveRequests()
-    {
-        try
-        {
-            var res = await LeaveService.GetLeaveRequestsAsync();
-            allLeaveRequests = res?.IsSuccess == true && res.Data != null
-                ? res.Data : new();
+        // Leave Types
+        leaveTypes = _dashboard.LeaveTypes ?? new();
+        leaveTypeNames = leaveTypes.ToDictionary(
+            t => t.Id,
+            t => FormatName(t.LeaveNameId.ToString()));
 
-            var today = DateTime.Today;
-            var monthStart = new DateTime(today.Year, today.Month, 1);
+        // Leave Requests
+        allLeaveRequests = _dashboard.Requests ?? new();
 
-            onLeaveToday = allLeaveRequests.Count(r =>
-                r.StatusId == Status.Approved
-                && today >= r.StartDate.Date
-                && today <= r.EndDate.Date);
+        var today = DateTime.Today;
+        var monthStart = new DateTime(today.Year, today.Month, 1);
 
-            pendingCount = allLeaveRequests.Count(r => r.StatusId == Status.Pending);
-            approvedTotal = allLeaveRequests.Count(r => r.StatusId == Status.Approved);
-            rejectedTotal = allLeaveRequests.Count(r => r.StatusId == Status.Rejected);
-            cancelledTotal = allLeaveRequests.Count(r => r.StatusId == Status.Cancelled);
+        onLeaveToday = allLeaveRequests.Count(r =>
+            r.StatusId == Status.Approved &&
+            today >= r.StartDate.Date &&
+            today <= r.EndDate.Date);
 
-            approvedThisMonth = allLeaveRequests.Count(r =>
-                r.StatusId == Status.Approved && r.StartDate >= monthStart);
+        pendingCount = _dashboard.PendingRequests;
+        approvedTotal = _dashboard.ApprovedRequests;
+        rejectedTotal = _dashboard.RejectedRequests;
+        cancelledTotal = _dashboard.CancledRequests;
 
-            pendingLeaveRequests = allLeaveRequests
-                .Where(r => r.StatusId == Status.Pending)
-                .OrderByDescending(r => r.StartDate)
-                .ToList();
+        approvedThisMonth = allLeaveRequests.Count(r =>
+            r.StatusId == Status.Approved &&
+            r.StartDate >= monthStart);
 
-            recentApproved = allLeaveRequests
-                .Where(r => r.StatusId == Status.Approved)
-                .OrderByDescending(r => r.StartDate)
-                .ToList();
+        pendingLeaveRequests = allLeaveRequests
+            .Where(r => r.StatusId == Status.Pending)
+            .OrderByDescending(r => r.StartDate)
+            .ToList();
 
-            recentRejected = allLeaveRequests
-                .Where(r => r.StatusId == Status.Rejected)
-                .OrderByDescending(r => r.StartDate)
-                .ToList();
-        }
-        catch { allLeaveRequests = new(); }
+        recentApproved = allLeaveRequests
+            .Where(r => r.StatusId == Status.Approved)
+            .OrderByDescending(r => r.StartDate)
+            .ToList();
+
+        recentRejected = allLeaveRequests
+            .Where(r => r.StatusId == Status.Rejected)
+            .OrderByDescending(r => r.StartDate)
+            .ToList();
     }
 
     private void BuildOverview()
@@ -415,28 +414,28 @@
         };
     }
 
-    // ═══════════ ACTIONS ═══════════
+    // ═══════════════════════════════════════════════
+    // ACTIONS
+    // ═══════════════════════════════════════════════
 
     private async Task ApproveLeave(LeaveRequestViewModel req)
     {
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Approve this leave request?"))
             return;
 
-        try
+        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Approved);
+
+        if (res?.IsSuccess == true)
         {
-            var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Approved);
-            if (res?.IsSuccess == true)
-            {
-                await NotificationService.Success("Leave approved successfully.");
-                await LoadLeaveRequests();
-                BuildOverview();
-            }
-            else
-                await NotificationService.Error(res?.Message ?? "Failed to approve.");
+            await NotificationService.Success("Leave approved successfully.");
+
+            await LoadDashboard();
+            ProcessDashboardData();
+            BuildOverview();
         }
-        catch (Exception ex)
+        else
         {
-            await NotificationService.Error(ex.Message ?? "Error approving leave.");
+            await NotificationService.Error(res?.Message ?? "Failed to approve.");
         }
     }
 
@@ -445,36 +444,40 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Reject this leave request?"))
             return;
 
-        try
+        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Rejected);
+
+        if (res?.IsSuccess == true)
         {
-            var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Rejected);
-            if (res?.IsSuccess == true)
-            {
-                await NotificationService.Success("Leave rejected.");
-                await LoadLeaveRequests();
-                BuildOverview();
-            }
-            else
-                await NotificationService.Error(res?.Message ?? "Failed to reject.");
+            await NotificationService.Success("Leave rejected.");
+
+            await LoadDashboard();
+            ProcessDashboardData();
+            BuildOverview();
         }
-        catch (Exception ex)
+        else
         {
-            await NotificationService.Error(ex.Message ?? "Error rejecting leave.");
+            await NotificationService.Error(res?.Message ?? "Failed to reject.");
         }
     }
 
-    // ═══════════ HELPERS ═══════════
+    // ═══════════════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════════════
 
     private string GetLeaveTypeName(int id) =>
         leaveTypeNames.TryGetValue(id, out var n) ? n : $"Leave #{id}";
 
     private static string FormatName(string name) =>
-        System.Text.RegularExpressions.Regex.Replace(name ?? "", "([A-Z])", " $1").Trim();
+        System.Text.RegularExpressions.Regex
+            .Replace(name ?? "", "([A-Z])", " $1")
+            .Trim();
 
     private static string GetInitials(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return "?";
+
         var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
         return parts.Length >= 2
             ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
             : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
