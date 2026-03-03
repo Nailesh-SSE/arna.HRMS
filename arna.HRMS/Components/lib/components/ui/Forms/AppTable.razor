@@ -38,7 +38,7 @@
                         <tr class="@(RowClassFunc?.Invoke(item) ?? "")">
                             @foreach (var col in Columns)
                             {
-                                <td class="px-3 py-2">
+                                <td class="px-2 py-2 custom-td">
                                     @* @if (col.CssClassFunc != null)
                                     {
                                         <span class="@col.CssClassFunc(item)">@col.Value(item)</span>
@@ -55,7 +55,7 @@
                             }
                             @if (ShowActions)
                             {
-                                <td class="text-center px-3 py-2">
+                                <td class="text-center px-2 py-2">
                                     <div class="d-inline-flex gap-2">
                                         @if (ActionTemplate != null)
                                         {
@@ -63,11 +63,13 @@
                                         }
                                         else
                                         {
-                                            <AppButton ButtonClass="btn btn-sm btn-primary"
-                                                       OnClick="() => OnEdit.InvokeAsync(item)">
+                                            <AppButton ButtonClass="req-action-btn btn btn-outline-primary btn-sm rounded-circle
+                                                           d-inline-flex align-items-center justify-content-center"
+                                                    OnClick="() => OnEdit.InvokeAsync(item)">
                                                 <i class="bi bi-pencil-square"></i>
                                             </AppButton>
-                                            <AppButton ButtonClass="btn btn-sm btn-danger"
+                                            <AppButton ButtonClass="req-action-btn btn btn-outline-danger btn-sm rounded-circle
+                                                                           d-inline-flex align-items-center justify-content-center"
                                                        OnClick="() => OnDelete.InvokeAsync(item)">
                                                 <i class="bi bi-trash"></i>
                                             </AppButton>

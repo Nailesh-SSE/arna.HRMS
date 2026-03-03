@@ -78,15 +78,6 @@ public class AttendanceRequestController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    [HttpGet("pending")]
-    [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> GetPendingAsync()
-    {
-        var result = await _service.GetPendingAttendanceRequestsAsync();
-
-        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
-    }
-
     [HttpPost("{id:int}/status")]
     [Authorize(Roles = UserRoleGroups.AdminRoles)]
     public async Task<IActionResult> UpdateStatusAsync(int id, [FromQuery] Status status)

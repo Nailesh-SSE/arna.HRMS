@@ -15,6 +15,7 @@ public interface IAttendanceService
     Task<ApiResult<AttendanceViewModel>> GetAttendanceByIdAsync(int id);
     Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId);
     Task<ApiResult<AttendanceViewModel>> GetTodayClockinEntryAsync(int employeeId);
+    Task<ApiResult<AttendanceViewModel>> GetTodayLastEntryAsync(int employeeId);
 }
 
 public class AttendanceService : IAttendanceService
@@ -76,7 +77,7 @@ public class AttendanceService : IAttendanceService
 
     public async Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId)
     {
-        return await _attendance.GetByEmployeeOrStatusAsync(status, employeeId);
+        return await _attendance.GetAttendanceByStatusAndEmployeeIdAsync(status, employeeId); 
     }
 
     public async Task<ApiResult<AttendanceViewModel>> GetAttendanceByIdAsync(int id)
@@ -87,6 +88,11 @@ public class AttendanceService : IAttendanceService
     public async Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId)
     {
         return await _attendance.GetMonthlyAttendanceAsync(year, month, empId, date, statusId);
+    }
+
+    public async Task<ApiResult<AttendanceViewModel>> GetTodayLastEntryAsync(int employeeId)
+    {
+        return await _attendance.GetTodayLastEntryAsync(employeeId);
     }
 
     public async Task<ApiResult<AttendanceViewModel>> GetTodayClockinEntryAsync(int employeeId)

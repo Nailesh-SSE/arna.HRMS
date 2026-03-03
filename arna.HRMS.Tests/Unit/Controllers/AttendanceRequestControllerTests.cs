@@ -383,34 +383,6 @@ public class AttendanceRequestControllerTests
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
 
-    [Test]
-    public async Task GetPendingAttendanceRequests_ReturnsOkResult()
-    {
-        var Data = new List<AttendanceRequestDto>
-                {
-                    new AttendanceRequestDto { Id = 1, EmployeeId = 1, StatusId = Status.Pending },
-                    new AttendanceRequestDto { Id = 2, EmployeeId = 5, StatusId = Status.Cancelled }
-                };
-        // Arrange
-        _attendanceRequestServiceMock.Setup(s => s.GetPendingAttendanceRequestsAsync())
-            .ReturnsAsync(ServiceResult<List<AttendanceRequestDto>>.Success(Data));
-        // Act
-        var result = await _controller.GetPendingAsync();
-        // Assert
-        Assert.That(result, Is.TypeOf<OkObjectResult>());
-    }
-
-    [Test]
-    public async Task GetPendingAttendanceRequests_ReturnsBadRequest()
-    {
-        // Arrange
-        _attendanceRequestServiceMock.Setup(s => s.GetPendingAttendanceRequestsAsync())
-            .ReturnsAsync(ServiceResult<List<AttendanceRequestDto>>.Success(null!));
-        // Act
-        var result = await _controller.GetPendingAsync();
-        // Assert
-        Assert.That(result, Is.TypeOf<OkObjectResult>());
-    }
 
     [Test]
     public async Task UpdateAttendanceRequestStatusCancel_ReturnsOkResult()

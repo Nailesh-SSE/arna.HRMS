@@ -127,7 +127,7 @@ public class AttendanceServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService.GetEmployeeAttendanceByStatusAsync(null, null);
+        var result = await _attendanceService.GetAttendanceByStatusAndEmployeeIdAsync(null, null);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
@@ -166,7 +166,7 @@ public class AttendanceServiceTests
 
         await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceService.GetEmployeeAttendanceByStatusAsync(null, null);
+        var result = await _attendanceService.GetAttendanceByStatusAndEmployeeIdAsync(null, null);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
@@ -185,7 +185,7 @@ public class AttendanceServiceTests
     [Test]
     public async Task GetAttendanceAsync_WhenNoData_ReturnsEmptyList()
     {
-        var result = await _attendanceService.GetEmployeeAttendanceByStatusAsync(null, null);
+        var result = await _attendanceService.GetAttendanceByStatusAndEmployeeIdAsync(null, null);
 
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);

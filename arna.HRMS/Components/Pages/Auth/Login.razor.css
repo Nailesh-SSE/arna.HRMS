@@ -1,0 +1,50 @@
+﻿/* Brand panel gradient */
+.login-brand-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Stat icons size (no Bootstrap utility for exact 48px) */
+.login-stat-icon {
+    width: 48px;
+    height: 48px;
+}
+
+/* Logo circle size */
+.login-logo-circle {
+    width: 72px;
+    height: 72px;
+}
+
+.login-logo-img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+/* Accent bar */
+.login-accent-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+}
+
+/* Decorative floating shapes */
+.login-shape {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+}
+
+.login-shape-1 {
+    width: 280px;
+    height: 280px;
+    top: -60px;
+    right: -50px;
+}
+
+.login-shape-2 {
+    width: 180px;
+    height: 180px;
+    bottom: -30px;
+    left: -30px;
+}

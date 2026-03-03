@@ -36,11 +36,11 @@ public class AttendanceService : IAttendanceService
         _validator = validator;
     }
 
-    public async Task<ServiceResult<List<AttendanceDto>>> GetEmployeeAttendanceByStatusAsync(AttendanceStatus? status, int? employeeId)
+    public async Task<ServiceResult<List<AttendanceDto>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId)
     {
-        var data = await _attendanceRepository.GetEmployeeAttendanceByStatus(status, employeeId);
+        var data = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(status, employeeId);
 
-        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(data));
+        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(data));  
     }
 
     public async Task<ServiceResult<AttendanceDto?>> GetAttendanceByIdAsync(int id)
@@ -79,7 +79,7 @@ public class AttendanceService : IAttendanceService
         return ServiceResult<AttendanceDto>.Success(_mapper.Map<AttendanceDto>(created), "Attendance created successfully.");
     }
 
-    public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? employeeId, DateTime? date, AttendanceStatus? status)
+    public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? employeeId, DateTime? date, AttendanceStatus? statusId)
     {
         if (year <= 0)
             return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid year.");
@@ -95,7 +95,7 @@ public class AttendanceService : IAttendanceService
                 return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Employee not found.");
         }
 
-        var result = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, employeeId, date, status);
+        var result = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, employeeId, date, statusId);
 
         return result.Any()
             ? ServiceResult<List<MonthlyAttendanceDto>>.Success(result)

@@ -9,29 +9,55 @@
 <div class="header-root bg-white border-bottom shadow-sm">
 
     <!-- Row 1 — always visible -->
-    <div class="header-row d-flex align-items-center gap-2 px-3 px-lg-4">
+    <div class="header-row d-flex align-items-center gap-1 gap-sm-2
+                px-2 px-sm-3 px-lg-4">
 
         <!-- Toggle Button -->
         <button class="header-toggle btn btn-light border-0 rounded-circle
-                       d-flex align-items-center justify-content-center flex-shrink-0"
+                       d-flex align-items-center justify-content-center
+                       flex-shrink-0"
                 @onclick="OnToggleSidebar"
                 aria-label="Toggle Sidebar">
-            <i class="bi d-lg-none @(SidebarActive ? "bi-x-lg" : "bi-list") fs-5"></i>
-            <i class="bi d-none d-lg-inline @(SidebarActive ? "bi-list" : "bi-layout-sidebar-inset") fs-5"></i>
+            <i class="bi d-lg-none
+                      @(SidebarActive ? "bi-x-lg" : "bi-list")
+                      header-toggle-icon"></i>
+            <i class="bi d-none d-lg-inline
+                      @(SidebarActive
+                                         ? "bi-list"
+                                         : "bi-layout-sidebar-inset")
+                      header-toggle-icon"></i>
         </button>
 
+        <!-- Time & Greeting -->
         <div class="d-flex flex-column lh-sm me-auto overflow-hidden">
-            <div class="d-flex align-items-baseline gap-2">
-                <span class="fs-6 fw-semibold">@CurrentTime</span>
-                <span class="text-muted">@GetDayLabel()</span>
+
+            <!-- Time + Day -->
+            <div class="d-flex align-items-baseline gap-1 gap-sm-2
+                        flex-wrap">
+
+                <!-- Time — always visible -->
+                <span class="fw-semibold header-time-text">
+                    @CurrentTime
+                </span>
+
+                <!-- Day — hidden on very small, shown sm+ -->
+                <span class="text-muted d-none d-sm-inline header-day-text">
+                    @GetDayLabel()
+                </span>
             </div>
-            <span class="text-muted small d-none d-md-inline fw-medium text-truncate">
-                @Greeting@(!string.IsNullOrEmpty(GetUserFullName()) ? $", {GetUserFullName()}" : "")
+
+            <!-- Greeting — hidden on mobile, shown md+ -->
+            <span class="text-muted d-none d-md-inline fw-medium
+                         text-truncate header-hello-text">
+                @Greeting@(!string.IsNullOrEmpty(GetUserFullName())
+                                ? $", {GetUserFullName()}"
+                                : "")
             </span>
         </div>
 
         <!-- Right actions -->
-        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+        <div class="d-flex align-items-center gap-1 gap-sm-2
+                    flex-shrink-0">
 
             <!-- Clock — desktop only -->
             <AuthorizeView Roles="Employee">
@@ -39,13 +65,15 @@
                     <div class="d-none d-lg-flex align-items-center gap-2">
                         <ClockInAndOut />
                     </div>
-                    <div class="header-divider vr opacity-25 d-none d-lg-block"></div>
+                    <div class="header-divider vr opacity-25
+                                d-none d-lg-block"></div>
                 </Authorized>
             </AuthorizeView>
 
             <!-- Notifications -->
             <NotificationDrawer />
 
+            <!-- User Menu -->
             <UserMenu />
         </div>
     </div>
@@ -53,8 +81,9 @@
     <!-- Row 2 — clock bar, mobile & tablet only -->
     <AuthorizeView Roles="Employee">
         <Authorized>
-            <div class="header-clock-bar d-flex d-lg-none align-items-center
-                        justify-content-center gap-2 px-3 py-2 border-top">
+            <div class="header-clock-bar d-flex d-lg-none
+                        align-items-center justify-content-center
+                        gap-2 px-2 px-sm-3 border-top">
                 <ClockInAndOut />
             </div>
         </Authorized>
@@ -67,7 +96,6 @@
 
     private string Greeting = string.Empty;
     private string CurrentTime = "";
-
     private CancellationTokenSource? _cts;
 
     protected override async Task OnInitializedAsync()
@@ -84,7 +112,6 @@
         catch { }
     }
 
-    // ── Running clock (ticks every second) ──
     private void StartHeaderClock()
     {
         _cts?.Cancel();

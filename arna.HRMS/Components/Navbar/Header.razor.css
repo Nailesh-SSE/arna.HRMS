@@ -1,28 +1,120 @@
-﻿.header-row {
-    min-height: 56px;
+﻿.header-root {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
 }
 
+.header-row {
+    min-height: 48px;
+}
+
+/* Tablet (≥ 576px) */
+@media (min-width: 576px) {
+    .header-row {
+        min-height: 56px;
+    }
+}
+
+@media (min-width: 992px) {
+    .header-row {
+        min-height: 67.2px;
+    }
+}
+
+
+/* Mobile */
 .header-toggle {
-    width: 38px;
-    height: 38px;
+    width: 32px;
+    height: 32px;
 }
 
-.header-day {
-    font-size: .7rem;
+.header-toggle-icon {
+    font-size: 1.1rem;
 }
 
-.header-hello {
-    font-size: .9rem;
+/* Tablet */
+@media (min-width: 576px) {
+    .header-toggle {
+        width: 36px;
+        height: 36px;
+    }
+
+    .header-toggle-icon {
+        font-size: 1.2rem;
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .header-toggle {
+        width: 38px;
+        height: 38px;
+    }
+
+    .header-toggle-icon {
+        font-size: 1.25rem;
+    }
+}
+
+.header-time-text {
+    font-size: 0.82rem;
+}
+
+/* Tablet */
+@media (min-width: 576px) {
+    .header-time-text {
+        font-size: 0.9rem;
+    }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    .header-time-text {
+        font-size: 1rem;
+    }
+}
+
+.header-day-text {
+    font-size: 0.68rem;
+}
+
+@media (min-width: 768px) {
+    .header-day-text {
+        font-size: 0.72rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .header-day-text {
+        font-size: 0.75rem;
+    }
+}
+
+.header-hello-text {
+    font-size: 0.78rem;
+}
+
+@media (min-width: 992px) {
+    .header-hello-text {
+        font-size: 0.85rem;
+    }
 }
 
 .header-divider {
     height: 24px;
 }
 
+/* Mobile */
 .header-clock-bar {
     background: #f8f9fb;
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
 }
-.header-clock-text {
-    font-size: 1.15rem;
-    letter-spacing: .5px;
+
+/* Tablet */
+@media (min-width: 576px) {
+    .header-clock-bar {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
 }

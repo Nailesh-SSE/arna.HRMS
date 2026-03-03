@@ -216,19 +216,33 @@ public sealed class ApiClients
     {
         public AttendanceApi(HttpService http) : base(http, "api/attendance") { }
 
-        public async Task<ApiResult<List<AttendanceViewModel>>> GetByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId)
-        {
-            return await Http.GetAsync<List<AttendanceViewModel>>($"{Url}/employee-attendance?status={status}&employeeId={employeeId}");
-        }
-
         public async Task<ApiResult<AttendanceViewModel>> GetClockStatusAsync(int employeeId)
         {
             return await Http.GetAsync<AttendanceViewModel>($"{Url}/clockStatus/{employeeId}");
         }
 
+        public async Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId)
+        {
+            var query = new List<string>();
+            if (status.HasValue)
+                query.Add($"status={status}");
+
+            if (employeeId.HasValue)
+                query.Add($"employeeId={employeeId}");
+
+            var qs = query.Any() ? "?" + string.Join("&", query) : "";
+
+            return await Http.GetAsync<List<AttendanceViewModel>>($"{Url}{qs}");
+        }
+
         public async Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetMonthlyAttendanceAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId)
         {
-            return await Http.GetAsync<List<MonthlyAttendanceViewModel>>($"{Url}/monthly?year={year}&month={month}&empId={empId}&date={date:yyyy-MM-dd}&statusId={statusId}");
+            return await Http.GetAsync<List<MonthlyAttendanceViewModel>>($"{Url}/monthly?year={year}&month={month}&employeeId={empId}&date={date:yyyy-MM-dd}&statusId={statusId}");
+        }
+
+        public async Task<ApiResult<AttendanceViewModel>> GetTodayLastEntryAsync(int employeeId)
+        {
+            return await Http.GetAsync<AttendanceViewModel>($"{Url}/{employeeId}/last-today");
         }
 
         public async Task<ApiResult<AttendanceViewModel>> GetTodayFirstClockInAsync(int employeeId)
@@ -282,7 +296,7 @@ public sealed class ApiClients
 
         public async Task<ApiResult<bool>> UpdateStatusAsync(int id, Status status)
         {
-            return await Http.PostAsync<bool>($"{Url}/{id}/status?status={status}", new { });
+            return await Http.PostAsync<bool>($"{Url}/{id}?status={status}", new { });
         }
 
         public async Task<ApiResult<bool>> CancelRequestAsync(int id)
@@ -329,7 +343,7 @@ public sealed class ApiClients
                 query.Add($"status={status}");
 
             if (empId.HasValue)
-                query.Add($"empId={empId}");
+                query.Add($"employeeId={empId}");
 
             var queryString = query.Any()
                 ? "?" + string.Join("&", query)

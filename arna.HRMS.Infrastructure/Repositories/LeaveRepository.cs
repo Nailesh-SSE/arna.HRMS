@@ -86,7 +86,9 @@ public class LeaveRepository
     {
         IQueryable<LeaveRequest> query = _leaveRequestRepository.Query()
         .Where(x => x.IsActive && !x.IsDeleted)
-        .Include(x => x.Employee);
+        .Include(x => x.Employee)
+        .Include(x => x.LeaveType)
+        .Include(x => x.ApprovedByEmployee);
 
         if (status.HasValue)
             query = query.Where(x => x.StatusId == status.Value);

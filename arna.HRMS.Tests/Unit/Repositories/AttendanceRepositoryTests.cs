@@ -82,7 +82,7 @@ public class AttendanceRepositoryTests
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _attendanceRepository.GetEmployeeAttendanceByStatus(null, null);
+        var result = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(null, null);
 
         // Assert
         var record = result.First();
@@ -117,7 +117,7 @@ public class AttendanceRepositoryTests
         _dbContext.Attendances.Add(attendance);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _attendanceRepository.GetEmployeeAttendanceByStatus(null, null);
+        var result = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(null, null);
         var record = result.First();
 
         Assert.That(record.StatusId, Is.EqualTo(AttendanceStatus.Late));
@@ -129,7 +129,7 @@ public class AttendanceRepositoryTests
     public async Task GetAttendenceAsync_WhenNoRecords_ReturnsEmptyList()
     {
         // Act
-        var result = await _attendanceRepository.GetEmployeeAttendanceByStatus(null, null);
+        var result = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(null, null);
 
         // Assert
         Assert.That(result, Is.Not.Null);
@@ -162,7 +162,7 @@ public class AttendanceRepositoryTests
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _attendanceRepository.GetEmployeeAttendanceByStatus(null, null);
+        var result = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(null, null);
 
         // Assert
         Assert.That(result.Count, Is.EqualTo(2));
@@ -187,7 +187,7 @@ public class AttendanceRepositoryTests
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _attendanceRepository.GetEmployeeAttendanceByStatus(null, null);
+        var result = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(null, null);
         var record = result.First();
 
         // Assert
@@ -212,7 +212,7 @@ public class AttendanceRepositoryTests
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _attendanceRepository.GetEmployeeAttendanceByStatus(null, null);
+        var result = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(null, null);
 
         // Assert
         Assert.That(result.Count, Is.EqualTo(3));

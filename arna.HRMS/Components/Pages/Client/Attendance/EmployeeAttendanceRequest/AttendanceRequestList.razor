@@ -117,105 +117,87 @@
                           RowClassFunc="GetRowClass">
 
                     <ActionTemplate Context="req">
+
+                        @* ══════════ PENDING — Action Buttons ══════════ *@
                         @if (req.StatusId == Status.Pending)
                         {
                             <div class="d-flex align-items-center gap-1 gap-md-2
-                                                justify-content-center flex-wrap">
+                            justify-content-center flex-wrap">
 
                                 @* ── Admin Actions ── *@
                                 @if (HasAdminActions)
                                 {
-                                    <button class="req-list-action-btn btn btn-outline-success btn-sm
-                                                               rounded-pill"
+                                    <button class="req-action-btn btn btn-outline-success btn-sm rounded-circle
+                                           d-inline-flex align-items-center justify-content-center"
                                             title="Approve"
                                             @onclick="() => ApproveClicked.InvokeAsync(req)">
                                         <i class="bi bi-check-lg"></i>
-                                        <span class="d-none d-lg-inline ms-1">Approve</span>
                                     </button>
 
-                                    <button class="req-list-action-btn btn btn-outline-danger btn-sm
-                                                               rounded-pill"
+                                    <button class="req-action-btn btn btn-outline-danger btn-sm rounded-circle
+                                           d-inline-flex align-items-center justify-content-center"
                                             title="Reject"
                                             @onclick="() => RejectClicked.InvokeAsync(req)">
                                         <i class="bi bi-x-lg"></i>
-                                        <span class="d-none d-lg-inline ms-1">Reject</span>
                                     </button>
                                 }
 
                                 @* ── Employee Actions ── *@
                                 @if (HasEmployeeActions)
                                 {
-                                    <button class="req-list-action-btn btn btn-outline-primary btn-sm
-                                                               rounded-pill"
+                                    <button class="req-action-btn btn btn-outline-primary btn-sm rounded-circle
+                                           d-inline-flex align-items-center justify-content-center"
                                             title="Edit Request"
                                             @onclick="() => EditClicked.InvokeAsync(req)">
                                         <i class="bi bi-pencil-square"></i>
-                                        <span class="d-none d-lg-inline ms-1">Edit</span>
                                     </button>
 
-                                    <button class="req-list-action-btn btn btn-outline-warning btn-sm
-                                                               rounded-pill"
+                                    <button class="req-action-btn btn btn-outline-warning btn-sm rounded-circle
+                                           d-inline-flex align-items-center justify-content-center"
                                             title="Cancel Request"
                                             @onclick="() => CancelClicked.InvokeAsync(req)">
                                         <i class="bi bi-x-circle"></i>
-                                        <span class="d-none d-lg-inline ms-1">Cancel</span>
                                     </button>
                                 }
                             </div>
                         }
+
+                        @* ══════════ APPROVED ══════════ *@
                         else if (req.StatusId == Status.Approved)
                         {
-                            <span class="badge bg-success bg-opacity-10 text-success
-                                                 rounded-pill px-2 px-md-3 small">
-                                <i class="bi bi-check-circle-fill me-1 d-none d-sm-inline"></i>
-                                Approved
+                            <span class="req-status-icon req-icon-approved rounded-circle
+                             d-inline-flex align-items-center justify-content-center"
+                                  title="Approved">
+                                <i class="bi bi-check-circle-fill"></i>
                             </span>
                         }
+
+                        @* ══════════ REJECTED ══════════ *@
                         else if (req.StatusId == Status.Rejected)
                         {
-                            <span class="badge bg-danger bg-opacity-10 text-danger
-                                                 rounded-pill px-2 px-md-3 small">
-                                <i class="bi bi-x-circle-fill me-1 d-none d-sm-inline"></i>
-                                Rejected
+                            <span class="req-status-icon req-icon-rejected rounded-circle
+                             d-inline-flex align-items-center justify-content-center"
+                                  title="Rejected">
+                                <i class="bi bi-x-circle-fill"></i>
                             </span>
                         }
+
+                        @* ══════════ CANCELLED ══════════ *@
                         else if (req.StatusId == Status.Cancelled)
                         {
-                            <span class="badge bg-secondary bg-opacity-10 text-secondary
-                                                 rounded-pill px-2 px-md-3 small">
-                                <i class="bi bi-slash-circle me-1 d-none d-sm-inline"></i>
-                                Cancelled
+                            <span class="req-status-icon req-icon-cancelled rounded-circle
+                             d-inline-flex align-items-center justify-content-center"
+                                  title="Cancelled">
+                                <i class="bi bi-slash-circle"></i>
                             </span>
                         }
+
                     </ActionTemplate>
 
                 </AppTable>
             </div>
         }
     </div>
-
-    <!-- ═══════════ FOOTER SUMMARY ═══════════ -->
-    @if (FilteredRequests.Any())
-    {
-        <div class="card-footer bg-white border-top py-2 px-2 px-md-3">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                <div class="d-flex align-items-center gap-1 gap-md-2 flex-wrap">
-                    @foreach (var summary in StatusSummary)
-                    {
-                        <span class="badge @summary.BadgeClass rounded-pill px-2 py-1 small">
-                            <i class="bi @summary.Icon me-1 d-none d-sm-inline"></i>
-                            @summary.Count
-                            <span class="d-none d-md-inline">@summary.Label</span>
-                        </span>
-                    }
-                </div>
-                <small class="text-muted">
-                    Total: <strong>@Requests.Count</strong>
-                    <span class="d-none d-sm-inline">requests</span>
-                </small>
-            </div>
-        </div>
-    }
 </div>
 
 @code {

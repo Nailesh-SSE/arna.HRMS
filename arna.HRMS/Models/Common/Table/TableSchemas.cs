@@ -243,7 +243,7 @@ public class TableSchemas
     new() { Header = "Clock Out",   Value = u => u.ClockOut?.ToString("hh:mm tt") ?? "--" },
     new() { Header = "Break",       Value = u => u.BreakDuration?.ToString(@"hh\:mm") ?? "00:00" },
     new() { Header = "Total",       Value = u => u.TotalHours.ToString(@"hh\:mm") },
-    new() { Header = "Description", Value = u => TruncateText(u.Description, 30) },
+    new() { Header = "Description", Value = u => TruncateText(u.Description, 20) },
 };
 
     private static string TruncateText(string? text, int maxLength)

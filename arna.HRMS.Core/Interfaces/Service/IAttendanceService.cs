@@ -6,10 +6,10 @@ namespace arna.HRMS.Core.Interfaces.Service;
 
 public interface IAttendanceService
 {
-    Task<ServiceResult<List<AttendanceDto>>> GetEmployeeAttendanceByStatusAsync(AttendanceStatus? status, int? employeeId);
-    Task<ServiceResult<AttendanceDto?>> GetAttendanceByIdAsync(int id);
+    Task<ServiceResult<List<AttendanceDto>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId);
+    Task<ServiceResult<AttendanceDto?>> GetAttendanceByIdAsync(int id); 
     Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto);
-    Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? employeeId, DateTime? date, AttendanceStatus? status);
+    Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? employeeId, DateTime? date, AttendanceStatus? statusId); 
     Task<ServiceResult<AttendanceDto?>> GetTodayLastEntryAsync(int employeeId);
     Task<ServiceResult<AttendanceDto>> GetEmployeeTodayFirstClockInAsync(int employeeId);
 }

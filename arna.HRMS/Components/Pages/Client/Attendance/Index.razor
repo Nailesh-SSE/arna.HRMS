@@ -68,44 +68,45 @@
         </div>
 
         <!-- ================= TAB NAVIGATION ================= -->
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-body p-0">
-                <ul class="nav nav-tabs px-3 pt-3">
+        <div class="py-3 attendence-fade-in">
+            <div class="card border-0 shadow-sm rounded-3 mb-4 ">
+                <div class="card-body p-0">
+                    <ul class="nav nav-tabs attendence-tabs px-3 pt-3">
 
-                    <li class="nav-item">
-                        <button class="nav-link @(_activeTab == Tab.Attendance ? "active" : "")"
-                                @onclick="() => SetTab(Tab.Attendance)">
-                            <i class="bi bi-calendar-check me-2"></i>
-                            Daily Attendance
+                        <li class="nav-item">
+                            <button class="nav-link @(_activeTab == Tab.Attendance ? "active" : "")"
+                                    @onclick="() => SetTab(Tab.Attendance)">
+                                <i class="bi bi-calendar-check me-2"></i>
+                                Daily Attendance
 
-                            @if (_attendanceCount > 0)
-                            {
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-2">
-                                    @_attendanceCount
-                                </span>
-                            }
-                        </button>
-                    </li>
+                                @if (_attendanceCount > 0)
+                                {
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-2">
+                                        @_attendanceCount
+                                    </span>
+                                }
+                            </button>
+                        </li>
 
-                    <li class="nav-item">
-                        <button class="nav-link @(_activeTab == Tab.Requests ? "active" : "")"
-                                @onclick="() => SetTab(Tab.Requests)">
-                            <i class="bi bi-inbox me-2"></i>
-                            Attendance Requests
+                        <li class="nav-item">
+                            <button class="nav-link @(_activeTab == Tab.Requests ? "active" : "")"
+                                    @onclick="() => SetTab(Tab.Requests)">
+                                <i class="bi bi-inbox me-2"></i>
+                                Attendance Requests
 
-                            @if (_pendingRequestCount > 0)
-                            {
-                                <span class="badge bg-warning text-dark rounded-pill ms-2">
-                                    @_pendingRequestCount
-                                </span>
-                            }
-                        </button>
-                    </li>
+                                @if (_pendingRequestCount > 0)
+                                {
+                                    <span class="badge bg-warning text-dark rounded-pill ms-2">
+                                        @_pendingRequestCount
+                                    </span>
+                                }
+                            </button>
+                        </li>
 
-                </ul>
+                    </ul>
+                </div>
             </div>
         </div>
-
         <!-- ================= TAB CONTENT ================= -->
         <div class="tab-content">
 

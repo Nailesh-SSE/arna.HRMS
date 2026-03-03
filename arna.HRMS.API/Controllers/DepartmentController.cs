@@ -1,6 +1,5 @@
 ﻿using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Interfaces.Service;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace arna.HRMS.API.Controllers;

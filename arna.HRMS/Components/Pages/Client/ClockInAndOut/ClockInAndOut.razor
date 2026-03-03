@@ -14,74 +14,51 @@
 
 <Loader Visible="@IsLoading" Message="@LoaderMessage" />
 
-<div class="d-flex align-items-center gap-2 flex-wrap">
+<div class="clock-container d-flex align-items-center gap-2 flex-wrap">
     @if (IsEmployee())
     {
-        <!-- ── Status Pill ── -->
-        <span class="d-inline-flex align-items-center gap-1 rounded-pill border
-                         px-2 py-1 @(IsClockedIn
-                                       ? "bg-success bg-opacity-10 border-success border-opacity-25"
-                                       : "bg-light")">
-        <span class="clock-status-dot d-inline-block rounded-circle
-                         @(IsClockedIn ? "bg-success" : "bg-secondary")"></span>
-    </span>
-
-        <!-- ── First Clock-In (always visible once set, never changes during the day) ── -->
-    @if (!string.IsNullOrEmpty(FirstClockInDisplay))
+        @if (!string.IsNullOrEmpty(FirstClockInDisplay))
         {
-            <span class="d-none d-sm-inline-flex align-items-center gap-1
-                                 rounded-pill border px-2 py-1 bg-light"
-                  title="First clock-in today">
-                <small class="clock-label-text fw-bold text-success">ClockIN</small>
-                <small class="fw-semibold font-monospace">@FirstClockInDisplay</small>
+            <span class="clock-info-pill clock-info-pill--in" title="First clock-in today">
+                <small class="clock-info-label text-success">ClockIn</small>
+                <small class="clock-info-time">@FirstClockInDisplay</small>
             </span>
         }
 
-        <!-- ── Last Clock-Out (updates each time user clocks out) ── -->
         @if (!string.IsNullOrEmpty(LastClockOutDisplay))
         {
-            <span class="d-none d-md-inline-flex align-items-center gap-1
-                                 rounded-pill border px-2 py-1 bg-light"
-                  title="Last clock-out today">
-                <small class="clock-label-text fw-bold text-danger">ClockOUT</small>
-                <small class="fw-semibold font-monospace">@LastClockOutDisplay</small>
+            <span class="clock-info-pill clock-info-pill--out" title="Last clock-out today">
+                <small class="clock-info-label text-danger">ClockOut</small>
+                <small class="clock-info-time">@LastClockOutDisplay</small>
             </span>
         }
 
-        <!-- ── Session Timer (runs from latest clock-in) ── -->
         @if (IsClockedIn)
         {
-            <span class="d-inline-flex align-items-center gap-1 rounded-pill border
-                                 px-2 py-1 bg-primary bg-opacity-10 border-primary border-opacity-25"
-                  title="Current session duration">
-                <i class="bi bi-stopwatch text-primary clock-stopwatch-icon"></i>
-                <small class="fw-semibold font-monospace text-primary">@SessionDuration</small>
+            <span class="clock-session-pill" title="Current session duration">
+                <i class="bi bi-stopwatch clock-stopwatch-icon text-primary"></i>
+                <small class="clock-session-time">@SessionDuration</small>
             </span>
-        }
 
-        <!-- ── Action Button ── -->
-        @if (IsClockedIn)
-        {
-            <AppButton ButtonClass="btn btn-outline-danger btn-sm rounded-pill"
+            <AppButton ButtonClass="btn btn-outline-danger btn-sm rounded-pill clock-action-btn"
                        Disabled="@DisableClockOut"
                        OnClick="ClockOutAsync">
                 <i class="bi bi-stop-circle"></i>
-                <span class="d-none d-sm-inline ms-1">ClockOut</span>
+                <span class="ms-1">ClockOut</span>
             </AppButton>
         }
         else
         {
-            <AppButton ButtonClass="btn btn-success btn-sm rounded-pill"
+            <AppButton ButtonClass="btn btn-success btn-sm rounded-pill clock-action-btn"
                        Disabled="@DisableClockIn"
                        OnClick="ClockInAsync">
                 <i class="bi bi-play-circle @(IsClockInOut ? "clock-alert" : "")"></i>
-                <span class="d-none d-sm-inline ms-1">ClockIn</span>
+                <span class="ms-1">ClockIn</span>
             </AppButton>
         }
     }
 </div>
 
-@* ── Note Form Modal ── *@
 @if (ShowDynamicForm)
 {
     <div class="clock-modal-overlay position-fixed top-0 start-0 w-100 h-100
@@ -94,7 +71,6 @@
     </div>
 }
 
-@* ── Toast ── *@
 @if (ShowToast)
 {
     <div class="clock-toast-wrapper position-fixed bottom-0 end-0 p-3">
@@ -108,113 +84,92 @@
 }
 
 @code {
-
-    // ── Form ──
     private AttendanceViewModel attendanceViewModel = new();
 
-    // ── Core State ──
     private bool IsClockedIn;
     private bool? PendingClockIn;
     private bool DisableClockOut;
     private bool DisableClockIn;
-    public bool IsClockInOut;
+    private bool IsClockInOut;
+    private bool ShowDynamicForm;
+    private bool ShowToast;
+    private bool IsLoading;
+    private bool _jsReady;
 
-    // ── Time Tracking ──
     private TimeOnly In;
     private TimeOnly Out;
     private TimeOnly AccumulatedHours;
     private TimeOnly LastClockInTime;
 
-    // ── API fallback values (used when localStorage is empty) ──
     private TimeSpan? _apiClockIn;
     private TimeSpan? _apiClockOut;
 
-    // ── Display Strings ──
     private string? FirstClockInDisplay;
     private string? LastClockOutDisplay;
     private string SessionDuration = "00:00:00";
-
-    // ── UI Flags ──
-    private bool ShowDynamicForm;
-    private bool ShowToast;
     private string ToastMessage = "";
-    private bool IsLoading;
     private string LoaderMessage = "";
 
-    // ── Location ──
     private double? CurrentLatitude;
     private double? CurrentLongitude;
-    private bool IsGettingLocation;
 
-    // ── Timers ──
     private CancellationTokenSource? _cts;
-    private CancellationTokenSource? _clockOutCooldownCts;
-    private bool _jsReady;
+    private CancellationTokenSource? _cooldownCts;
 
-    // ─────────────────────────────────────────────
-    //  LIFECYCLE
-    // ─────────────────────────────────────────────
+    private const int CooldownSeconds = 60;
+    private const int ToastMs = 2500;
+    private const string DisplayFmt = "hh:mm tt";
+    private const string ParseFmt = "HH:mm:ss";
+    private const string DateFmt = "yyyy-MM-dd";
+
+    private string StatusPillClass => IsClockedIn ? "clock-status--active" : "clock-status--inactive";
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         StartSessionTimer();
 
-        var employeeId = GetEmployeeId();
-        if (employeeId == 0) return;
-
-        var lastEntry = await ClockService.GetClockStatusAsync(employeeId);
-        if (!lastEntry.IsSuccess || lastEntry.Data == null) return;
-
-        var data = lastEntry.Data;
-
-        if (data.Date.Date == DateTime.Today)
-        {
-            // ── Store API values as fallback for localStorage restore ──
-            _apiClockIn = data.ClockInTime;
-            _apiClockOut = data.ClockOutTime;
-
-            if (data.ClockInTime != null && data.ClockOutTime == null)
-            {
-                // Currently clocked in
-                IsClockedIn = true;
-                In = TimeOnly.FromTimeSpan(data.ClockInTime.Value);
-                LastClockInTime = In;
-
-                var elapsed = (DateTime.Now - DateTime.Today.Add(In.ToTimeSpan())).TotalSeconds;
-                if (elapsed < 60)
-                    _ = StartClockOutCooldownAsync((int)(60 - elapsed));
-                else
-                    DisableClockOut = false;
-            }
-            else
-            {
-                // Already clocked out or no active session
-                IsClockedIn = false;
-            }
-        }
-        else if (data.ClockInTime != null
-                 && data.ClockOutTime == null
-                 && data.Date.Date < DateTime.Today)
-        {
-            // Pending clock-out from a previous day
-            IsClockedIn = false;
-            IsClockInOut = true;
-        }
+        var id = GetEmployeeId();
+        if (id > 0) await LoadClockStatusAsync(id);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
-
         _jsReady = true;
         await RestoreFromStorage();
         StateHasChanged();
     }
 
-    // ─────────────────────────────────────────────
-    //  LOCAL STORAGE
-    // ─────────────────────────────────────────────
+    private async Task LoadClockStatusAsync(int employeeId)
+    {
+        var result = await ClockService.GetClockStatusAsync(employeeId);
+        if (!result.IsSuccess || result.Data is null) return;
+
+        var data = result.Data;
+
+        if (data.Date.Date == DateTime.Today)
+        {
+            _apiClockIn = data.ClockInTime;
+            _apiClockOut = data.ClockOutTime;
+
+            if (data.ClockInTime is not null && data.ClockOutTime is null)
+            {
+                IsClockedIn = true;
+                In = LastClockInTime = TimeOnly.FromTimeSpan(data.ClockInTime.Value);
+
+                var remaining = CooldownSeconds - (int)(DateTime.Now - DateTime.Today.Add(In.ToTimeSpan())).TotalSeconds;
+                if (remaining > 0)
+                    _ = RunCooldownAsync(remaining);
+                else
+                    DisableClockOut = false;
+            }
+        }
+        else if (data.ClockInTime is not null && data.ClockOutTime is null && data.Date.Date < DateTime.Today)
+        {
+            IsClockInOut = true;
+        }
+    }
 
     private async Task PersistToStorage()
     {
@@ -223,10 +178,10 @@
         {
             await JS.InvokeVoidAsync("clockState.save", new
             {
-                date = DateTime.Today.ToString("yyyy-MM-dd"),
+                date = DateTime.Today.ToString(DateFmt),
                 firstClockIn = FirstClockInDisplay,
                 lastClockOut = LastClockOutDisplay,
-                lastClockIn = LastClockInTime.ToString("HH:mm:ss"),
+                lastClockIn = LastClockInTime.ToString(ParseFmt),
                 isClockedIn = IsClockedIn
             });
         }
@@ -238,80 +193,53 @@
         try
         {
             var state = await JS.InvokeAsync<ClockStateDto?>("clockState.load");
-            var today = DateTime.Today.ToString("yyyy-MM-dd");
+            var today = DateTime.Today.ToString(DateFmt);
 
-            if (state != null && state.Date == today)
+            if (state?.Date == today)
             {
-                // ── Restore from localStorage ──
-                if (!string.IsNullOrEmpty(state.FirstClockIn))
-                    FirstClockInDisplay = state.FirstClockIn;
+                FirstClockInDisplay ??= state.FirstClockIn;
+                LastClockOutDisplay ??= state.LastClockOut;
 
-                if (!string.IsNullOrEmpty(state.LastClockOut))
-                    LastClockOutDisplay = state.LastClockOut;
-
-                // Restore LastClockInTime for session timer
-                if (!string.IsNullOrEmpty(state.LastClockIn)
-                    && TimeOnly.TryParse(state.LastClockIn, out var parsed))
-                {
-                    LastClockInTime = parsed;
-                    In = parsed;
-                }
+                if (!string.IsNullOrEmpty(state.LastClockIn) && TimeOnly.TryParse(state.LastClockIn, out var t))
+                    In = LastClockInTime = t;
             }
             else
             {
-                // Stale data — clear
                 await JS.InvokeVoidAsync("clockState.clear");
             }
 
-            // ── Fallback: seed from API if localStorage was empty ──
-            if (string.IsNullOrEmpty(FirstClockInDisplay) && _apiClockIn.HasValue)
-                FirstClockInDisplay = TimeOnly.FromTimeSpan(_apiClockIn.Value).ToString("hh:mm tt");
-
-            if (string.IsNullOrEmpty(LastClockOutDisplay) && _apiClockOut.HasValue)
-                LastClockOutDisplay = TimeOnly.FromTimeSpan(_apiClockOut.Value).ToString("hh:mm tt");
-
-            // If currently clocked in but still no FirstClockIn, use current session
-            if (IsClockedIn && string.IsNullOrEmpty(FirstClockInDisplay))
-                FirstClockInDisplay = LastClockInTime.ToString("hh:mm tt");
-
+            SeedFromApi();
             await PersistToStorage();
         }
         catch { }
     }
 
-    private sealed class ClockStateDto
+    private void SeedFromApi()
     {
-        [JsonPropertyName("date")] public string? Date { get; set; }
-        [JsonPropertyName("firstClockIn")] public string? FirstClockIn { get; set; }
-        [JsonPropertyName("lastClockOut")] public string? LastClockOut { get; set; }
-        [JsonPropertyName("lastClockIn")] public string? LastClockIn { get; set; }
-        [JsonPropertyName("isClockedIn")] public bool IsClockedIn { get; set; }
+        if (string.IsNullOrEmpty(FirstClockInDisplay) && _apiClockIn.HasValue)
+            FirstClockInDisplay = Fmt(_apiClockIn.Value);
+
+        if (string.IsNullOrEmpty(LastClockOutDisplay) && _apiClockOut.HasValue)
+            LastClockOutDisplay = Fmt(_apiClockOut.Value);
+
+        if (IsClockedIn && string.IsNullOrEmpty(FirstClockInDisplay))
+            FirstClockInDisplay = LastClockInTime.ToString(DisplayFmt);
     }
 
-    // ─────────────────────────────────────────────
-    //  CLOCK ACTIONS
-    // ─────────────────────────────────────────────
+    private static string Fmt(TimeSpan ts) => TimeOnly.FromTimeSpan(ts).ToString("hh:mm tt");
 
     private async Task ClockInAsync()
     {
         PendingClockIn = true;
         DisableClockIn = true;
-        await LogDevice();
-        await PrepareClockActionAsync();
+        await PrepareAndOpenForm();
     }
 
     private async Task ClockOutAsync()
     {
         if (DisableClockOut) return;
         PendingClockIn = false;
-        await LogDevice();
-        await PrepareClockActionAsync();
-    }
-
-    private void OpenNoteForm()
-    {
-        attendanceViewModel = new AttendanceViewModel();
-        ShowDynamicForm = true;
+        await PrepareAndOpenForm();
     }
 
     private void CloseForm()
@@ -322,201 +250,179 @@
 
     private async Task SubmitClockInOutAsync()
     {
-        if (CurrentLatitude == null || CurrentLongitude == null)
+        if (CurrentLatitude is null || CurrentLongitude is null)
         {
-            await ShowNotification("Location is required");
+            await Toast("Location is required");
             return;
         }
 
         ShowDynamicForm = false;
+        var isIn = PendingClockIn == true;
 
         try
         {
-            await SetLoading(true, PendingClockIn == true ? "Clocking in…" : "Clocking out…");
+            await Loading(true, isIn ? "Clocking in…" : "Clocking out…");
 
-            var employeeId = GetEmployeeId();
-            if (employeeId == 0) return;
+            var empId = GetEmployeeId();
+            if (empId == 0) return;
 
             var device = await JS.InvokeAsync<string>("deviceHelper.getDeviceType");
 
-            if (PendingClockIn == true)
-            {
-                // ──── CLOCK IN ────
-                In = TimeOnly.FromDateTime(DateTime.Now);
-                LastClockInTime = In;
-                IsClockedIn = true;
-
-                // First clock-in of the day — set ONLY ONCE, never overwrite
-                if (string.IsNullOrEmpty(FirstClockInDisplay))
-                    FirstClockInDisplay = In.ToString("hh:mm tt");
-
-                var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
-                {
-                    EmployeeId = employeeId,
-                    Date = DateTime.Today,
-                    ClockInTime = In.ToTimeSpan(),
-                    StatusId = AttendanceStatus.Present,
-                    Notes = attendanceViewModel.Notes,
-                    WorkingHours = TimeSpan.Zero,
-                    Latitude = CurrentLatitude,
-                    Longitude = CurrentLongitude,
-                    Device = device
-                });
-
-                if (!result.IsSuccess)
-                {
-                    IsClockedIn = false;
-                    DisableClockIn = false;
-                    await ShowNotification(result.Message ?? "Clock-In failed");
-                    return;
-                }
-
-                AccumulatedHours = new TimeOnly(0, 0);
-                _ = StartClockOutCooldownAsync(60);
-                await PersistToStorage();
-                await ShowNotification($"Clocked in at {In:hh:mm tt}");
-            }
+            if (isIn)
+                await DoClockIn(empId, device);
             else
-            {
-                // ──── CLOCK OUT ────
-                Out = TimeOnly.FromDateTime(DateTime.Now);
-                IsClockedIn = false;
-                DisableClockIn = false;
-                IsClockInOut = false;
+                await DoClockOut(empId, device);
 
-                // Update last clock-out display
-                LastClockOutDisplay = Out.ToString("hh:mm tt");
-
-                var worked = Out.ToTimeSpan() - In.ToTimeSpan();
-                AccumulatedHours = AccumulatedHours.Add(worked);
-
-                var result = await ClockService.CreateAttendanceAsync(new AttendanceViewModel
-                {
-                    EmployeeId = employeeId,
-                    Date = DateTime.Today,
-                    ClockOutTime = Out.ToTimeSpan(),
-                    StatusId = AttendanceStatus.Present,
-                    Notes = attendanceViewModel.Notes,
-                    WorkingHours = AccumulatedHours.ToTimeSpan(),
-                    Latitude = CurrentLatitude,
-                    Longitude = CurrentLongitude,
-                    Device = device
-                });
-
-                if (!result.IsSuccess)
-                {
-                    await ShowNotification(result.Message ?? "Clock-Out failed");
-                    return;
-                }
-
-                await PersistToStorage();
-                await ShowNotification($"Clocked out at {Out:hh:mm tt}");
-            }
-
-            CurrentLatitude = null;
-            CurrentLongitude = null;
+            CurrentLatitude = CurrentLongitude = null;
         }
         finally
         {
-            await SetLoading(false);
+            await Loading(false);
         }
     }
+
+    private async Task DoClockIn(int empId, string device)
+    {
+        In = LastClockInTime = TimeOnly.FromDateTime(DateTime.Now);
+        IsClockedIn = true;
+        FirstClockInDisplay ??= In.ToString(DisplayFmt);
+
+        var res = await ClockService.CreateAttendanceAsync(
+            MakeVm(empId, device, clockIn: In.ToTimeSpan()));
+
+        if (!res.IsSuccess)
+        {
+            IsClockedIn = false;
+            DisableClockIn = false;
+            await Toast(res.Message ?? "Clock-In failed");
+            return;
+        }
+
+        AccumulatedHours = new TimeOnly(0, 0);
+        _ = RunCooldownAsync(CooldownSeconds);
+        await PersistToStorage();
+        await Toast($"Clocked in at {In.ToString(DisplayFmt)}");
+    }
+
+    private async Task DoClockOut(int empId, string device)
+    {
+        Out = TimeOnly.FromDateTime(DateTime.Now);
+        IsClockedIn = false;
+        DisableClockIn = false;
+        IsClockInOut = false;
+        LastClockOutDisplay = Out.ToString(DisplayFmt);
+
+        AccumulatedHours = AccumulatedHours.Add(Out.ToTimeSpan() - In.ToTimeSpan());
+
+        var res = await ClockService.CreateAttendanceAsync(
+            MakeVm(empId, device, clockOut: Out.ToTimeSpan(), hours: AccumulatedHours.ToTimeSpan()));
+
+        if (!res.IsSuccess)
+        {
+            await Toast(res.Message ?? "Clock-Out failed");
+            return;
+        }
+
+        await PersistToStorage();
+        await Toast($"Clocked out at {Out.ToString(DisplayFmt)}");
+    }
+
+    private AttendanceViewModel MakeVm(
+        int empId, string device,
+        TimeSpan? clockIn = null, TimeSpan? clockOut = null,
+        TimeSpan? hours = null) => new()
+        {
+            EmployeeId = empId,
+            Date = DateTime.Today,
+            ClockInTime = clockIn,
+            ClockOutTime = clockOut,
+            StatusId = AttendanceStatus.Present,
+            Notes = attendanceViewModel.Notes,
+            WorkingHours = hours ?? TimeSpan.Zero,
+            Latitude = CurrentLatitude,
+            Longitude = CurrentLongitude,
+            Device = device
+        };
 
     private void StartSessionTimer()
     {
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
-        var ct = _cts.Token;
-        var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        var token = _cts.Token;
 
         _ = Task.Run(async () =>
         {
+            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
             try
             {
-                while (await timer.WaitForNextTickAsync(ct))
+                while (await timer.WaitForNextTickAsync(token))
                 {
                     if (!IsClockedIn) continue;
-
-                    var elapsed = DateTime.Now.TimeOfDay - LastClockInTime.ToTimeSpan();
-                    if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
-                    SessionDuration = elapsed.ToString(@"hh\:mm\:ss");
-
+                    var e = DateTime.Now.TimeOfDay - LastClockInTime.ToTimeSpan();
+                    SessionDuration = (e < TimeSpan.Zero ? TimeSpan.Zero : e).ToString(@"hh\:mm\:ss");
                     await InvokeAsync(StateHasChanged);
                 }
             }
             catch (OperationCanceledException) { }
-            finally { timer.Dispose(); }
-        }, ct);
+        }, token);
     }
 
-    private async Task StartClockOutCooldownAsync(int seconds)
+    private async Task RunCooldownAsync(int seconds)
     {
-        _clockOutCooldownCts?.Cancel();
-        _clockOutCooldownCts = new CancellationTokenSource();
-        var ct = _clockOutCooldownCts.Token;
+        _cooldownCts?.Cancel();
+        _cooldownCts = new CancellationTokenSource();
 
         DisableClockOut = true;
         await InvokeAsync(StateHasChanged);
 
         try
         {
-            await Task.Delay(TimeSpan.FromSeconds(seconds), ct);
+            await Task.Delay(TimeSpan.FromSeconds(seconds), _cooldownCts.Token);
             DisableClockOut = false;
             await InvokeAsync(StateHasChanged);
         }
         catch (OperationCanceledException) { }
     }
 
-    private async Task<bool> PrepareClockActionAsync()
+    private async Task<bool> PrepareAndOpenForm()
     {
         try
         {
-            await SetLoading(true, "Getting location…");
-            IsGettingLocation = true;
+            await Loading(true, "Getting location…");
+            var loc = await ClockService.GetCurrentLocationAsync();
 
-            var location = await ClockService.GetCurrentLocationAsync();
-            IsGettingLocation = false;
-
-            if (location == null)
+            if (loc is null)
             {
                 DisableClockIn = false;
                 DisableClockOut = false;
-                await ShowNotification("Location permission is required");
+                await Toast("Location permission is required");
                 return false;
             }
 
-            CurrentLatitude = location.Value.Latitude;
-            CurrentLongitude = location.Value.Longitude;
+            CurrentLatitude = loc.Value.Latitude;
+            CurrentLongitude = loc.Value.Longitude;
 
-            OpenNoteForm();
+            attendanceViewModel = new AttendanceViewModel();
+            ShowDynamicForm = true;
             return true;
         }
         finally
         {
-            await SetLoading(false);
+            await Loading(false);
         }
     }
 
-    private async Task LogDevice()
+    private async Task Toast(string msg)
     {
-        var device = await JS.InvokeAsync<string>("deviceHelper.getDeviceType");
-        await JS.InvokeVoidAsync("console.log", $"Device: {device}");
-    }
-
-    private async Task ShowNotification(string message)
-    {
-        ToastMessage = message;
+        ToastMessage = msg;
         ShowToast = true;
         await InvokeAsync(StateHasChanged);
-
-        try { await Task.Delay(2500); }
-        catch (OperationCanceledException) { }
-
+        try { await Task.Delay(ToastMs); } catch (OperationCanceledException) { }
         ShowToast = false;
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task SetLoading(bool show, string msg = "")
+    private async Task Loading(bool show, string msg = "")
     {
         IsLoading = show;
         LoaderMessage = show ? msg : "";
@@ -527,7 +433,16 @@
     {
         _cts?.Cancel();
         _cts?.Dispose();
-        _clockOutCooldownCts?.Cancel();
-        _clockOutCooldownCts?.Dispose();
+        _cooldownCts?.Cancel();
+        _cooldownCts?.Dispose();
+    }
+
+    private sealed class ClockStateDto
+    {
+        [JsonPropertyName("date")] public string? Date { get; set; }
+        [JsonPropertyName("firstClockIn")] public string? FirstClockIn { get; set; }
+        [JsonPropertyName("lastClockOut")] public string? LastClockOut { get; set; }
+        [JsonPropertyName("lastClockIn")] public string? LastClockIn { get; set; }
+        [JsonPropertyName("isClockedIn")] public bool IsClockedIn { get; set; }
     }
 }

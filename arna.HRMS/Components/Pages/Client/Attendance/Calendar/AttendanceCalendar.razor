@@ -1,62 +1,126 @@
 ﻿@using arna.HRMS.Components.Pages.Client.Attendance.Icon
 @using arna.HRMS.Models.ViewModels.Attendance
 
-<div class="calendar-container">
-    <div class="calendar-header">
-        @foreach (var d in WeekDays)
-        {
-            <div>@d</div>
-        }
+<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+
+    <!-- ══════════ MONTH HEADER ══════════ -->
+    <div class="card-header border-0 cal-month-header">
+        <div class="d-flex align-items-center justify-content-center py-1">
+            <i class="bi bi-calendar2-week text-primary me-2 fs-6"></i>
+            <h6 class="fw-bold mb-0 text-primary">@GetMonthName(Month) @Year</h6>
+        </div>
     </div>
 
-    <div class="calendar-grid">
-        @foreach (var day in CalendarDays)
-        {
-            if (day is null)
+    <div class="card-body p-2 p-sm-3 p-lg-4">
+
+        <!-- ══════════ WEEKDAY HEADERS ══════════ -->
+        <div class="cal-grid mb-2">
+            @foreach (var d in WeekDays)
             {
-                <div class="calendar-cell empty"></div>
-            }
-            else
-            {
-                AttendanceLookup.TryGetValue(
-                DateOnly.FromDateTime(day.Value),
-                out var attendance
-                );
+                var isWeekendDay = d is "Sun" or "Sat";
 
-                var emp = attendance?.Employees.FirstOrDefault();
-
-                <div class="calendar-cell">
-                    <div class="date">@day.Value.Day</div>
-
-                    @if (emp != null)
-                    {
-                        <AttendanceIcon Status="@(emp.Status ?? "")" />
-
-                        <div class="hours">
-                            @(emp.ClockIn.HasValue && emp.ClockOut.HasValue 
-                                ? emp.TotalHours.ToString(@"hh\:mm") + " hrs"
-                                : "-")
-                        </div>
-                    }
-                    else
-                    {
-                        <span class="calendar-status muted"></span>
-                    }
+                <div class="cal-weekday-cell text-center rounded-2 py-2
+                                @(isWeekendDay ? "cal-weekday-weekend" : "cal-weekday-default")">
+                    <span class="fw-semibold d-none d-sm-inline">@d</span>
+                    <span class="fw-semibold d-sm-none">@d[0]</span>
                 </div>
             }
-        }
+        </div>
+
+        <!-- ══════════ DAYS GRID ══════════ -->
+        <div class="cal-grid">
+            @foreach (var day in CalendarDays)
+            {
+                @if (day is null)
+                {
+                    <div class="cal-day-cell cal-day-empty rounded-2"></div>
+                }
+                else
+                {
+                    AttendanceLookup.TryGetValue(
+                    DateOnly.FromDateTime(day.Value),
+                    out var attendance);
+
+                    var emp = attendance?.Employees?.FirstOrDefault();
+                    var isToday = day.Value.Date == DateTime.Today;
+                    var isWeekend = day.Value.DayOfWeek is DayOfWeek.Saturday
+                    or DayOfWeek.Sunday;
+                    var isFuture = day.Value.Date > DateTime.Today;
+
+                    <div class="cal-day-cell rounded-2
+                                        @(isToday ? "cal-day-today" : "")
+                                        @(isWeekend && !isToday ? "cal-day-weekend" : "")
+                                        @(isFuture ? "cal-day-future" : "")">
+
+                        <div class="d-flex flex-column align-items-center h-100
+                                            py-1 py-md-2">
+
+                            <!-- Date Number -->
+                            <span class="cal-date-num
+                                                 @(isToday ? "bg-primary text-white shadow-sm" : "")">
+                                @day.Value.Day
+                            </span>
+
+                            <!-- Status Icon -->
+                            @if (emp != null)
+                            {
+                                <div class="mt-1 mt-md-2">
+                                    <AttendanceIcon Status="@(emp.Status ?? "")" />
+                                </div>
+
+                                <!-- Hours (visible on lg+) -->
+                                <small class="cal-hours d-none d-lg-block mt-1">
+                                    @if (emp.ClockIn.HasValue && emp.ClockOut.HasValue)
+                                    {
+                                        @(emp.TotalHours.ToString(@"hh\:mm"))
+                                        <span class="d-none d-xl-inline"> hrs</span>
+                                    }
+                                    else
+                                    {
+                                        <text>—</text>
+                                    }
+                                </small>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <!-- ══════════ LEGEND ══════════ -->
+        <div class="d-flex flex-wrap gap-2 gap-md-3 justify-content-center
+                    mt-3 pt-3 border-top">
+            @foreach (var (label, colorClass) in LegendItems)
+            {
+                <div class="d-flex align-items-center gap-1">
+                    <span class="cal-legend-dot rounded-circle @colorClass"></span>
+                    <small class="text-muted">@label</small>
+                </div>
+            }
+        </div>
     </div>
 </div>
 
 @code {
     [Parameter, EditorRequired] public int Year { get; set; }
     [Parameter, EditorRequired] public int Month { get; set; }
-    [Parameter, EditorRequired] public Dictionary<DateOnly, MonthlyAttendanceViewModel> AttendanceLookup { get; set; } = new();
+
+    [Parameter, EditorRequired]
+    public Dictionary<DateOnly, MonthlyAttendanceViewModel> AttendanceLookup { get; set; } = new();
 
     private List<DateTime?> CalendarDays = new();
 
     private static readonly string[] WeekDays =
         { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+
+    private static readonly (string Label, string ColorClass)[] LegendItems =
+    {
+        ("Present", "bg-success"),
+        ("Absent",  "bg-danger"),
+        ("Late",    "bg-warning"),
+        ("Leave",   "bg-info"),
+        ("Today",   "bg-primary")
+    };
 
     protected override void OnParametersSet() => BuildCalendar();
 
@@ -73,4 +137,8 @@
         for (int d = 1; d <= daysInMonth; d++)
             CalendarDays.Add(new DateTime(Year, Month, d));
     }
+
+    private static string GetMonthName(int m)
+        => System.Globalization.CultureInfo.CurrentCulture
+            .DateTimeFormat.GetMonthName(m);
 }

@@ -31,10 +31,10 @@ public class AttendanceControllerTests
             new AttendanceDto { Id = 2, EmployeeId = 2, Date = DateTime.Today, ClockInTime = null, ClockOutTime=DateTime.Now.TimeOfDay }
         };
         _serviceMock
-            .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null, null))
+            .Setup(s => s.GetAttendanceByStatusAndEmployeeIdAsync(null, null))
             .ReturnsAsync(ServiceResult<List<AttendanceDto>>.Success(list));
         // Act
-        var result = await _controller.GetAsync(null, null);
+        var result = await _controller.GetAttendanceByStatusAndEmployeeIdAsync(null, null);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
@@ -44,10 +44,10 @@ public class AttendanceControllerTests
     {
         // Arrange
         _serviceMock
-            .Setup(s => s.GetEmployeeAttendanceByStatusAsync(null, null))
+            .Setup(s => s.GetAttendanceByStatusAndEmployeeIdAsync(null, null))
             .ReturnsAsync(ServiceResult<List<AttendanceDto>>.Success(null!, "No data found"));
         // Act
-        var result = await _controller.GetAsync(null, null);
+        var result = await _controller.GetAttendanceByStatusAndEmployeeIdAsync(null, null);
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
     }

@@ -1,28 +1,60 @@
-﻿/* ── Trigger Button ── */
-.usermenu-trigger {
-    line-height: 1;
-}
-
-/* ── Avatar ── */
+﻿/* Trigger avatar */
 .usermenu-avatar {
-    width: 30px;
-    height: 30px;
-    font-size: .75rem;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
-/* ── Name ── */
-.usermenu-name {
-    max-width: 110px;
-    font-size: .85rem;
+/* Dropdown large avatar */
+.usermenu-avatar-lg {
+    width: 46px;
+    height: 46px;
+    font-size: 0.95rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
 }
 
-/* ── Chevron ── */
-.usermenu-chevron {
-    font-size: .65rem;
+/* Name max-width (prevents overflow) */
+.usermenu-name-width {
+    max-width: 120px;
 }
 
-/* ── Dropdown ── */
-.usermenu-dropdown {
-    min-width: 230px;
+/* Role text size */
+.usermenu-role-text {
+    font-size: 0.65rem;
+}
+
+/* Chevron size */
+.usermenu-chevron-size {
+    font-size: 0.65rem;
+}
+
+/* Online indicator dot */
+.usermenu-online-dot {
+    width: 10px;
+    height: 10px;
+    bottom: 2px;
+    right: 2px;
+}
+
+/* Dropdown width */
+.usermenu-dropdown-width {
+    min-width: 260px;
+}
+
+/* Profile section background */
+.usermenu-profile-bg {
+    background: linear-gradient( 135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05) );
+}
+
+/* Menu icon circles */
+.usermenu-icon-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 0.82rem;
+}
+
+/* Sub-text under menu items */
+.usermenu-sub-text {
+    font-size: 0.65rem;
 }

@@ -24,14 +24,14 @@ public class AttendanceRepository
 
     #region Basic Queries
 
-    public async Task<List<Attendance>> GetEmployeeAttendanceByStatus(AttendanceStatus? status, int? empId)
+    public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId)
     {
         var query = _baseRepository.Query()
             .Include(x => x.Employee)
             .Where(x => x.IsActive && !x.IsDeleted);
 
         if (status.HasValue)
-            query = query.Where(x => x.StatusId == status.Value);
+            query = query.Where(x => x.StatusId == status.Value); 
 
         if (empId.HasValue)
             query = query.Where(x => x.EmployeeId == empId.Value);

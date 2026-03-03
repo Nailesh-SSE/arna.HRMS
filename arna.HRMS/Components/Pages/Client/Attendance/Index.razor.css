@@ -124,12 +124,30 @@
 }
 
 /* ══════════ TAB STYLING ══════════ */
-.attendence-tabs {
+/* ══════════ FADE IN ══════════ */
+.attendence-fade-in {
+    animation: attendenceFade 0.35s ease-out;
+}
+
+@keyframes attendenceFade {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ══════════ TABS ══════════ */
+::deep .attendence-tabs {
     border-bottom: 2px solid #e9ecef;
     gap: 4px;
 }
 
-    .attendence-tabs .nav-link {
+    ::deep .attendence-tabs .nav-link {
         border: none;
         border-bottom: 3px solid transparent;
         border-radius: 0;
@@ -139,13 +157,13 @@
         transition: all 0.2s ease;
     }
 
-        .attendence-tabs .nav-link:hover {
+        ::deep .attendence-tabs .nav-link:hover {
             color: #0d6efd;
             background: #f8f9fa;
             border-bottom-color: #dee2e6;
         }
 
-        .attendence-tabs .nav-link.active {
+        ::deep .attendence-tabs .nav-link.active {
             color: #0d6efd;
             background: transparent;
             border-bottom-color: #0d6efd;

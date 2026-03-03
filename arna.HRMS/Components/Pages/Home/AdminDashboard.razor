@@ -16,7 +16,7 @@
 
 <div class="container-fluid px-3 px-md-4 py-3 dash-fade-in">
 
-    <!-- ══════════ HEADER ══════════ -->
+    @* <!-- ══════════ HEADER ══════════ -->
     <div class="row align-items-center mb-4">
         <div class="col">
             <h3 class="fw-bold mb-1">@greeting, @UserFullName</h3>
@@ -31,38 +31,34 @@
                 </span>
             </p>
         </div>
-    </div>
+    </div> *@
 
     <!-- ══════════ STAT CARDS ══════════ -->
     <div class="row g-3 mb-4">
 
-        <AppStatCard
-            Icon="bi-people-fill"
-            BgClass="bg-primary bg-opacity-10"
-            TextClass="text-primary"
-            Label="Total Employees"
-            Count="@totalEmployees" />
+        <AppStatCard Icon="bi-people-fill"
+                     BgClass="bg-primary bg-opacity-10"
+                     TextClass="text-primary"
+                     Label="Total Employees"
+                     Count="@totalEmployees" />
 
-        <AppStatCard
-            Icon="bi-calendar-check-fill"
-            BgClass="bg-success bg-opacity-10"
-            TextClass="text-success"
-            Label="On Leave Today"
-            Count="@onLeaveToday" />
+        <AppStatCard Icon="bi-calendar-check-fill"
+                     BgClass="bg-success bg-opacity-10"
+                     TextClass="text-success"
+                     Label="On Leave Today"
+                     Count="@onLeaveToday" />
 
-        <AppStatCard
-            Icon="bi-hourglass-split"
-            BgClass="bg-warning bg-opacity-25"
-            TextClass="text-warning"
-            Label="Pending Requests"
-            Count="@pendingCount" />
+        <AppStatCard Icon="bi-hourglass-split"
+                     BgClass="bg-warning bg-opacity-25"
+                     TextClass="text-warning"
+                     Label="Pending Requests"
+                     Count="@pendingCount" />
 
-        <AppStatCard
-            Icon="bi-check2-all"
-            BgClass="bg-info bg-opacity-10"
-            TextClass="text-info"
-            Label="Approved (Month)"
-            Count="@approvedThisMonth" />
+        <AppStatCard Icon="bi-check2-all"
+                     BgClass="bg-info bg-opacity-10"
+                     TextClass="text-info"
+                     Label="Approved (Month)"
+                     Count="@approvedThisMonth" />
 
     </div>
 
@@ -70,16 +66,18 @@
     <div class="row g-4 mb-4">
 
         <!-- Pending Leave Requests (AppTable) -->
+        <!-- Pending Leave Requests (AppTable) -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-3 h-100">
                 <div class="card-header bg-transparent border-bottom
-                            d-flex align-items-center justify-content-between py-3">
+                    d-flex align-items-center justify-content-between py-3">
                     <h6 class="fw-semibold mb-0">
                         <i class="bi bi-inbox-fill text-warning me-2"></i>
                         Pending Leave Requests
                         @if (pendingCount > 0)
                         {
-                            <span class="badge bg-warning text-dark rounded-pill ms-1">
+                            <span class="badge bg-warning text-dark
+                                         rounded-pill ms-1">
                                 @pendingCount
                             </span>
                         }
@@ -92,9 +90,13 @@
 
                 <div class="card-body p-0">
                     <div class="dash-scroll-area">
+
+                        @* ── Pass WrapperClass to scope CSS overrides ── *@
                         <AppTable TItem="LeaveRequestViewModel"
                                   Items="pendingLeaveRequests"
-                                  Columns="TableSchemas.DashboardPendingLeaves">
+                                  Columns="TableSchemas.DashboardPendingLeaves"
+                                  WrapperClass="dash-pending-table"
+                                  TableClass="dash-pending-table-inner">
 
                             <ActionTemplate Context="req">
                                 <button class="btn btn-sm btn-outline-success me-1"
@@ -110,6 +112,7 @@
                             </ActionTemplate>
 
                         </AppTable>
+
                     </div>
                 </div>
             </div>
@@ -172,7 +175,7 @@
                                 @foreach (var r in recentApproved)
                                 {
                                     <li class="list-group-item d-flex
-                                                       align-items-center gap-3 px-3">
+                                                               align-items-center gap-3 px-3">
                                         <div class="avatar-sm avatar-green">
                                             @GetInitials(r.EmployeeName ?? string.Empty)
                                         </div>
@@ -216,7 +219,7 @@
                                 @foreach (var r in recentRejected)
                                 {
                                     <li class="list-group-item d-flex
-                                                       align-items-center gap-3 px-3">
+                                                               align-items-center gap-3 px-3">
                                         <div class="avatar-sm avatar-red">
                                             @GetInitials(r.EmployeeName ?? string.Empty)
                                         </div>
@@ -254,7 +257,7 @@
             {
                 <div class="col-6 col-sm-4 col-md-3 col-xl-2">
                     <div class="card border-0 shadow-sm rounded-3
-                                    text-center action-tile h-100"
+                                        text-center action-tile h-100"
                          role="button"
                          @onclick="() => Nav.NavigateTo(a.Route)">
                         <div class="card-body py-4">
@@ -313,9 +316,6 @@
         new("Users",       "bi bi-person-gear",    "/user",       "bg-secondary bg-opacity-10", "text-secondary"),
     };
 
-    // ═══════════════════════════════════════════════
-    // LIFECYCLE
-    // ═══════════════════════════════════════════════
 
     protected override async Task OnInitializedAsync()
     {
@@ -336,10 +336,6 @@
             _ => "Good Night"
         };
     }
-
-    // ═══════════════════════════════════════════════
-    // DASHBOARD LOADING (ONE API CALL ONLY)
-    // ═══════════════════════════════════════════════
 
     private async Task LoadDashboard()
     {
@@ -460,9 +456,6 @@
         }
     }
 
-    // ═══════════════════════════════════════════════
-    // HELPERS
-    // ═══════════════════════════════════════════════
 
     private string GetLeaveTypeName(int id) =>
         leaveTypeNames.TryGetValue(id, out var n) ? n : $"Leave #{id}";

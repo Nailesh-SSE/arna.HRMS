@@ -1,6 +1,5 @@
 ﻿using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Interfaces.Service;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace arna.HRMS.API.Controllers;
@@ -28,14 +27,6 @@ public class RoleController : ControllerBase
     public async Task<IActionResult> GetByIdAsync(int id)
     {
         var result = await _service.GetRoleByIdAsync(id);
-
-        return result.IsSuccess ? Ok(result) : NotFound(result.Message);
-    }
-
-    [HttpGet("by-name")]
-    public async Task<IActionResult> GetByNameAsync([FromQuery] string name)
-    {
-        var result = await _service.GetRoleByNameAsync(name);
 
         return result.IsSuccess ? Ok(result) : NotFound(result.Message);
     }

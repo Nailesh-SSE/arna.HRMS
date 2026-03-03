@@ -859,7 +859,7 @@ public class AttendanceRequestServiceTests
     {
         // ---------- MOCK DEPENDENCIES ----------
         _attendanceServiceMock
-            .Setup(x => x.GetEmployeeAttendanceByStatusAsync(null, null))
+            .Setup(x => x.GetAttendanceByStatusAndEmployeeIdAsync(null, null))
             .ReturnsAsync(
                 ServiceResult<List<AttendanceDto>>.Success(new List<AttendanceDto>())
             );
@@ -1084,7 +1084,7 @@ public class AttendanceRequestServiceTests
     {
         // ---------- MOCK DEPENDENCIES ----------
         _attendanceServiceMock
-            .Setup(x => x.GetEmployeeAttendanceByStatusAsync(null, null))
+            .Setup(x => x.GetAttendanceByStatusAndEmployeeIdAsync(null, null))
             .ReturnsAsync(
                 ServiceResult<List<AttendanceDto>>.Success(new List<AttendanceDto>())
             );

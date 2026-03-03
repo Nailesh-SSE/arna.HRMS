@@ -7,6 +7,7 @@ using System.Security.Claims;
 
 namespace arna.HRMS.API.Controllers;
 
+[AllowAnonymous]
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
@@ -19,7 +20,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    [AllowAnonymous]
+    
     public async Task<IActionResult> Login([FromBody] LoginDto request)
     {
         var result = await _authService.LoginAsync(request);
@@ -28,7 +29,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    [AllowAnonymous]
     public async Task<IActionResult> Register([FromBody] UserDto dto)
     {
         var result = await _authService.RegisterAsync(dto);
@@ -37,7 +37,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
     {
         var result = await _authService.RefreshTokenAsync(request);
@@ -45,7 +44,6 @@ public class AuthController : ControllerBase
         return result.IsSuccess ? Ok(result) : Unauthorized(result.Message);
     }
 
-    [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {

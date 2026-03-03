@@ -1,36 +1,183 @@
-﻿.calendar-container {
-    background: white;
-    border-radius: 18px;
-    padding: 16px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
-}
-
-.calendar-header {
+﻿/* ═══════════════════════════════════════════
+   7-Column Grid (the one thing Bootstrap can't do)
+   ═══════════════════════════════════════════ */
+.cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    font-weight: 700;
-    font-size: 13px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 10px;
+    gap: 3px;
 }
 
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
+/* ═══════════════════════════════════════════
+   Month Header
+   ═══════════════════════════════════════════ */
+.cal-month-header {
+    background: linear-gradient( 135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-primary-rgb), 0.03) );
 }
 
-.calendar-cell {
-    min-height: 110px;
-    border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border);
-    padding: 10px;
+/* ═══════════════════════════════════════════
+   Weekday Header Cells
+   ═══════════════════════════════════════════ */
+.cal-weekday-cell {
+    font-size: 0.78rem;
+    letter-spacing: 0.03em;
+    user-select: none;
 }
 
-    .calendar-cell:nth-child(7n) {
-        border-right: none;
+.cal-weekday-default {
+    background-color: var(--bs-light);
+    color: var(--bs-secondary);
+}
+
+.cal-weekday-weekend {
+    background-color: rgba(var(--bs-danger-rgb), 0.08);
+    color: var(--bs-danger);
+}
+
+/* ═══════════════════════════════════════════
+   Day Cells
+   ═══════════════════════════════════════════ */
+.cal-day-cell {
+    min-height: 52px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+    .cal-day-cell:not(.cal-day-empty):hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.06);
+        border-color: rgba(var(--bs-primary-rgb), 0.2);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
     }
 
-    .calendar-cell.empty {
-        background: #f9fafb;
+.cal-day-empty {
+    border-color: transparent;
+    min-height: 0;
+}
+
+.cal-day-today {
+    background-color: rgba(var(--bs-primary-rgb), 0.07) !important;
+    border-color: rgba(var(--bs-primary-rgb), 0.3) !important;
+    box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb), 0.1);
+}
+
+.cal-day-weekend {
+    background-color: rgba(var(--bs-danger-rgb), 0.025);
+}
+
+.cal-day-future {
+    opacity: 0.55;
+}
+
+/* ═══════════════════════════════════════════
+   Date Number Badge
+   ═══════════════════════════════════════════ */
+.cal-date-num {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   Hours Label
+   ═══════════════════════════════════════════ */
+.cal-hours {
+    font-size: 0.65rem;
+    color: var(--bs-secondary-color, #6c757d);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+/* ═══════════════════════════════════════════
+   Legend Dots
+   ═══════════════════════════════════════════ */
+.cal-legend-dot {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   Responsive — Small phones (≤ 375px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 375px) {
+    .cal-day-cell {
+        min-height: 42px;
     }
+
+    .cal-date-num {
+        width: 22px;
+        height: 22px;
+        font-size: 0.7rem;
+    }
+
+    .cal-weekday-cell {
+        font-size: 0.7rem;
+        padding-top: 0.25rem !important;
+        padding-bottom: 0.25rem !important;
+    }
+
+    .cal-legend-dot {
+        width: 8px;
+        height: 8px;
+    }
+}
+
+/* ═══════════════════════════════════════════
+   Responsive — Tablets (≥ 576px)
+   ═══════════════════════════════════════════ */
+@media (min-width: 576px) {
+    .cal-day-cell {
+        min-height: 68px;
+    }
+
+    .cal-grid {
+        gap: 4px;
+    }
+
+    .cal-weekday-cell {
+        font-size: 0.82rem;
+    }
+}
+
+/* ═══════════════════════════════════════════
+   Responsive — Medium screens (≥ 768px)
+   ═══════════════════════════════════════════ */
+@media (min-width: 768px) {
+    .cal-day-cell {
+        min-height: 84px;
+    }
+
+    .cal-date-num {
+        width: 30px;
+        height: 30px;
+        font-size: 0.85rem;
+    }
+}
+
+/* ═══════════════════════════════════════════
+   Responsive — Desktops (≥ 992px)
+   ═══════════════════════════════════════════ */
+@media (min-width: 992px) {
+    .cal-day-cell {
+        min-height: 100px;
+    }
+
+    .cal-grid {
+        gap: 5px;
+    }
+
+    .cal-date-num {
+        width: 32px;
+        height: 32px;
+        font-size: 0.9rem;
+    }
+}

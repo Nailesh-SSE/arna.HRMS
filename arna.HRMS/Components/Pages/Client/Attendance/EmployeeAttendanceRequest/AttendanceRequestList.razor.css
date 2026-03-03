@@ -57,72 +57,93 @@
             background: #adb5bd;
         }
 
-/* ─── Action Buttons ─── */
-.req-list-action-btn {
+/* ═══════════════════════════════════════════
+   Action Buttons (Pending — Icon Only)
+   ═══════════════════════════════════════════ */
+.req-action-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 0.85rem;
     transition: all 0.2s ease;
-    font-size: 0.78rem;
-    padding: 0.25rem 0.5rem;
 }
 
-    .req-list-action-btn:hover {
+    .req-action-btn:hover {
         transform: translateY(-1px);
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
     }
 
-/* ─── Row Status Highlights ─── */
-.req-list-row-pending {
-    border-left: 3px solid #ffc107;
+    .req-action-btn:active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+
+    /* ── Warning button contrast fix ── */
+    .req-action-btn.btn-outline-warning {
+        color: #b45309;
+        border-color: #d97706;
+    }
+
+        .req-action-btn.btn-outline-warning:hover {
+            background-color: #d97706;
+            border-color: #d97706;
+            color: #fff;
+        }
+
+/* ═══════════════════════════════════════════
+   Status Icons (Non-Pending — Icon Only)
+   ═══════════════════════════════════════════ */
+.req-status-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
 }
 
-.req-list-row-approved {
-    border-left: 3px solid #198754;
+.req-icon-approved {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #0f7b4f;
 }
 
-.req-list-row-rejected {
-    border-left: 3px solid #dc3545;
+.req-icon-rejected {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #c62828;
 }
 
-.req-list-row-cancelled {
-    border-left: 3px solid #6c757d;
-    opacity: 0.7;
+.req-icon-cancelled {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #5a6268;
 }
 
-/* ─── Mobile ─── */
+/* ═══════════════════════════════════════════
+   Responsive — Small phones (≤ 575px)
+   ═══════════════════════════════════════════ */
 @media (max-width: 575.98px) {
-    .req-list-header-icon {
+    .req-action-btn {
         width: 28px;
         height: 28px;
         font-size: 0.75rem;
     }
 
-    .req-list-filter-btn {
-        font-size: 0.72rem;
-        padding: 0.2rem 0.5rem;
-    }
-
-    .req-list-action-btn {
-        font-size: 0.72rem;
-        padding: 0.2rem 0.4rem;
-    }
-
-    .req-list-empty-icon {
-        width: 56px;
-        height: 56px;
-    }
-
-    .req-list-table-scroll {
-        max-height: 50vh;
+    .req-status-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
     }
 }
 
-@media (min-width: 576px) and (max-width: 991.98px) {
-    .req-list-table-scroll {
-        max-height: 60vh;
-    }
-}
-
+/* ═══════════════════════════════════════════
+   Responsive — Desktop (≥ 992px)
+   ═══════════════════════════════════════════ */
 @media (min-width: 992px) {
-    .req-list-table-scroll {
-        max-height: 65vh;
+    .req-action-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 0.9rem;
+    }
+
+    .req-status-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 0.95rem;
     }
 }
