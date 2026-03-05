@@ -89,6 +89,44 @@
     white-space: nowrap;
 }
 
+.clock-btn-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.clock-hover-tip {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    z-index: 9999;
+    box-shadow: 0 3px 10px rgba(0,0,0,.15);
+}
+
+.clock-hover-tip--warn {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.clock-hover-tip--in {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.clock-hover-tip--out {
+    background: #f8d7da;
+    color: #842029;
+}
+
+    .clock-hover-tip--out::after {
+        border-top-color: #dc3545;
+    }
+
 /* ── Modal Overlay ── */
 .clock-modal-overlay {
     z-index: 1055;
@@ -104,10 +142,19 @@
 
 /* ── Toast Wrapper ── */
 .clock-toast-wrapper {
-    z-index: 1070;
+    z-index: 1090;
 }
 
-/* ── Alert animation for pending clock-out ── */
+/* ── Toast Variants ── */
+.clock-toast--success .bi {
+    color: #198754;
+}
+
+.clock-toast--warning .bi {
+    color: #ffc107;
+}
+
+/* ── Alert animation ── */
 .clock-alert {
     animation: clock-pulse 1.5s ease-in-out infinite;
 }
@@ -122,8 +169,20 @@
     }
 }
 
+@keyframes tipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
 /* ═══════════════════════════════════════════════
-   MOBILE RESPONSIVE — compact but VISIBLE
+   MOBILE RESPONSIVE
    ═══════════════════════════════════════════════ */
 @media (max-width: 575.98px) {
     .clock-container {
@@ -149,5 +208,11 @@
     .clock-action-btn {
         font-size: 0.75rem;
         padding: 0.2rem 0.6rem;
+    }
+
+    .clock-hover-tip {
+        font-size: 0.68rem;
+        padding: 5px 10px;
+        bottom: calc(100% + 8px);
     }
 }

@@ -250,7 +250,7 @@ public class AttendanceRepository
                 !a.IsDeleted &&
                 a.EmployeeId == empId &&
                 a.Date.Date == today)
-            .OrderBy(a => a.ClockIn) 
+            .OrderBy(a => a.Id) 
             .FirstOrDefaultAsync();
     }
 
