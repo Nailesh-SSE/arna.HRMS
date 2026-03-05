@@ -296,7 +296,7 @@ public sealed class ApiClients
 
         public async Task<ApiResult<bool>> UpdateStatusAsync(int id, Status status)
         {
-            return await Http.PostAsync<bool>($"{Url}/{id}?status={status}", new { });
+            return await Http.PostAsync<bool>($"{Url}/{id}/status?status={status}", new { });
         }
 
         public async Task<ApiResult<bool>> CancelRequestAsync(int id)
