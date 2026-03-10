@@ -61,14 +61,16 @@ public class EmployeeRepository
         return true;
     }
 
-    public async Task<bool> EmployeeExistsAsync(string? email, string? phoneNumber, int? employeeId = 0)
+    public async Task<bool> EmployeeExistsAsync(string? email, string? phoneNumber, string? officeEmail , int? employeeId = 0)
     {
-        if (string.IsNullOrWhiteSpace(email) &&
-            string.IsNullOrWhiteSpace(phoneNumber))
+        if (string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrWhiteSpace(phoneNumber) ||
+            string.IsNullOrWhiteSpace(officeEmail))
             return false;
 
         email = email?.Trim().ToLower();
         phoneNumber = phoneNumber?.Trim().ToLower();
+        officeEmail = officeEmail?.Trim().ToLower();
 
         return await _baseRepository.Query()
             .Where(e => e.IsActive && !e.IsDeleted)
@@ -76,7 +78,8 @@ public class EmployeeRepository
                e.Id != employeeId &&
                 (
                     (!string.IsNullOrEmpty(email) && e.Email.Trim().ToLower() == email) ||
-                    (!string.IsNullOrEmpty(phoneNumber) && e.PhoneNumber.Trim().ToLower() == phoneNumber)
+                    (!string.IsNullOrEmpty(phoneNumber) && e.PhoneNumber.Trim().ToLower() == phoneNumber) ||
+                    (!string.IsNullOrEmpty(officeEmail) && e.OfficeEmail.Trim().ToLower() == officeEmail)
                 )
             );
     }

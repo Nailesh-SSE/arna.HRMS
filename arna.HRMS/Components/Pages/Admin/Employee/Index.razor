@@ -184,6 +184,7 @@
                 .Where(e =>
                     MatchesSearch(e.FullName) ||
                     MatchesSearch(e.Email) ||
+                    MatchesSearch(e.OfficeEmail) ||
                     MatchesSearch(e.EmployeeNumber) ||
                     MatchesSearch(e.Position))
                 .ToList();

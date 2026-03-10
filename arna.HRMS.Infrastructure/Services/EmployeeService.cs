@@ -110,7 +110,7 @@ public class EmployeeService : IEmployeeService
 
         var userDto = new UserDto
         {
-            Username = employee.FirstName,
+            Username = employee.OfficeEmail,
             Email = employee.Email,
             FirstName = employee.FirstName,
             LastName = employee.LastName,
@@ -136,7 +136,7 @@ public class EmployeeService : IEmployeeService
                 next = current + 1;
         }
 
-        return $"EMP{next:D4}";
+        return $"EMP{next:D3}";
     }
 
     private static string GenerateRandomPassword()

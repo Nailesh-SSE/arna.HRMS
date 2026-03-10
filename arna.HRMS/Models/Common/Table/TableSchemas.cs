@@ -32,6 +32,7 @@ public class TableSchemas
         new() { Header = "Number", Value = u => u.EmployeeNumber },
         new() { Header = "Full Name", Value = u => u.FullName },
         new() { Header = "Email", Value = u => u.Email },
+        new() { Header = "Office Email", Value = u => u.OfficeEmail},
         new() { Header = "Department Code", Value = u => u.DepartmentCode, CssClass = "badge bg-info" },
         new() { Header = "Manager Name", Value = u => u.ManagerFullName },
         new() { Header = "Position", Value = u => u.Position }

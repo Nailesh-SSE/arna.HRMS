@@ -81,11 +81,11 @@
                 <EmployeeLeaveTypes @ref="leaveTab" OnRequestCountChanged="c => { leaveRequestCount = c; StateHasChanged(); }" />
             }
 
-            @* @if (activeTab == Tab.FestivalsHoliday)
+            @if (activeTab == Tab.FestivalsHoliday)
             {
-                <EmployeeFestivalHolidayTab @ref="festivalTab"
+                <EmployeeFestivalHolidayTab @ref="festivalHoliday"
                                             OnCountChanged="c => { festivalCount = c; StateHasChanged(); }" />
-            } *@
+            } 
 
         </div>
     </div>
@@ -101,7 +101,7 @@
 
     private string loadingMessage = "Loading leavemanagement... ";
     private EmployeeLeaveTypes? leaveTab;
-    // private FestivalHolidayType? festivalTab;
+    private EmployeeFestivalHolidayTab? festivalHoliday;
     
     protected override async Task OnInitializedAsync()
     {

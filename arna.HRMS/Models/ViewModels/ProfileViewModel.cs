@@ -7,6 +7,7 @@ public class ProfileViewModel
     public string LastName { get; set; }
     public string FullName => $"{FirstName} {LastName}";
     public string Email { get; set; }
+    public string OfficeEmail { get; set; }
     public string PhoneNumber { get; set; }
     public string Position { get; set; }
     public string DepartmentName { get; set; }
@@ -23,6 +24,7 @@ public class ProfileViewModel
         FirstName = e.FirstName; 
         LastName = e.LastName; 
         Email = e.Email;
+        OfficeEmail = e.OfficeEmail;
         PhoneNumber = e.PhoneNumber; 
         Position = e.Position; 
         EmployeeNumber = e.EmployeeNumber ?? string.Empty;

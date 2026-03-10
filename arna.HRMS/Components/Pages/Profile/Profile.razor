@@ -200,11 +200,11 @@
                                         @EditableField("Last Name", profile.LastName, v => profile.LastName = v)
                                         @EditableField("Email Address", profile.Email, v => profile.Email = v, "email")
                                         @EditableField("Phone Number", profile.PhoneNumber, v => profile.PhoneNumber = v, "tel")
-                                        @StaticField("Address", "123 Main Street, SF", true)
                                         break;
 
                                     case ProfileTab.Work:
                                         @StaticField("Employee ID", profile.EmployeeNumber)
+                                        @StaticField("Office Email", profile.OfficeEmail)
                                         @StaticField("Department", profile.DepartmentName)
                                         @StaticField("Position", profile.Position)
                                         @StaticField("Manager", profile.ManagerFullName)

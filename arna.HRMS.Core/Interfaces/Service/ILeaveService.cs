@@ -8,6 +8,7 @@ public interface ILeaveService
 {
     // Leave Types
     Task<ServiceResult<List<LeaveTypeDto>>> GetLeaveTypesAsync();
+    Task<ServiceResult<List<LeaveTypeDto>>> GetEmployeeLeaveTypesAsync();
     Task<ServiceResult<LeaveTypeDto?>> GetLeaveTypeByIdAsync(int id);
     Task<ServiceResult<LeaveTypeDto>> CreateLeaveTypeAsync(LeaveTypeDto dto);
     Task<ServiceResult<LeaveTypeDto>> UpdateLeaveTypeAsync(LeaveTypeDto dto);

@@ -143,8 +143,13 @@
         if (leaveTypes == null || !leaveTypes.Any())
             return new();
 
+        var (start, end) = GetFinancialYear();
+
         var approvedRequests = employeeRequests
-            .Where(r => r.StatusId == Status.Approved)
+            .Where(r =>
+                r.StatusId == Status.Approved &&
+                r.StartDate >= start &&
+                r.StartDate <= end)
             .ToList();
 
         return leaveTypes
@@ -191,4 +196,16 @@
     private static string FormatEnum(string name) =>
         System.Text.RegularExpressions.Regex.Replace(
             name ?? "", "([a-z])([A-Z])", "$1 $2");
+
+    private (DateTime start, DateTime end) GetFinancialYear()
+    {
+        var today = DateTime.Today;
+
+        int year = today.Month >= 4 ? today.Year : today.Year - 1;
+
+        var start = new DateTime(year, 4, 1);
+        var end = new DateTime(year + 1, 3, 31);
+
+        return (start, end);
+    }
 }

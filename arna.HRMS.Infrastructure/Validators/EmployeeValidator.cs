@@ -97,7 +97,7 @@ public class EmployeeValidator
         if (instance.Salary <= 0)
             errors.Add("Salary must be greater than 0");
 
-        var duplicate = await _repository.EmployeeExistsAsync(instance.Email, instance.PhoneNumber, instance.Id);
+        var duplicate = await _repository.EmployeeExistsAsync(instance.Email, instance.PhoneNumber, instance.OfficeEmail, instance.Id);
 
         if (duplicate)
             errors.Add("Email or Phone Number already exists");

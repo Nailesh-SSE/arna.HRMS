@@ -153,6 +153,13 @@
                         </div>
 
                         <div class="col-12 col-md-6">
+                            <AppInput Label="Office Email"
+                                      Value="@_employee.OfficeEmail"
+                                      ValueChanged="v => _employee.OfficeEmail = v"
+                                      ValidationExpression="@(() => _employee.OfficeEmail)" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
                             <AppInput Label="Salary"
                                       Type="number"
                                       Value="@_employee.Salary.ToString("0.##")"

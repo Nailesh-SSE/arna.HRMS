@@ -21,11 +21,13 @@ public static class DependencyInjection
         services.AddAutoMapper(typeof(LeaveProfile).Assembly);
         services.AddAutoMapper(typeof(UserProfile).Assembly);
         services.AddAutoMapper(typeof(RoleProfile).Assembly);
+        services.AddAutoMapper(typeof(DashboardProfile).Assembly);
 
         // Base repository
         services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 
         // Services
+        services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IEmployeeService, EmployeeService>();
         services.AddScoped<IDepartmentService, DepartmentService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
@@ -36,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IRoleService, RoleService>();
 
         // Repositories
+        services.AddScoped<DashboardRepository>();
         services.AddScoped<DepartmentRepository>();
         services.AddScoped<EmployeeRepository>();
         services.AddScoped<AttendanceRepository>();

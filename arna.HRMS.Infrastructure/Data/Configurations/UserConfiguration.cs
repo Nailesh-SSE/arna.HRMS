@@ -12,7 +12,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(d => d.Username)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(255);
 
         builder.Property(d => d.Email)
             .IsRequired()

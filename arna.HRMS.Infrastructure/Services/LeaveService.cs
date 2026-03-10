@@ -37,12 +37,43 @@ public class LeaveService : ILeaveService
 
     public async Task<ServiceResult<List<LeaveTypeDto>>> GetLeaveTypesAsync()
     {
+
         var entities = await _leaveRepository.GetLeaveTypesAsync();
 
         var dtos = _mapper.Map<List<LeaveTypeDto>>(entities);
 
         return ServiceResult<List<LeaveTypeDto>>.Success(dtos);
     }
+
+    public async Task<ServiceResult<List<LeaveTypeDto>>> GetEmployeeLeaveTypesAsync()
+    {
+        var entities = await _leaveRepository.GetLeaveTypesAsync();
+
+        var dtos = _mapper.Map<List<LeaveTypeDto>>(entities);
+
+        var today = DateTime.Today;
+
+        int financialYear = today.Month >= 4 ? today.Year : today.Year - 1;
+
+        var firstHalfStart = new DateTime(financialYear, 4, 1);
+        var firstHalfEnd = new DateTime(financialYear, 9, 30);
+
+        bool isFirstHalf = today >= firstHalfStart && today <= firstHalfEnd;
+        //bool isFirstHalf = true;
+
+        dtos = dtos.Select(leave =>
+        {
+            if (isFirstHalf)
+                leave.MaxPerYear = leave.MaxPerYear / 2;
+            else
+                leave.MaxPerYear = leave.MaxPerYear;
+
+            return leave;
+        }).ToList();
+
+        return ServiceResult<List<LeaveTypeDto>>.Success(dtos);
+    }
+
 
     public async Task<ServiceResult<LeaveTypeDto?>> GetLeaveTypeByIdAsync(int id)
     {

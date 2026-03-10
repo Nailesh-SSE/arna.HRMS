@@ -1,8 +1,10 @@
-﻿using arna.HRMS.Core.DTOs;
+﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -22,7 +24,25 @@ public class LeaveController : ControllerBase
     [HttpGet("types")]
     public async Task<IActionResult> GetTypesAsync()
     {
-        var result = await _service.GetLeaveTypesAsync();
+        // Read role from JWT
+        var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+
+        // Read employeeId from JWT
+        var employeeIdClaim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
+        int.TryParse(employeeIdClaim, out var employeeId);
+
+        ServiceResult<List<LeaveTypeDto>> result;
+
+        // If logged user is Employee → use employee logic
+        if (role == UserRoleGroups.Employee && employeeId > 0)
+        {
+            result = await _service.GetEmployeeLeaveTypesAsync();
+        }
+        else
+        {
+            // Admin / HR / Manager / SuperAdmin
+            result = await _service.GetLeaveTypesAsync();
+        }
 
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
