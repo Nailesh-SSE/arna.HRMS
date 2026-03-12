@@ -1,25 +1,29 @@
-﻿using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Http;
+using System.Net.Http.Headers;
 
 namespace arna.HRMS.Services.Auth;
 
 public sealed class AuthHeaderHandler : DelegatingHandler
 {
-    private readonly CustomAuthStateProvider _authProvider;
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    private const string AccessTokenKey = "auth_access_token";
 
-    public AuthHeaderHandler(CustomAuthStateProvider authProvider)
+    public AuthHeaderHandler(IHttpContextAccessor httpContextAccessor)
     {
-        _authProvider = authProvider;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         if (request.Headers.Authorization is null)
         {
-            var token = await _authProvider.GetAccessTokenAsync();
-
-            if (!string.IsNullOrWhiteSpace(token))
+            var httpContext = _httpContextAccessor.HttpContext;
+            if (httpContext != null && httpContext.Request.Cookies.TryGetValue(AccessTokenKey, out var token))
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                }
             }
         }
 

@@ -1,5 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -12,17 +12,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
     private const string UserIdKey = "auth_user_id";
     private const string AuthType = "jwt";
 
-    private readonly IMemoryCache _memoryCache;
+    private readonly ProtectedSessionStorage _sessionStorage;
     private readonly ILogger<CustomAuthStateProvider> _logger;
 
     private static readonly AuthenticationState Anonymous =
         new(new ClaimsPrincipal(new ClaimsIdentity()));
 
     public CustomAuthStateProvider(
-        IMemoryCache memoryCache,
+        ProtectedSessionStorage sessionStorage,
         ILogger<CustomAuthStateProvider> logger)
     {
-        _memoryCache = memoryCache;
+        _sessionStorage = sessionStorage;
         _logger = logger;
     }
 
@@ -59,42 +59,35 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
         var expiry = jwt.ValidTo;
 
-        _memoryCache.Set(AccessTokenKey, accessToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
-
-        _memoryCache.Set(RefreshTokenKey, refreshToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
-
-        _memoryCache.Set(UserIdKey, userId);
+        await _sessionStorage.SetAsync(AccessTokenKey, accessToken);
+        await _sessionStorage.SetAsync(RefreshTokenKey, refreshToken);
+        await _sessionStorage.SetAsync(UserIdKey, userId);
 
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-
-        await Task.CompletedTask;
     }
 
     public async Task LogoutAsync()
     {
-        _memoryCache.Remove(AccessTokenKey);
-        _memoryCache.Remove(RefreshTokenKey);
-        _memoryCache.Remove(UserIdKey);
+        await _sessionStorage.DeleteAsync(AccessTokenKey);
+        await _sessionStorage.DeleteAsync(RefreshTokenKey);
+        await _sessionStorage.DeleteAsync(UserIdKey);
 
         NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));
-
-        await Task.CompletedTask;
     }
 
-    public Task<string?> GetAccessTokenAsync()
+    public async Task<string?> GetAccessTokenAsync()
     {
-        _memoryCache.TryGetValue(AccessTokenKey, out string? token);
-        return Task.FromResult(token);
+        var result = await _sessionStorage.GetAsync<string>(AccessTokenKey);
+        return result.Success ? result.Value : null;
     }
 
-    public Task<(int userId, string? refreshToken)> GetRefreshDataAsync()
+    public async Task<(int userId, string? refreshToken)> GetRefreshDataAsync()
     {
-        _memoryCache.TryGetValue(UserIdKey, out int userId);
-        _memoryCache.TryGetValue(RefreshTokenKey, out string? refreshToken);
-
-        return Task.FromResult((userId, refreshToken));
+        var userIdResult = await _sessionStorage.GetAsync<int>(UserIdKey);
+        var refreshTokenResult = await _sessionStorage.GetAsync<string>(RefreshTokenKey);
+        int userId = userIdResult.Success ? userIdResult.Value : 0;
+        string? refreshToken = refreshTokenResult.Success ? refreshTokenResult.Value : null;
+        return (userId, refreshToken);
     }
 
     public async Task UpdateTokensAsync(string newAccessToken, string newRefreshToken)
@@ -102,14 +95,9 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
         var jwt = new JwtSecurityTokenHandler().ReadJwtToken(newAccessToken);
         var expiry = jwt.ValidTo;
 
-        _memoryCache.Set(AccessTokenKey, newAccessToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
-
-        _memoryCache.Set(RefreshTokenKey, newRefreshToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
+        await _sessionStorage.SetAsync(AccessTokenKey, newAccessToken);
+        await _sessionStorage.SetAsync(RefreshTokenKey, newRefreshToken);
 
         NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-
-        await Task.CompletedTask;
     }
 }

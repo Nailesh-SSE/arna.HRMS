@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.ViewModels.Auth;
 using arna.HRMS.Services.Auth;

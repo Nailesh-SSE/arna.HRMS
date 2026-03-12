@@ -1,10 +1,11 @@
-﻿using arna.HRMS.Components;
+using arna.HRMS.Components;
 using arna.HRMS.Models.State.Attendance;
 using arna.HRMS.Services;
 using arna.HRMS.Services.Auth;
 using arna.HRMS.Services.Common;
 using arna.HRMS.Services.Http;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace arna.HRMS;
 
@@ -26,10 +27,13 @@ public class Program
         builder.Services.AddAuthorizationCore();
         builder.Services.AddCascadingAuthenticationState();
 
-        // Add MemoryCache
-        builder.Services.AddMemoryCache();
+        // Add HttpContextAccessor for cookie-based authentication
+        builder.Services.AddHttpContextAccessor();
 
-        // Register CustomAuthStateProvider
+        // Register ProtectedSessionStorage
+        builder.Services.AddScoped<ProtectedSessionStorage>();
+
+        // Register CustomAuthStateProvider with ProtectedSessionStorage
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
             sp.GetRequiredService<CustomAuthStateProvider>());

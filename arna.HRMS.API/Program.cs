@@ -1,6 +1,5 @@
-﻿using arna.HRMS.Infrastructure.Dependency;
+using arna.HRMS.Infrastructure.Dependency;
 using arna.HRMS.Infrastructure.Dependency.Identity;
-using arna.HRMS.Infrastructure.Middleware;
 
 namespace arna.HRMS.API
 {
@@ -46,7 +45,6 @@ namespace arna.HRMS.API
                 app.UseSwaggerUI();
             }
 
-            app.UseMiddleware<TestAuthHeaderMiddleware>();
             app.UseHttpsRedirection();
 
             // Use CORS middleware
