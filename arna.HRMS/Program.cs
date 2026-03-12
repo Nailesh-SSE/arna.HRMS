@@ -1,4 +1,7 @@
-﻿using arna.HRMS.Components;
+﻿// ============================================================
+// FILE: arna.HRMS/Program.cs  (Blazor Server Web App)
+// ============================================================
+using arna.HRMS.Components;
 using arna.HRMS.Models.State.Attendance;
 using arna.HRMS.Services;
 using arna.HRMS.Services.Auth;
@@ -6,6 +9,7 @@ using arna.HRMS.Services.Common;
 using arna.HRMS.Services.Dashboard;
 using arna.HRMS.Services.Http;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace arna.HRMS;
 
@@ -15,37 +19,37 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // ==========================
-        // Razor Components
-        // ==========================
+        // ── Razor / Blazor ────────────────────────────────────
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
 
-        // ==========================
-        // Authentication (Blazor)
-        // ==========================
+        // ── Authorization Core ────────────────────────────────
+        // Required for [Authorize], AuthorizeView, AuthorizeRouteView
         builder.Services.AddAuthorizationCore();
+
+        // Provides AuthenticationState as a cascading value to all components
         builder.Services.AddCascadingAuthenticationState();
 
-        // Add MemoryCache
-        builder.Services.AddMemoryCache();
+        // ── ProtectedSessionStorage ───────────────────────────
+        // Stores tokens encrypted in the browser session
+        // Requires Data Protection (included by default in ASP.NET Core)
+        builder.Services.AddScoped<ProtectedSessionStorage>();
 
-        // Register CustomAuthStateProvider
+        // ── Auth State Provider ───────────────────────────────
+        // Register BOTH as concrete type (for direct injection in HttpService)
+        // AND as AuthenticationStateProvider (for Blazor auth infrastructure)
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
             sp.GetRequiredService<CustomAuthStateProvider>());
 
-        // ==========================
-        // HTTP CLIENTS
-        // ==========================
-
+        // ── HTTP Clients ──────────────────────────────────────
         var baseUrl = builder.Configuration["ApiSettings:BaseUrl"]
-                      ?? throw new Exception("ApiSettings:BaseUrl not configured");
+                      ?? throw new Exception("ApiSettings:BaseUrl not configured in appsettings.json");
 
-        // Register AuthHeaderHandler
+        // AuthHeaderHandler reads token from CustomAuthStateProvider (NOT cookies)
         builder.Services.AddScoped<AuthHeaderHandler>();
 
-        // Authorized Client with token handler
+        // Main HTTP client — used for all authenticated API calls
         builder.Services.AddHttpClient("AuthorizedClient", client =>
         {
             client.BaseAddress = new Uri(baseUrl);
@@ -53,26 +57,19 @@ public class Program
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         })
         .AddHttpMessageHandler<AuthHeaderHandler>()
-        .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Prevent handler caching issues
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
-        // Refresh Client (no token handler)
-        builder.Services.AddHttpClient("RefreshClient", client =>
-        {
-            client.BaseAddress = new Uri(baseUrl);
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        // Default injected HttpClient = AuthorizedClient
+        // Default injected HttpClient resolves to AuthorizedClient
         builder.Services.AddScoped(sp =>
             sp.GetRequiredService<IHttpClientFactory>()
-                .CreateClient("AuthorizedClient"));
+              .CreateClient("AuthorizedClient"));
 
-        // ==========================
-        // Core App Services
-        // ==========================
+        // ── Core App Services ─────────────────────────────────
         builder.Services.AddScoped<NotificationService>();
         builder.Services.AddScoped<HttpService>();
 
+        // ApiClients wraps all API endpoint calls
+        // SetApiClients call avoids circular DI (HttpService ↔ ApiClients)
         builder.Services.AddScoped<ApiClients>(sp =>
         {
             var httpService = sp.GetRequiredService<HttpService>();
@@ -81,9 +78,7 @@ public class Program
             return apiClients;
         });
 
-        // ==========================
-        // Feature Services
-        // ==========================
+        // ── Feature Services ──────────────────────────────────
         builder.Services.AddScoped<IDashboardService, DashboardService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IEmployeeService, EmployeeService>();
@@ -94,20 +89,15 @@ public class Program
         builder.Services.AddScoped<ILeaveService, LeaveService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
         builder.Services.AddScoped<IFestivalHolidayService, FestivalHolidayService>();
-
         builder.Services.AddScoped<AttendanceState>();
 
-        // ==========================
-        // Other
-        // ==========================
+        // ── Other ─────────────────────────────────────────────
         builder.Services.AddBlazorBootstrap();
         builder.Services.AddGeolocationServices();
 
         var app = builder.Build();
 
-        // ==========================
-        // Middleware
-        // ==========================
+        // ── Middleware Pipeline ───────────────────────────────
         if (!app.Environment.IsDevelopment())
         {
             app.UseExceptionHandler("/Error");
@@ -119,7 +109,7 @@ public class Program
         app.UseAntiforgery();
 
         app.MapRazorComponents<App>()
-            .AddInteractiveServerRenderMode();
+           .AddInteractiveServerRenderMode();
 
         app.Run();
     }

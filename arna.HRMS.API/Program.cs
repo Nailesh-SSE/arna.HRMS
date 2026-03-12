@@ -1,62 +1,71 @@
-﻿using arna.HRMS.Infrastructure.Dependency;
+﻿// ============================================================
+// FILE: arna.HRMS.API/Program.cs
+// ============================================================
+using arna.HRMS.Infrastructure.Dependency;
 using arna.HRMS.Infrastructure.Dependency.Identity;
-using arna.HRMS.Infrastructure.Middleware;
 
-namespace arna.HRMS.API
+namespace arna.HRMS.API;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        builder.Services.AddControllers();
+        builder.Services.AddEndpointsApiExplorer();
+
+        // ── CORS ──────────────────────────────────────────────
+        builder.Services.AddCors(options =>
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-
-            builder.Services.AddCors(options =>
+            options.AddPolicy("AllowBlazorApp", policy =>
             {
-                options.AddPolicy("AllowBlazorApp", policy =>
-                {
-                    policy
-                      .WithOrigins(
-                          "https://hrms.arnatechnosoft.com",
-                          "https://www.hrms.arnatechnosoft.com",
-                          "http://hrms.arnatechnosoft.com",
-                          "https://hrms-api.arnatechnosoft.com",
-                          "https://www.hrms-api.arnatechnosoft.com",
-                          "http://hrms-api.arnatechnosoft.com"
-                      )
-                      .AllowAnyHeader()
-                      .AllowAnyMethod()
-                      .AllowCredentials();
-                });
+                policy
+                    .WithOrigins(
+                        "https://hrms.arnatechnosoft.com",
+                        "https://www.hrms.arnatechnosoft.com",
+                        "http://hrms.arnatechnosoft.com",
+                        "https://hrms-api.arnatechnosoft.com",
+                        "https://localhost:7263",   // Blazor dev
+                        "http://localhost:5263"
+                    )
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
+        });
 
-            builder.Services.AddSwaggerWithJwt();
-            builder.Services.AddDatabase(builder.Configuration);
-            builder.Services.AddJwtAuthentication(builder.Configuration);
+        // ── Swagger with JWT support ──────────────────────────
+        builder.Services.AddSwaggerWithJwt();
 
-            builder.Services.AddInfrastructureServices();
+        // ── Database ──────────────────────────────────────────
+        builder.Services.AddDatabase(builder.Configuration);
 
-            var app = builder.Build();
+        // ── JWT Authentication ────────────────────────────────
+        // Reads JwtSettings from appsettings.json
+        // Validates every request with [Authorize] attribute
+        builder.Services.AddJwtAuthentication(builder.Configuration);
 
-            if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+        // ── All Infrastructure Services (repos, services etc.) 
+        builder.Services.AddInfrastructureServices();
 
-            app.UseMiddleware<TestAuthHeaderMiddleware>();
-            app.UseHttpsRedirection();
+        var app = builder.Build();
 
-            // Use CORS middleware
-            app.UseCors("AllowBlazorApp");
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.MapControllers();
-            app.Run();
+        // ── Middleware Pipeline ───────────────────────────────
+        if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
+
+        app.UseHttpsRedirection();
+
+        app.UseCors("AllowBlazorApp");  // Must be before UseAuthentication
+
+        app.UseAuthentication();        // Reads JWT from Authorization header
+        app.UseAuthorization();         // Checks [Authorize] attributes
+
+        app.MapControllers();
+        app.Run();
     }
 }

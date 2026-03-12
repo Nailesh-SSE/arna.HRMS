@@ -1,9 +1,26 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿// ============================================================
+// FILE: arna.HRMS/Services/Auth/AuthenticatedLayoutBase.cs
+// ============================================================
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Security.Claims;
 
 namespace arna.HRMS.Services.Auth;
+
+// ──────────────────────────────────────────────────────────────
+// HOW THIS WORKS:
+//
+//  Base class for pages/layouts that need the current user info.
+//  Inherit from this instead of ComponentBase to get:
+//    - GetUserId(), GetUserRole(), GetEmployeeId() etc.
+//    - Automatic redirect to /login if not authenticated
+//    - Automatic re-render on auth state change (login/logout)
+//
+//  USAGE:
+//    @inherits AuthenticatedLayoutBase
+//    ... then use GetUserId(), GetUserRole() etc. in code
+// ──────────────────────────────────────────────────────────────
 
 public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
 {
@@ -21,13 +38,11 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     private string _role = string.Empty;
     private bool _isAuthenticated;
 
-    private bool _disposed;
+    private volatile bool _disposed;
+
     protected bool IsInitialized { get; private set; }
 
-    // ==============================
-    // Public Accessors
-    // ==============================
-
+    // ── Public Accessors ──────────────────────────────────────
     protected int GetUserId() => _userId;
     protected int GetEmployeeId() => _employeeId;
     protected string GetUserName() => _userName;
@@ -35,16 +50,17 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     protected string GetUserRole() => _role;
     protected bool IsAuthenticated() => _isAuthenticated;
 
-    // ==============================
-    // Lifecycle
-    // ==============================
-
+    // ── Lifecycle ─────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // Subscribe first so we don't miss any state change
             AuthProvider.AuthenticationStateChanged += HandleAuthStateChanged;
+
+            // Load current user — cached by CustomAuthStateProvider, so no extra storage hit
             await LoadUserAsync();
+
             IsInitialized = true;
         }
         catch (Exception ex)
@@ -53,27 +69,22 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         }
     }
 
-    // MUST be async void (event handler pattern)
+    // Event handler — async void is required for event handler pattern
     private async void HandleAuthStateChanged(Task<AuthenticationState> task)
     {
+        if (_disposed) return;
+
         try
         {
             var authState = await task;
             SetUser(authState.User);
-
             await RedirectIfUnauthenticatedAsync();
 
             if (!_disposed)
                 await InvokeAsync(StateHasChanged);
         }
-        catch (ObjectDisposedException)
-        {
-            // Component disposed, ignore
-        }
-        catch (JSDisconnectedException)
-        {
-            // Blazor Server circuit disconnected
-        }
+        catch (ObjectDisposedException) { /* component disposed, safe to ignore */ }
+        catch (JSDisconnectedException) { /* SignalR circuit disconnected */        }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error handling auth state change");
@@ -94,10 +105,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         }
     }
 
-    // ==============================
-    // User Handling
-    // ==============================
-
+    // ── User Parsing from Claims ───────────────────────────────
     private void SetUser(ClaimsPrincipal user)
     {
         User = user;
@@ -111,14 +119,11 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         _isAuthenticated = user.Identity?.IsAuthenticated ?? false;
 
         Logger.LogDebug(
-            "User updated: Authenticated={Auth}, UserId={UserId}, Role={Role}",
+            "Auth state updated: Authenticated={Auth}, UserId={UserId}, Role={Role}",
             _isAuthenticated, _userId, _role);
     }
 
-    // ==============================
-    // Redirect Handling
-    // ==============================
-
+    // ── Redirect ───────────────────────────────────────────────
     private async Task RedirectIfUnauthenticatedAsync()
     {
         if (_isAuthenticated || IsOnLoginPage())
@@ -126,19 +131,11 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
 
         try
         {
-            Logger.LogWarning("Unauthenticated access. Redirecting to login.");
-
-            await InvokeAsync(() =>
-                Navigation.NavigateTo("/login", replace: true));
+            Logger.LogWarning("Unauthenticated — redirecting to /login");
+            await InvokeAsync(() => Navigation.NavigateTo("/login", replace: true));
         }
-        catch (ObjectDisposedException)
-        {
-            // Safe ignore
-        }
-        catch (JSDisconnectedException)
-        {
-            // Safe ignore
-        }
+        catch (ObjectDisposedException) { /* safe ignore */ }
+        catch (JSDisconnectedException) { /* safe ignore */ }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Redirect failed");
@@ -151,23 +148,12 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         return relative.StartsWith("login", StringComparison.OrdinalIgnoreCase);
     }
 
-    // ==============================
-    // Role Helpers
-    // ==============================
+    // ── Role Helpers ───────────────────────────────────────────
+    protected bool IsSuperAdmin() => GetUserRole() == Models.Enums.UserRole.SuperAdmin.ToString();
+    protected bool IsAdmin() => GetUserRole() == Models.Enums.UserRole.Admin.ToString();
+    protected bool IsEmployee() => GetUserRole() == Models.Enums.UserRole.Employee.ToString();
 
-    protected bool IsSuperAdmin()
-        => GetUserRole() == Models.Enums.UserRole.SuperAdmin.ToString();
-
-    protected bool IsAdmin()
-        => GetUserRole() == Models.Enums.UserRole.Admin.ToString();
-
-    protected bool IsEmployee()
-        => GetUserRole() == Models.Enums.UserRole.Employee.ToString();
-
-    // ==============================
-    // Dispose
-    // ==============================
-
+    // ── Dispose ────────────────────────────────────────────────
     public void Dispose()
     {
         _disposed = true;
@@ -178,7 +164,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during layout disposal");
+            Logger.LogError(ex, "Error during dispose");
         }
     }
 }

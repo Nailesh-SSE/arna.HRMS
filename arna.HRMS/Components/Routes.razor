@@ -8,15 +8,6 @@
             <AuthorizeRouteView RouteData="@routeData"
                                 DefaultLayout="@typeof(Layout.MainLayout)">
 
-                <!-- While checking auth -->
-                <Authorizing>
-                    <div class="d-flex justify-content-center align-items-center vh-100">
-                        <div class="spinner-border text-primary me-2"></div>
-                        <span>Validating session...</span>
-                    </div>
-                </Authorizing>
-
-                <!-- If NOT authorized -->
                 <NotAuthorized>
                     @if (!IsLoginPage())
                     {
@@ -31,7 +22,6 @@
 
         <NotFound>
             <PageTitle>Not Found</PageTitle>
-
             <div class="min-vh-100 d-flex flex-column justify-content-center align-items-center text-center bg-light">
                 <h1 class="display-1 fw-bold">404</h1>
                 <p class="lead">Sorry, the page you are looking for does not exist.</p>
