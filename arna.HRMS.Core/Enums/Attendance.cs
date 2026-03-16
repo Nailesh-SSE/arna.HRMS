@@ -28,3 +28,11 @@ public enum AttendanceStatus
     Leave = 5,
     Holiday = 6
 }
+
+public enum DeviceType
+{
+    Mobile = 1,
+    Tablet = 2,
+    LaptopDesktop = 3,
+    UnknownDevice = 4
+}

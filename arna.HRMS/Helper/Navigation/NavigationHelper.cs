@@ -71,6 +71,15 @@ public class NavigationHelper
             Route = "/user",
             AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR }
         },
+         new()
+        {
+            Id = "attendanceReport",
+            Label = "AttendanceReport",
+            Icon = "bi bi-clipboard-data me-2",
+            Section = "Report",
+            Route = "/attendance-report",
+            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager}
+        },
         new()
         {
             Id = "profile",
@@ -140,7 +149,8 @@ public class NavigationHelper
             "Main" => 1,
             "Leave" => 2,
             "Administration" => 3,
-            "Account" => 4,
+            "Report" =>4,
+            "Account" => 5,
             _ => 99
         };
     }

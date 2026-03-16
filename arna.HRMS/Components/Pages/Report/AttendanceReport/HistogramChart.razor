@@ -1,0 +1,329 @@
+﻿@using arna.HRMS.Components.Pages.Report.Component
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.State.Attendance
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+
+@inject IJSRuntime JS
+@inject AttendanceState State
+@inject IEmployeeService EmployeeService
+
+<!-- HEADER -->
+<div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 gap-sm-3 mb-3 mb-md-4">
+
+    <div class="d-flex align-items-start gap-2">
+        <span class="bg-primary bg-opacity-10 text-primary rounded-2 p-2 flex-shrink-0">
+            <i class="bi bi-bar-chart-fill fs-5"></i>
+        </span>
+
+        <div>
+            <h5 class="fw-bold mb-0 fs-6 fs-md-5">
+                Employee Work Hours
+            </h5>
+
+            <p class="text-muted mb-0 small d-none d-sm-block">
+                Visualize employee working hours and break duration
+            </p>
+        </div>
+    </div>
+
+    @if (HasActiveFilters)
+    {
+        <button class="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                @onclick="ClearFilters">
+            <i class="bi bi-x-lg me-1"></i>
+            Clear All Filters
+        </button>
+    }
+
+</div>
+
+
+<!-- FILTER CARD -->
+<div class="card border-0 shadow-sm rounded-3 mb-3">
+
+    <div class="card-body py-2 px-3">
+
+        <div class="row align-items-center g-2">
+
+            <!-- LEFT : FILTER ICON -->
+            <div class="col-auto">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                    <i class="bi bi-funnel-fill me-1"></i>
+                    Filters
+                </span>
+            </div>
+
+            <!-- CENTER : BOTH FILTERS -->
+            <div class="col d-flex justify-content-center">
+                <div class="d-flex align-items-center gap-3">
+
+                    <!-- MONTH YEAR -->
+                    <div style="min-width:200px;">
+                        <YearMonthPicker Year="Year"
+                                         Month="Month"
+                                         OnChange="OnDateChange" />
+                    </div>
+
+                    <!-- EMPLOYEE SEARCH -->
+                    <div style="min-width:220px;">
+                        <SearchEmployee Employees="EmployeeOptions"
+                                        SelectedValue="@GetEmployeeValue()"
+                                        OnChanged="OnEmployeeChange"
+                                        OnNameChanged="OnEmployeeNameChanged" />
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- RIGHT : ACTIVE FILTER CHIP -->
+            @if (EmployeeId.HasValue)
+            {
+                <div class="col-auto">
+                    <span class="badge bg-light text-dark border rounded-pill px-3 py-2">
+                        Employee Selected
+                        <button type="button"
+                                class="btn-close btn-close-sm ms-2"
+                                style="font-size:0.5rem"
+                                @onclick="ClearEmployeeFilter">
+                        </button>
+                    </span>
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- CHART CARD -->
+<div class="card border-0 shadow-sm rounded-3">
+
+    <div class="card-body">
+
+        <div style="height:420px; position:relative;">
+
+            @if (ReportData == null)
+            {
+                <div class="text-center mt-5">
+
+                    <div class="spinner-border text-primary"></div>
+
+                    <div class="mt-2">
+                        Loading chart...
+                    </div>
+
+                </div>
+            }
+            else if (!ReportData.Any())
+            {
+                <div class="text-center py-5">
+
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                         style="width:80px;height:80px">
+
+                        <i class="bi bi-inbox fs-2 text-muted"></i>
+
+                    </div>
+
+                    <h6 class="fw-semibold text-muted mb-1">
+                        No Data Found
+                    </h6>
+
+                    <p class="text-muted small mb-3">
+                        No working hours match your current filters.
+                    </p>
+
+                    @if (HasActiveFilters)
+                    {
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                                @onclick="ClearFilters">
+
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>
+                            Reset Filters
+
+                        </button>
+                    }
+
+                </div>
+            }
+
+            <canvas id="histogramChart"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+@code {
+
+    /* ================= PARAMETERS ================= */
+
+    [Parameter] public List<AttendanceReportViewModel> ReportData { get; set; } = new();
+
+    [Parameter] public int? Year { get; set; }
+
+    [Parameter] public int? Month { get; set; }
+
+    [Parameter] public int? EmployeeId { get; set; }
+
+    [Parameter] public EventCallback<AttendanceFilter> OnFilter { get; set; }
+
+
+    /* ================= EMPLOYEE DROPDOWN ================= */
+
+    private List<SelectOption> EmployeeOptions = new();
+
+    private string? _selectedEmployeeName;
+
+    private string? _selectedEmployeeNumber;
+
+
+    /* ================= FILTER STATE ================= */
+
+    private bool HasActiveFilters =>
+        EmployeeId.HasValue || Year.HasValue || Month.HasValue;
+
+
+    /* ================= LIFECYCLE ================= */
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployees();
+    }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ReportData != null)
+        {
+            await JS.InvokeVoidAsync("drawHistogramChart", ReportData);
+        }
+    }
+
+
+    /* ================= LOAD EMPLOYEES ================= */
+
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            var result = await EmployeeService.GetEmployeesAsync();
+
+            EmployeeOptions = result?.IsSuccess == true
+                ? result.Data
+                    .Select(e => new SelectOption
+                    {
+                        Value = e.Id.ToString(),
+                        Text = $"{e.FullName} ({e.EmployeeNumber})"
+                    })
+                    .ToList()
+                : new();
+        }
+        catch
+        {
+            EmployeeOptions = new();
+        }
+    }
+
+
+    /* ================= FILTER EVENTS ================= */
+
+    async Task OnDateChange((int year, int month) value)
+    {
+        Year = value.year;
+        Month = value.month;
+
+        await ApplyFilter();
+    }
+
+
+    async Task OnEmployeeChange(string? empId)
+    {
+        EmployeeId =
+            !string.IsNullOrWhiteSpace(empId) && empId != "0"
+                ? int.Parse(empId)
+                : null;
+
+        State.SelectedEmployeeId = EmployeeId;
+
+        await ApplyFilter();
+    }
+
+
+    async Task OnEmployeeNameChanged(string? text)
+    {
+        _selectedEmployeeName = null;
+        _selectedEmployeeNumber = null;
+
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                text, @"^(.*?)(?:\s*\((.*?)\))?$");
+
+            if (match.Success)
+            {
+                _selectedEmployeeName = match.Groups[1].Value.Trim();
+                _selectedEmployeeNumber = match.Groups[2].Value.Trim();
+            }
+        }
+
+        await ApplyFilter();
+    }
+
+
+    async Task ClearEmployeeFilter()
+    {
+        EmployeeId = null;
+        State.SelectedEmployeeId = null;
+
+        _selectedEmployeeName = null;
+        _selectedEmployeeNumber = null;
+
+        await ApplyFilter();
+    }
+
+
+    async Task ClearFilters()
+    {
+        EmployeeId = null;
+        State.SelectedEmployeeId = null;
+
+        Year = DateTime.Now.Year;
+        Month = DateTime.Now.Month;
+
+        _selectedEmployeeName = null;
+        _selectedEmployeeNumber = null;
+
+        await ApplyFilter();
+    }
+
+
+    /* ================= APPLY FILTER ================= */
+
+    async Task ApplyFilter()
+    {
+        var filter = new AttendanceFilter
+        {
+            Year = Year,
+            Month = Month,
+            EmployeeId = EmployeeId
+        };
+
+        await OnFilter.InvokeAsync(filter);
+    }
+
+
+    /* ================= HELPERS ================= */
+
+    private string GetEmployeeValue()
+        => State.SelectedEmployeeId?.ToString() ?? "0";
+
+}

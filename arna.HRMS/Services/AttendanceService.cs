@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.Enums;
+using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Models.ViewModels.Attendance;
 using arna.HRMS.Services.Http;
 using Microsoft.JSInterop;
@@ -14,7 +15,7 @@ public interface IAttendanceService
     Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId);
     Task<ApiResult<AttendanceViewModel>> GetAttendanceByIdAsync(int id);
     Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId);
-    Task<ApiResult<AttendanceViewModel>> GetTodayClockinEntryAsync(int employeeId);
+    Task<ApiResult<List<AttendanceViewModel>>> GetTodayClockinEntryAsync(int employeeId);
     Task<ApiResult<AttendanceViewModel>> GetTodayLastEntryAsync(int employeeId);
 }
 
@@ -95,7 +96,7 @@ public class AttendanceService : IAttendanceService
         return await _attendance.GetTodayLastEntryAsync(employeeId);
     }
 
-    public async Task<ApiResult<AttendanceViewModel>> GetTodayClockinEntryAsync(int employeeId)
+    public async Task<ApiResult<List<AttendanceViewModel>>> GetTodayClockinEntryAsync(int employeeId)
     {
         return await _attendance.GetTodayFirstClockInAsync(employeeId);
     }
