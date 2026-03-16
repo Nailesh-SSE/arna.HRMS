@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IFestivalHolidayService, FestivalHolidayService>();
         services.AddScoped<ILeaveService, LeaveService>();
         services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IReportService, ReportService>();
 
         // Repositories
         services.AddScoped<DashboardRepository>();
@@ -47,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<FestivalHolidayRepository>();
         services.AddScoped<LeaveRepository>();
         services.AddScoped<RoleRepository>();
+        services.AddScoped<ReportRepository>();
 
         // Auth Services
         services.AddScoped<IAuthService, AuthService>();

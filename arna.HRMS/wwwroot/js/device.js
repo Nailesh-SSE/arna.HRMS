@@ -1,76 +1,42 @@
 ﻿window.deviceHelper = {
-    getDeviceType: function () {
-        return this.getDeviceInfo().category;
-    },
 
-    getDeviceInfo: function () {
+    getDeviceType: function () {
 
         const ua = navigator.userAgent.toLowerCase();
         const width = window.innerWidth;
-        const hasTouch = navigator.maxTouchPoints > 0;
-        const isFinePointer = window.matchMedia("(pointer: fine)").matches;
 
-        // Detect iPad desktop mode (iPad pretending to be Mac)
-        const isIPadDesktopMode =
-            ua.includes("macintosh") && hasTouch;
+        let deviceType = "UnknownDevice";
 
-        let deviceCategory = "Unknown";
-
-        // =========================
-        // 1️⃣ iOS Devices (Strict First)
-        // =========================
-        if (ua.includes("iphone") || ua.includes("ipod")) {
-            deviceCategory = "iOS Mobile";
-        }
-        else if (ua.includes("ipad") || isIPadDesktopMode) {
-            deviceCategory = "iOS Tablet";
+        if (
+            ua.includes("iphone") ||
+            ua.includes("ipod") ||
+            (ua.includes("android") && ua.includes("mobile"))
+        ) {
+            deviceType = "Mobile";
         }
 
-        // =========================
-        // 2️⃣ Android Devices
-        // =========================
-        else if (ua.includes("android")) {
-            if (ua.includes("mobile")) {
-                deviceCategory = "Android Mobile";
-            } else {
-                deviceCategory = "Android Tablet";
-            }
+        else if (
+            ua.includes("ipad") ||
+            (ua.includes("android") && !ua.includes("mobile")) ||
+            ua.includes("tablet")
+        ) {
+            deviceType = "Tablet";
         }
 
-        // =========================
-        // 3️⃣ Desktop Operating Systems
-        // =========================
-        else if (ua.includes("windows") || ua.includes("macintosh") || ua.includes("linux")) {
-
-            if (hasTouch) {
-                deviceCategory = "Touch Laptop/Desktop";
-            } else if (!hasTouch && isFinePointer) {
-                deviceCategory = "Non-Touch Laptop/Desktop";
-            } else {
-                deviceCategory = "Laptop/Desktop";
-            }
+        else if (
+            ua.includes("windows") ||
+            ua.includes("macintosh") ||
+            ua.includes("linux")
+        ) {
+            deviceType = "LaptopDesktop";
         }
 
-        // =========================
-        // 4️⃣ Fallback by screen size
-        // =========================
         else {
-            if (width <= 768) {
-                deviceCategory = "Mobile";
-            } else if (width <= 1024) {
-                deviceCategory = "Tablet";
-            } else {
-                deviceCategory = hasTouch
-                    ? "Touch Laptop/Desktop"
-                    : "Non-Touch Laptop/Desktop";
-            }
+            if (width <= 768) deviceType = "Mobile";
+            else if (width <= 1024) deviceType = "Tablet";
+            else deviceType = "LaptopDesktop";
         }
 
-        return {
-            category: deviceCategory,
-            width: width,
-            hasTouch: hasTouch,
-            userAgent: ua
-        };
+        return deviceType;
     }
 };

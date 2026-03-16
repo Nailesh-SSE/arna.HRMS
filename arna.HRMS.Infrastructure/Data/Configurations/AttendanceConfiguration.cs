@@ -31,10 +31,8 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
         builder.Property(a=> a.Longitude)
             .IsRequired(false);
 
-        builder.Property(a=> a.Device)
-            .IsRequired(false)
-            .HasColumnType("varchar")
-            .HasMaxLength(50);
+        builder.Property(a => a.DeviceId)
+            .IsRequired(false);
 
         // Relationship with Employee
         builder.HasOne(a => a.Employee)

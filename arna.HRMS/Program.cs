@@ -5,6 +5,7 @@ using arna.HRMS.Services.Auth;
 using arna.HRMS.Services.Common;
 using arna.HRMS.Services.Dashboard;
 using arna.HRMS.Services.Http;
+using arna.HRMS.Services.Report;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace arna.HRMS;
@@ -94,6 +95,7 @@ public class Program
         builder.Services.AddScoped<ILeaveService, LeaveService>();
         builder.Services.AddScoped<IRoleService, RoleService>();
         builder.Services.AddScoped<IFestivalHolidayService, FestivalHolidayService>();
+        builder.Services.AddScoped<IReportService, ReportService>();
 
         builder.Services.AddScoped<AttendanceState>();
 

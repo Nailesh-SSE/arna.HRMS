@@ -177,21 +177,21 @@ public class AttendanceService : IAttendanceService
         }
     }
 
-    public async Task<ServiceResult<AttendanceDto>> GetEmployeeTodayFirstClockInAsync(int employeeId)
+    public async Task<ServiceResult<List<AttendanceDto>>> GetEmployeeTodayFirstClockInAsync(int employeeId)
     {
         if (employeeId <= 0)
-            return ServiceResult<AttendanceDto>.Fail("Invalid Employee ID.");
+            return ServiceResult<List<AttendanceDto>>.Fail("Invalid Employee ID.");
 
         var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
         if (!exist.IsSuccess || exist.Data == null)
-            return ServiceResult<AttendanceDto>.Fail("Employee not found.");
+            return ServiceResult<List<AttendanceDto>>.Fail("Employee not found.");
 
         var firstClockIn = await _attendanceRepository.GetTodayFirstClockInAsync(employeeId);
 
         if (firstClockIn == null)
-            return ServiceResult<AttendanceDto>.Fail("Attendance not found.");
+            return ServiceResult<List<AttendanceDto>>.Fail("Attendance not found.");
 
-        return ServiceResult<AttendanceDto>.Success(_mapper.Map<AttendanceDto>(firstClockIn));
+        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(firstClockIn));
 
     }
 

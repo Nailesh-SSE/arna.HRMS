@@ -75,8 +75,13 @@
                 <AppButton ButtonClass="btn btn-success btn-sm rounded-pill clock-action-btn"
                            Disabled="@CooldownActive"
                            OnClick="ClockInAsync">
-                    <i class="bi bi-play-circle"></i>
-                    <span class="ms-1">ClockIn</span>
+
+                    <i class="bi bi-play-circle @(MissedClockOutYesterday ? "text-danger" : "")"></i>
+
+                    <span class="ms-1 @(MissedClockOutYesterday ? "text-danger" : "")">
+                        ClockIn
+                    </span>
+
                 </AppButton>
 
                 @if (ShowHoverTip)
@@ -135,7 +140,7 @@
     private bool ShowHoverTip, IsToastWarning;
     private bool? PendingClockIn;
 
-    // ★ NEW: prevents double-loading & ensures data loads on reload
+    private bool MissedClockOutYesterday;
     private bool _dataLoaded;
 
     private int CooldownRemaining;
@@ -205,56 +210,89 @@
     // ───────── load today's status ─────────
     private async Task LoadStatusAsync(int empId)
     {
-        var firstTask = ClockService.GetTodayClockinEntryAsync(empId);
-        var lastTask = ClockService.GetTodayLastEntryAsync(empId);
-        var statusTask = ClockService.GetClockStatusAsync(empId);
-        await Task.WhenAll(firstTask, lastTask, statusTask);
+        MissedClockOutYesterday = false;
+        // STEP 1 — Get today's records
+        var todayResult = await ClockService.GetTodayClockinEntryAsync(empId);
 
-        var first = firstTask.Result;
-        var last = lastTask.Result;
-        var status = statusTask.Result;
+        var todayRecords = todayResult.IsSuccess
+            ? todayResult.Data ?? new List<AttendanceViewModel>()
+            : new List<AttendanceViewModel>();
 
-        // ★ FIX: Set first clock-in display
-        if (first.IsSuccess && first.Data?.ClockInTime is not null)
+        // CASE 1 — TODAY RECORDS EXIST
+        if (todayRecords.Any())
         {
-            FirstClockInDisplay = Fmt(first.Data.ClockInTime.Value);
-        }
+            // FIRST CLOCK IN
+            var firstClock = todayRecords
+                .Where(x => x.ClockInTime != null)
+                .OrderBy(x => x.ClockInTime)
+                .FirstOrDefault();
 
-        TimeSpan? activeClockIn = null;
+            if (firstClock?.ClockInTime != null)
+                FirstClockInDisplay = Fmt(firstClock.ClockInTime.Value);
 
-        if (status.IsSuccess && status.Data is { ClockInTime: not null, ClockOutTime: null })
-            activeClockIn = status.Data.ClockInTime.Value;
-        else if (last.IsSuccess && last.Data is { ClockInTime: not null, ClockOutTime: null })
-            activeClockIn = last.Data.ClockInTime.Value;
 
-        if (activeClockIn.HasValue)
-        {
-            IsClockedIn = true;
-            LastClockInTime = TimeOnly.FromTimeSpan(activeClockIn.Value);
+            // LAST TODAY RECORD
+            var lastToday = todayRecords
+                .OrderByDescending(x => x.CreatedOn)
+                .FirstOrDefault();
 
-            var remaining = CooldownSec
-                - (int)(DateTime.Now - DateTime.Today.Add(activeClockIn.Value)).TotalSeconds;
-            if (remaining > 0) _ = CooldownAsync(remaining);
-        }
-        else if (last.IsSuccess && last.Data?.ClockOutTime is not null)
-        {
-            var remaining = CooldownSec
-                - (int)(DateTime.Now - DateTime.Today.Add(last.Data.ClockOutTime.Value)).TotalSeconds;
-            if (remaining > 0) _ = CooldownAsync(remaining);
-        }
 
-        // ★ FIX: Set last activity display
-        if (last.IsSuccess && last.Data is not null)
-        {
-            if (last.Data.ClockOutTime is not null)
+            // ACTIVE SESSION (ClockIn without ClockOut)
+            // LAST TODAY RECORD
+            lastToday = todayRecords
+                .OrderByDescending(x => x.CreatedOn)
+                .FirstOrDefault();
+
+            if (lastToday != null)
             {
-                LastActivityDisplay = Fmt(last.Data.ClockOutTime.Value);
+                if (lastToday.ClockInTime != null && lastToday.ClockOutTime == null)
+                {
+                    // user currently clocked in
+                    IsClockedIn = true;
+                    LastClockInTime = TimeOnly.FromTimeSpan(lastToday.ClockInTime.Value);
+                }
+                else
+                {
+                    // last action was clock out
+                    IsClockedIn = false;
+                }
             }
-            else if (last.Data.ClockInTime is not null
-                     && last.Data.ClockInTime != first.Data?.ClockInTime)
+
+
+            // LAST ACTIVITY DISPLAY
+            if (lastToday?.ClockOutTime != null)
+                LastActivityDisplay = Fmt(lastToday.ClockOutTime.Value);
+
+
+            // COOLDOWN
+            if (lastToday != null)
             {
-                LastActivityDisplay = Fmt(last.Data.ClockInTime.Value);
+                var remaining =
+                    CooldownSec - (int)(DateTime.Now - lastToday.CreatedOn).TotalSeconds;
+
+                if (remaining > 0)
+                    _ = CooldownAsync(remaining);
             }
+
+            return;
+        }
+
+        // CASE 2 — NO TODAY RECORDS CHECK LAST ATTENDANCE (YESTERDAY)
+        var lastResult = await ClockService.GetTodayLastEntryAsync(empId);
+
+        if (!lastResult.IsSuccess || lastResult.Data == null)
+            return;
+
+        var lastRecord = lastResult.Data;
+
+        // MISSED CLOCK OUT YESTERDAY
+        if (lastRecord != null &&
+            lastRecord.ClockInTime != null &&
+            lastRecord.ClockOutTime == null &&
+            lastRecord.Date.Date < DateTime.Today)
+        {
+            MissedClockOutYesterday = true;
+            IsClockedIn = false;
         }
     }
 
@@ -262,7 +300,6 @@
     private void OnBtnMouseEnter() => ShowHoverTip = true;
     private void OnBtnMouseLeave() => ShowHoverTip = false;
 
-    // ───────── wrapper click (fires when button is disabled) ─────────
     private async Task HandleWrapperClick()
     {
         if (!CooldownActive) return;
@@ -309,7 +346,13 @@
             var empId = GetEmployeeId();
             if (empId == 0) return;
 
-            var device = await JS.InvokeAsync<string>("deviceHelper.getDeviceType");
+            var deviceString = await JS.InvokeAsync<string>("deviceHelper.getDeviceType");
+            Console.WriteLine(deviceString);
+
+            if (!Enum.TryParse<DeviceType>(deviceString, true, out var device))
+            {
+                device = DeviceType.UnknownDevice;
+            }
             var now = TimeOnly.FromDateTime(DateTime.Now);
 
             if (isIn) await ProcessClockIn(empId, device, now);
@@ -320,10 +363,10 @@
         finally { await SetLoading(false); }
     }
 
-    private async Task ProcessClockIn(int empId, string device, TimeOnly now)
+    private async Task ProcessClockIn(int empId, DeviceType device, TimeOnly now)
     {
         var res = await ClockService.CreateAttendanceAsync(
-                      BuildVm(empId, device, clockIn: now.ToTimeSpan()));
+            BuildVm(empId, device, clockIn: now.ToTimeSpan()));
 
         if (!res.IsSuccess)
         {
@@ -344,13 +387,13 @@
         await ShowMsg($"Clocked in at {now.ToString(TimeFmt)}");
     }
 
-    private async Task ProcessClockOut(int empId, string device, TimeOnly now)
+    private async Task ProcessClockOut(int empId, DeviceType device, TimeOnly now)
     {
         var hours = now.ToTimeSpan() - LastClockInTime.ToTimeSpan();
         if (hours < TimeSpan.Zero) hours = TimeSpan.Zero;
 
         var res = await ClockService.CreateAttendanceAsync(
-                      BuildVm(empId, device, clockOut: now.ToTimeSpan(), hours: hours));
+            BuildVm(empId, device, clockOut: now.ToTimeSpan(), hours: hours));
 
         if (!res.IsSuccess)
         {
@@ -367,7 +410,7 @@
     }
 
     // ───────── build view-model ─────────
-    private AttendanceViewModel BuildVm(int empId, string device,
+    private AttendanceViewModel BuildVm(int empId, DeviceType device,
         TimeSpan? clockIn = null, TimeSpan? clockOut = null, TimeSpan? hours = null) => new()
         {
             EmployeeId = empId,
@@ -379,7 +422,7 @@
             WorkingHours = hours ?? TimeSpan.Zero,
             Latitude = CurrentLatitude,
             Longitude = CurrentLongitude,
-            Device = device
+            DeviceId = device
         };
 
     private static string Fmt(TimeSpan ts) =>
@@ -478,7 +521,6 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    // ───────── cleanup ─────────
     public void Dispose()
     {
         _timerCts?.Cancel(); _timerCts?.Dispose();

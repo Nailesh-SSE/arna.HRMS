@@ -14,6 +14,6 @@ public class AttendanceDto : BaseEntity
     public Double? Latitude { get; set; }
     public Double? Longitude { get; set; }
     public TimeSpan? WorkingHours { get; set; }
-    public string? Device { get; set; }
+    public DeviceType? DeviceId { get; set; }
 
 }

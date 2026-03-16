@@ -35,6 +35,9 @@ public sealed class ApiClients
 
     public FestivalHolidayApi FestivalHoliday { get; }
 
+    // ===================== REPORT =====================
+    public ReportApi Report { get; }
+
     public ApiClients(HttpService http)
     {
         http.SetApiClients(this);
@@ -54,7 +57,11 @@ public sealed class ApiClients
         Leave = new LeaveApi(http);
 
         FestivalHoliday = new FestivalHolidayApi(http);
+
+        Report = new ReportApi(http);
     }
+
+    
 
     // =========================================================
     // ===================== BASE CRUD =========================
@@ -245,9 +252,9 @@ public sealed class ApiClients
             return await Http.GetAsync<AttendanceViewModel>($"{Url}/{employeeId}/last-today");
         }
 
-        public async Task<ApiResult<AttendanceViewModel>> GetTodayFirstClockInAsync(int employeeId)
+        public async Task<ApiResult<List<AttendanceViewModel>>> GetTodayFirstClockInAsync(int employeeId)
         {
-            return await Http.GetAsync<AttendanceViewModel>($"{Url}/employees/{employeeId}/today/first-clock-in");
+            return await Http.GetAsync<List<AttendanceViewModel>>($"{Url}/employees/{employeeId}/today/first-clock-in");
         }
     }
 
@@ -376,4 +383,52 @@ public sealed class ApiClients
             return await Http.GetAsync<List<FestivalHolidayViewModel>>($"{Url}/monthly?year={year}&month={month}");
         }
     }
+
+    // ===============================================
+    // ===================== Report ==================
+    // ===============================================
+
+    public sealed class ReportApi
+    {
+        private const string Url = "api/report";
+        private readonly HttpService _http;
+
+        public ReportApi(HttpService http)
+        {
+            _http = http;
+        }
+
+        public async Task<ApiResult<List<AttendanceReportViewModel>>> GetEmployeesAttendanceReportAsync(
+            int? year,
+            int? month,
+            int? employeeId,
+            AttendanceStatus? statusId,
+            DeviceType? device)
+        {
+            var query = new List<string>();
+
+            if (year.HasValue)
+                query.Add($"year={year}");
+
+            if (month.HasValue)
+                query.Add($"month={month}");
+
+            if (employeeId.HasValue)
+                query.Add($"employeeId={employeeId}");
+
+            if (statusId.HasValue)
+                query.Add($"statusId={statusId}");
+
+            if (device.HasValue)
+                query.Add($"device={device}");
+
+            var qs = query.Any()
+                ? "?" + string.Join("&", query)
+                : string.Empty;
+
+            return await _http.GetAsync<List<AttendanceReportViewModel>>(
+                $"{Url}/attendance-report{qs}");
+        }
+    }
+
 }

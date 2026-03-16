@@ -235,12 +235,19 @@ public class AttendanceRepository
             .Where(a =>
                 a.IsActive &&
                 !a.IsDeleted &&
-                a.EmployeeId == employeeId)
-            .OrderByDescending(a => a.Id)
+                a.EmployeeId == employeeId &&
+                (
+                    a.StatusId == AttendanceStatus.Present ||
+                    a.StatusId == AttendanceStatus.Late ||
+                    a.StatusId == AttendanceStatus.HalfDay
+                ) &&
+                (a.ClockIn != null || a.ClockOut != null)
+            )
+            .OrderByDescending(a => a.CreatedOn)
             .FirstOrDefaultAsync();
     }
 
-    public async Task<Attendance?> GetTodayFirstClockInAsync(int empId)
+    public async Task<List<Attendance>> GetTodayFirstClockInAsync(int empId)
     {
         var today = DateTime.Today;
 
@@ -249,12 +256,18 @@ public class AttendanceRepository
                 a.IsActive &&
                 !a.IsDeleted &&
                 a.EmployeeId == empId &&
-                a.Date.Date == today)
-            .OrderBy(a => a.Id) 
-            .FirstOrDefaultAsync();
+                a.Date.Date == today &&
+                (
+                    a.StatusId == AttendanceStatus.Present ||
+                    a.StatusId == AttendanceStatus.Late ||
+                    a.StatusId == AttendanceStatus.HalfDay
+                ))
+            .OrderBy(a => a.CreatedOn)
+            .ToListAsync();
     }
 
-    #region Helpers
+
+        #region Helpers
 
     private static string CalculateStatus(
         IEnumerable<AttendanceStatus> statuses,

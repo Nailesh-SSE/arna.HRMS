@@ -1,0 +1,139 @@
+﻿<div class="myp-wrapper">
+
+    <!-- Display -->
+    <div class="myp-display" @onclick="Toggle">
+        <span class="myp-text">@DisplayText</span>
+        <span class="myp-arrow @(IsOpen ? "open" : "")"></span>
+    </div>
+
+    @if (IsOpen)
+    {
+        <!-- click outside -->
+        <div class="myp-overlay" @onclick="Close"></div>
+
+        <!-- dropdown panel -->
+        <div class="myp-panel" @onclick:stopPropagation="true">
+
+            <div class="myp-header">
+
+                <button type="button"
+                        class="nav-btn"
+                        @onclick="PrevYear">
+                    ‹
+                </button>
+
+                <span class="year-text">@CurrentYear</span>
+
+                <button type="button"
+                        class="nav-btn"
+                        @onclick="NextYear">
+                    ›
+                </button>
+
+            </div>
+
+            <div class="myp-divider"></div>
+
+            <div class="myp-grid">
+
+                @for (int i = 1; i <= 12; i++)
+                {
+                    var m = i;
+
+                    <button type="button"
+                            class="myp-month @(m == SelectedMonth ? "active" : "")"
+                            @onclick="() => SelectMonth(m)">
+
+                        @MonthNames[m - 1]
+
+                    </button>
+                }
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    /* PARAMETERS FROM PARENT */
+    [Parameter] public int? Year { get; set; }
+    [Parameter] public int? Month { get; set; }
+
+    /* EVENT TO PARENT */
+    [Parameter] public EventCallback<(int year, int month)> OnChange { get; set; }
+
+    private bool IsOpen;
+
+    /* INTERNAL STATE */
+    private int CurrentYear;
+    private int SelectedMonth;
+
+    private readonly string[] MonthNames =
+    {
+        "January","February","March","April","May","June",
+        "July","August","September","October","November","December"
+    };
+
+    /* INITIALIZE DEFAULT VALUES */
+    protected override void OnInitialized()
+    {
+        CurrentYear = Year ?? DateTime.Now.Year;
+
+        SelectedMonth =
+            Month.HasValue && Month.Value >= 1 && Month.Value <= 12
+            ? Month.Value
+            : DateTime.Now.Month;
+    }
+
+    /* DISPLAY TEXT */
+    private string DisplayText =>
+        $"{MonthNames[SelectedMonth - 1]} {CurrentYear}";
+
+    private void Toggle()
+    {
+        IsOpen = !IsOpen;
+    }
+
+    private void Close()
+    {
+        IsOpen = false;
+    }
+
+    /* YEAR NAVIGATION */
+
+    private async Task PrevYear()
+    {
+        CurrentYear--;
+
+        await NotifyParent();
+    }
+
+    private async Task NextYear()
+    {
+        CurrentYear++;
+
+        await NotifyParent();
+    }
+
+    /* MONTH CLICK */
+
+    private async Task SelectMonth(int month)
+    {
+        SelectedMonth = month;
+
+        await NotifyParent();
+
+        Close();
+    }
+
+    /* SEND DATA TO PARENT */
+
+    private async Task NotifyParent()
+    {
+        await OnChange.InvokeAsync((CurrentYear, SelectedMonth));
+    }
+
+}

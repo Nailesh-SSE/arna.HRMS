@@ -1,6 +1,9 @@
-﻿using arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection.Emit;
 
 namespace arna.HRMS.Infrastructure.Data
 {
@@ -22,6 +25,9 @@ namespace arna.HRMS.Infrastructure.Data
         public DbSet<FestivalHoliday> FestivalHoliday { get; set; }
         public DbSet<LeaveType> LeaveTypes { get; set; }
 
+        [NotMapped]
+        public DbSet<AttendanceReportDto> AttendanceReport { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -36,6 +42,10 @@ namespace arna.HRMS.Infrastructure.Data
             builder.ApplyConfiguration(new AttendanceRequestConfiguration());
             builder.ApplyConfiguration(new FestivalHolidayConfiguration()); 
             builder.ApplyConfiguration(new LeaveTypeConfiguration());
+
+            builder.Entity<AttendanceReportDto>()
+                   .HasNoKey()
+                   .ToView(null);
 
             // ===== Roles =====
             builder.Entity<Role>().HasData(
@@ -111,6 +121,9 @@ namespace arna.HRMS.Infrastructure.Data
                     ParentDepartmentId = 3
                 }
             );
+
+       
+
         }
 
         private string HashPassword(string password)
