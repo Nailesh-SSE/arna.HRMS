@@ -1,0 +1,25 @@
+﻿@page "/admin-report-management"
+
+@using arna.HRMS.Components.Loader
+
+@if (isLoading) 
+{
+    <Loader Visible="isLoading" Message="@loadingMessage" />
+}
+else
+{
+    <ReportPage />
+}
+
+@code
+{
+    private bool isLoading = false;
+    private string loadingMessage = "Loading Report Management....";
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await Task.Delay(500);
+        isLoading = false;
+    }
+}

@@ -33,16 +33,16 @@
 
         <!-- ================= HEADER ================= -->
         <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
-                            justify-content-between gap-2 gap-sm-3 mb-4">
+                                justify-content-between gap-2 gap-sm-3 mb-4">
 
             <div class="d-flex align-items-start gap-2">
                 <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
-                                     p-2 d-inline-flex align-items-center justify-content-center">
+                                         p-2 d-inline-flex align-items-center justify-content-center">
                     <i class="bi bi-calendar-check-fill fs-5"></i>
                 </span>
 
                 <div>
-                    <h5 class="fw-bold mb-0">My Attendance</h5>
+                    <h5 class="fw-bold mb-0">Attendance</h5>
                     <p class="text-muted mb-0 small d-none d-sm-block">
                         View and track your daily attendance records
                     </p>
@@ -123,7 +123,7 @@
                             <div>
                                 <small class="text-muted">Total Working Hours</small>
                                 <div class="fs-4 fw-bold text-success">
-                                    @State.TotalWorkingHours.ToString(@"hh\:mm") hrs
+                                    @FormatTotalWorkingHours() hrs
                                 </div>
                             </div>
                         </div>
@@ -134,16 +134,6 @@
                                  style="width:@GetWorkingHoursPercent()%">
                             </div>
                         </div>
-
-                        <div class="d-flex justify-content-between mt-2">
-                            <small class="text-muted">
-                                @State.TotalWorkingHours.ToString(@"hh\:mm") logged
-                            </small>
-                            <small class="text-muted">
-                                @GetExpectedHours() expected
-                            </small>
-                        </div>
-
                     </div>
                 </div>
 
@@ -191,8 +181,8 @@
         <EmployeeRequestDrawer IsOpen="@_isDrawerOpen"
                                IsOpenChanged="OnDrawerOpenChanged"
                                Title="@(_editModel != null
-                                ? "Edit Attendance Request"
-                                : "New Attendance Request")"
+                                                               ? "Edit Attendance Request"
+                                                               : "New Attendance Request")"
                            EditModel="_editModel" />
 </div>
 }
@@ -286,9 +276,10 @@
 
     private void CalculateTotalHours()
     {
+        // Sum only WorkingHours (exclude breaks/total hours which include breaks)
         State.TotalWorkingHours = State.AttendanceList
             .SelectMany(d => d.Employees ?? Enumerable.Empty<dynamic>())
-            .Aggregate(TimeSpan.Zero, (t, e) => t + (e?.TotalHours ?? TimeSpan.Zero));
+            .Aggregate(TimeSpan.Zero, (t, e) => t + (e?.WorkingHours ?? TimeSpan.Zero));
     }
 
     private void BuildSummary()
@@ -303,15 +294,11 @@
             .Count(r => r.StatusId == Status.Pending) ?? 0;
     }
 
-    // ═══════════ TAB MANAGEMENT ═══════════
-
     private void SetTab(Tab tab)
     {
         if (_activeTab == tab) return;
         _activeTab = tab;
     }
-
-    // ═══════════ ATTENDANCE VIEW ═══════════
 
     private async Task SetAttendanceView(string mode)
     {
@@ -333,8 +320,6 @@
         State.SelectedMonth = $"{value.year}-{value.month:D2}";
         await LoadData();
     }
-
-    // ═══════════ DRAWER & REQUEST ACTIONS ═══════════
 
     private void OpenNewRequest()
     {
@@ -386,11 +371,17 @@
         }
     }
 
-    // ═══════════ HELPERS ═══════════
-
     private int GetWorkingHoursPercent()
     {
-        var workingDays = State.AttendanceList.Count;
+        var workingDays = State.AttendanceList.Count(d =>
+        {
+            var empRecord = d.Employees?.FirstOrDefault();
+            if (empRecord == null) return false;
+
+            var status = empRecord.Status?.ToString() ?? "";
+            return status == "Present" || status == "Late" || status == "HalfDay";
+        });
+
         if (workingDays == 0) return 0;
 
         var expected = workingDays * ExpectedDailyHours;
@@ -402,7 +393,15 @@
 
     private string GetExpectedHours()
     {
-        var workingDays = State.AttendanceList.Count;
+        var workingDays = State.AttendanceList.Count(d =>
+        {
+            var empRecord = d.Employees?.FirstOrDefault();
+            if (empRecord == null) return false;
+
+            var status = empRecord.Status?.ToString() ?? "";
+            return status == "Present" || status == "Late" || status == "HalfDay";
+        });
+
         var expected = workingDays * ExpectedDailyHours;
         return $"{expected}:00";
     }
@@ -424,4 +423,13 @@
     private static string GetMonthName(int m)
         => System.Globalization.CultureInfo.CurrentCulture
             .DateTimeFormat.GetMonthName(m);
+
+    private string FormatTotalWorkingHours()
+    {
+        var ts = State.TotalWorkingHours;
+        int totalHours = (int)ts.TotalHours;
+        int minutes = ts.Minutes;
+        int seconds = ts.Seconds;
+        return $"{totalHours}:{minutes:D2}:{seconds:D2}";
+    }
 }

@@ -27,6 +27,13 @@ public sealed class SmartRouter : ISmartRouter
                 [UserRole.SuperAdmin] = "/admin-attendance-management"
             },
 
+            ["report"] = new Dictionary<UserRole, string>
+            {
+                [UserRole.Employee] = "/emp-report-management",
+                [UserRole.Admin] = "/admin-report-management",
+                [UserRole.SuperAdmin] = "/admin-report-management"
+            },
+
             ["dashboard"] = new Dictionary<UserRole, string>
             {
                 [UserRole.Employee] = "/",

@@ -322,14 +322,17 @@
         try
         {
             var empId = Employee.Id;
-            var result = await AttendanceService.GetAttendanceByMonthAsync(selectedYear, selectedMonth, empId, null, AttendanceStatus.Present);
+            // Call without status filter to get ALL records for the month
+            var result = await AttendanceService.GetAttendanceByMonthAsync(
+                selectedYear, selectedMonth, empId, null, null);
             allRecords = result.Data ?? new List<MonthlyAttendanceViewModel>();
             CalculateStats();
         }
-        catch
+        catch (Exception ex)
         {
             allRecords = new();
             presentCount = absentCount = lateCount = attendanceRate = 0;
+            Console.WriteLine($"Error loading attendance data: {ex.Message}");
         }
         finally
         {
@@ -362,21 +365,23 @@
         StateHasChanged();
     }
 
-    private void OnMonthDropdownChanged(ChangeEventArgs e)
+    private async Task OnMonthDropdownChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var month))
         {
             selectedMonth = month;
-            CalculateStats();
+            selectedStatusFilter = null;  // Clear filter when changing month
+            await LoadAllData();  // Reload data from API
         }
     }
 
-    private void OnYearDropdownChanged(ChangeEventArgs e)
+    private async Task OnYearDropdownChanged(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var year))
         {
             selectedYear = year;
-            CalculateStats();
+            selectedStatusFilter = null;  // Clear filter when changing year
+            await LoadAllData();  // Reload data from API
         }
     }
 
@@ -397,7 +402,7 @@
         selectedYear = DateTime.Today.Year;
         selectedMonth = DateTime.Today.Month;
         selectedStatusFilter = null;
-        CalculateStats();
+        await LoadAllData();  // Reload data from API
     }
 
     private async Task HandleBack()

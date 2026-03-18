@@ -73,12 +73,12 @@ public class NavigationHelper
         },
          new()
         {
-            Id = "attendanceReport",
-            Label = "AttendanceReport",
+            Id = "report-management",
+            Label = "Report",
             Icon = "bi bi-clipboard-data me-2",
             Section = "Report",
-            Route = "/attendance-report",
-            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager}
+            Route = "/report-management",
+            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
         },
         new()
         {
@@ -129,6 +129,13 @@ public class NavigationHelper
                     ? "/emp-attendance-management"
                     : "/admin-attendance-management",
 
+            "report-management" => 
+                role == UserRole.Employee 
+                    ? "/employee-report"
+                    : role == UserRole.SuperAdmin || role == UserRole.Admin
+                        ? "/admin-report-management"
+                        : "/report-management",
+            
             _ => item.Route
         };
     }

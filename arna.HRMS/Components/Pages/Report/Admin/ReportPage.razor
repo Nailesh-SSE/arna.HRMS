@@ -1,0 +1,471 @@
+﻿@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Report
+@using arna.HRMS.Services.Common
+
+@inject IReportService ReportService
+@inject NotificationService NotificationService
+
+@implements IDisposable
+
+@if (isLoading && !showDetail)
+{
+    <Loader Visible="isLoading" Message="Loading employee reports…" />
+}
+else if (!showDetail)
+{
+    <div class="emp-report-fade-in">
+
+        <!-- ══════════ HEADER ══════════ -->
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:48px; height:48px;">
+                    <i class="bi bi-clipboard-data-fill text-primary fs-4"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-0">Employees Attendance Report</h4>
+                    <p class="text-muted mb-0 small">
+                        Monitor attendance data across your team. Click
+                        <strong class="text-primary">View</strong> for detailed insights.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════ FILTER CARD ══════════ -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-3 p-md-4">
+                <div class="row align-items-end g-3">
+
+                    <!-- From Date -->
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="bi bi-calendar-event me-1"></i>From Date
+                        </label>
+                        <input type="text"
+                               class="form-control form-control-sm @(fromDateError ? "is-invalid" : "")"
+                               placeholder="DD/MM/YY"
+                               maxlength="8"
+                               value="@FormatDate(fromDate)"
+                               @onchange="OnFromDateInput" />
+                        @if (fromDateError)
+                        {
+                            <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
+                        }
+                    </div>
+
+                    <!-- To Date -->
+                    <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                        <label class="form-label small fw-semibold text-muted mb-1">
+                            <i class="bi bi-calendar-event me-1"></i>To Date
+                        </label>
+                        <input type="text"
+                               class="form-control form-control-sm @(toDateError ? "is-invalid" : "")"
+                               placeholder="DD/MM/YY"
+                               maxlength="8"
+                               value="@FormatDate(toDate)"
+                               @onchange="OnToDateInput" />
+                        @if (toDateError)
+                        {
+                            <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
+                        }
+                    </div>
+
+                    <!-- Reset -->
+                    <div class="col-auto">
+                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                @onclick="ResetDates"
+                                title="Reset to current month">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                        </button>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="col-12 col-md-auto ms-md-auto">
+                        <div class="position-relative">
+                            <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted"
+                               style="left:12px;"></i>
+                            <input type="text"
+                                   class="form-control form-control-sm rounded-pill ps-5"
+                                   placeholder="Search by name or number…"
+                                   style="min-width:240px;"
+                                   @bind="_searchText"
+                                   @bind:event="oninput" />
+                            @if (!string.IsNullOrWhiteSpace(_searchText))
+                            {
+                                <button class="btn btn-link btn-sm position-absolute top-50 translate-middle-y border-0 p-0"
+                                        style="right:10px;"
+                                        @onclick="ClearSearch">
+                                    <i class="bi bi-x-lg text-muted"></i>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Filter Summary -->
+                <div class="mt-3 pt-2 border-top border-light">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        @if (isCustomDateRange)
+                        {
+                            <span>
+                                Showing data from
+                                <strong class="text-primary">@FormatDate(fromDate)</strong>
+                                to
+                                <strong class="text-primary">@FormatDate(toDate)</strong>
+                                <span class="ms-1">(@((toDate - fromDate).Days + 1) days)</span>
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Showing data for
+                                <strong class="text-primary">
+                                    @System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(fromDate.Month) @fromDate.Year
+                                </strong>
+                            </span>
+                        }
+                        &mdash;
+                        <span class="fw-semibold">@FilteredEmployees.Count</span> of @_allEmployees.Count employees
+                    </small>
+                </div>
+            </div>
+        </div>
+
+            <!-- Attendance Rate Bar -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <small class="fw-semibold text-muted">
+                            <i class="bi bi-speedometer2 me-1"></i>Overall Attendance Rate
+                        </small>
+                        <span class="fw-bold @GetRateColor(GetOverallAttendanceRate())">
+                            @GetOverallAttendanceRate()%
+                        </span>
+                    </div>
+                    <div class="progress rounded-pill" style="height:8px;">
+                        <div class="progress-bar rounded-pill @GetRateBarColor(GetOverallAttendanceRate())"
+                             style="width:@GetOverallAttendanceRate()%; transition:width .6s ease;"
+                             role="progressbar"></div>
+                    </div>
+                </div>
+            </div>
+        
+
+        <!-- ══════════ TABLE CARD ══════════ -->
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h6 class="fw-semibold mb-0">
+                        <i class="bi bi-table text-primary me-2"></i>Employee Summary
+                    </h6>
+                    <span class="badge bg-light text-dark rounded-pill px-3 py-1 border">
+                        <i class="bi bi-list-ul me-1"></i>@FilteredEmployees.Count employees
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                @if (!FilteredEmployees.Any())
+                {
+                    <div class="text-center py-5 px-3">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width:72px; height:72px;">
+                            <i class="bi bi-person-slash fs-2 text-muted opacity-50"></i>
+                        </div>
+                        <h6 class="fw-semibold text-muted mb-1">No Employees Found</h6>
+                        <p class="text-muted small mb-3 mx-auto" style="max-width:360px;">
+                            @if (!string.IsNullOrWhiteSpace(_searchText))
+                            {
+                                <span>No employees match "<strong>@_searchText</strong>"</span>
+                            }
+                            else
+                            {
+                                <span>
+                                    No attendance data from
+                                    <strong>@FormatDate(fromDate)</strong> to
+                                    <strong>@FormatDate(toDate)</strong>.
+                                </span>
+                            }
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(_searchText))
+                        {
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
+                                    @onclick="ClearSearch">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Search
+                            </button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-primary rounded-pill px-4 shadow-sm"
+                                    @onclick="ResetDates">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Current Month
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <AppTable TItem="EmployeeAttendanceReportViewModel"
+                              Items="FilteredEmployees"
+                              Columns="TableSchemas.EmployeeReport"
+                              EnablePagination="true"
+                              PageSize="10"
+                              WrapperClass="emp-report-table">
+                        <ActionTemplate Context="emp">
+                            <AppButton ButtonClass="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                       OnClick="() => OpenDetail(emp)">
+                                <i class="bi bi-eye me-1"></i>
+                                <span class="d-none d-sm-inline">View</span>
+                            </AppButton>
+                        </ActionTemplate>
+                    </AppTable>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- ═══════════════════════════════════════════
+         FIX: Only pass dates when user manually
+         changed them. Otherwise pass null so
+         detail page defaults to month mode.
+         ═══════════════════════════════════════════ -->
+    <ReportDetailPage Employee="selectedEmployee!"
+                      InitialFromDate="@(isCustomDateRange ? (DateTime?)fromDate : null)"
+                      InitialToDate="@(isCustomDateRange ? (DateTime?)toDate : null)"
+                      OnBackClicked="BackToList" />
+}
+
+@code {
+
+    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
+
+    /* ───── State ───── */
+    private bool showDetail;
+    private bool isLoading;
+    private string _searchText = "";
+    private EmployeeViewModel? selectedEmployee;
+    private DateTime fromDate;
+    private DateTime toDate;
+    private bool isCustomDateRange;
+    private bool fromDateError;
+    private bool toDateError;
+
+    private List<EmployeeAttendanceReportViewModel> _allEmployees = new();
+    private CancellationTokenSource _cts = new();
+    private bool _isDisposed;
+
+    /* ───── Computed ───── */
+    private List<EmployeeAttendanceReportViewModel> FilteredEmployees =>
+        string.IsNullOrWhiteSpace(_searchText)
+            ? _allEmployees
+            : _allEmployees.Where(e =>
+                MatchesSearch(e.EmployeeName) ||
+                MatchesSearch(e.EmployeeNumber)
+            ).ToList();
+
+    /* ───── Lifecycle ───── */
+    protected override async Task OnInitializedAsync()
+    {
+        SetDefaultDates();
+        await LoadEmployees();
+    }
+
+    /* ───── Data Loading ───── */
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            int? yearParam;
+            int? monthParam;
+            DateTime? fromParam;
+            DateTime? toParam;
+
+            if (isCustomDateRange)
+            {
+                yearParam = null;
+                monthParam = null;
+                fromParam = fromDate;
+                toParam = toDate;
+            }
+            else
+            {
+                yearParam = fromDate.Year;
+                monthParam = fromDate.Month;
+                fromParam = null;
+                toParam = null;
+            }
+
+            var result = await ReportService.GetEmployeeAttendanceReportAsync(
+                yearParam, monthParam, null, fromParam, toParam);
+
+            if (_cts.IsCancellationRequested || _isDisposed) return;
+
+            _allEmployees = result?.IsSuccess == true
+                ? result.Data ?? new()
+                : new();
+
+            if (!_isDisposed)
+                await OnCountChanged.InvokeAsync(_allEmployees.Count);
+        }
+        catch (Exception ex)
+        {
+            _allEmployees = new();
+            await NotificationService.Error($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /* ───── Date Defaults ───── */
+    private void SetDefaultDates()
+    {
+        var today = DateTime.Today;
+        fromDate = new DateTime(today.Year, today.Month, 1);
+        toDate = new DateTime(today.Year, today.Month,
+                              DateTime.DaysInMonth(today.Year, today.Month));
+        isCustomDateRange = false;
+    }
+
+    /* ───── Format: DD/MM/YY ───── */
+    private static string FormatDate(DateTime date)
+        => date.ToString("dd/MM/yy");
+
+    /* ───── Parse: DD/MM/YY ───── */
+    private static bool TryParseDate(string? input, out DateTime result)
+    {
+        result = default;
+        if (string.IsNullOrWhiteSpace(input)) return false;
+
+        string[] formats = {
+            "dd/MM/yy", "dd-MM-yy", "dd.MM.yy",
+            "dd/MM/yyyy", "dd-MM-yyyy", "dd.MM.yyyy"
+        };
+
+        return DateTime.TryParseExact(
+            input.Trim(),
+            formats,
+            System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None,
+            out result);
+    }
+
+    /* ───── From Date Handler ───── */
+    private async Task OnFromDateInput(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+
+        if (TryParseDate(val, out var d))
+        {
+            fromDate = d;
+            fromDateError = false;
+            isCustomDateRange = true;
+
+            if (fromDate > toDate) toDate = fromDate;
+
+            await LoadEmployees();
+        }
+        else
+        {
+            fromDateError = true;
+        }
+    }
+
+    /* ───── To Date Handler ───── */
+    private async Task OnToDateInput(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+
+        if (TryParseDate(val, out var d))
+        {
+            toDate = d;
+            toDateError = false;
+            isCustomDateRange = true;
+
+            if (toDate < fromDate) fromDate = toDate;
+
+            await LoadEmployees();
+        }
+        else
+        {
+            toDateError = true;
+        }
+    }
+
+    /* ───── Reset ───── */
+    private async Task ResetDates()
+    {
+        SetDefaultDates();
+        _searchText = "";
+        fromDateError = false;
+        toDateError = false;
+        await LoadEmployees();
+    }
+
+    /* ───── Navigation ───── */
+    private void OpenDetail(EmployeeAttendanceReportViewModel emp)
+    {
+        // Split EmployeeName into FirstName and LastName
+        var nameParts = (emp.EmployeeName ?? "").Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+
+        selectedEmployee = new EmployeeViewModel
+        {
+            Id = emp.EmployeeId,
+            EmployeeNumber = emp.EmployeeNumber,
+            FirstName = nameParts.Length > 0 ? nameParts[0] : "",
+            LastName = nameParts.Length > 1 ? nameParts[1] : "",
+        };
+        showDetail = true;
+    }
+
+    private void BackToList()
+    {
+        showDetail = false;
+        selectedEmployee = null;
+    }
+
+    /* ───── Search ───── */
+    private void ClearSearch() => _searchText = "";
+
+    private bool MatchesSearch(string? value) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+    /* ───── Stats ───── */
+    private double GetOverallAttendanceRate()
+    {
+        var totalWork = _allEmployees.Sum(e => e.TotalWorkDays);
+        var totalPresent = _allEmployees.Sum(e => e.TotalPresent);
+        return totalWork > 0
+            ? Math.Round((double)totalPresent / totalWork * 100, 1)
+            : 0;
+    }
+
+    private static string GetRateColor(double r) =>
+        r >= 80 ? "text-success" : r >= 60 ? "text-warning" : "text-danger";
+
+    private static string GetRateBarColor(double r) =>
+        r >= 80 ? "bg-success" : r >= 60 ? "bg-warning" : "bg-danger";
+
+    /* ───── Dispose ───── */
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+        _isDisposed = true;
+        try { _cts.Cancel(); } catch { }
+        try { _cts.Dispose(); } catch { }
+    }
+}
