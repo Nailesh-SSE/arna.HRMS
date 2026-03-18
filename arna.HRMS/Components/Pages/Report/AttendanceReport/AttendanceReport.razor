@@ -64,6 +64,8 @@
     int? employeeId;
     DeviceType? Device;
     AttendanceStatus? status;
+    DateTime? fromDate;
+    DateTime? toDate;
 
 
 
@@ -82,7 +84,9 @@
             Month = month,
             EmployeeId = employeeId,
             Status = status,
-            Device = Device
+            Device = Device,
+            FromDate = fromDate,
+            ToDate = toDate
         });
     }
 
@@ -99,12 +103,14 @@
         reportData = new List<AttendanceReportViewModel>();
         await InvokeAsync(StateHasChanged);
 
-        var result = await ReportService.GetAttendanceReportAsync(
+        var result = await ReportService.GetEmployeeDailyAttendanceReportAsync(
             year,
             month,
             employeeId,
             status,
-            Device
+            Device,
+            fromDate,
+            toDate
         );
 
         if (result.IsSuccess && result.Data != null)

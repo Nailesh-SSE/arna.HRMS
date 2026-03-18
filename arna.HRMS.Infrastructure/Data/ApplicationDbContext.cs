@@ -27,6 +27,8 @@ namespace arna.HRMS.Infrastructure.Data
 
         [NotMapped]
         public DbSet<AttendanceReportDto> AttendanceReport { get; set; }
+        [NotMapped]
+        public DbSet<EmployeeAttendanceReportDto> EmployeeAttendanceReport { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -44,6 +46,10 @@ namespace arna.HRMS.Infrastructure.Data
             builder.ApplyConfiguration(new LeaveTypeConfiguration());
 
             builder.Entity<AttendanceReportDto>()
+                   .HasNoKey()
+                   .ToView(null);
+
+            builder.Entity<EmployeeAttendanceReportDto>()
                    .HasNoKey()
                    .ToView(null);
 

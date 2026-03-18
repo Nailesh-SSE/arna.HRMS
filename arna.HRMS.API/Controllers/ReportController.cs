@@ -15,15 +15,33 @@ public class ReportController : ControllerBase
         _reportService = reportService;
     }
 
-    [HttpGet("attendance-report")]
-    public async Task<IActionResult> AttendanceReportAsync(
+    [HttpGet("daily-attendance-report")]
+    public async Task<IActionResult> DailyAttendanceReportAsync(
     [FromQuery] int? year,
     [FromQuery] int? month,
     [FromQuery] int? employeeId,
     [FromQuery] AttendanceStatus? statusId,
-    [FromQuery] DeviceType? device)
+    [FromQuery] DeviceType? device,
+    [FromQuery] DateTime? FromDate,
+    [FromQuery] DateTime? ToDate)
     {
-        var result = await _reportService.GetAttendanceReport(year, month, employeeId, statusId, device);
+        var result = await _reportService.GetDailyAttendanceReport(year, month, employeeId, statusId, device,FromDate, ToDate);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Message);
+
+        return Ok(result);
+    }
+
+    [HttpGet("employees-attendance-report")]
+    public async Task<IActionResult> EmployeeAttendanceReportAsync(
+    [FromQuery] int? year,
+    [FromQuery] int? month,
+    [FromQuery] int? employeeId,
+    [FromQuery] DateTime? FromDate,
+    [FromQuery] DateTime? ToDate)
+    {
+        var result = await _reportService.GetEmployeeAttendanceReport(year, month, employeeId, FromDate, ToDate);
 
         if (!result.IsSuccess)
             return BadRequest(result.Message);

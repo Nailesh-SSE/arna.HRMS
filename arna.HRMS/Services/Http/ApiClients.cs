@@ -398,12 +398,14 @@ public sealed class ApiClients
             _http = http;
         }
 
-        public async Task<ApiResult<List<AttendanceReportViewModel>>> GetEmployeesAttendanceReportAsync(
+        public async Task<ApiResult<List<AttendanceReportViewModel>>> GetEmployeesDailyAttendanceReportAsync(
             int? year,
             int? month,
             int? employeeId,
             AttendanceStatus? statusId,
-            DeviceType? device)
+            DeviceType? device,
+            DateTime? FromDate,
+            DateTime? ToDate)
         {
             var query = new List<string>();
 
@@ -422,12 +424,50 @@ public sealed class ApiClients
             if (device.HasValue)
                 query.Add($"device={device}");
 
+            if (FromDate.HasValue)
+                query.Add($"FromDate={FromDate}");
+
+            if (ToDate.HasValue)
+                query.Add($"ToDate={ToDate}");
+
             var qs = query.Any()
                 ? "?" + string.Join("&", query)
                 : string.Empty;
 
             return await _http.GetAsync<List<AttendanceReportViewModel>>(
-                $"{Url}/attendance-report{qs}");
+                $"{Url}/daily-attendance-report{qs}");
+        }
+
+        public async Task<ApiResult<List<EmployeeAttendanceReportViewModel>>> GetEmployeesAttendanceReportAsync(
+            int? year,
+            int? month,
+            int? employeeId,
+            DateTime? FromDate,
+            DateTime? ToDate)
+        {
+            var query = new List<string>();
+
+            if (year.HasValue)
+                query.Add($"year={year}");
+
+            if (month.HasValue)
+                query.Add($"month={month}");
+
+            if (employeeId.HasValue)
+                query.Add($"employeeId={employeeId}");
+
+            if (FromDate.HasValue)
+                query.Add($"FromDate={FromDate}");
+
+            if (ToDate.HasValue)
+                query.Add($"ToDate={ToDate}");
+
+            var qs = query.Any()
+                ? "?" + string.Join("&", query)
+                : string.Empty;
+
+            return await _http.GetAsync<List<EmployeeAttendanceReportViewModel>>(
+                $"{Url}/employees-attendance-report{qs}");
         }
     }
 

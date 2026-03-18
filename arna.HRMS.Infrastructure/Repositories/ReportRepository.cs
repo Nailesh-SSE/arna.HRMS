@@ -15,29 +15,68 @@ public class ReportRepository
         _context = context;
     }
 
+    public async Task<List<AttendanceReportDto>> GetDailyAttendanceReportAsync(
+        int? year,
+        int? month,
+        int? employeeId,
+        AttendanceStatus? statusId,
+        DeviceType? device,
+        DateTime? fromDate,
+        DateTime? toDate)
+    {
+        var parameters = new List<SqlParameter>
+        {
+            new SqlParameter("@Year", (object?)year ?? DBNull.Value),
+            new SqlParameter("@Month", (object?)month ?? DBNull.Value),
+            new SqlParameter("@EmployeeId", (object?)employeeId ?? DBNull.Value),
+            new SqlParameter("@StatusId", (object?)statusId ?? DBNull.Value),
+            new SqlParameter("@DepartmentId", DBNull.Value), // optional
+            new SqlParameter("@DeviceId", (object?)device ?? DBNull.Value),
+            new SqlParameter("@FromDate", (object?)fromDate ?? DBNull.Value),
+            new SqlParameter("@ToDate", (object?)toDate ?? DBNull.Value)
+        };
 
-    public async Task<List<AttendanceReportDto>> GetAttendanceReportAsync(
-    int? year,
-    int? month,
-    int? employeeId,
-    AttendanceStatus? statusId,
-    DeviceType? device)
+        var result = await _context
+            .Set<AttendanceReportDto>()
+            .FromSqlRaw(
+                @"EXEC dbo.Sp_DailyAttendanceReport 
+                    @Year, 
+                    @Month, 
+                    @EmployeeId, 
+                    @StatusId, 
+                    @DepartmentId, 
+                    @DeviceId, 
+                    @FromDate, 
+                    @ToDate",
+                parameters.ToArray())
+            .ToListAsync();
+
+        return result;
+    }
+
+    public async Task<List<EmployeeAttendanceReportDto>> GetEmployeeAttendanceReportAsync(
+        int? year,
+        int? month,
+        int? employeeId,
+        DateTime? fromDate,
+        DateTime? toDate)
     {
         var parameters = new[]
         {
-        new SqlParameter("@Year", (object?)year ?? DBNull.Value),
-        new SqlParameter("@Month", (object?)month ?? DBNull.Value),
-        new SqlParameter("@EmployeeId", (object?)employeeId ?? DBNull.Value),
-        new SqlParameter("@StatusId", (object?)statusId ?? DBNull.Value),
-        new SqlParameter("@DepartmentId", DBNull.Value), // if needed later
-        new SqlParameter("@DeviceId", (object?)device ?? DBNull.Value)
-    };
+            new SqlParameter("@Year", (object?)year ?? DBNull.Value),
+            new SqlParameter("@Month", (object?)month ?? DBNull.Value),
+            new SqlParameter("@EmployeeId", (object?)employeeId ?? DBNull.Value),
+            new SqlParameter("@FromDate", (object?)fromDate ?? DBNull.Value),
+            new SqlParameter("@ToDate", (object?)toDate ?? DBNull.Value)
+        };
 
-        return await _context
-            .Set<AttendanceReportDto>()
+        var result = await _context
+            .Set<EmployeeAttendanceReportDto>()
             .FromSqlRaw(
-                "EXEC dbo.Sp_AttendanceReport @Year, @Month, @EmployeeId, @StatusId, @DepartmentId, @DeviceId",
+                "EXEC dbo.Sp_EmployeesAttendanceReport @Year, @Month, @EmployeeId, @FromDate, @ToDate",
                 parameters)
             .ToListAsync();
+
+        return result;
     }
 }

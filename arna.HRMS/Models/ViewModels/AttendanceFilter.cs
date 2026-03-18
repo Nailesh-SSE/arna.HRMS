@@ -10,4 +10,7 @@ public class AttendanceFilter
 
     public DeviceType? Device { get; set; }
     public AttendanceStatus? Status { get; set; }
+
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
 }

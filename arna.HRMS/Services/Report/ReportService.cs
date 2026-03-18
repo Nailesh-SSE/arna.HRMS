@@ -7,7 +7,8 @@ namespace arna.HRMS.Services.Report;
 
 public interface IReportService
 {
-    Task<ApiResult<List<AttendanceReportViewModel>>> GetAttendanceReportAsync(int? year, int? month, int? employeeId, AttendanceStatus? StatusId, DeviceType? device);
+    Task<ApiResult<List<EmployeeAttendanceReportViewModel>>> GetEmployeeAttendanceReportAsync(int? year, int? month, int? employeeId, DateTime? FromDate, DateTime? ToDate);
+    Task<ApiResult<List<AttendanceReportViewModel>>> GetEmployeeDailyAttendanceReportAsync(int? year, int? month, int? employeeId, AttendanceStatus? StatusId, DeviceType? device, DateTime? FromDate, DateTime? ToDate);
 }
 
 public class ReportService : IReportService
@@ -19,8 +20,12 @@ public class ReportService : IReportService
         _report = api.Report;
     }
 
-    public async Task<ApiResult<List<AttendanceReportViewModel>>> GetAttendanceReportAsync(int? year, int? month, int? employeeId, AttendanceStatus? statusId, DeviceType? device)
+    public async Task<ApiResult<List<AttendanceReportViewModel>>> GetEmployeeDailyAttendanceReportAsync(int? year, int? month, int? employeeId, AttendanceStatus? statusId, DeviceType? device, DateTime? FromDate, DateTime? ToDate)
     {
-        return await _report.GetEmployeesAttendanceReportAsync(year, month, employeeId, statusId, device);
+        return await _report.GetEmployeesDailyAttendanceReportAsync(year, month, employeeId, statusId, device, FromDate, ToDate);
+    }
+    public async Task<ApiResult<List<EmployeeAttendanceReportViewModel>>> GetEmployeeAttendanceReportAsync(int? year, int? month, int? employeeId, DateTime? FromDate, DateTime? ToDate)
+    {
+        return await _report.GetEmployeesAttendanceReportAsync(year, month, employeeId, FromDate, ToDate);
     }
 }

@@ -15,12 +15,21 @@ public class ReportService : IReportService
         _reportRepository = reportRepository;
     }
 
-    public async Task<ServiceResult<List<AttendanceReportDto>>> GetAttendanceReport(int? year, int? month, int? employeeId, AttendanceStatus? statusId, DeviceType? device)
+    public async Task<ServiceResult<List<AttendanceReportDto>>> GetDailyAttendanceReport(int? year, int? month, int? employeeId, AttendanceStatus? statusId, DeviceType? device, DateTime? FromDate, DateTime? ToDate)
     {
-        var reportData = await _reportRepository.GetAttendanceReportAsync(year, month, employeeId, statusId, device);
+        var reportData = await _reportRepository.GetDailyAttendanceReportAsync(year, month, employeeId, statusId, device, FromDate, ToDate);
         if (reportData == null || !reportData.Any())
             return ServiceResult<List<AttendanceReportDto>>.Fail("No attendance data found for the specified criteria.");
 
         return ServiceResult<List<AttendanceReportDto>>.Success(reportData);
+    }
+
+    public async Task<ServiceResult<List<EmployeeAttendanceReportDto>>> GetEmployeeAttendanceReport(int? year, int? month, int? employeeId, DateTime? FromDate, DateTime? ToDate)
+    {
+        var reportData = await _reportRepository.GetEmployeeAttendanceReportAsync(year, month, employeeId, FromDate, ToDate);
+        if (reportData == null || !reportData.Any())
+            return ServiceResult<List<EmployeeAttendanceReportDto>>.Fail("No attendance data found for the specified criteria.");
+
+        return ServiceResult<List<EmployeeAttendanceReportDto>>.Success(reportData);
     }
 }
