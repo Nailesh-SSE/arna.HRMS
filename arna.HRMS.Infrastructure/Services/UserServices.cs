@@ -46,6 +46,20 @@ public class UserServices : IUserServices
         return ServiceResult<UserDto?>.Success(_mapper.Map<UserDto>(user));
     }
 
+    public async Task<ServiceResult<UserDto?>> GetuserByEmployeeAsync(int empid)
+    {
+        if (empid <= 0)
+        {
+            return ServiceResult<UserDto?>.Fail("Invalid employee ID.");
+        }
+        var emp = await _repository.GetUserByEmployeeIdAsync(empid);
+
+        if (emp == null)
+            return ServiceResult<UserDto?>.Fail("Employee not found.");
+
+        return ServiceResult<UserDto?>.Success(_mapper.Map<UserDto>(emp));
+    }
+
     public async Task<ServiceResult<UserDto>> CreateUserAsync(UserDto dto)
     {
         var validation = await _validator.ValidateCreateAsync(dto);

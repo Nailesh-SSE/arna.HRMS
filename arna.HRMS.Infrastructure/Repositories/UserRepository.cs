@@ -128,4 +128,13 @@ public class UserRepository
         var hash = sha.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
     }
+
+    public async Task<User?> GetUserByEmployeeIdAsync(int employeeId)
+    {
+        return await _baseRepository.Query()
+            .Where(u => u.EmployeeId == employeeId
+                        && u.IsActive
+                        && !u.IsDeleted)
+            .FirstOrDefaultAsync();
+    }
 }

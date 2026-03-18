@@ -84,6 +84,11 @@ public class EmployeeService : IEmployeeService
 
         var updated = await _repository.UpdateEmployeeAsync(entity);
 
+        if (updated == null)
+            return ServiceResult<EmployeeDto>.Fail("Failed to create employee.");
+
+        await UpdateUserForEmployeeAsync(updated);
+
         return ServiceResult<EmployeeDto>.Success(_mapper.Map<EmployeeDto>(updated), "Employee updated successfully.");
     }
 
@@ -122,6 +127,42 @@ public class EmployeeService : IEmployeeService
         };
 
         await _userServices.CreateUserAsync(userDto);
+    }
+
+    private async Task UpdateUserForEmployeeAsync(Employee employee)
+    {
+        var existingUserResult = await _userServices.GetuserByEmployeeAsync(employee.Id);
+
+        if (!existingUserResult.IsSuccess || existingUserResult.Data == null)
+            return;
+
+        var roleResult = await _roleService.GetRoleByNameAsync(UserRole.Employee.ToString());
+
+        if (!roleResult.IsSuccess || roleResult.Data == null)
+            return;
+
+        var existingUser = existingUserResult.Data;
+
+        var userDto = new UserDto
+        {
+            Id = existingUser.Id, 
+            Username = employee.OfficeEmail ?? existingUser.Username,
+            Email = employee.Email ?? existingUser.Email,
+            FirstName = employee.FirstName ?? existingUser.FirstName,
+            LastName = employee.LastName ?? existingUser.LastName,
+            EmployeeName = $"{employee.FirstName} {employee.LastName}",
+            RoleId = roleResult.Data.Id,
+            PhoneNumber = employee.PhoneNumber ?? existingUser.PhoneNumber,
+            EmployeeId = employee.Id,
+            Password = existingUser.Password
+        };
+
+        var updateResult = await _userServices.UpdateUserAsync(userDto);
+
+        if (!updateResult.IsSuccess)
+        {
+            throw new Exception($"User update failed: {updateResult.Message}");
+        }
     }
 
     private static string GenerateEmployeeNumber(string? lastNumber)
