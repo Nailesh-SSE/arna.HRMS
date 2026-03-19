@@ -1,4 +1,24 @@
-﻿.header-root {
+﻿/* ── Mobile clock bar — a bit more breathing room ── */
+.header-clock-bar {
+    background: #f8f9fa;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+@media (min-width: 576px) {
+    .header-clock-bar {
+        padding-top: 0.55rem;
+        padding-bottom: 0.55rem;
+    }
+}
+
+/* ── Desktop header row — small bump ── */
+@media (min-width: 992px) {
+    .header-row {
+        min-height: 70px;
+    }
+}
+.header-root {
     position: sticky;
     top: 0;
     z-index: 1030;

@@ -1,6 +1,5 @@
 ﻿@using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Attendance
-@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Services
@@ -8,198 +7,304 @@
 
 @implements IDisposable
 @inject IAttendanceService ClockService
-@inherits AuthenticatedLayoutBase
 @inject IJSRuntime JS
+@inherits AuthenticatedLayoutBase
 
 <Loader Visible="@IsLoading" Message="@LoaderMessage" />
 
-<div class="clock-container d-flex align-items-center gap-2 flex-wrap">
-    @if (IsEmployee())
-    {
-        @* ── First Clock-In pill ── *@
-        @if (!string.IsNullOrEmpty(FirstClockInDisplay))
-        {
-            <span class="clock-info-pill clock-info-pill--in" title="First clock-in today">
-                <small class="clock-info-label text-success">ClockIn</small>
-                <small class="clock-info-time">@FirstClockInDisplay</small>
-            </span>
-        }
-
-        @* ── Last Activity pill ── *@
-        @if (!string.IsNullOrEmpty(LastActivityDisplay))
-        {
-            <span class="clock-info-pill clock-info-pill--out" title="Last activity today">
-                <small class="clock-info-label text-danger">ClockOut</small>
-                <small class="clock-info-time">@LastActivityDisplay</small>
-            </span>
-        }
-
-        @if (IsClockedIn)
-        {
-            @* ── Session timer ── *@
-            <span class="clock-session-pill" title="Current session duration">
-                <i class="bi bi-stopwatch clock-stopwatch-icon text-primary"></i>
-                <small class="clock-session-time">@SessionDuration</small>
-            </span>
-
-            @* ── Clock-Out button with wrapper ── *@
-            <span class="clock-btn-wrapper"
-                  @onmouseenter="OnBtnMouseEnter"
-                  @onmouseleave="OnBtnMouseLeave"
-                  @onclick="HandleWrapperClick">
-
-                <AppButton ButtonClass="btn btn-outline-danger btn-sm rounded-pill clock-action-btn"
-                           Disabled="@CooldownActive"
-                           OnClick="ClockOutAsync">
-                    <i class="bi bi-stop-circle"></i>
-                    <span class="ms-1">ClockOut</span>
-                </AppButton>
-
-                @if (ShowHoverTip)
-                {
-                    <div class="clock-hover-tip @HoverTipClass">
-                        <i class="bi @HoverTipIcon"></i>
-                        <span>@HoverTipText</span>
-                    </div>
-                }
-            </span>
-        }
-        else
-        {
-            @* ── Clock-In button with wrapper ── *@
-            <span class="clock-btn-wrapper"
-                  @onmouseenter="OnBtnMouseEnter"
-                  @onmouseleave="OnBtnMouseLeave"
-                  @onclick="HandleWrapperClick">
-
-                <AppButton ButtonClass="btn btn-success btn-sm rounded-pill clock-action-btn"
-                           Disabled="@CooldownActive"
-                           OnClick="ClockInAsync">
-
-                    <i class="bi bi-play-circle @(MissedClockOutYesterday ? "text-danger" : "")"></i>
-
-                    <span class="ms-1 @(MissedClockOutYesterday ? "text-danger" : "")">
-                        ClockIn
-                    </span>
-
-                </AppButton>
-
-                @if (ShowHoverTip)
-                {
-                    <div class="clock-hover-tip @HoverTipClass">
-                        <i class="bi @HoverTipIcon"></i>
-                        <span>@HoverTipText</span>
-                    </div>
-                }
-            </span>
-        }
-    }
-</div>
-
-@* ── Modal form ── *@
-@if (ShowDynamicForm)
+@if (IsEmployee())
 {
-    <div class="clock-modal-overlay position-fixed top-0 start-0 w-100 h-100
-                        d-flex align-items-center justify-content-center">
-        <div class="clock-modal-card bg-white rounded-3 shadow-lg mx-3 p-4">
-            <ClockInAndOutMessage Model="attendanceViewModel"
-                                  OnSubmit="SubmitAsync"
-                                  OnCancel="CloseForm" />
-        </div>
-    </div>
-}
+    <div class="container-fluid px-2 px-md-3 py-2">
+        <div class="row g-2 align-items-stretch">
 
-@* ── Toast notification ── *@
-@if (ShowToast)
-{
-    <div class="clock-toast-wrapper position-fixed bottom-0 end-0 p-3">
-        <div class="toast show border-0 shadow-lg rounded-3 bg-white @(IsToastWarning ? "clock-toast--warning" : "clock-toast--success")"
-             role="alert">
-            <div class="toast-body d-flex align-items-center gap-2 py-3 px-3">
-                @if (IsToastWarning)
-                {
-                    <i class="bi bi-exclamation-triangle-fill text-warning fs-5"></i>
-                }
-                else
-                {
-                    <i class="bi bi-check-circle-fill text-success fs-5"></i>
-                }
-                <span>@ToastMessage</span>
+            @* ── First In ── *@
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body d-flex align-items-center gap-2 p-2 p-md-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center
+                                        bg-success bg-opacity-10 text-success flex-shrink-0 cw-icon-box">
+                            <i class="bi bi-box-arrow-in-right"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-muted cw-label">First In</div>
+                            <div class="fw-bold text-truncate cw-value">
+                                @(string.IsNullOrEmpty(FirstClockInDisplay)
+                                                            ? "--:-- --" : FirstClockInDisplay)
+                                                                                           </div>
+                                                                                       </div>
+                                                                                   </div>
+                                                                               </div>
+                                                                           </div>
+
+            @* ── Last Out ── *@
+            <div class="col-6 col-md-3">
+                <div class="card border-0 shadow-sm rounded-3 h-100">
+                    <div class="card-body d-flex align-items-center gap-2 p-2 p-md-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center
+                                        bg-danger bg-opacity-10 text-danger flex-shrink-0 cw-icon-box">
+                            <i class="bi bi-box-arrow-right"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-muted cw-label">Last Out</div>
+                            <div class="fw-bold text-truncate cw-value">
+                                @(string.IsNullOrEmpty(LastActivityDisplay)
+                                                            ? "--:-- --" : LastActivityDisplay)
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+
+            @* ── Clock Action + Timer ── *@
+            <div class="col-12 col-md-6">
+                <div class="card border-0 shadow-sm rounded-3 h-100
+                                @(MissedClockOutYesterday ? "cw-missed-border" : "")">
+                    <div class="card-body d-flex align-items-center justify-content-between
+                                    gap-2 p-2 p-md-3">
+
+                        @* ── ACTION BUTTON ── *@
+                        <button class="btn d-flex align-items-center justify-content-center
+                                           gap-1 rounded-3 flex-shrink-0 cw-action-btn
+                                           @ButtonClass"
+                                @onclick="HandleClick"
+                                disabled="@(CooldownActive || ShowDynamicForm || IsLoading)">
+
+                        @if (CooldownActive)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                                <span class="cw-btn-label">@(CooldownRemaining)s</span>
+                            }
+                            else if (MissedClockOutYesterday && !IsClockedIn)
+                            {
+                                @* RED button with warning icon *@
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                                <span class="cw-btn-label">In</span>
+                            }
+                            else if (IsClockedIn)
+                            {
+                                <i class="bi bi-stop-fill"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-play-fill"></i>
+                            }
+                        </button>
+
+                        @* ── STATUS BADGE (all devices) ── *@
+                        <div class="min-w-0">
+                            @if (CooldownActive)
+                            {
+                                <span class="badge bg-warning bg-opacity-10 text-warning
+                                                     rounded-pill px-2 py-1 cw-label">
+                                    <i class="bi bi-hourglass-split me-1"></i>@(CooldownRemaining)s
+                                </span>
+                            }
+                            else if (MissedClockOutYesterday && !IsClockedIn)
+                            {
+                                <span class="badge bg-danger bg-opacity-10 text-danger
+                                                     rounded-pill px-2 py-1 cw-label cw-missed-badge">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Missed
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted cw-label">
+                                    @(IsClockedIn ? "Working" : "Ready")
+                                </span>
+                            }
+                        </div>
+
+                        @* ── TIMER ── *@
+                        <div class="d-flex align-items-center gap-1 gap-md-2 ms-auto">
+                            <i class="bi bi-stopwatch text-primary cw-label"></i>
+                            <span class="fw-bold text-nowrap cw-timer
+                                             @(IsClockedIn ? "text-primary" : "text-muted")">
+                                @SessionDuration
+                            </span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        @* ── ALERTS (visible on ALL devices) ── *@
+        @if (CooldownActive)
+        {
+            <div class="alert alert-warning border-0 shadow-sm rounded-3
+                                py-2 px-3 mt-2 mb-0 d-flex align-items-center gap-2 cw-label">
+                <i class="bi bi-hourglass-split"></i>
+                <span>
+                    Wait <strong>@CooldownRemaining</strong>s
+                    to @(IsClockedIn ? "clock out" : "clock in")
+                </span>
+            </div>
+        }
+
+        @if (MissedClockOutYesterday)
+        {
+            <div class="alert alert-danger border-0 shadow-sm rounded-3
+                                py-2 px-3 mt-2 mb-0 d-flex align-items-center gap-2 cw-missed-alert">
+                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
+                <div>
+                    <strong class="small">Missed Clock-Out!</strong>
+                    <div class="cw-label text-danger-emphasis">
+                        You forgot to clock out yesterday. Please clock in to start a new session.
+                    </div>
+                </div>
+            </div>
+        }
     </div>
+
+    @* ═══════ MODAL ═══════ *@
+    @if (ShowDynamicForm)
+    {
+        <div class="position-fixed top-0 start-0 w-100 h-100
+                            d-flex align-items-center justify-content-center p-2 p-md-3"
+             style="z-index:1050; background:rgba(0,0,0,.5); backdrop-filter:blur(3px);"
+             @onclick="CloseForm">
+
+            <div class="bg-white rounded-4 shadow-lg w-100 overflow-hidden"
+                 style="max-width:460px;"
+                 @onclick:stopPropagation="true">
+
+                @* Modal Header *@
+                <div class="d-flex align-items-center justify-content-between px-3 py-2 text-white
+                                    @ModalHeaderClass">
+                    <div class="d-flex align-items-center gap-2 fw-semibold small">
+                        <i class="bi @(PendingClockIn == true
+                                                                  ? "bi-play-circle" : "bi-stop-circle")"></i>
+                @(PendingClockIn == true ? "Clock In" : "Clock Out")
+
+                @if (MissedClockOutYesterday && PendingClockIn == true)
+                        {
+                            <span class="badge bg-white text-danger rounded-pill px-2 py-1"
+                                  style="font-size:0.6rem;">
+                                Missed yesterday
+                            </span>
+                        }
+                    </div>
+                    <button class="btn btn-sm text-white p-0 border-0"
+                            @onclick="CloseForm">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <div class="p-3 p-md-4">
+                    <ClockInAndOutMessage Model="attendanceViewModel"
+                                          OnSubmit="SubmitAsync"
+                                          OnCancel="CloseForm" />
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ═══════ TOAST ═══════ *@
+    @if (ShowToast)
+    {
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;">
+            <div class="toast show border-0 shadow-lg rounded-3 cw-toast
+                                @(IsToastWarning ? "bg-warning text-dark" : "bg-success text-white")"
+                 role="alert">
+                <div class="toast-body d-flex align-items-center gap-2 py-2 px-3">
+                    <i class="bi @(IsToastWarning
+                                                           ? "bi-exclamation-triangle-fill"
+                                                           : "bi-check-circle-fill")"></i>
+            <span class="small fw-medium">@ToastMessage</span>
+            <button type="button"
+                    class="btn-close btn-close-white ms-auto p-0"
+                    style="font-size:0.6rem;"
+                    @onclick="() => ShowToast = false"></button>
+        </div>
+    </div>
+</div>
+    }
 }
 
 @code {
-    // ───────── state ─────────
+    /* ════════════════  STATE  ════════════════ */
+
     private AttendanceViewModel attendanceViewModel = new();
 
     private bool IsClockedIn;
     private bool CooldownActive;
-    private bool ShowDynamicForm, ShowToast, IsLoading;
-    private bool ShowHoverTip, IsToastWarning;
+    private bool ShowDynamicForm;
+    private bool ShowToast;
+    private bool IsLoading;
+    private bool IsToastWarning;
+    private bool MissedClockOutYesterday;
     private bool? PendingClockIn;
 
-    private bool MissedClockOutYesterday;
-    private bool _dataLoaded;
-
     private int CooldownRemaining;
-    private TimeOnly LastClockInTime;
-    private string? FirstClockInDisplay, LastActivityDisplay;
-    private string SessionDuration = "00:00:00";
-    private string ToastMessage = "", LoaderMessage = "";
-    private double? CurrentLatitude, CurrentLongitude;
+    private DateTime? LastClockInDateTime;
 
-    private CancellationTokenSource? _timerCts, _cooldownCts;
+    private string? FirstClockInDisplay;
+    private string? LastActivityDisplay;
+    private string SessionDuration = "00:00:00";
+    private string ToastMessage = "";
+    private string LoaderMessage = "";
+    private double? CurrentLatitude;
+    private double? CurrentLongitude;
+
+    private CancellationTokenSource? _timerCts, _cooldownCts, _refreshCts;
+
     private const int CooldownSec = 60;
     private const string TimeFmt = "hh:mm tt";
+    private const int RefreshIntervalSec = 5;
 
-    // ───────── computed tooltip properties ─────────
-    private string HoverTipClass => CooldownActive
-        ? "clock-hover-tip--warn"
-        : (IsClockedIn ? "clock-hover-tip--out" : "clock-hover-tip--in");
+    /* ════════════════  COMPUTED PROPERTIES  ════════════════ */
 
-    private string HoverTipIcon => CooldownActive
-        ? "bi-hourglass-split"
-        : (IsClockedIn ? "bi-stop-circle" : "bi-play-circle");
+    /// Button color: RED if missed yesterday, DANGER if clocked in, PRIMARY if idle
+    private string ButtonClass
+    {
+        get
+        {
+            if (MissedClockOutYesterday && !IsClockedIn)
+                return "btn-danger cw-btn-missed";    // RED for missed
+            if (IsClockedIn)
+                return "btn-danger";                  // RED for clock-out
+            return "btn-primary";                     // BLUE for clock-in
+        }
+    }
 
-    private string HoverTipText => CooldownActive
-        ? $"Please wait {CooldownRemaining}s to {(IsClockedIn ? "Clock Out" : "Clock In")}"
-        : (IsClockedIn ? "Click to Clock Out" : "Click to Clock In");
+    private string ModalHeaderClass
+    {
+        get
+        {
+            if (MissedClockOutYesterday && PendingClockIn == true)
+                return "bg-danger bg-gradient";       
+            return PendingClockIn == true
+                ? "bg-primary bg-gradient"
+                : "bg-danger bg-gradient";
+        }
+    }
 
-    // ───────── lifecycle ─────────
-
-    // ★ FIX: Try loading in OnInitializedAsync first
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         await TryLoadDataAsync();
-        StartTimer();
+        StartSessionTimer();
+        StartRefreshTimer();
     }
 
-    // ★ FIX: If auth wasn't ready during OnInitializedAsync,
-    //         retry here — auth IS available after first render
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !_dataLoaded)
+        if (firstRender)
         {
             await TryLoadDataAsync();
             await InvokeAsync(StateHasChanged);
         }
     }
 
-    // ★ FIX: Central method — only loads once, guards against empId == 0
     private async Task TryLoadDataAsync()
     {
-        if (_dataLoaded) return;
-
         try
         {
             var id = GetEmployeeId();
             if (id <= 0) return;
 
             await LoadStatusAsync(id);
-            _dataLoaded = true;
         }
         catch (Exception ex)
         {
@@ -207,127 +312,130 @@
         }
     }
 
-    // ───────── load today's status ─────────
     private async Task LoadStatusAsync(int empId)
     {
-        MissedClockOutYesterday = false;
-        // STEP 1 — Get today's records
-        var todayResult = await ClockService.GetTodayClockinEntryAsync(empId);
-
-        var todayRecords = todayResult.IsSuccess
-            ? todayResult.Data ?? new List<AttendanceViewModel>()
-            : new List<AttendanceViewModel>();
-
-        // CASE 1 — TODAY RECORDS EXIST
-        if (todayRecords.Any())
+        try
         {
-            // FIRST CLOCK IN
-            var firstClock = todayRecords
-                .Where(x => x.ClockInTime != null)
-                .OrderBy(x => x.ClockInTime)
-                .FirstOrDefault();
+            MissedClockOutYesterday = false;
 
-            if (firstClock?.ClockInTime != null)
-                FirstClockInDisplay = Fmt(firstClock.ClockInTime.Value);
+            var todayResult = await ClockService.GetTodayClockinEntryAsync(empId);
+            var todayRecords = todayResult?.Data ?? new List<AttendanceViewModel>();
 
-
-            // LAST TODAY RECORD
-            var lastToday = todayRecords
-                .OrderByDescending(x => x.CreatedOn)
-                .FirstOrDefault();
-
-
-            // ACTIVE SESSION (ClockIn without ClockOut)
-            // LAST TODAY RECORD
-            lastToday = todayRecords
-                .OrderByDescending(x => x.CreatedOn)
-                .FirstOrDefault();
-
-            if (lastToday != null)
+            if (todayRecords.Any())
             {
-                if (lastToday.ClockInTime != null && lastToday.ClockOutTime == null)
+                // First clock-in
+                var firstClock = todayRecords
+                    .Where(x => x.ClockInTime != null)
+                    .OrderBy(x => x.ClockInTime)
+                    .FirstOrDefault();
+
+                if (firstClock?.ClockInTime != null)
+                    FirstClockInDisplay = Fmt(firstClock.ClockInTime.Value);
+
+                // Last record
+                var last = todayRecords
+                    .OrderByDescending(x => x.CreatedOn)
+                    .FirstOrDefault();
+
+                if (last != null)
                 {
-                    // user currently clocked in
-                    IsClockedIn = true;
-                    LastClockInTime = TimeOnly.FromTimeSpan(lastToday.ClockInTime.Value);
+                    if (last.ClockInTime != null && last.ClockOutTime == null)
+                    {
+                        IsClockedIn = true;
+                        LastClockInDateTime = last.CreatedOn;
+                    }
+                    else if (last.ClockOutTime != null)
+                    {
+                        IsClockedIn = false;
+                        LastActivityDisplay = Fmt(last.ClockOutTime.Value);
+                    }
+                    else
+                    {
+                        IsClockedIn = false;
+                    }
+
+                    // Resume cooldown
+                    if (last.CreatedOn != default)
+                    {
+                        var remaining =
+                            CooldownSec - (int)(DateTime.Now - last.CreatedOn).TotalSeconds;
+
+                        if (remaining > 0)
+                            _ = CooldownAsync(remaining);
+                    }
                 }
-                else
-                {
-                    // last action was clock out
-                    IsClockedIn = false;
-                }
+
+                return;
             }
 
+            // ── No today records → check missed clock-out yesterday ──
+            var lastResult = await ClockService.GetTodayLastEntryAsync(empId);
 
-            // LAST ACTIVITY DISPLAY
-            if (lastToday?.ClockOutTime != null)
-                LastActivityDisplay = Fmt(lastToday.ClockOutTime.Value);
-
-
-            // COOLDOWN
-            if (lastToday != null)
+            if (lastResult?.Data is { } prev
+                && prev.ClockInTime != null
+                && prev.ClockOutTime == null
+                && prev.Date.Date < DateTime.Today)
             {
-                var remaining =
-                    CooldownSec - (int)(DateTime.Now - lastToday.CreatedOn).TotalSeconds;
-
-                if (remaining > 0)
-                    _ = CooldownAsync(remaining);
+                MissedClockOutYesterday = true;
+                IsClockedIn = false;
             }
-
-            return;
+            else
+            {
+                IsClockedIn = false;
+                MissedClockOutYesterday = false;
+            }
         }
-
-        // CASE 2 — NO TODAY RECORDS CHECK LAST ATTENDANCE (YESTERDAY)
-        var lastResult = await ClockService.GetTodayLastEntryAsync(empId);
-
-        if (!lastResult.IsSuccess || lastResult.Data == null)
-            return;
-
-        var lastRecord = lastResult.Data;
-
-        // MISSED CLOCK OUT YESTERDAY
-        if (lastRecord != null &&
-            lastRecord.ClockInTime != null &&
-            lastRecord.ClockOutTime == null &&
-            lastRecord.Date.Date < DateTime.Today)
+        catch (Exception ex)
         {
-            MissedClockOutYesterday = true;
-            IsClockedIn = false;
+            Console.WriteLine($"[Clock] LoadStatus error: {ex.Message}");
         }
     }
 
-    // ───────── hover handlers ─────────
-    private void OnBtnMouseEnter() => ShowHoverTip = true;
-    private void OnBtnMouseLeave() => ShowHoverTip = false;
-
-    private async Task HandleWrapperClick()
-    {
-        if (!CooldownActive) return;
-
-        var action = IsClockedIn ? "Clock Out" : "Clock In";
-        await ShowMsg(
-            $"Please wait {CooldownRemaining} seconds before you can {action}.",
-            warning: true);
-    }
-
-    // ───────── action entry-points ─────────
-    private async Task ClockInAsync()
+    private async Task HandleClick()
     {
         if (CooldownActive || ShowDynamicForm || IsLoading) return;
-        PendingClockIn = true;
-        await OpenForm();
+
+        PendingClockIn = !IsClockedIn;
+        await OpenFormWithLocation();
     }
 
-    private async Task ClockOutAsync()
+    private void CloseForm()
     {
-        if (CooldownActive || ShowDynamicForm || IsLoading) return;
-        PendingClockIn = false;
-        await OpenForm();
+        ShowDynamicForm = false;
+        StateHasChanged();
     }
 
-    private void CloseForm() => ShowDynamicForm = false;
+    private async Task OpenFormWithLocation()
+    {
+        try
+        {
+            await SetLoading(true, "Getting location…");
 
-    // ───────── form submit ─────────
+            var loc = await ClockService.GetCurrentLocationAsync();
+
+            if (loc is null)
+            {
+                await ShowMsg("Location permission is required.", warning: true);
+                return;
+            }
+
+            CurrentLatitude = loc.Value.Latitude;
+            CurrentLongitude = loc.Value.Longitude;
+            attendanceViewModel = new();
+            ShowDynamicForm = true;
+        }
+        catch (Exception ex)
+        {
+            await ShowMsg($"Location error: {ex.Message}", warning: true);
+        }
+        finally
+        {
+            await SetLoading(false);
+        }
+    }
+
+    /* ════════════════  FORM SUBMIT  ════════════════ */
+
     private async Task SubmitAsync()
     {
         if (CurrentLatitude is null || CurrentLongitude is null)
@@ -344,29 +452,50 @@
             await SetLoading(true, isIn ? "Clocking in…" : "Clocking out…");
 
             var empId = GetEmployeeId();
-            if (empId == 0) return;
+            if (empId == 0)
+            {
+                await ShowMsg("Employee not found.", warning: true);
+                return;
+            }
 
-            var deviceString = await JS.InvokeAsync<string>("deviceHelper.getDeviceType");
-            Console.WriteLine(deviceString);
-
-            if (!Enum.TryParse<DeviceType>(deviceString, true, out var device))
+            DeviceType device;
+            try
+            {
+                var deviceStr = await JS.InvokeAsync<string>("deviceHelper.getDeviceType");
+                if (!Enum.TryParse<DeviceType>(deviceStr, true, out device))
+                    device = DeviceType.UnknownDevice;
+            }
+            catch
             {
                 device = DeviceType.UnknownDevice;
             }
-            var now = TimeOnly.FromDateTime(DateTime.Now);
 
-            if (isIn) await ProcessClockIn(empId, device, now);
-            else await ProcessClockOut(empId, device, now);
+            var now = DateTime.Now;
+
+            if (isIn)
+                await ProcessClockIn(empId, device, now);
+            else
+                await ProcessClockOut(empId, device, now);
+
+            // Force refresh after action
+            await LoadStatusAsync(empId);
 
             CurrentLatitude = CurrentLongitude = null;
         }
-        finally { await SetLoading(false); }
+        catch (Exception ex)
+        {
+            await ShowMsg($"Error: {ex.Message}", warning: true);
+        }
+        finally
+        {
+            await SetLoading(false);
+        }
     }
 
-    private async Task ProcessClockIn(int empId, DeviceType device, TimeOnly now)
+    private async Task ProcessClockIn(int empId, DeviceType device, DateTime now)
     {
-        var res = await ClockService.CreateAttendanceAsync(
-            BuildVm(empId, device, clockIn: now.ToTimeSpan()));
+        var vm = BuildVm(empId, device, clockIn: now.TimeOfDay);
+        var res = await ClockService.CreateAttendanceAsync(vm);
 
         if (!res.IsSuccess)
         {
@@ -374,26 +503,28 @@
             return;
         }
 
-        LastClockInTime = now;
         IsClockedIn = true;
+        LastClockInDateTime = now;
         SessionDuration = "00:00:00";
+        MissedClockOutYesterday = false;
 
         if (string.IsNullOrEmpty(FirstClockInDisplay))
             FirstClockInDisplay = now.ToString(TimeFmt);
-        else
-            LastActivityDisplay = now.ToString(TimeFmt);
 
         _ = CooldownAsync(CooldownSec);
         await ShowMsg($"Clocked in at {now.ToString(TimeFmt)}");
     }
 
-    private async Task ProcessClockOut(int empId, DeviceType device, TimeOnly now)
+    private async Task ProcessClockOut(int empId, DeviceType device, DateTime now)
     {
-        var hours = now.ToTimeSpan() - LastClockInTime.ToTimeSpan();
+        var hours = LastClockInDateTime != null
+            ? now - LastClockInDateTime.Value
+            : TimeSpan.Zero;
+
         if (hours < TimeSpan.Zero) hours = TimeSpan.Zero;
 
-        var res = await ClockService.CreateAttendanceAsync(
-            BuildVm(empId, device, clockOut: now.ToTimeSpan(), hours: hours));
+        var vm = BuildVm(empId, device, clockOut: now.TimeOfDay, hours: hours);
+        var res = await ClockService.CreateAttendanceAsync(vm);
 
         if (!res.IsSuccess)
         {
@@ -409,42 +540,47 @@
         await ShowMsg($"Clocked out at {now.ToString(TimeFmt)}");
     }
 
-    // ───────── build view-model ─────────
-    private AttendanceViewModel BuildVm(int empId, DeviceType device,
-        TimeSpan? clockIn = null, TimeSpan? clockOut = null, TimeSpan? hours = null) => new()
+    /* ════════════════  BUILD VM  ════════════════ */
+
+    private AttendanceViewModel BuildVm(
+        int empId, DeviceType device,
+        TimeSpan? clockIn = null,
+        TimeSpan? clockOut = null,
+        TimeSpan? hours = null) => new()
         {
             EmployeeId = empId,
             Date = DateTime.Today,
             ClockInTime = clockIn,
             ClockOutTime = clockOut,
-            StatusId = AttendanceStatus.Present,
-            Notes = attendanceViewModel.Notes,
-            WorkingHours = hours ?? TimeSpan.Zero,
+            WorkingHours = hours,
+            DeviceId = device,
             Latitude = CurrentLatitude,
             Longitude = CurrentLongitude,
-            DeviceId = device
+            Notes = attendanceViewModel.Notes ?? string.Empty,
+            StatusId = AttendanceStatus.Present
         };
 
-    private static string Fmt(TimeSpan ts) =>
-        TimeOnly.FromTimeSpan(ts).ToString("hh:mm tt");
+    /* ════════════════  SESSION TIMER  ════════════════ */
 
-    // ───────── session timer (1-s tick) ─────────
-    private void StartTimer()
+    private void StartSessionTimer()
     {
         _timerCts?.Cancel();
-        _timerCts = new();
+        _timerCts = new CancellationTokenSource();
         var token = _timerCts.Token;
 
         _ = Task.Run(async () =>
         {
             using var tick = new PeriodicTimer(TimeSpan.FromSeconds(1));
+
             try
             {
                 while (await tick.WaitForNextTickAsync(token))
                 {
-                    if (!IsClockedIn) continue;
-                    var elapsed = DateTime.Now.TimeOfDay - LastClockInTime.ToTimeSpan();
+                    if (!IsClockedIn || LastClockInDateTime is null) continue;
+
+                    var elapsed = DateTime.Now - LastClockInDateTime.Value;
                     if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
+
                     SessionDuration = elapsed.ToString(@"hh\:mm\:ss");
                     await InvokeAsync(StateHasChanged);
                 }
@@ -453,20 +589,54 @@
         }, token);
     }
 
-    // ───────── cooldown (blocks BOTH buttons for N seconds) ─────────
+    /* ════════════════  REFRESH TIMER  ════════════════ */
+
+    private void StartRefreshTimer()
+    {
+        _refreshCts?.Cancel();
+        _refreshCts = new CancellationTokenSource();
+        var token = _refreshCts.Token;
+
+        _ = Task.Run(async () =>
+        {
+            using var tick = new PeriodicTimer(TimeSpan.FromSeconds(RefreshIntervalSec));
+
+            try
+            {
+                while (await tick.WaitForNextTickAsync(token))
+                {
+                    try
+                    {
+                        var empId = GetEmployeeId();
+                        if (empId > 0)
+                            await InvokeAsync(async () => await LoadStatusAsync(empId));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Clock] Refresh error: {ex.Message}");
+                    }
+                }
+            }
+            catch (OperationCanceledException) { }
+        }, token);
+    }
+
+    /* ════════════════  COOLDOWN  ════════════════ */
+
     private async Task CooldownAsync(int seconds)
     {
         _cooldownCts?.Cancel();
-        _cooldownCts = new();
+        _cooldownCts = new CancellationTokenSource();
         var token = _cooldownCts.Token;
 
         CooldownActive = true;
         CooldownRemaining = seconds;
-        await InvokeAsync(StateHasChanged);
 
         try
         {
-            while (CooldownRemaining > 0)
+            await InvokeAsync(StateHasChanged);
+
+            while (CooldownRemaining > 0 && !token.IsCancellationRequested)
             {
                 await Task.Delay(1000, token);
                 CooldownRemaining--;
@@ -474,44 +644,29 @@
             }
 
             CooldownActive = false;
-            ShowHoverTip = false;
             await InvokeAsync(StateHasChanged);
         }
         catch (OperationCanceledException) { }
     }
 
-    // ───────── open form (location) ─────────
-    private async Task OpenForm()
-    {
-        try
-        {
-            await SetLoading(true, "Getting location…");
-            var loc = await ClockService.GetCurrentLocationAsync();
+    /* ════════════════  HELPERS  ════════════════ */
 
-            if (loc is null)
-            {
-                await ShowMsg("Location permission is required.", warning: true);
-                return;
-            }
+    private static string Fmt(TimeSpan ts)
+        => TimeOnly.FromTimeSpan(ts).ToString("hh:mm tt");
 
-            CurrentLatitude = loc.Value.Latitude;
-            CurrentLongitude = loc.Value.Longitude;
-            attendanceViewModel = new();
-            ShowDynamicForm = true;
-        }
-        finally { await SetLoading(false); }
-    }
-
-    // ───────── toast (success / warning) ─────────
     private async Task ShowMsg(string msg, bool warning = false)
     {
         ToastMessage = msg;
         IsToastWarning = warning;
         ShowToast = true;
+
         await InvokeAsync(StateHasChanged);
-        try { await Task.Delay(3000); } catch { }
+
+        try { await Task.Delay(4000); } catch { }
+
         ShowToast = false;
-        await InvokeAsync(StateHasChanged);
+
+        try { await InvokeAsync(StateHasChanged); } catch { }
     }
 
     private async Task SetLoading(bool on, string msg = "")
@@ -525,5 +680,6 @@
     {
         _timerCts?.Cancel(); _timerCts?.Dispose();
         _cooldownCts?.Cancel(); _cooldownCts?.Dispose();
+        _refreshCts?.Cancel(); _refreshCts?.Dispose();
     }
 }
