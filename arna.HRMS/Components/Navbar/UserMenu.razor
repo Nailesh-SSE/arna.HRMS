@@ -68,7 +68,7 @@
                                 <h6 class="fw-bold mb-0 text-truncate">
                                     @GetUserFullName()
                                 </h6>
-                          </div>
+                            </div>
                         </div>
                     </div>
                 </li>
@@ -79,8 +79,7 @@
                 <li>
                     <button class="dropdown-item d-flex align-items-center
                                    gap-2 py-2 px-3"
-                            @onclick="@(() =>
-                                                            Navigation.NavigateTo("/change-password"))">
+                            @onclick="@(() => Navigation.NavigateTo("/change-password"))">
                         <span class="usermenu-icon-circle bg-warning
                                      bg-opacity-10 rounded-circle
                                      d-flex align-items-center
@@ -105,16 +104,17 @@
                 <li>
                     <button class="dropdown-item d-flex align-items-center
                                    gap-2 py-2 px-3 mb-1"
-                            @onclick="HandleLogout">
+                            @onclick="HandleLogout"
+                            disabled="@isLoggingOut">
                         <span class="usermenu-icon-circle bg-danger
                                      bg-opacity-10 rounded-circle
                                      d-flex align-items-center
                                      justify-content-center flex-shrink-0">
-                            <i class="bi bi-box-arrow-right text-danger"></i>
+                            <i class="bi @(isLoggingOut ? "bi-hourglass-split" : "bi-box-arrow-right") text-danger"></i>
                         </span>
                         <div class="lh-sm">
                             <span class="fw-medium small text-danger">
-                                Sign Out
+                                @(isLoggingOut ? "Signing out..." : "Sign Out")
                             </span>
                             <br />
                             <span class="text-muted usermenu-sub-text">
@@ -138,18 +138,38 @@
 </AuthorizeView>
 
 @code {
+    private bool isLoggingOut = false;
+
     private async Task HandleLogout()
     {
-        await AuthService.LogoutAsync();
-        Navigation.NavigateTo("/login");
+        try
+        {
+            isLoggingOut = true;
+            Logger.LogInformation("User initiated logout");
+            
+            // ✅ Call AuthService which gets userId internally
+            int userId = GetUserId();
+            await AuthService.LogoutAsync(userId);
+            
+            Logger.LogInformation("Logout completed, redirecting to login");
+            Navigation.NavigateTo("/login", true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Logout error in UserMenu");
+            Navigation.NavigateTo("/login", true);
+        }
+        finally
+        {
+            isLoggingOut = false;
+        }
     }
 
     private string GetInitials()
     {
         var name = GetUserFullName();
         if (string.IsNullOrWhiteSpace(name)) return "U";
-        var parts = name.Trim().Split(' ',
-            StringSplitOptions.RemoveEmptyEntries);
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return parts.Length >= 2
             ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
             : parts[0][0].ToString().ToUpper();
@@ -157,7 +177,6 @@
 
     private string GetRoleName()
     {
-        // Adjust based on your claims/role logic
         var role = GetUserRole();
         return string.IsNullOrWhiteSpace(role) ? "User" : role;
     }

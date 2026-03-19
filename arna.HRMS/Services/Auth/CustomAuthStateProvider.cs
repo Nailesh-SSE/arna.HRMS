@@ -56,21 +56,21 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
 
     public async Task LoginAsync(int userId, string accessToken, string refreshToken)
     {
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
-        var expiry = jwt.ValidTo;
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
+            var expiry = jwt.ValidTo;
 
-        _memoryCache.Set(AccessTokenKey, accessToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
+            _memoryCache.Set(AccessTokenKey, accessToken,
+                new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
 
-        _memoryCache.Set(RefreshTokenKey, refreshToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
+            _memoryCache.Set(RefreshTokenKey, refreshToken,
+                new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
 
-        _memoryCache.Set(UserIdKey, userId);
+            _memoryCache.Set(UserIdKey, userId);
 
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
 
-        await Task.CompletedTask;
-    }
+            await Task.CompletedTask;
+        }
 
     public async Task LogoutAsync()
     {
@@ -81,6 +81,12 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
         NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));
 
         await Task.CompletedTask;
+    }
+
+    public Task<int> GetUserIdAsync()
+    {
+        _memoryCache.TryGetValue(UserIdKey, out int userId);
+        return Task.FromResult(userId);
     }
 
     public Task<string?> GetAccessTokenAsync()
@@ -99,17 +105,25 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
 
     public async Task UpdateTokensAsync(string newAccessToken, string newRefreshToken)
     {
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(newAccessToken);
-        var expiry = jwt.ValidTo;
+        try
+        {
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(newAccessToken);
+            var expiry = jwt.ValidTo;
 
-        _memoryCache.Set(AccessTokenKey, newAccessToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
+            _memoryCache.Set(AccessTokenKey, newAccessToken,
+                new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
 
-        _memoryCache.Set(RefreshTokenKey, newRefreshToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
+            _memoryCache.Set(RefreshTokenKey, newRefreshToken,
+                new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
 
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
 
-        await Task.CompletedTask;
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Token update failed");
+            throw;
+        }
     }
 }
