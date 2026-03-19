@@ -109,6 +109,14 @@
                                       ValidationExpression="@(() => user.Email)" />
                         </div>
 
+                        <div class="col-12 col-md-6">
+                            <AppSelect Label="Employee"
+                                       Options="@_employeeOption"
+                                       Value="@user.EmployeeId?.ToString()"
+                                       ValueChanged="v => user.EmployeeId = int.Parse(v!)"
+                                       ValidationExpression="@(() => user.EmployeeId)" />
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -275,6 +283,7 @@
     private bool IsEditMode => Id.HasValue;
     private List<EmployeeViewModel> employees = new();
     private List<SelectOption> roles = new();
+    private List<SelectOption> _employeeOption = new();
 
     // ═══════════ LIFECYCLE ═══════════
 
@@ -298,7 +307,13 @@
         var result = await EmployeeService.GetEmployeesAsync();
 
         employees = result is { IsSuccess: true, Data: not null }
-            ? result.Data.ToList()
+            ? result.Data
+            : new();
+
+        _employeeOption = result is { IsSuccess: true, Data: not null }
+            ? result.Data
+                .Select(e => new SelectOption { Value = e.Id.ToString(), Text = e.FullName })
+                .ToList()
             : new();
     }
 
