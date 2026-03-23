@@ -204,7 +204,6 @@
 }
 
 @code {
-    /* ════════════════  STATE  ════════════════ */
 
     private AttendanceViewModel attendanceViewModel = new();
 
@@ -234,18 +233,15 @@
     private const string TimeFmt = "hh:mm tt";
     private const int RefreshIntervalSec = 5;
 
-    /* ════════════════  COMPUTED PROPERTIES  ════════════════ */
-
-    /// Button color: RED if missed yesterday, DANGER if clocked in, PRIMARY if idle
     private string ButtonClass
     {
         get
         {
             if (MissedClockOutYesterday && !IsClockedIn)
-                return "btn-danger cw-btn-missed";    // RED for missed
+                return "btn-danger cw-btn-missed";    
             if (IsClockedIn)
-                return "btn-danger";                  // RED for clock-out
-            return "btn-primary";                     // BLUE for clock-in
+                return "btn-danger";                  
+            return "btn-primary";                     
         }
     }
 
@@ -313,9 +309,14 @@
                 if (firstClock?.ClockInTime != null)
                     FirstClockInDisplay = Fmt(firstClock.ClockInTime.Value);
 
-                // Last record
+                // Last record (for determining current status)
                 var last = todayRecords
                     .OrderByDescending(x => x.CreatedOn)
+                    .FirstOrDefault();
+
+                var lastClockOut = todayRecords
+                    .Where(x => x.ClockOutTime != null)
+                    .OrderByDescending(x => x.ClockOutTime)
                     .FirstOrDefault();
 
                 if (last != null)
@@ -328,7 +329,6 @@
                     else if (last.ClockOutTime != null)
                     {
                         IsClockedIn = false;
-                        LastActivityDisplay = Fmt(last.ClockOutTime.Value);
                     }
                     else
                     {
@@ -346,10 +346,14 @@
                     }
                 }
 
+                if (lastClockOut?.ClockOutTime != null)
+                {
+                    LastActivityDisplay = Fmt(lastClockOut.ClockOutTime.Value);
+                }
+
                 return;
             }
 
-            // ── No today records → check missed clock-out yesterday ──
             var lastResult = await ClockService.GetTodayLastEntryAsync(empId);
 
             if (lastResult?.Data is { } prev
@@ -414,8 +418,6 @@
             await SetLoading(false);
         }
     }
-
-    /* ════════════════  FORM SUBMIT  ════════════════ */
 
     private async Task SubmitAsync()
     {
@@ -521,8 +523,6 @@
         await ShowMsg($"Clocked out at {now.ToString(TimeFmt)}");
     }
 
-    /* ════════════════  BUILD VM  ════════════════ */
-
     private AttendanceViewModel BuildVm(
         int empId, DeviceType device,
         TimeSpan? clockIn = null,
@@ -540,8 +540,6 @@
             Notes = attendanceViewModel.Notes ?? string.Empty,
             StatusId = AttendanceStatus.Present
         };
-
-    /* ════════════════  SESSION TIMER  ════════════════ */
 
     private void StartSessionTimer()
     {
@@ -569,8 +567,6 @@
             catch (OperationCanceledException) { }
         }, token);
     }
-
-    /* ════════════════  REFRESH TIMER  ════════════════ */
 
     private void StartRefreshTimer()
     {
@@ -602,8 +598,6 @@
         }, token);
     }
 
-    /* ════════════════  COOLDOWN  ════════════════ */
-
     private async Task CooldownAsync(int seconds)
     {
         _cooldownCts?.Cancel();
@@ -629,8 +623,6 @@
         }
         catch (OperationCanceledException) { }
     }
-
-    /* ════════════════  HELPERS  ════════════════ */
 
     private static string Fmt(TimeSpan ts)
         => TimeOnly.FromTimeSpan(ts).ToString("hh:mm tt");
