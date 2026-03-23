@@ -79,4 +79,33 @@ public class ReportRepository
 
         return result;
     }
+
+    public async Task<List<LeaveSummaryReportDto>> GetLeaveSummaryReportAsync(
+        int year,
+        int? month,
+        DateTime? fromDate, 
+        DateTime? toDate,
+        int? departmentId)
+    {
+        var parameters = new[]
+        {
+            new SqlParameter("@Year", (object?)year ?? DBNull.Value),
+            new SqlParameter("@Month", (object?)month ?? DBNull.Value),
+             new SqlParameter("@FromDate", (object?)fromDate ?? DBNull.Value),
+            new SqlParameter("@ToDate", (object?)toDate ?? DBNull.Value),
+            new SqlParameter("@DepartmentId", (object?)departmentId ?? DBNull.Value)
+        };
+        var result = await _context
+            .Set<LeaveSummaryReportDto>()
+            .FromSqlRaw(
+                @"EXEC dbo.Sp_LeaveSummaryReport 
+                    @Year,
+                    @Month,
+                    @FromDate,
+                    @ToDate,
+                    @DepartmentId",
+                parameters)
+            .ToListAsync();
+        return result;
+    }
 }

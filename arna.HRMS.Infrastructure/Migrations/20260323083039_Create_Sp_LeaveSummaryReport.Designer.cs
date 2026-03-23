@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using arna.HRMS.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using arna.HRMS.Infrastructure.Data;
 namespace arna.HRMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260323083039_Create_Sp_LeaveSummaryReport")]
+    partial class Create_Sp_LeaveSummaryReport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -166,7 +169,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Attendances", (string)null);
+                    b.ToTable("Attendances");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.AttendanceRequest", b =>
@@ -237,7 +240,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("AttendanceRequest", (string)null);
+                    b.ToTable("AttendanceRequest");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.Department", b =>
@@ -284,7 +287,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasIndex("ParentDepartmentId");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
 
                     b.HasData(
                         new
@@ -410,7 +413,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.HasIndex("OfficeEmail")
                         .IsUnique();
 
-                    b.ToTable("Employees", (string)null);
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.FestivalHoliday", b =>
@@ -455,7 +458,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasIndex("FestivalName");
 
-                    b.ToTable("FestivalHoliday", (string)null);
+                    b.ToTable("FestivalHoliday");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.LeaveRequest", b =>
@@ -521,7 +524,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasIndex("LeaveTypeId");
 
-                    b.ToTable("LeaveRequests", (string)null);
+                    b.ToTable("LeaveRequests");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.LeaveType", b =>
@@ -562,7 +565,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                     b.HasIndex("LeaveNameId")
                         .IsUnique();
 
-                    b.ToTable("LeaveTypes", (string)null);
+                    b.ToTable("LeaveTypes");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.Role", b =>
@@ -594,7 +597,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
 
                     b.HasData(
                         new
@@ -694,7 +697,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasIndex("EmployeeId");
 
-                    b.ToTable("Timesheets", (string)null);
+                    b.ToTable("Timesheets");
                 });
 
             modelBuilder.Entity("arna.HRMS.Core.Entities.User", b =>
@@ -771,7 +774,7 @@ namespace arna.HRMS.Infrastructure.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
 
                     b.HasData(
                         new

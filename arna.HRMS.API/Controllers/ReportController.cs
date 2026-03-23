@@ -48,4 +48,20 @@ public class ReportController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("leave-summary-report")]
+    public async Task<IActionResult> LeaveSummaryReportAsync(
+        [FromQuery] int year,
+        [FromQuery] int? month,
+        [FromQuery] int? departmentId,
+        [FromQuery] DateTime? FromDate,
+        [FromQuery] DateTime? ToDate)
+    {
+        var result = await _reportService.GetLeaveSummaryReport(year, month, departmentId, FromDate, ToDate);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Message);
+        
+        return Ok(result);
+    }
 }

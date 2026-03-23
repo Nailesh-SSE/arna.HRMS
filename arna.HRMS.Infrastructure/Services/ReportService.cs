@@ -32,4 +32,12 @@ public class ReportService : IReportService
 
         return ServiceResult<List<EmployeeAttendanceReportDto>>.Success(reportData);
     }
+    public async Task<ServiceResult<List<LeaveSummaryReportDto>>> GetLeaveSummaryReport(int year, int? month, int? departmentId, DateTime? FromDate, DateTime? ToDate)
+    {
+        var reportData = await _reportRepository.GetLeaveSummaryReportAsync(year, month,  FromDate, ToDate, departmentId);
+        if (reportData == null || !reportData.Any())
+            return ServiceResult<List<LeaveSummaryReportDto>>.Fail("No leave summary data found for the specified criteria.");
+
+        return ServiceResult<List<LeaveSummaryReportDto>>.Success(reportData);
+    }
 }
