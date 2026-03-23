@@ -64,30 +64,24 @@
 
                         @* ── ACTION BUTTON ── *@
                         <button class="btn d-flex align-items-center justify-content-center
-                                           gap-1 rounded-3 flex-shrink-0 cw-action-btn
-                                           @ButtonClass"
+                   gap-1 rounded-3 flex-shrink-0 cw-action-btn
+                   @ButtonClass"
                                 @onclick="HandleClick"
-                                disabled="@(CooldownActive || ShowDynamicForm || IsLoading)">
+                                disabled="@(CooldownActive || ShowDynamicForm)">
 
-                        @if (CooldownActive)
+                        @if (MissedClockOutYesterday && !IsClockedIn)
                             {
-                                <span class="spinner-border spinner-border-sm"></span>
-                                <span class="cw-btn-label">@(CooldownRemaining)s</span>
-                            }
-                            else if (MissedClockOutYesterday && !IsClockedIn)
-                            {
-                                @* RED button with warning icon *@
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                                <span class="cw-btn-label">In</span>
+                                <i class="bi bi-exclamation-triangle-fill cw-icon"></i>
                             }
                             else if (IsClockedIn)
                             {
-                                <i class="bi bi-stop-fill"></i>
+                                <i class="bi bi-stop-fill cw-icon"></i>
                             }
                             else
                             {
-                                <i class="bi bi-play-fill"></i>
+                                <i class="bi bi-play-fill cw-icon"></i>
                             }
+
                         </button>
 
                         @* ── STATUS BADGE (all devices) ── *@
@@ -128,19 +122,6 @@
             </div>
 
         </div>
-
-        @* ── ALERTS (visible on ALL devices) ── *@
-        @if (CooldownActive)
-        {
-            <div class="alert alert-warning border-0 shadow-sm rounded-3
-                                py-2 px-3 mt-2 mb-0 d-flex align-items-center gap-2 cw-label">
-                <i class="bi bi-hourglass-split"></i>
-                <span>
-                    Wait <strong>@CooldownRemaining</strong>s
-                    to @(IsClockedIn ? "clock out" : "clock in")
-                </span>
-            </div>
-        }
 
         @if (MissedClockOutYesterday)
         {
