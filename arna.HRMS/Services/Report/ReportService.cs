@@ -9,6 +9,7 @@ public interface IReportService
 {
     Task<ApiResult<List<EmployeeAttendanceReportViewModel>>> GetEmployeeAttendanceReportAsync(int? year, int? month, int? employeeId, DateTime? FromDate, DateTime? ToDate);
     Task<ApiResult<List<AttendanceReportViewModel>>> GetEmployeeDailyAttendanceReportAsync(int? year, int? month, int? employeeId, AttendanceStatus? StatusId, DeviceType? device, DateTime? FromDate, DateTime? ToDate);
+    Task<ApiResult<List<LeaveSummaryReportViewModel>>> GetEmployeeLeaveSummaryReportAsync(int? year, int? month, int? departmentId, DateTime? FromDate, DateTime? ToDate);
 }
 
 public class ReportService : IReportService
@@ -27,5 +28,9 @@ public class ReportService : IReportService
     public async Task<ApiResult<List<EmployeeAttendanceReportViewModel>>> GetEmployeeAttendanceReportAsync(int? year, int? month, int? employeeId, DateTime? FromDate, DateTime? ToDate)
     {
         return await _report.GetEmployeesAttendanceReportAsync(year, month, employeeId, FromDate, ToDate);
+    }
+    public async Task<ApiResult<List<LeaveSummaryReportViewModel>>> GetEmployeeLeaveSummaryReportAsync(int? year, int? month, int? departmentId, DateTime? FromDate, DateTime? ToDate)
+    {
+        return await _report.GetLeaveSummaryReportAsync(year, month, departmentId, FromDate, ToDate);
     }
 }

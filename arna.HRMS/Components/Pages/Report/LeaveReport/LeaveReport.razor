@@ -1,0 +1,133 @@
+﻿@page "/leave-report"
+
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services.Report
+
+@inject IReportService ReportService
+
+<h3>Leave Report</h3>
+
+<!-- 🔍 Filters -->
+<div class="row mb-3">
+    <div class="col-md-2">
+        <input type="number" class="form-control" placeholder="Year" @bind="year" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="number" class="form-control" placeholder="Month" @bind="month" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="number" class="form-control" placeholder="DepartmentId" @bind="departmentId" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="date" class="form-control" @bind="fromDate" />
+    </div>
+
+    <div class="col-md-2">
+        <input type="date" class="form-control" @bind="toDate" />
+    </div>
+
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100" @onclick="ApplyFilter">
+            Filter
+        </button>
+    </div>
+</div>
+
+<!-- 📊 Grid -->
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Employee No</th>
+            <th>Employee Name</th>
+            <th>Department</th>
+            <th>Leave Type</th>
+            <th>Max Per Year</th>
+            <th>Used Leave</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (reportData == null || !reportData.Any())
+        {
+            <tr>
+                <td colspan="6" class="text-center">No data found</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in reportData)
+            {
+                <tr>
+                    <td>@item.EmployeeNumber</td>
+                    <td>@item.EmployeeName</td>
+                    <td>@item.DepartmentName</td>
+                    <td>@((LeaveName)item.LeaveNameId)</td>
+                    <td>@item.MaxPerYear</td>
+                    <td>@item.UsedLeave</td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+
+    List<LeaveSummaryReportViewModel> reportData = new();
+
+    int? year;
+    int? month;
+    int? departmentId;
+    DateTime? fromDate;
+    DateTime? toDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReport(new ReportFilter());
+    }
+
+    async Task ApplyFilter()
+    {
+        await LoadReport(new ReportFilter
+        {
+            Year = year,
+            Month = month,
+            DepartmentId = departmentId,
+            FromDate = fromDate,
+            ToDate = toDate
+        });
+    }
+
+    async Task LoadReport(ReportFilter filter)
+    {
+        year = filter.Year;
+        month = filter.Month;
+        departmentId = filter.DepartmentId;
+        fromDate = filter.FromDate;
+        toDate = filter.ToDate;
+
+        reportData = new List<LeaveSummaryReportViewModel>();
+        await InvokeAsync(StateHasChanged);
+
+        var result = await ReportService.GetEmployeeLeaveSummaryReportAsync(
+            year,
+            month,
+            departmentId,
+            fromDate,
+            toDate
+        );
+
+        if (result.IsSuccess && result.Data != null)
+        {
+            reportData = result.Data.ToList();
+        }
+        else
+        {
+            reportData = new List<LeaveSummaryReportViewModel>();
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+}

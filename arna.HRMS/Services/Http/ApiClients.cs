@@ -469,6 +469,28 @@ public sealed class ApiClients
             return await _http.GetAsync<List<EmployeeAttendanceReportViewModel>>(
                 $"{Url}/employees-attendance-report{qs}");
         }
+        public async Task<ApiResult<List<LeaveSummaryReportViewModel>>> GetLeaveSummaryReportAsync(
+            int? year,
+            int? month,
+            int? departmentId,
+            DateTime? FromDate,
+            DateTime? ToDate)
+        {
+            var query = new List<string>();
+            query.Add($"year={year}");
+            if (month.HasValue)
+                query.Add($"month={month}");
+            if (departmentId.HasValue)
+                query.Add($"departmentId={departmentId}");
+            if (FromDate.HasValue)
+                query.Add($"FromDate={FromDate}");
+            if (ToDate.HasValue)
+                query.Add($"ToDate={ToDate}");
+            var qs = query.Any()
+                ? "?" + string.Join("&", query)
+                : string.Empty;
+            return await _http.GetAsync<List<LeaveSummaryReportViewModel>>(
+                $"{Url}/leave-summary-report{qs}");
+        }
     }
-
 }

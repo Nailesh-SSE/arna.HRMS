@@ -71,14 +71,14 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadReport(new AttendanceFilter());
+        await LoadReport(new ReportFilter());
     }
 
 
 
     async Task GraphChanged()
     {
-        await LoadReport(new AttendanceFilter
+        await LoadReport(new ReportFilter
         {
             Year = year,
             Month = month,
@@ -92,7 +92,7 @@
 
 
 
-    async Task LoadReport(AttendanceFilter filter)
+    async Task LoadReport(ReportFilter filter)
     {
         year = filter.Year;
         month = filter.Month;
