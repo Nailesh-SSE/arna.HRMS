@@ -28,9 +28,6 @@ public class Program
         builder.Services.AddAuthorizationCore();
         builder.Services.AddCascadingAuthenticationState();
 
-        // Add MemoryCache
-        builder.Services.AddMemoryCache();
-
         // Register CustomAuthStateProvider
         builder.Services.AddScoped<CustomAuthStateProvider>();
         builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
