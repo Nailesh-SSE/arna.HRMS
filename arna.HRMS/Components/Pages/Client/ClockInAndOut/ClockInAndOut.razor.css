@@ -1,10 +1,4 @@
-﻿/* ═══════════════════════════════════
-   ClockWidget — only what Bootstrap
-   cannot do alone
-   ═══════════════════════════════════ */
-
-/* Icon box — fixed size square */
-.cw-icon-box {
+﻿.cw-icon-box {
     width: 38px;
     height: 38px;
     min-width: 38px;
@@ -24,27 +18,109 @@
 
 /* Action button — fixed size */
 .cw-action-btn {
-    width: 46px;
-    height: 46px;
-    min-width: 46px;
-    font-size: 1.15rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    font-size: 1.3rem;
+    position: relative;
+    overflow: hidden;
+    border: none;
+    transition: all 0.3s ease;
 }
 
-    .cw-action-btn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+/* ICON SMOOTH */
+.cw-icon {
+    transition: transform 0.25s ease;
+}
+
+/* HOVER EFFECT */
+.cw-action-btn:hover:not(:disabled) {
+    transform: translateY(-4px) scale(1.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.cw-action-btn:hover .cw-icon {
+    transform: scale(1.2) rotate(8deg);
+}
+
+/* CLICK PRESS */
+.cw-action-btn:active:not(:disabled) {
+    transform: scale(0.9);
+}
+
+/* RIPPLE EFFECT */
+.cw-action-btn::after {
+    content: "";
+    position: absolute;
+    width: 140%;
+    height: 140%;
+    top: 50%;
+    left: 50%;
+    background: rgba(255,255,255,0.25);
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.cw-action-btn:active::after {
+    animation: ripple 0.6s ease-out;
+}
+
+@keyframes ripple {
+    from {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 1;
     }
 
-    .cw-action-btn:active:not(:disabled) {
-        transform: scale(0.95);
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+    }
+}
+
+/* CLOCK-IN (BLUE GLOW) */
+.btn-primary.cw-action-btn {
+    animation: pulseBlue 2s infinite;
+}
+
+@keyframes pulseBlue {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13,110,253,0.6);
     }
 
-/* Timer font */
-.cw-timer {
-    font-family: 'Courier New', 'SF Mono', monospace;
-    font-size: 1rem;
-    letter-spacing: 1px;
+    70% {
+        box-shadow: 0 0 0 12px rgba(13,110,253,0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(13,110,253,0);
+    }
+}
+
+/* CLOCK-OUT (RED GLOW) */
+.btn-danger.cw-action-btn {
+    animation: pulseRed 2s infinite;
+}
+
+@keyframes pulseRed {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220,53,69,0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(220,53,69,0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(220,53,69,0);
+    }
+}
+
+/* DISABLED STATE */
+.cw-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    animation: none;
 }
 
 /* Modal max-width */

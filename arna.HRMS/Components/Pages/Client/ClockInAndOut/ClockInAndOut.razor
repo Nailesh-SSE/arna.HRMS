@@ -22,7 +22,7 @@
                 <div class="card border-0 shadow-sm rounded-3 h-100">
                     <div class="card-body d-flex align-items-center gap-2 p-2 p-md-3">
                         <div class="rounded-3 d-flex align-items-center justify-content-center
-                                        bg-success bg-opacity-10 text-success flex-shrink-0 cw-icon-box">
+                                            bg-success bg-opacity-10 text-success flex-shrink-0 cw-icon-box">
                             <i class="bi bi-box-arrow-in-right"></i>
                         </div>
                         <div class="min-w-0">
@@ -41,7 +41,7 @@
                 <div class="card border-0 shadow-sm rounded-3 h-100">
                     <div class="card-body d-flex align-items-center gap-2 p-2 p-md-3">
                         <div class="rounded-3 d-flex align-items-center justify-content-center
-                                        bg-danger bg-opacity-10 text-danger flex-shrink-0 cw-icon-box">
+                                            bg-danger bg-opacity-10 text-danger flex-shrink-0 cw-icon-box">
                             <i class="bi bi-box-arrow-right"></i>
                         </div>
                         <div class="min-w-0">
@@ -58,36 +58,30 @@
             @* ── Clock Action + Timer ── *@
             <div class="col-12 col-md-6">
                 <div class="card border-0 shadow-sm rounded-3 h-100
-                                @(MissedClockOutYesterday ? "cw-missed-border" : "")">
+                                    @(MissedClockOutYesterday ? "cw-missed-border" : "")">
                     <div class="card-body d-flex align-items-center justify-content-between
-                                    gap-2 p-2 p-md-3">
+                                        gap-2 p-2 p-md-3">
 
                         @* ── ACTION BUTTON ── *@
                         <button class="btn d-flex align-items-center justify-content-center
-                                           gap-1 rounded-3 flex-shrink-0 cw-action-btn
-                                           @ButtonClass"
+                       gap-1 rounded-3 flex-shrink-0 cw-action-btn
+                       @ButtonClass"
                                 @onclick="HandleClick"
-                                disabled="@(CooldownActive || ShowDynamicForm || IsLoading)">
+                                disabled="@(CooldownActive || ShowDynamicForm)">
 
-                        @if (CooldownActive)
+                        @if (MissedClockOutYesterday && !IsClockedIn)
                             {
-                                <span class="spinner-border spinner-border-sm"></span>
-                                <span class="cw-btn-label">@(CooldownRemaining)s</span>
-                            }
-                            else if (MissedClockOutYesterday && !IsClockedIn)
-                            {
-                                @* RED button with warning icon *@
-                                <i class="bi bi-exclamation-triangle-fill"></i>
-                                <span class="cw-btn-label">In</span>
+                                <i class="bi bi-exclamation-triangle-fill cw-icon"></i>
                             }
                             else if (IsClockedIn)
                             {
-                                <i class="bi bi-stop-fill"></i>
+                                <i class="bi bi-stop-fill cw-icon"></i>
                             }
                             else
                             {
-                                <i class="bi bi-play-fill"></i>
+                                <i class="bi bi-play-fill cw-icon"></i>
                             }
+
                         </button>
 
                         @* ── STATUS BADGE (all devices) ── *@
@@ -95,14 +89,14 @@
                             @if (CooldownActive)
                             {
                                 <span class="badge bg-warning bg-opacity-10 text-warning
-                                                     rounded-pill px-2 py-1 cw-label">
+                                                             rounded-pill px-2 py-1 cw-label">
                                     <i class="bi bi-hourglass-split me-1"></i>@(CooldownRemaining)s
                                 </span>
                             }
                             else if (MissedClockOutYesterday && !IsClockedIn)
                             {
                                 <span class="badge bg-danger bg-opacity-10 text-danger
-                                                     rounded-pill px-2 py-1 cw-label cw-missed-badge">
+                                                             rounded-pill px-2 py-1 cw-label cw-missed-badge">
                                     <i class="bi bi-exclamation-triangle-fill me-1"></i>Missed
                                 </span>
                             }
@@ -118,7 +112,7 @@
                         <div class="d-flex align-items-center gap-1 gap-md-2 ms-auto">
                             <i class="bi bi-stopwatch text-primary cw-label"></i>
                             <span class="fw-bold text-nowrap cw-timer
-                                             @(IsClockedIn ? "text-primary" : "text-muted")">
+                                                 @(IsClockedIn ? "text-primary" : "text-muted")">
                                 @SessionDuration
                             </span>
                         </div>
@@ -129,23 +123,10 @@
 
         </div>
 
-        @* ── ALERTS (visible on ALL devices) ── *@
-        @if (CooldownActive)
-        {
-            <div class="alert alert-warning border-0 shadow-sm rounded-3
-                                py-2 px-3 mt-2 mb-0 d-flex align-items-center gap-2 cw-label">
-                <i class="bi bi-hourglass-split"></i>
-                <span>
-                    Wait <strong>@CooldownRemaining</strong>s
-                    to @(IsClockedIn ? "clock out" : "clock in")
-                </span>
-            </div>
-        }
-
         @if (MissedClockOutYesterday)
         {
             <div class="alert alert-danger border-0 shadow-sm rounded-3
-                                py-2 px-3 mt-2 mb-0 d-flex align-items-center gap-2 cw-missed-alert">
+                                        py-2 px-3 mt-2 mb-0 d-flex align-items-center gap-2 cw-missed-alert">
                 <i class="bi bi-exclamation-triangle-fill text-danger"></i>
                 <div>
                     <strong class="small">Missed Clock-Out!</strong>
@@ -161,7 +142,7 @@
     @if (ShowDynamicForm)
     {
         <div class="position-fixed top-0 start-0 w-100 h-100
-                            d-flex align-items-center justify-content-center p-2 p-md-3"
+                                    d-flex align-items-center justify-content-center p-2 p-md-3"
              style="z-index:1050; background:rgba(0,0,0,.5); backdrop-filter:blur(3px);"
              @onclick="CloseForm">
 
@@ -171,10 +152,10 @@
 
                 @* Modal Header *@
                 <div class="d-flex align-items-center justify-content-between px-3 py-2 text-white
-                                    @ModalHeaderClass">
+                                            @ModalHeaderClass">
                     <div class="d-flex align-items-center gap-2 fw-semibold small">
                         <i class="bi @(PendingClockIn == true
-                                                                  ? "bi-play-circle" : "bi-stop-circle")"></i>
+                                                                                             ? "bi-play-circle" : "bi-stop-circle")"></i>
                 @(PendingClockIn == true ? "Clock In" : "Clock Out")
 
                 @if (MissedClockOutYesterday && PendingClockIn == true)
@@ -205,12 +186,12 @@
     {
         <div class="position-fixed bottom-0 end-0 p-3" style="z-index:1090;">
             <div class="toast show border-0 shadow-lg rounded-3 cw-toast
-                                @(IsToastWarning ? "bg-warning text-dark" : "bg-success text-white")"
+                                        @(IsToastWarning ? "bg-warning text-dark" : "bg-success text-white")"
                  role="alert">
                 <div class="toast-body d-flex align-items-center gap-2 py-2 px-3">
                     <i class="bi @(IsToastWarning
-                                                           ? "bi-exclamation-triangle-fill"
-                                                           : "bi-check-circle-fill")"></i>
+                                                                                  ? "bi-exclamation-triangle-fill"
+                                                                                  : "bi-check-circle-fill")"></i>
             <span class="small fw-medium">@ToastMessage</span>
             <button type="button"
                     class="btn-close btn-close-white ms-auto p-0"
@@ -223,7 +204,6 @@
 }
 
 @code {
-    /* ════════════════  STATE  ════════════════ */
 
     private AttendanceViewModel attendanceViewModel = new();
 
@@ -253,18 +233,15 @@
     private const string TimeFmt = "hh:mm tt";
     private const int RefreshIntervalSec = 5;
 
-    /* ════════════════  COMPUTED PROPERTIES  ════════════════ */
-
-    /// Button color: RED if missed yesterday, DANGER if clocked in, PRIMARY if idle
     private string ButtonClass
     {
         get
         {
             if (MissedClockOutYesterday && !IsClockedIn)
-                return "btn-danger cw-btn-missed";    // RED for missed
+                return "btn-danger cw-btn-missed";    
             if (IsClockedIn)
-                return "btn-danger";                  // RED for clock-out
-            return "btn-primary";                     // BLUE for clock-in
+                return "btn-danger";                  
+            return "btn-primary";                     
         }
     }
 
@@ -273,7 +250,7 @@
         get
         {
             if (MissedClockOutYesterday && PendingClockIn == true)
-                return "bg-danger bg-gradient";       
+                return "bg-danger bg-gradient";
             return PendingClockIn == true
                 ? "bg-primary bg-gradient"
                 : "bg-danger bg-gradient";
@@ -332,9 +309,14 @@
                 if (firstClock?.ClockInTime != null)
                     FirstClockInDisplay = Fmt(firstClock.ClockInTime.Value);
 
-                // Last record
+                // Last record (for determining current status)
                 var last = todayRecords
                     .OrderByDescending(x => x.CreatedOn)
+                    .FirstOrDefault();
+
+                var lastClockOut = todayRecords
+                    .Where(x => x.ClockOutTime != null)
+                    .OrderByDescending(x => x.ClockOutTime)
                     .FirstOrDefault();
 
                 if (last != null)
@@ -347,7 +329,6 @@
                     else if (last.ClockOutTime != null)
                     {
                         IsClockedIn = false;
-                        LastActivityDisplay = Fmt(last.ClockOutTime.Value);
                     }
                     else
                     {
@@ -365,10 +346,14 @@
                     }
                 }
 
+                if (lastClockOut?.ClockOutTime != null)
+                {
+                    LastActivityDisplay = Fmt(lastClockOut.ClockOutTime.Value);
+                }
+
                 return;
             }
 
-            // ── No today records → check missed clock-out yesterday ──
             var lastResult = await ClockService.GetTodayLastEntryAsync(empId);
 
             if (lastResult?.Data is { } prev
@@ -433,8 +418,6 @@
             await SetLoading(false);
         }
     }
-
-    /* ════════════════  FORM SUBMIT  ════════════════ */
 
     private async Task SubmitAsync()
     {
@@ -540,8 +523,6 @@
         await ShowMsg($"Clocked out at {now.ToString(TimeFmt)}");
     }
 
-    /* ════════════════  BUILD VM  ════════════════ */
-
     private AttendanceViewModel BuildVm(
         int empId, DeviceType device,
         TimeSpan? clockIn = null,
@@ -559,8 +540,6 @@
             Notes = attendanceViewModel.Notes ?? string.Empty,
             StatusId = AttendanceStatus.Present
         };
-
-    /* ════════════════  SESSION TIMER  ════════════════ */
 
     private void StartSessionTimer()
     {
@@ -588,8 +567,6 @@
             catch (OperationCanceledException) { }
         }, token);
     }
-
-    /* ════════════════  REFRESH TIMER  ════════════════ */
 
     private void StartRefreshTimer()
     {
@@ -621,8 +598,6 @@
         }, token);
     }
 
-    /* ════════════════  COOLDOWN  ════════════════ */
-
     private async Task CooldownAsync(int seconds)
     {
         _cooldownCts?.Cancel();
@@ -648,8 +623,6 @@
         }
         catch (OperationCanceledException) { }
     }
-
-    /* ════════════════  HELPERS  ════════════════ */
 
     private static string Fmt(TimeSpan ts)
         => TimeOnly.FromTimeSpan(ts).ToString("hh:mm tt");
