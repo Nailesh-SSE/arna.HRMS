@@ -123,20 +123,55 @@
 
         </div>
 
-        @if (MissedClockOutYesterday)
-        {
-            <div class="alert alert-danger border-0 shadow-sm rounded-3
-                                        py-2 px-3 mt-2 mb-0 d-flex align-items-center gap-2 cw-missed-alert">
-                <i class="bi bi-exclamation-triangle-fill text-danger"></i>
-                <div>
-                    <strong class="small">Missed Clock-Out!</strong>
-                    <div class="cw-label text-danger-emphasis">
-                        You forgot to clock out yesterday. Please clock in to start a new session.
+        
+    </div>
+    @* ═══════ MISSED CLOCK-OUT MODAL ═══════ *@
+    @if (ShowMissedClockOutModal)
+    {
+        <div class="position-fixed top-0 start-0 w-100 h-100
+                                        d-flex align-items-center justify-content-center p-2 p-md-3"
+             style="z-index:1050; background:rgba(0,0,0,.5); backdrop-filter:blur(3px);"
+             @onclick="CloseMissedModal">
+
+            <div class="bg-white rounded-4 shadow-lg w-100 overflow-hidden"
+                 style="max-width:460px;"
+                 @onclick:stopPropagation="true">
+
+                @* Modal Header *@
+                <div class="d-flex align-items-center justify-content-between px-3 py-2 text-white bg-danger bg-gradient">
+                    <div class="d-flex align-items-center gap-2 fw-semibold small">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Missed Clock-Out!
+                    </div>
+                    <button class="btn btn-sm text-white p-0 border-0"
+                            @onclick="CloseMissedModal">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                @* Modal Body *@
+                <div class="p-4">
+                    <div class="mb-4">
+                        <p class="text-muted mb-3">
+                            <i class="bi bi-info-circle text-danger me-2"></i>
+                            <strong>You forgot to clock out yesterday.</strong>
+                        </p>
+                        <p class="text-muted">
+                            Please clock in to start a new session. Your last session was recorded. You missed clocking out—please submit an attendance request.
+                        </p>
+                    </div>
+
+                    @* Modal Footer - OK Button *@
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btn btn-danger px-4"
+                                @onclick="CloseMissedModal">
+                            <i class="bi bi-check-lg me-2"></i>OK
+                        </button>
                     </div>
                 </div>
             </div>
-        }
-    </div>
+        </div>
+    }
 
     @* ═══════ MODAL ═══════ *@
     @if (ShowDynamicForm)
@@ -154,8 +189,7 @@
                 <div class="d-flex align-items-center justify-content-between px-3 py-2 text-white
                                             @ModalHeaderClass">
                     <div class="d-flex align-items-center gap-2 fw-semibold small">
-                        <i class="bi @(PendingClockIn == true
-                                                                                             ? "bi-play-circle" : "bi-stop-circle")"></i>
+                        <i class="bi @(PendingClockIn == true ? "bi-play-circle" : "bi-stop-circle")"></i>
                 @(PendingClockIn == true ? "Clock In" : "Clock Out")
 
                 @if (MissedClockOutYesterday && PendingClockIn == true)
@@ -214,6 +248,7 @@
     private bool IsLoading;
     private bool IsToastWarning;
     private bool MissedClockOutYesterday;
+    private bool ShowMissedClockOutModal;
     private bool? PendingClockIn;
 
     private int CooldownRemaining;
@@ -363,6 +398,7 @@
             {
                 MissedClockOutYesterday = true;
                 IsClockedIn = false;
+                ShowMissedClockOutModal = true;
             }
             else
             {
@@ -387,6 +423,12 @@
     private void CloseForm()
     {
         ShowDynamicForm = false;
+        StateHasChanged();
+    }
+
+    private void CloseMissedModal()
+    {
+        ShowMissedClockOutModal = false;
         StateHasChanged();
     }
 
