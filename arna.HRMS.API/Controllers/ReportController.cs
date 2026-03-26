@@ -25,7 +25,7 @@ public class ReportController : ControllerBase
     [FromQuery] DateTime? FromDate,
     [FromQuery] DateTime? ToDate)
     {
-        var result = await _reportService.GetDailyAttendanceReport(year, month, employeeId, statusId, device,FromDate, ToDate);
+        var result = await _reportService.GetDailyAttendanceReport(year, month, employeeId, statusId, device, FromDate, ToDate);
 
         if (!result.IsSuccess)
             return BadRequest(result.Message);
@@ -61,7 +61,23 @@ public class ReportController : ControllerBase
 
         if (!result.IsSuccess)
             return BadRequest(result.Message);
-        
+
+        return Ok(result);
+    }
+    [HttpGet("employee-leave-details-report")]
+    public async Task<IActionResult> EmployeeLeaveDetailsReportAsync(
+        [FromQuery] int year,
+        [FromQuery] int? month,
+        [FromQuery] DateTime? FromDate,
+        [FromQuery] DateTime? ToDate,
+        [FromQuery] int? employeeId,
+        [FromQuery] string? employeeNumber)
+    {
+        var result = await _reportService.GetEmployeeLeaveDetailsReport(year, month, FromDate, ToDate, employeeId, employeeNumber);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Message);
+
         return Ok(result);
     }
 }
