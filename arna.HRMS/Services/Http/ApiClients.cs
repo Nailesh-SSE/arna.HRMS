@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Models.Common.Result;
+﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.Enums;
 using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Models.ViewModels.Attendance;
@@ -168,9 +169,9 @@ public sealed class ApiClients
             return await _http.PostAsync<AuthResponse>($"{Url}/refresh", request);
         }
 
-        public async Task<ApiResult<bool>> LogoutAsync()
+        public async Task<ApiResult<bool>> LogoutAsync(int userId)
         {
-            return await _http.PostAsync<bool>($"{Url}/logout", new { });
+            return await _http.PostAsync<bool>($"{Url}/logout", new { userId });
         }
     }
 

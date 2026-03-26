@@ -171,7 +171,7 @@ public class EmployeesControllerTests
 
         var result = await _controller.UpdateAsync(5, dto);
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid employee ID."));
 
     }
 

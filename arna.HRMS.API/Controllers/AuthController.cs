@@ -3,7 +3,6 @@ using arna.HRMS.Core.DTOs.Auth;
 using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace arna.HRMS.API.Controllers;
 
@@ -20,11 +19,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    
     public async Task<IActionResult> Login([FromBody] LoginDto request)
     {
         var result = await _authService.LoginAsync(request);
-
         return result.IsSuccess ? Ok(result) : Unauthorized(result.Message);
     }
 
@@ -32,7 +29,6 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] UserDto dto)
     {
         var result = await _authService.RegisterAsync(dto);
-
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
@@ -40,25 +36,20 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
     {
         var result = await _authService.RefreshTokenAsync(request);
-
         return result.IsSuccess ? Ok(result) : Unauthorized(result.Message);
     }
 
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
-        if (!TryGetUserId(out var userId))
-            return Unauthorized("Invalid token user id.");
+        if (request?.UserId <= 0)
+            return BadRequest("Invalid userId");
 
-        var result = await _authService.LogoutAsync(userId);
-
-        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+        var result = await _authService.LogoutAsync(request.UserId);
+        return result.IsSuccess ? Ok(result) : Ok("Logout successful");
     }
 
-    private bool TryGetUserId(out int userId)
-    {
-        userId = 0;
-        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return int.TryParse(claim, out userId);
-    }
+    public class LogoutRequest { public int UserId { get; set; } }
+
+    
 }

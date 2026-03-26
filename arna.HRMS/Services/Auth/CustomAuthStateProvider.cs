@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -12,17 +12,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
     private const string UserIdKey = "auth_user_id";
     private const string AuthType = "jwt";
 
-    private readonly IMemoryCache _memoryCache;
+    private readonly ProtectedLocalStorage _protectedLocalStorage;
     private readonly ILogger<CustomAuthStateProvider> _logger;
 
     private static readonly AuthenticationState Anonymous =
         new(new ClaimsPrincipal(new ClaimsIdentity()));
 
     public CustomAuthStateProvider(
-        IMemoryCache memoryCache,
+        ProtectedLocalStorage protectedLocalStorage,
         ILogger<CustomAuthStateProvider> logger)
     {
-        _memoryCache = memoryCache;
+        _protectedLocalStorage = protectedLocalStorage;
         _logger = logger;
     }
 
@@ -56,60 +56,101 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
 
     public async Task LoginAsync(int userId, string accessToken, string refreshToken)
     {
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
-        var expiry = jwt.ValidTo;
+        try
+        {
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
 
-        _memoryCache.Set(AccessTokenKey, accessToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
+            await _protectedLocalStorage.SetAsync(AccessTokenKey, accessToken);
+            await _protectedLocalStorage.SetAsync(RefreshTokenKey, refreshToken);
+            await _protectedLocalStorage.SetAsync(UserIdKey, userId);
 
-        _memoryCache.Set(RefreshTokenKey, refreshToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to store authentication tokens");
+            throw;
+        }
+    }
 
-        _memoryCache.Set(UserIdKey, userId);
+    public async Task UpdateTokensAsync(string accessToken, string refreshToken)
+    {
+        try
+        {
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(accessToken);
 
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+            await _protectedLocalStorage.SetAsync(AccessTokenKey, accessToken);
+            await _protectedLocalStorage.SetAsync(RefreshTokenKey, refreshToken);
 
-        await Task.CompletedTask;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update authentication tokens");
+            throw;
+        }
     }
 
     public async Task LogoutAsync()
     {
-        _memoryCache.Remove(AccessTokenKey);
-        _memoryCache.Remove(RefreshTokenKey);
-        _memoryCache.Remove(UserIdKey);
+        try
+        {
+            await _protectedLocalStorage.DeleteAsync(AccessTokenKey);
+            await _protectedLocalStorage.DeleteAsync(RefreshTokenKey);
+            await _protectedLocalStorage.DeleteAsync(UserIdKey);
 
-        NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));
-
-        await Task.CompletedTask;
+            NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to clear authentication tokens");
+        }
     }
 
-    public Task<string?> GetAccessTokenAsync()
+    public async Task<int> GetUserIdAsync()
     {
-        _memoryCache.TryGetValue(AccessTokenKey, out string? token);
-        return Task.FromResult(token);
+        try
+        {
+            var result = await _protectedLocalStorage.GetAsync<int>(UserIdKey);
+            return result.Success ? result.Value : 0;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve user ID");
+            return 0;
+        }
     }
 
-    public Task<(int userId, string? refreshToken)> GetRefreshDataAsync()
+    public async Task<string?> GetAccessTokenAsync()
     {
-        _memoryCache.TryGetValue(UserIdKey, out int userId);
-        _memoryCache.TryGetValue(RefreshTokenKey, out string? refreshToken);
-
-        return Task.FromResult((userId, refreshToken));
+        try
+        {
+            var result = await _protectedLocalStorage.GetAsync<string>(AccessTokenKey);
+            return result.Success ? result.Value : null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve access token");
+            return null;
+        }
     }
 
-    public async Task UpdateTokensAsync(string newAccessToken, string newRefreshToken)
+    public async Task<(int userId, string? refreshToken)> GetRefreshDataAsync()
     {
-        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(newAccessToken);
-        var expiry = jwt.ValidTo;
+        try
+        {
+            var userIdResult = await _protectedLocalStorage.GetAsync<int>(UserIdKey);
+            var refreshTokenResult = await _protectedLocalStorage.GetAsync<string>(RefreshTokenKey);
 
-        _memoryCache.Set(AccessTokenKey, newAccessToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(expiry));
+            var userId = userIdResult.Success ? userIdResult.Value : 0;
+            var refreshToken = refreshTokenResult.Success ? refreshTokenResult.Value : null;
 
-        _memoryCache.Set(RefreshTokenKey, newRefreshToken,
-            new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromDays(7)));
-
-        NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-
-        await Task.CompletedTask;
+            return (userId, refreshToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve refresh data");
+            return (0, null);
+        }
     }
 }

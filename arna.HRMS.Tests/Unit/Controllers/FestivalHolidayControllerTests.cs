@@ -73,7 +73,7 @@ public class FestivalHolidayControllerTests
         // Act
         var result = await _FestivalHolidayController.GetByIdAsync(999);
         // Assert
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
     [Test]
@@ -86,13 +86,13 @@ public class FestivalHolidayControllerTests
         var result = await _FestivalHolidayController.GetByIdAsync(0);
 
         // Assert
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
 
         // Act
         result = await _FestivalHolidayController.GetByIdAsync(-1);
 
         //Assert
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
     [Test]

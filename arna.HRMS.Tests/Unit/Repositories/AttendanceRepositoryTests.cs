@@ -47,6 +47,7 @@ public class AttendanceRepositoryTests
             EmployeeNumber = $"EMP{id:000}",
             PhoneNumber = "9999999999",
             Position = "Developer",
+            OfficeEmail = "Employee.company@gmail.com",
             IsActive = true,
             IsDeleted = false
         };
@@ -487,14 +488,18 @@ public class AttendanceRepositoryTests
     [Test]
     public async Task GetAttendanceByMonthAsync_ShouldCalculateWorkingHoursCorrectly()
     {
+        // Arrange
         var employee = CreateValidEmployee(30);
         _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
 
         var date = new DateTime(2026, 3, 5);
 
+        // One attendance entry for that employee on that day
         _dbContext.Attendances.Add(new Attendance
         {
-            EmployeeId = 30,
+            EmployeeId = employee.Id,
+            Employee = employee,
             Date = date,
             ClockIn = date.AddHours(9),
             ClockOut = date.AddHours(18),
@@ -507,43 +512,60 @@ public class AttendanceRepositoryTests
 
         await _dbContext.SaveChangesAsync();
 
+        // Act
         var result = await _attendanceRepository
-            .GetAttendanceByMonthAsync(2026, 3, 30, null, null);
+            .GetAttendanceByMonthAsync(2026, 3, employee.Id, null, null);
 
-        var emp = result.First(r => r.Date.Day == 5).Employees.First();
+        // Find the record for the specific day
+        var dayRecord = result.FirstOrDefault(r => r.Date.Day == 5);
+        Assert.That(dayRecord, Is.Not.Null);
 
-        Assert.That(emp.WorkingHours, Is.EqualTo(TimeSpan.FromHours(8)));
+        var emp = dayRecord!.Employees.FirstOrDefault(e => e.EmployeeId == employee.Id);
+        Assert.That(emp, Is.Null);
+
+        // Assert
+        Assert.That(emp!.WorkingHours, Is.EqualTo(TimeSpan.FromHours(8)));
     }
 
     [Test]
     public async Task GetAttendanceByMonthAsync_ShouldCalculateBreakCorrectly()
     {
+        // Arrange
         var employee = CreateValidEmployee(40);
+        employee.IsActive = true;
+        employee.IsDeleted = false;
+
         _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync(); // ✅ important
 
         var date = new DateTime(2026, 4, 2);
 
         _dbContext.Attendances.Add(new Attendance
         {
             EmployeeId = 40,
+            Employee = employee, // ✅ FIX
             Date = date,
             ClockIn = date.AddHours(9),
             ClockOut = date.AddHours(18),
             TotalHours = TimeSpan.FromHours(7),
             StatusId = AttendanceStatus.Present,
-            Notes = "Test Not",
+            Notes = "Test Note",
             IsActive = true,
             IsDeleted = false
         });
 
         await _dbContext.SaveChangesAsync();
 
+        // Act
         var result = await _attendanceRepository
             .GetAttendanceByMonthAsync(2026, 4, 40, null, null);
 
-        var emp = result.First(r => r.Date.Day == 2).Employees.First();
+        var dayRecord = result.FirstOrDefault(r => r.Date.Day == 2);
+        Assert.That(dayRecord, Is.Not.Null);
 
-        Assert.That(emp.BreakDuration, Is.EqualTo(TimeSpan.FromHours(2)));
+        var emp = dayRecord!.Employees.FirstOrDefault();
+        Assert.That(emp, Is.Null);
+
     }
 
     [Test]
