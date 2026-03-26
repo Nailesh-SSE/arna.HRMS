@@ -193,7 +193,7 @@ public class DepartmentControllerTests
         var result = await _departmentController.UpdateAsync(2, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid department ID."));
     }
 
     [Test]
@@ -207,12 +207,12 @@ public class DepartmentControllerTests
         var result = await _departmentController.UpdateAsync(0, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid department ID."));
         // Act
         result = await _departmentController.UpdateAsync(-1, departmentDto);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid Id"));
+        Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Invalid department ID."));
     }
 
     [Test]

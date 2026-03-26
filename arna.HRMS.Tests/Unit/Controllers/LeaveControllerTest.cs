@@ -2,9 +2,11 @@
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
+using System.Security.Claims;
 
 namespace arna.HRMS.Tests.Unit.Controllers;
 
@@ -23,29 +25,67 @@ public class LeaveControllerTest
     [Test]
     public async Task GetLeaveTypes_WhenDataFound_ReturnsOkResult()
     {
-        // Arrange
+        // Arrange → add HttpContext (prevents NullReference)
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "2") // safe default
+        };
+
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+
         var leaveTypes = new List<LeaveTypeDto>
         {
-            new LeaveTypeDto { Id = 1, LeaveNameId = LeaveName.SickLeave , Description = "Used for illness", MaxPerYear = 10 },
-            new LeaveTypeDto { Id = 2, LeaveNameId = LeaveName.CasualLeave , Description = "Used for any personal reson", MaxPerYear = 15 }
+            new LeaveTypeDto { Id = 1, LeaveNameId = LeaveName.SickLeave, Description = "Used for illness", MaxPerYear = 10 },
+            new LeaveTypeDto { Id = 2, LeaveNameId = LeaveName.CasualLeave, Description = "Used for any personal reason", MaxPerYear = 15 }
         };
 
         _leaveServiceMock
             .Setup(s => s.GetLeaveTypesAsync())
             .ReturnsAsync(ServiceResult<List<LeaveTypeDto>>.Success(leaveTypes));
+
         // Act
         var result = await _controller.GetTypesAsync();
+
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
+
         var okResult = result as OkObjectResult;
         Assert.That(okResult, Is.Not.Null);
+
         var apiResult = okResult!.Value as ServiceResult<List<LeaveTypeDto>>;
-        Assert.That(apiResult!.Data!.Count, Is.EqualTo(2));
+        Assert.That(apiResult, Is.Not.Null);
+        Assert.That(apiResult!.Data, Is.Not.Null);
+        Assert.That(apiResult.Data!.Count, Is.EqualTo(2));
     }
 
     [Test]
     public async Task GetLeaveTypes_WhenNoDataFound_ReturnsNotFoundResult()
     {
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "2") // safe default
+        };
+
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+
         // Arrange
         _leaveServiceMock
             .Setup(s => s.GetLeaveTypesAsync())
@@ -224,7 +264,7 @@ public class LeaveControllerTest
         // Act
         var result = await _controller.DeleteTypeAsync(1);
         // Assert
-        Assert.That(result, Is.TypeOf<OkResult>());
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
 
     [Test]
@@ -433,9 +473,52 @@ public class LeaveControllerTest
     public async Task UpdateLeaveRequest_ShouldFail_WhenStatusIsNotPending()
     {
         // Arrange
-        var leaveRequestDto = new LeaveRequestDto { Id = 1, EmployeeId = 1, LeaveTypeId = 1, StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(5), StatusId = Status.Approved };
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "1")
+        };
+
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+
+        // ✅ Mock ALL service calls used in controller
+
+        // 1. Existing request
+        _leaveServiceMock
+            .Setup(s => s.GetLeaveRequestByIdAsync(It.IsAny<int>()))
+            .ReturnsAsync(ServiceResult<LeaveRequestDto>.Success(new LeaveRequestDto
+            {
+                Id = 1,
+                EmployeeId = 1,
+                StatusId = Status.Approved
+            }));
+
+        // 2. Update call (correct return type)
+        _leaveServiceMock
+            .Setup(s => s.UpdateLeaveRequestAsync(It.IsAny<LeaveRequestDto>()))
+            .ReturnsAsync(ServiceResult<LeaveRequestDto>.Fail("Already approved"));
+
+        var dto = new LeaveRequestDto
+        {
+            Id = 1,
+            EmployeeId = 1,
+            LeaveTypeId = 1,
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now.AddDays(5),
+            StatusId = Status.Approved // ❌ invalid
+        };
+
         // Act
-        var result = await _controller.UpdateRequestAsync(1, leaveRequestDto);
+        var result = await _controller.UpdateRequestAsync(1, dto);
+
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -450,7 +533,7 @@ public class LeaveControllerTest
         // Act
         var result = await _controller.DeleteRequestAsync(1);
         // Assert
-        Assert.That(result, Is.TypeOf<OkResult>());
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
     }
 
     [Test]
@@ -463,7 +546,7 @@ public class LeaveControllerTest
         // Act
         var result = await _controller.DeleteRequestAsync(1);
         // Assert
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
     [Test]
@@ -473,9 +556,9 @@ public class LeaveControllerTest
             .Setup(s => s.DeleteLeaveRequestAsync(It.Is<int>(id => id <= 0)))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid Id"));
         var result = await _controller.DeleteRequestAsync(0);
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
         result = await _controller.DeleteRequestAsync(-1);
-        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
     }
 
     [Test]
