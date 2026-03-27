@@ -96,13 +96,20 @@
     color: #4e73df;
 }
 
-/* Floating dark tooltip box — hidden by default */
-.att-tip-box {
-    display: none;
+/* Arrow pointing down toward the cell */
+.att-tip-box::after {
+    content: "";
     position: absolute;
-    bottom: calc(100% + 8px);
+    top: 100%;
     left: 50%;
     transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e2a3a;
+}
+/* ADD THIS */
+.att-tip-box {
+    display: none;
+    position: fixed;
     background: #1e2a3a;
     color: #fff;
     border-radius: 8px;
@@ -114,21 +121,10 @@
     pointer-events: none;
 }
 
-/* Arrow pointing down toward the cell */
-.att-tip-box::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: #1e2a3a;
-}
-
-/* Show on hover */
-.att-tip-host:hover .att-tip-box {
-    display: block;
-}
+    /* ADD THIS */
+    .att-tip-box.visible {
+        display: block;
+    }
 
 /* ── Tooltip inner layout ── */
 .att-tip-header {

@@ -130,6 +130,51 @@
         </div>
     }
 </div>
+<!-- At the bottom of App.razor, before </body> -->
+<script>
+    (function () {
+        let box = null;
+
+        document.addEventListener('mouseover', function (e) {
+            const host = e.target.closest('.att-tip-host');
+            if (!host) { hide(); return; }
+            const tip = host.querySelector('.att-tip-box');
+            if (!tip || tip === box) return;
+            hide();
+            box = tip;
+
+            // Measure dimensions while invisible
+            box.style.visibility = 'hidden';
+            box.classList.add('visible');
+
+            const r = host.querySelector('.att-tip-trigger').getBoundingClientRect();
+            let top  = r.top - box.offsetHeight - 8;
+            let left = r.left + r.width / 2 - box.offsetWidth / 2;
+
+            // Flip below if clips top of screen
+            if (top < 4) top = r.bottom + 8;
+            // Keep inside viewport horizontally
+            left = Math.max(8, Math.min(left, window.innerWidth - box.offsetWidth - 8));
+
+            box.style.top  = top  + 'px';
+            box.style.left = left + 'px';
+            box.style.visibility = '';
+        });
+
+        document.addEventListener('mouseout', function (e) {
+            const host = e.target.closest('.att-tip-host');
+            if (host && !host.contains(e.relatedTarget)) hide();
+        });
+
+        function hide() {
+            if (box) {
+                box.classList.remove('visible');
+                box.style.top = box.style.left = box.style.visibility = '';
+                box = null;
+            }
+        }
+    })();
+</script>
 
 @code {
     [Parameter] public List<TItem> Items { get; set; } = new();
