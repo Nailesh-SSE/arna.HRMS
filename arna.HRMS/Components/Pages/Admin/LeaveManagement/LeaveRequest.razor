@@ -25,19 +25,6 @@
     </div>
 </div>
 
-<!-- STATUS SUMMARY CARDS -->
-<div class="row g-3 mb-4">
-    @foreach (var stat in StatCards)
-    {
-        <AppStatCard Icon="@stat.Icon"
-                     BgClass="@stat.BgClass"
-                     TextClass="@stat.TextClass"
-                     Label="@stat.Label"
-                     Count="@stat.Count"
-                     CardClass="@(statusFilter == stat.Status ? stat.ActiveClass : "")"
-                     OnClick="() => FilterByStatus(stat.Status)" />
-    }
-</div>
 
 <!-- FILTER BAR -->
 <div class="card border-0 shadow-sm rounded-3 mb-3">
