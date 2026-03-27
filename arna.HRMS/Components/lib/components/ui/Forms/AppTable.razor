@@ -24,9 +24,11 @@
             @if (Items == null || Items.Count == 0)
             {
                 <tr>
-                    <td colspan="@GetColSpan()" class="text-start py-5">
-                        <i class="bi bi-inbox fs-1 d-block mb-2 text-muted opacity-50"></i>
-                        <span class="text-muted">No data found</span>
+                    <td colspan="@GetColSpan()" class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center justify-content-center">
+                            <i class="bi bi-inbox fs-1 mb-2 text-muted opacity-50"></i>
+                            <span class="text-muted">No data found</span>
+                        </div>
                     </td>
                 </tr>
             }
