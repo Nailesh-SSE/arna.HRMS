@@ -3,86 +3,97 @@
 @using arna.HRMS.Models.Common.Table
 
 <div class="app-table-wrapper @WrapperClass">
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0 @TableClass">
-            <thead>
-                <tr>
-                    @foreach (var col in Columns)
-                    {
-                        <th class="bg-light text-muted text-uppercase small fw-semibold py-3 px-3 border-bottom">
-                            @col.Header
-                        </th>
-                    }
-                    @if (ShowActions)
-                    {
-                        <th class="bg-light text-muted text-uppercase small fw-semibold py-3 px-3 text-center border-0">
-                            Action
-                        </th>
-                    }
-                </tr>
-            </thead>
-            <tbody>
-                @if (Items == null || Items.Count == 0)
+    <table class="table table-hover align-middle mb-0 @TableClass custom-table">
+        <thead>
+            <tr>
+                @foreach (var col in Columns)
                 {
-                    <tr>
-                        <td colspan="@GetColSpan()" class="text-center py-5">
-                            <i class="bi bi-inbox fs-1 d-block mb-2 text-muted opacity-50"></i>
-                            <span class="text-muted">No data found</span>
-                        </td>
-                    </tr>
+                    <th class="bg-light text-muted text-uppercase small fw-semibold py-3 px-3 border-bottom text-start sticky-th">
+                        @col.Header
+                    </th>
                 }
-                else
+                @if (ShowActions)
                 {
-                    @foreach (var item in DisplayItems)
-                    {
-                        <tr class="@(RowClassFunc?.Invoke(item) ?? "")">
-                            @foreach (var col in Columns)
-                            {
-                                <td class="px-2 py-2 custom-td">
-                                    @* @if (col.CssClassFunc != null)
+                    <th class="bg-light text-muted text-uppercase small fw-semibold py-3 px-3 text-center border-0 sticky-th">
+                        Action
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (Items == null || Items.Count == 0)
+            {
+                <tr>
+                    <td colspan="@GetColSpan()" class="text-start py-5">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 text-muted opacity-50"></i>
+                        <span class="text-muted">No data found</span>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in DisplayItems)
+                {
+                    <tr class="@(RowClassFunc?.Invoke(item) ?? "")">
+                        @foreach (var col in Columns)
+                        {
+                            <td class="px-3 py-2 text-start custom-td">
+                                @{
+                                    var tipHtml = col.TooltipHtml?.Invoke(item);
+                                    var cssClass = col.CssClassFunc?.Invoke(item) ?? col.CssClass;
+                                    var cellVal = col.Value(item);
+                                }
+                                @if (!string.IsNullOrWhiteSpace(tipHtml))
+                                {
+                                    <div class="att-tip-host">
+                                        <span class="att-tip-trigger @cssClass">
+                                            @cellVal
+                                            <i class="bi bi-info-circle att-tip-icon"></i>
+                                        </span>
+                                        <div class="att-tip-box">
+                                            @((MarkupString)tipHtml)
+                                        </div>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(cssClass))
+                                {
+                                    <span class="@cssClass">@cellVal</span>
+                                }
+                                else
+                                {
+                                    @cellVal
+                                }
+                            </td>
+                        }
+                        @if (ShowActions)
+                        {
+                            <td class="text-center px-3 py-2">
+                                <div class="d-inline-flex gap-2">
+                                    @if (ActionTemplate != null)
                                     {
-                                        <span class="@col.CssClassFunc(item)">@col.Value(item)</span>
-                                    } *@
-                                    @if (!string.IsNullOrWhiteSpace(col.CssClass))
-                                    {
-                                        <span class="@col.CssClass">@col.Value(item)</span>
+                                        @ActionTemplate(item)
                                     }
                                     else
                                     {
-                                        @col.Value(item)
+                                        <AppButton ButtonClass="req-action-btn btn btn-outline-primary btn-sm rounded-circle
+                                                               d-inline-flex align-items-center justify-content-center"
+                                                   OnClick="() => OnEdit.InvokeAsync(item)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </AppButton>
+                                        <AppButton ButtonClass="req-action-btn btn btn-outline-danger btn-sm rounded-circle
+                                                               d-inline-flex align-items-center justify-content-center"
+                                                   OnClick="() => OnDelete.InvokeAsync(item)">
+                                            <i class="bi bi-trash"></i>
+                                        </AppButton>
                                     }
-                                </td>
-                            }
-                            @if (ShowActions)
-                            {
-                                <td class="text-center px-2 py-2">
-                                    <div class="d-inline-flex gap-2">
-                                        @if (ActionTemplate != null)
-                                        {
-                                            @ActionTemplate(item)
-                                        }
-                                        else
-                                        {
-                                            <AppButton ButtonClass="req-action-btn btn btn-outline-primary btn-sm rounded-circle
-                                                           d-inline-flex align-items-center justify-content-center"
-                                                    OnClick="() => OnEdit.InvokeAsync(item)">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </AppButton>
-                                            <AppButton ButtonClass="req-action-btn btn btn-outline-danger btn-sm rounded-circle
-                                                                           d-inline-flex align-items-center justify-content-center"
-                                                       OnClick="() => OnDelete.InvokeAsync(item)">
-                                                <i class="bi bi-trash"></i>
-                                            </AppButton>
-                                        }
-                                    </div>
-                                </td>
-                            }
-                        </tr>
-                    }
+                                </div>
+                            </td>
+                        }
+                    </tr>
                 }
-            </tbody>
-        </table>
-    </div>
+            }
+        </tbody>
+    </table>
 
     @if (EnablePagination && TotalPages > 1)
     {
@@ -102,7 +113,9 @@
                     {
                         var page = p;
                         <li class="page-item @(page == currentPage ? "active" : "")">
-                            @* <button class="page-link border-0 rounded" @onclick="() => GoToPage(page)">@page</button> *@
+                            <button class="page-link border-0 rounded" @onclick="() => GoToPage(page)">
+                                @p
+                            </button>
                         </li>
                     }
                     <li class="page-item @(currentPage >= TotalPages ? "disabled" : "")">

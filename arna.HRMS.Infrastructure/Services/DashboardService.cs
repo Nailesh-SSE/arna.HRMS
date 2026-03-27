@@ -55,13 +55,17 @@ public class DashboardService : IDashboardService
                     .ToList()
             };
         }
-
+        dashboard.Attendance = await _repository.GetTodayPresentEmployeesAsync();
+        dashboard.PresentEmployee = dashboard.Attendance.Count;
+        dashboard.AttendanceTotalRequests = dashboard.AttendanceRequests.Count;
+        dashboard.AttendancePendingRequests = dashboard.AttendanceRequests.Count(x => x.StatusId == Status.Pending);
         dashboard.TotalEmployees = dashboard.Employees.Count;
-        dashboard.TotalRequests = dashboard.Requests.Count;
-        dashboard.PendingRequests = dashboard.Requests.Count(x => x.StatusId == Status.Pending);
-        dashboard.ApprovedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Approved);
-        dashboard.RejectedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Rejected);
-        dashboard.CancledRequests = dashboard.Requests.Count(x => x.StatusId == Status.Cancelled);
+        dashboard.LeaveTotalRequests = dashboard.Requests.Count;
+        dashboard.LeavePendingRequests = dashboard.Requests.Count(x => x.StatusId == Status.Pending);
+        dashboard.LeaveApprovedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Approved);
+        dashboard.LeaveRejectedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Rejected);
+        dashboard.LeaveCancledRequests = dashboard.Requests.Count(x => x.StatusId == Status.Cancelled);
+        dashboard.AbsentEmployee = dashboard.TotalEmployees - dashboard.PresentEmployee;
 
         return ServiceResult<DashboardDto>.Success(dashboard);
     }

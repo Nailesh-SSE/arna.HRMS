@@ -23,8 +23,10 @@
         <AppStatCard Icon="bi-people-fill"
                      BgClass="bg-primary bg-opacity-10"
                      TextClass="text-primary"
-                     Label="Total Employees"
-                     Count="@totalEmployees" />
+                     Label="Present Today"
+                     Count="@PresentEmployees"
+                     OnClick="() => showPresentModal = true"
+                     CardClass="cursor-pointer" />
 
         <AppStatCard Icon="bi-calendar-check-fill"
                      BgClass="bg-success bg-opacity-10"
@@ -35,14 +37,14 @@
         <AppStatCard Icon="bi-hourglass-split"
                      BgClass="bg-warning bg-opacity-25"
                      TextClass="text-warning"
-                     Label="Pending Requests"
+                     Label="Leave Pending Requests"
                      Count="@pendingCount" />
 
-        <AppStatCard Icon="bi-check2-all"
-                     BgClass="bg-info bg-opacity-10"
-                     TextClass="text-info"
-                     Label="Approved (Month)"
-                     Count="@approvedThisMonth" />
+        <AppStatCard Icon="bi-hourglass-split"
+                     BgClass="bg-warning bg-opacity-25"
+                     TextClass="text-warning"
+                     Label="Attendance Pending Requests"
+                     Count="@AttendancePendingCount" />
 
     </div>
 
@@ -208,6 +210,50 @@
     </div>
 
 </div>
+@if (showPresentModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+
+                <div class="modal-header border-bottom py-3">
+                    <h6 class="modal-title fw-semibold mb-0">
+                        <i class="bi bi-people-fill text-primary me-2"></i>
+                        Present Employees Today
+                        <span class="badge bg-primary rounded-pill ms-2">@PresentEmployees</span>
+                    </h6>
+                    <button type="button" class="btn-close"
+                            @onclick="() => showPresentModal = false" />
+                </div>
+
+                <div class="modal-body p-lg-2">
+
+                    @if (EmployeePresent != null && EmployeePresent.Any())
+                    {
+                        <AppTable TItem="EmployeeDailyAttendanceViewModel"
+                                  Items="EmployeePresent"
+                                  Columns="TableSchemas.PresentEmployee"
+                                  ShowActions="false" />
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="empty-icon mb-2">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="fw-semibold">No Employees Found</div>
+                            <small class="text-muted">
+                                No one has clocked in today
+                            </small>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
 
 @code {
 
@@ -218,10 +264,15 @@
     // ── Dashboard Data ──
     private DashboardViewModel? _dashboard;
 
+    private bool showPresentModal = false;
+
     private List<LeaveTypeViewModel> leaveTypes = new();
     private Dictionary<int, string> leaveTypeNames = new();
     private List<LeaveRequestViewModel> allLeaveRequests = new();
     private List<LeaveRequestViewModel> pendingLeaveRequests = new();
+    private List<LeaveRequestViewModel> recentApproved = new();
+    private List<LeaveRequestViewModel> recentRejected = new();
+    private List<EmployeeDailyAttendanceViewModel> EmployeePresent = new();
 
     private List<AttendanceRequestViewModel> allAttendanceRequest = new();
     private List<AttendanceRequestViewModel> pendingAttendanceRequests = new();
@@ -229,13 +280,14 @@
     private void SetTab(string tab) => activeTab = tab;
 
     // ── Stats ──
-    private int totalEmployees;
+    private int PresentEmployees;
     private int onLeaveToday;
     private int pendingCount;
     private int approvedThisMonth;
     private int approvedTotal;
     private int rejectedTotal;
     private int cancelledTotal;
+    private int AttendancePendingCount;
 
     // ── Overview ──
     private record OverviewItem(string Label, int Count, string DotClass, string BarClass);
@@ -289,12 +341,12 @@
             leaveTypes = new();
             leaveTypeNames = new();
             allLeaveRequests = new();
-            totalEmployees = 0;
+            PresentEmployees = 0;
             return;
         }
 
         // Employees
-        totalEmployees = _dashboard.TotalEmployees;
+        PresentEmployees = _dashboard.PresentEmployee;
 
         // Leave Types
         leaveTypes = _dashboard.LeaveTypes ?? new();
@@ -308,15 +360,15 @@
         var today = DateTime.Today;
         var monthStart = new DateTime(today.Year, today.Month, 1);
 
-        onLeaveToday = allLeaveRequests.Count(r =>
-            r.StatusId == Status.Approved &&
-            today >= r.StartDate.Date &&
-            today <= r.EndDate.Date);
+        onLeaveToday = _dashboard.AbsentEmployee;
 
-        pendingCount = _dashboard.PendingRequests;
-        approvedTotal = _dashboard.ApprovedRequests;
-        rejectedTotal = _dashboard.RejectedRequests;
-        cancelledTotal = _dashboard.CancledRequests;
+        EmployeePresent = _dashboard.Attendance;
+
+        AttendancePendingCount = _dashboard.AttendancePendingRequests;
+        pendingCount = _dashboard.LeavePendingRequests;
+        approvedTotal = _dashboard.LeaveApprovedRequests;
+        rejectedTotal = _dashboard.LeaveRejectedRequests;
+        cancelledTotal = _dashboard.LeaveCancledRequests;
 
         approvedThisMonth = allLeaveRequests.Count(r =>
             r.StatusId == Status.Approved &&
@@ -337,15 +389,12 @@
         overviewItems = new()
         {
             new("Approved",  approvedTotal,  "bg-success",   "bg-success"),
-            new("Pending",   pendingCount,   "bg-warning",   "bg-warning"),
+            new("Leave Pending Request",   pendingCount,   "bg-warning",   "bg-warning"),
+            new("Attendance Pending Request",   AttendancePendingCount,   "bg-warning",   "bg-warning"),
             new("Rejected",  rejectedTotal,  "bg-danger",    "bg-danger"),
             new("Cancelled", cancelledTotal, "bg-secondary", "bg-secondary"),
         };
     }
-
-    // ═══════════════════════════════════════════════
-    // ACTIONS
-    // ═══════════════════════════════════════════════
 
     private async Task ApproveLeave(LeaveRequestViewModel req)
     {

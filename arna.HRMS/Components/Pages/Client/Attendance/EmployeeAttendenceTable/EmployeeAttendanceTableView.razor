@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <div class="card-body p-0">
+    <div class="card-body">
         @if (!Attendance.Any())
         {
             <div class="text-center py-4 py-md-5 px-3">
@@ -35,16 +35,12 @@
         }
         else
         {
-            <div class="att-table-scroll">
-                <AppTable TItem="MonthlyAttendanceViewModel"
-                          Items="Attendance"
-                          Columns="TableSchemas.EmployeeAttendence"
-                          ShowActions="false"
-                          EnablePagination="true"
-                          PageSize="10"
-                          WrapperClass="att-list-table"
-                          RowClassFunc="GetRowClass" />
-            </div>
+            <AppTable TItem="MonthlyAttendanceViewModel"
+                      Items="Attendance"
+                      Columns="TableSchemas.EmployeeAttendence"
+                      WrapperClass="att-list-table"
+                      ShowActions="false"
+                      RowClassFunc="GetRowClass" />
         }
     </div>
 </div>

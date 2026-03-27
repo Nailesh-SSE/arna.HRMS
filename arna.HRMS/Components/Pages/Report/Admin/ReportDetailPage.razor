@@ -424,8 +424,8 @@ else
             else
             {
                 allRecords = new();
-                if (result?.IsSuccess == false)
-                    await NotificationService.Error("Failed to load attendance report.");
+                // if (result?.IsSuccess == false)
+                //     await NotificationService.Info("Failed to load attendance report.");
             }
         }
         catch (Exception ex)
