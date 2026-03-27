@@ -6,4 +6,5 @@ public class TableColumn<T>
     public Func<T, object?> Value { get; set; } = default!;
     public Func<T, string>? CssClassFunc { get; set; }
     public string? CssClass { get; set; }
+    public Func<T, string?>? TooltipHtml { get; set; }
 }

@@ -38,7 +38,7 @@
 
         @if (IsAdmin() || IsSuperAdmin())
         {
-            <button class="btn btn-primary btn-sm rounded-pill px-4 emp-add-btn w-100 w-sm-auto"
+            <button class="btn btn-primary btn-sm rounded-pill px-2 py-1 emp-add-btn w-auto"
                     @onclick="@(() => NavigateTo("/employee/create"))">
                 <i class="bi bi-plus-lg me-1"></i>
                 <span class="d-none d-sm-inline">Add Employee</span>
@@ -46,19 +46,6 @@
             </button>
         }
     </div>
-
-    <!-- IMPROVED STAT CARDS SECTION -->
-    <div class="row g-3 mb-4">
-    @foreach (var stat in StatCards)
-    {
-        <AppStatCard
-            Icon="@stat.Icon"
-            BgClass="@stat.BgClass"
-            TextClass="@stat.TextClass"
-            Label="@stat.Label"
-            Count="@stat.Count" />
-    }
-</div>
 
     <!-- IMPROVED SEARCH & FILTER BAR -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
@@ -188,14 +175,6 @@
                     MatchesSearch(e.EmployeeNumber) ||
                     MatchesSearch(e.Position))
                 .ToList();
-
-    private IEnumerable<StatCardModel> StatCards => new[]
-    {
-        new StatCardModel("bi-people-fill",      "bg-primary bg-opacity-10", "text-primary", _employees.Count,                                          "Total"),
-        new StatCardModel("bi-person-check-fill", "bg-success bg-opacity-10", "text-success", _employees.Count(e => e.Designation != null),               "Active"),
-        new StatCardModel("bi-building",          "bg-info bg-opacity-10",    "text-info",    _employees.Select(e => e.DepartmentId).Distinct().Count(),  "Departments"),
-        new StatCardModel("bi-star-fill",         "bg-warning bg-opacity-10", "text-warning", _employees.Count(e => e.ManagerId == null),                  "Managers"),
-    };
 
     // ═══════════ LIFECYCLE ═══════════
 

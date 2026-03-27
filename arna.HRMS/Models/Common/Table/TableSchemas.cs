@@ -1,3 +1,4 @@
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Models.Enums;
 using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Models.ViewModels.Attendance;
@@ -12,7 +13,7 @@ public class TableSchemas
     {
         new() { Header = "Username", Value = u => u.Username },
         new() { Header = "Email", Value = u => u.Email },
-        new() { Header = "Full Name", Value = u => u.FullName },
+        new() { Header = "Name", Value = u => u.FullName },
         new() { Header = "Role", Value = u => u.Role },
         new() { Header = "Employee", Value = u => u.EmployeeName }
     };
@@ -30,12 +31,11 @@ public class TableSchemas
     public static List<TableColumn<EmployeeViewModel>> Employees = new()
     {
         new() { Header = "Number", Value = u => u.EmployeeNumber },
-        new() { Header = "Full Name", Value = u => u.FullName },
-        new() { Header = "Email", Value = u => u.Email },
+        new() { Header = "Name", Value = u => u.FullName },
         new() { Header = "Office Email", Value = u => u.OfficeEmail},
         new() { Header = "Department Code", Value = u => u.DepartmentCode, CssClass = "badge bg-info" },
         new() { Header = "Manager Name", Value = u => u.ManagerFullName },
-        new() { Header = "Position", Value = u => u.Position }
+        new() { Header = "Designation", Value = u => u.Position }
     };
 
 
@@ -74,15 +74,15 @@ public class TableSchemas
 
     public static List<TableColumn<LeaveRequestViewModel>> LeaveRequest = new()
     {
-        new() { Header = "EmployeeNumber", Value = u => u.EmployeeNumber },
-        new() { Header = "EmployeeName", Value = u => u.EmployeeName },
-        new() { Header = "LeaveTypeId", Value = u => u.LeaveTypeId },
+        new() { Header = "Employee Number", Value = u => u.EmployeeNumber },
+        new() { Header = "Employee Name", Value = u => u.EmployeeName },
+        new() { Header = "Leave Type Id", Value = u => u.LeaveTypeId },
         new() { Header = "Reason", Value = u => u.Reason },
-        new() { Header = "TotalDays", Value = u => u.LeaveDays },
+        new() { Header = "Total Days", Value = u => u.LeaveDays },
         new() { Header = "Status", Value = u => u.StatusId },
         new() { Header = "ApprovedBy", Value = u => u.ApprovedBy },
-        new() { Header = "StartDate", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
-        new() { Header = "EndDate", Value = u => u.EndDate.Date.ToString("yyyy/MM/dd") },
+        new() { Header = "Start Date", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
+        new() { Header = "End Date", Value = u => u.EndDate.Date.ToString("yyyy/MM/dd") },
     };
 
     public static List<TableColumn<LeaveRequestViewModel>> DashboardPendingLeaves = new()
@@ -176,11 +176,11 @@ public class TableSchemas
     {
         new() { Header = "Date",           Value = u => u.Date.ToString("yyyy-MM-dd") },
         new() { Header = "Day",            Value = u => u.Day },
-        new() { Header = "Clock In",       Value = u => GetEmp(u, employeeId)?.ClockIn?.ToString(@"hh\:mm") ?? "-" },
-        new() { Header = "Clock Out",      Value = u => GetEmp(u, employeeId)?.ClockOut?.ToString(@"hh\:mm") ?? "-" },
-        new() { Header = "Working Hours",  Value = u => GetEmp(u, employeeId)?.WorkingHours.ToString(@"hh\:mm") ?? "-" },
-        new() { Header = "Break Duration", Value = u => GetEmp(u, employeeId)?.BreakDuration.ToString(@"hh\:mm") ?? "-" },
-        new() { Header = "Total Hours",    Value = u => GetEmp(u, employeeId)?.TotalHours.ToString(@"hh\:mm") ?? "-" },
+        new() { Header = "Clock In",       Value = u => GetEmp(u, employeeId)?.ClockIn?.ToString(@"hh\:mm\:ss") ?? "-" },
+        new() { Header = "Clock Out",      Value = u => GetEmp(u, employeeId)?.ClockOut?.ToString(@"hh\:mm\:ss") ?? "-" },
+        new() { Header = "Working Hours",  Value = u => GetEmp(u, employeeId)?.WorkingHours.ToString(@"hh\:mm\:ss") ?? "-" },
+        new() { Header = "Break Duration", Value = u => GetEmp(u, employeeId)?.BreakDuration.ToString(@"hh\:mm\:ss") ?? "-" },
+        new() { Header = "Total Hours",    Value = u => GetEmp(u, employeeId)?.TotalHours.ToString(@"hh\:mm\:ss") ?? "-" },
         new() { Header = "Status",         Value = u => GetEmp(u, employeeId)?.Status ?? "-" },
     };
 
@@ -199,42 +199,72 @@ public class TableSchemas
     {
         new ()
         {
-            Header = "Employee Name",
-            Value = e => e.FullName
+            Header = "Emp. Number",
+            Value = e => e.EmployeeNumber
         },
         new ()
         {
-            Header = "Emp. Number",
-            Value = e => e.EmployeeNumber
+            Header = "Employee Name",
+            Value = e => e.FullName
         },
         new ()
         {
             Header = "Department",
             Value = e => e.DepartmentName ?? "—"
         },
-        new ()
-        {
-            Header = "Position",
-            Value = e => e.Position
-        },
         new()
         {
             Header = "Designation",
-            Value = e => e.Designation,
+            Value = e => e.Position,
         }
     };
 
     public static List<TableColumn<MonthlyAttendanceViewModel>> EmployeeAttendence = new()
-{
-    new() { Header = "Date",      Value = u => u.Date.ToString("dd MMM yyyy") },
-    new() { Header = "Day",       Value = u => u.Day },
-    new() { Header = "Clock In",  Value = u => FormatClockTime(u.Employees.FirstOrDefault()) },
-    new() { Header = "Clock Out", Value = u => FormatClockOutTime(u.Employees.FirstOrDefault()) },
-    new() { Header = "Break",     Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.BreakDuration) },
-    new() { Header = "Working",   Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.WorkingHours) },
-    new() { Header = "Total",     Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.TotalHours) },
-    new() { Header = "Status",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
-};
+    {
+        new() { Header = "Date",      Value = u => u.Date.ToString("dd MMM yyyy") },
+        new() { Header = "Day",       Value = u => u.Day },
+        new() { Header = "Clock In",  Value = u => FormatClockTime(u.Employees.FirstOrDefault()) },
+        new() { Header = "Clock Out", Value = u => FormatClockOutTime(u.Employees.FirstOrDefault()) },
+        new()
+            {
+                Value  = u => u.Employees.FirstOrDefault()?.BreakDuration.ToString(@"hh\:mm\:ss") ?? "-",
+                TooltipHtml = u =>
+                {
+                    var emp = u.Employees.FirstOrDefault();
+                    if (emp?.Breaks == null || !emp.Breaks.Any()) return null;
+
+                    var rows = emp.Breaks.Select((b, i) =>
+                        $"""
+                        <tr>
+                            <td class="pe-4">
+                                {b.BreakStart:hh\:mm\:ss} – {b.BreakEnd:hh\:mm\:ss}
+                            </td>
+                        
+                            <td class="text-end fw-semibold">
+                                {b.Duration:hh\:mm\:ss}
+                            </td>
+                        </tr>
+                        """);
+
+                    return $"""
+                    <table class="table table-sm mb-0 text-white">
+                        <thead>
+                            <tr class="small text-uppercase text-muted">
+                                <th class="fw-semibold">Break Time</th>
+                                <th class="text-end fw-semibold">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {string.Join("", rows)}
+                        </tbody>
+                    </table>
+                    """;
+                }
+            },
+        new() { Header = "Working",   Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.WorkingHours) },
+        new() { Header = "Total",     Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.TotalHours) },
+        new() { Header = "Status",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
+    };  
 
     private static string FormatEmpHours(EmployeeDailyAttendanceViewModel? emp,
      Func<EmployeeDailyAttendanceViewModel, TimeSpan> selector)
@@ -271,7 +301,7 @@ public class TableSchemas
 
     public static List<TableColumn<AttendanceReportViewModel>> EmployeeAttendanceDetailReport = new()
     {
-        new() {Header = "EmployeeName" , Value = u => u.EmployeeName},
+        new() {Header = "Employee Name" , Value = u => u.EmployeeName},
         new() { Header = "Date", Value = u => u.AttendanceDate.ToString("dd MMM yyyy") },
         new() { Header = "Day", Value = u => u.Day ?? "—" },
         new() { Header = "Clock In", Value = u => u.ClockIn?.ToString(@"hh\:mm") ?? "--" },
@@ -279,24 +309,80 @@ public class TableSchemas
         new() { Header = "Break", Value = u => u.BreakDuration?.ToString(@"hh\:mm") ?? "--" },
         new() { Header = "Working Hours", Value = u => u.WorkingHours?.ToString(@"hh\:mm") ?? "--" },
         new() { Header = "Total Hours", Value = u => u.TotalHours?.ToString(@"hh\:mm") ?? "--" },
-        new() {Header = "Latitude" , Value = u => u.Latitude },
-        new() {Header = "Longitude" , Value = u => u.Longitude},
+        new() { Header = "Latitude", Value = u => u.Latitude?.ToString("F3")},
+        new() { Header = "Longitude", Value = u => u.Longitude?.ToString("F3")},
         new() { Header = "Status", Value = u => u.AttendanceStatus?.ToString() ?? "—"},
-        new() { Header = "Device", Value = u => u.Device ?? "—" }
+        new() { Header = "Device", Value = u => u.Devices != null && u.Devices.Any()
+                        ? string.Join(", ", u.Devices.Select(d => FormatDevice(d)))
+                        : "—"
+                }
+    };
+    private static string FormatDevice(DeviceType device) => device switch
+    {
+        DeviceType.Mobile => "Mobile",
+        DeviceType.Tablet => "Tablet",
+        DeviceType.LaptopDesktop => "Laptop/Desktop",
+        DeviceType.UnknownDevice => "Unknown",
+        _ => "Unknown"
     };
 
     public static List<TableColumn<EmployeeAttendanceReportViewModel>> EmployeeReport = new()
     {
-        new() {Header = "EmployeeNumber" , Value = u => u.EmployeeNumber},
-        new() {Header = "EmployeeName" , Value = u => u.EmployeeName},
-        new() {Header  = "TotalWorkDays" , Value = u => u.TotalWorkDays},
-        new () {Header = "TotalPresent" , Value = u => u.TotalPresent},
-        new () {Header = "TotalAbsent" , Value = u => u.TotalAbsent},
-        new () {Header = "TotalHours" , Value = u => u.TotalHours},
-        new () {Header = "AvgWorkHours" , Value = u => u.AvgWorkHours},
-        new () {Header = "AvgBreak" , Value = u => u.AvgBreak},
+        new() {Header = "Employee Number" , Value = u => u.EmployeeNumber},
+        new() {Header = "Employee Name" , Value = u => u.EmployeeName},
+        new() {Header  = "Total WorkDays" , Value = u => u.TotalWorkDays},
+        new () {Header = "Total Present" , Value = u => u.TotalPresent},
+        new () {Header = "Total Absent" , Value = u => u.TotalAbsent},
+        new () {Header = "Total Hours" , Value = u => u.TotalHours},
+        new () {Header = "Avg WorkHours" , Value = u => u.AvgWorkHours},
+        new () {Header = "Avg Break" , Value = u => u.AvgBreak},
     };
 
+    public static List<TableColumn<EmployeeDailyAttendanceViewModel>> PresentEmployee = new()
+    {
+        new() { Header = "Employee Number",       Value = x => x.EmployeeNumber },
+        new() { Header = "Name",         Value = x => x.EmployeeName },
+        new() { Header = "Clock In",     Value = x => x.ClockIn.HasValue ? x.ClockIn.Value.ToString(@"hh\:mm\:ss") : "--" },
+        new() { Header = "Clock Out",    Value = x => x.ClockOut.HasValue ? x.ClockOut.Value.ToString(@"hh\:mm\:ss") : "--" },
+        new() { Header = "Working",      Value = x => x.WorkingHours.ToString(@"hh\:mm\:ss") },
+        new()
+        {
+            Value  = u => u.BreakDuration.ToString(@"hh\:mm\:ss"),
+            TooltipHtml = u =>
+            {
+                if (!u.Breaks.Any()) return null;
+
+                var rows = u.Breaks.Select(b =>
+                    $"""
+                    <tr>
+                        <td class="pe-4">
+                            {b.BreakStart:hh\:mm\:ss} – {b.BreakEnd:hh\:mm\:ss}
+                        </td>
+
+                        <td class="text-end fw-semibold">
+                            {b.Duration:hh\:mm\:ss}
+                        </td>
+                    </tr>
+                    """);
+
+                return $"""
+                    <table class="table table-sm mb-0 text-white">
+                        <thead>
+                            <tr class="small text-uppercase text-muted">
+                                <th class="fw-semibold">Break Time</th>
+                                <th class="text-end fw-semibold">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {string.Join("", rows)}
+                        </tbody>
+                    </table>
+                    """;
+
+            }
+        },
+        new() { Header = "Total",        Value = x => x.TotalHours.ToString(@"hh\:mm\:ss") },
+    };
 
 
     private static string TruncateText(string? text, int maxLength)
