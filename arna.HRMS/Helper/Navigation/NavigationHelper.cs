@@ -80,15 +80,6 @@ public class NavigationHelper
             Route = "/report-management",
             AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
         },
-         new()
-        {
-            Id = "leave-report",
-            Label = "Leave Report",
-            Icon = "bi bi-clipboard-data me-2",
-            Section = "Report",
-            Route = "/Leave-report",
-            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
-        },
         new()
         {
             Id = "profile",

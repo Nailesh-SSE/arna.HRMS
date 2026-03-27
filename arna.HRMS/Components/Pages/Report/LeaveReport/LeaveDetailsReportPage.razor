@@ -239,7 +239,7 @@ else
                 <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <h6 class="fw-semibold mb-0">
-                            <i class="bi bi-table text-primary me-2"></i>Daily Records
+                            <i class="bi bi-table text-primary me-2"></i>Leave Records
                         </h6>
                         <span class="badge bg-light text-dark rounded-pill px-3 py-1 border">
                             <i class="bi bi-list-ul me-1"></i>@DisplayRecords.Count records
@@ -397,8 +397,8 @@ else
             else
             {
                 allRecords = new();
-                if (result?.IsSuccess == false)
-                    await NotificationService.Error("Failed to load attendance report.");
+                // if (result?.IsSuccess == false)
+                //     await NotificationService.Error("Failed to load attendance report.");
             }
         }
         catch (Exception ex)
