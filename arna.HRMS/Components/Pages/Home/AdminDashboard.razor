@@ -3,6 +3,7 @@
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Dashboard
@@ -10,6 +11,7 @@
 
 @inject NavigationManager Nav
 @inject ILeaveService LeaveService
+@inject IAttendanceRequestService AttendanceRequestService
 @inject IDashboardService DashboardService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
@@ -51,52 +53,95 @@
         <!-- Pending Leave Requests (AppTable) -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-3 h-100">
-                <div class="card-header bg-transparent border-bottom
-                    d-flex align-items-center justify-content-between py-3">
-                    <h6 class="fw-semibold mb-0">
-                        <i class="bi bi-inbox-fill text-warning me-2"></i>
-                        Pending Leave Requests
-                        @if (pendingCount > 0)
-                        {
-                            <span class="badge bg-warning text-dark
-                                         rounded-pill ms-1">
-                                @pendingCount
-                            </span>
-                        }
-                    </h6>
-                    <a href="/admin-leave-management"
-                       class="btn btn-sm btn-outline-primary rounded-pill">
-                        View All <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
+
+                @* ── Header: tabs on left, View All on right ── *@
+                <div class="card-header bg-transparent border-bottom py-0 d-flex align-items-center justify-content-between">
+
+                    @* ── Tab buttons ── *@
+                    <ul class="nav nav-tabs border-0 gap-1 m-3">
+                        <li class="nav-item">
+                            <button class="nav-link px-3 py-3 @(activeTab == "leave" ? "active" : "")"
+                                    @onclick='() => SetTab("leave")'>
+                                <i class="bi bi-inbox-fill text-warning me-1"></i>
+                                Pending Leave Requests
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link px-3 py-3 @(activeTab == "attendance" ? "active" : "")"
+                                    @onclick='() => SetTab("attendance")'>
+                                <i class="bi bi-clock-history text-info me-1"></i>
+                                Pending Attendance Requests
+                            </button>
+                        </li>
+                    </ul>
+
+                    @* ── View All link changes per tab ── *@
+                    @if (activeTab == "leave")
+                    {
+                        <a href="/admin-leave-management"
+                           class="btn btn-sm btn-outline-primary rounded-pill">
+                            View All <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="/admin-attendance-management"
+                           class="btn btn-sm btn-outline-primary rounded-pill">
+                            View All <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    }
                 </div>
 
+                @* ── Tab content ── *@
                 <div class="card-body p-0">
                     <div class="dash-scroll-area">
 
-                        @* ── Pass WrapperClass to scope CSS overrides ── *@
-                        <AppTable TItem="LeaveRequestViewModel"
-                                  Items="pendingLeaveRequests"
-                                  Columns="TableSchemas.DashboardPendingLeaves"
-                                  WrapperClass="dash-pending-table"
-                                  TableClass="dash-pending-table-inner">
-
-                            <ActionTemplate Context="req">
-                                <button class="btn btn-sm btn-outline-success me-1"
-                                        title="Approve"
-                                        @onclick="() => ApproveLeave(req)">
-                                    <i class="bi bi-check-lg"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger"
-                                        title="Reject"
-                                        @onclick="() => RejectLeave(req)">
-                                    <i class="bi bi-x-lg"></i>
-                                </button>
-                            </ActionTemplate>
-
-                        </AppTable>
+                        @if (activeTab == "leave")
+                        {
+                            <AppTable TItem="LeaveRequestViewModel"
+                                      Items="pendingLeaveRequests"
+                                      Columns="TableSchemas.DashboardPendingLeaves"
+                                      WrapperClass="dash-pending-table"
+                                      TableClass="dash-pending-table-inner">
+                                <ActionTemplate Context="req">
+                                    <button class="btn btn-sm btn-outline-success me-1"
+                                            title="Approve"
+                                            @onclick="() => ApproveLeave(req)">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            title="Reject"
+                                            @onclick="() => RejectLeave(req)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </ActionTemplate>
+                            </AppTable>
+                        }
+                        else
+                        {
+                            <AppTable TItem="AttendanceRequestViewModel"
+                                      Items="pendingAttendanceRequests"
+                                      Columns="TableSchemas.EmployeeAttendenceRequestTable"
+                                      WrapperClass="dash-pending-table"
+                                      TableClass="dash-pending-table-inner">
+                                <ActionTemplate Context="req">
+                                    <button class="btn btn-sm btn-outline-success me-1"
+                                            title="Approve"
+                                            @onclick="() => ApproveAttendance(req)">
+                                        <i class="bi bi-check-lg"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            title="Reject"
+                                            @onclick="() => RejectAttendance(req)">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </ActionTemplate>
+                            </AppTable>
+                        }
 
                     </div>
                 </div>
+
             </div>
         </div>
 
@@ -137,98 +182,6 @@
         </div>
     </div>
 
-    <!-- ══════════ RECENT APPROVED / REJECTED ══════════ -->
-    <div class="row g-4 mb-4">
-
-        <!-- Recently Approved -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-transparent border-bottom py-3">
-                    <h6 class="fw-semibold mb-0">
-                        <i class="bi bi-check-circle text-success me-2"></i>
-                        Recently Approved
-                    </h6>
-                </div>
-                <div class="card-body p-0">
-                    @if (recentApproved.Any())
-                    {
-                        <div class="dash-scroll-area-sm">
-                            <ul class="list-group list-group-flush">
-                                @foreach (var r in recentApproved)
-                                {
-                                    <li class="list-group-item d-flex
-                                                               align-items-center gap-3 px-3">
-                                        <div class="avatar-sm avatar-green">
-                                            @GetInitials(r.EmployeeName ?? string.Empty)
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-medium small">@r.EmployeeName</div>
-                                            <small class="text-muted">
-                                                @GetLeaveTypeName(r.LeaveTypeId) •
-                                                @r.LeaveDays day(s)
-                                            </small>
-                                        </div>
-                                        <small class="text-muted">
-                                            @r.StartDate.ToString("MMM dd")
-                                        </small>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted text-center py-4 mb-0">No recent approvals</p>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- Recently Rejected -->
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-header bg-transparent border-bottom py-3">
-                    <h6 class="fw-semibold mb-0">
-                        <i class="bi bi-x-circle text-danger me-2"></i>
-                        Recently Rejected
-                    </h6>
-                </div>
-                <div class="card-body p-0">
-                    @if (recentRejected.Any())
-                    {
-                        <div class="dash-scroll-area-sm">
-                            <ul class="list-group list-group-flush">
-                                @foreach (var r in recentRejected)
-                                {
-                                    <li class="list-group-item d-flex
-                                                               align-items-center gap-3 px-3">
-                                        <div class="avatar-sm avatar-red">
-                                            @GetInitials(r.EmployeeName ?? string.Empty)
-                                        </div>
-                                        <div class="flex-grow-1">
-                                            <div class="fw-medium small">@r.EmployeeName</div>
-                                            <small class="text-muted">
-                                                @GetLeaveTypeName(r.LeaveTypeId) •
-                                                @r.LeaveDays day(s)
-                                            </small>
-                                        </div>
-                                        <small class="text-muted">
-                                            @r.StartDate.ToString("MMM dd")
-                                        </small>
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted text-center py-4 mb-0">No recent rejections</p>
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- ══════════ QUICK ACTIONS ══════════ -->
     <div class="mb-2">
         <h6 class="fw-semibold mb-3">
@@ -239,7 +192,7 @@
             {
                 <div class="col-6 col-sm-4 col-md-3 col-xl-2">
                     <div class="card border-0 shadow-sm rounded-3
-                                        text-center action-tile h-100"
+                                                    text-center action-tile h-100"
                          role="button"
                          @onclick="() => Nav.NavigateTo(a.Route)">
                         <div class="card-body py-4">
@@ -269,8 +222,11 @@
     private Dictionary<int, string> leaveTypeNames = new();
     private List<LeaveRequestViewModel> allLeaveRequests = new();
     private List<LeaveRequestViewModel> pendingLeaveRequests = new();
-    private List<LeaveRequestViewModel> recentApproved = new();
-    private List<LeaveRequestViewModel> recentRejected = new();
+
+    private List<AttendanceRequestViewModel> allAttendanceRequest = new();
+    private List<AttendanceRequestViewModel> pendingAttendanceRequests = new();
+    private string activeTab = "leave";
+    private void SetTab(string tab) => activeTab = tab;
 
     // ── Stats ──
     private int totalEmployees;
@@ -326,7 +282,7 @@
         _dashboard = res?.IsSuccess == true ? res.Data : null;
     }
 
-    private void ProcessDashboardData()
+    private async Task ProcessDashboardData()
     {
         if (_dashboard == null)
         {
@@ -371,15 +327,9 @@
             .OrderByDescending(r => r.StartDate)
             .ToList();
 
-        recentApproved = allLeaveRequests
-            .Where(r => r.StatusId == Status.Approved)
-            .OrderByDescending(r => r.StartDate)
-            .ToList();
-
-        recentRejected = allLeaveRequests
-            .Where(r => r.StatusId == Status.Rejected)
-            .OrderByDescending(r => r.StartDate)
-            .ToList();
+        // Attendance Requests
+        var attRes = await AttendanceRequestService.GetAllAsync(Status.Pending);
+        pendingAttendanceRequests = attRes?.IsSuccess == true ? attRes.Data ?? new() : new();
     }
 
     private void BuildOverview()
@@ -438,26 +388,51 @@
             await NotificationService.Error(res?.Message ?? "Failed to reject.");
         }
     }
+    private async Task ApproveAttendance(AttendanceRequestViewModel req)
+    {
+        if (!await JsRuntime.InvokeAsync<bool>("confirm", "Approve this attendance request?"))
+            return;
 
+        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Approved);
+        if (res?.IsSuccess == true)
+        {
+            await NotificationService.Success("Attendance approved successfully.");
 
-    private string GetLeaveTypeName(int id) =>
-        leaveTypeNames.TryGetValue(id, out var n) ? n : $"Leave #{id}";
+            await LoadDashboard();
+            ProcessDashboardData();
+            BuildOverview();
+        }
+        else
+        {
+            await NotificationService.Error(res?.Message ?? "Failed to approve.");
+        }
+    }
+    private async Task RejectAttendance(AttendanceRequestViewModel req)
+    {
+        if (!await JsRuntime.InvokeAsync<bool>("confirm", "Reject this attendance request?"))
+            return;
+
+        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Rejected);
+
+        if (res?.IsSuccess == true)
+        {
+            await NotificationService.Success("Attendance rejected.");
+
+            await LoadDashboard();
+            ProcessDashboardData();
+            BuildOverview();
+        }
+        else
+        {
+            await NotificationService.Error(res?.Message ?? "Failed to reject.");
+        }
+    }
 
     private static string FormatName(string name) =>
         System.Text.RegularExpressions.Regex
             .Replace(name ?? "", "([A-Z])", " $1")
             .Trim();
 
-    private static string GetInitials(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return "?";
-
-        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        return parts.Length >= 2
-            ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
-            : parts[0][..Math.Min(2, parts[0].Length)].ToUpper();
-    }
 
     private static int Pct(int value, int total) =>
         total > 0 ? (int)(value * 100.0 / total) : 0;
