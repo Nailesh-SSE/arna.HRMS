@@ -12,8 +12,8 @@ using arna.HRMS.Infrastructure.Data;
 namespace arna.HRMS.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260323083039_Create_Sp_LeaveSummaryReport")]
-    partial class Create_Sp_LeaveSummaryReport
+    [Migration("20260327104614_Create_Sp_EmployeeLeaveDetailsReport")]
+    partial class Create_Sp_EmployeeLeaveDetailsReport
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -106,6 +106,80 @@ namespace arna.HRMS.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<int?>("TotalWorkDays")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("arna.HRMS.Core.DTOs.EmployeeLeaveDetailsReportDto", b =>
+                {
+                    b.Property<int>("ApprovedBy")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ApprovedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmployeeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LeaveDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LeaveNameId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LeaveTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxPerYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StatusId")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView(null, (string)null);
+                });
+
+            modelBuilder.Entity("arna.HRMS.Core.DTOs.LeaveSummaryReportDto", b =>
+                {
+                    b.Property<string>("DepartmentName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EmployeeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LeaveNameId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxPerYear")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsedLeave")
                         .HasColumnType("int");
 
                     b.ToTable((string)null);
@@ -294,37 +368,37 @@ namespace arna.HRMS.Infrastructure.Migrations
                         {
                             Id = 1,
                             Code = "IT",
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(8119),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(6791),
                             Description = "Manages IT infrastructure and software systems",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Information Technology",
                             ParentDepartmentId = 1,
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(8121)
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(6792)
                         },
                         new
                         {
                             Id = 2,
                             Code = "QA",
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(8127),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(6798),
                             Description = "Tests software and ensures quality standards are met before release",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Quality Assurance",
                             ParentDepartmentId = 2,
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(8128)
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(6798)
                         },
                         new
                         {
                             Id = 3,
                             Code = "ADMIN",
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(8130),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(6801),
                             Description = "Manages facilities, office administration, and general services",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Administration",
                             ParentDepartmentId = 3,
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(8130)
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(6801)
                         });
                 });
 
@@ -603,42 +677,42 @@ namespace arna.HRMS.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6663),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5440),
                             Description = "Super Administrator with full permissions",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "SuperAdmin",
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6680)
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5455)
                         },
                         new
                         {
                             Id = 2,
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6684),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5459),
                             Description = "Administrator with full permissions",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Admin",
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6685)
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5459)
                         },
                         new
                         {
                             Id = 3,
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6686),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5461),
                             Description = "Manager role with team oversight",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Manager",
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6687)
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5461)
                         },
                         new
                         {
                             Id = 4,
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6688),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5463),
                             Description = "Standard employee role",
                             IsActive = true,
                             IsDeleted = false,
                             Name = "Employee",
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6689)
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5463)
                         });
                 });
 
@@ -780,7 +854,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6872),
+                            CreatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5621),
                             Email = "superadmin123@gmail.com",
                             FirstName = "Super",
                             IsActive = true,
@@ -790,7 +864,7 @@ namespace arna.HRMS.Infrastructure.Migrations
                             PasswordHash = "tv7BX1BYUu7bhR1UacjjLWp5sKyKvqMrp+pFlsFayqg=",
                             PhoneNumber = "9999999999",
                             RoleId = 1,
-                            UpdatedOn = new DateTime(2026, 3, 23, 14, 0, 38, 545, DateTimeKind.Local).AddTicks(6873),
+                            UpdatedOn = new DateTime(2026, 3, 27, 16, 16, 13, 870, DateTimeKind.Local).AddTicks(5622),
                             Username = "SuperAdmin"
                         });
                 });
