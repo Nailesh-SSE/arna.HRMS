@@ -33,24 +33,12 @@
             </div>
         </div>
 
-        <button class="btn btn-primary btn-sm rounded-pill px-4 user-add-btn w-100 w-sm-auto"
+        <button class="btn btn-primary btn-sm rounded-pill px-3 ms-sm-auto"
                 @onclick="@(() => NavigateTo("/user/create"))">
             <i class="bi bi-plus-lg me-1"></i>
             <span class="d-none d-sm-inline">Add User</span>
             <span class="d-sm-none">Add</span>
         </button>
-    </div>
-
-    <!-- ═══════════ STAT CARDS ═══════════ -->
-    <div class="row g-2 g-sm-3 mb-4 mb-md-5">
-        @foreach (var stat in StatCards)
-        {
-            <AppStatCard Icon="@stat.Icon"
-                         BgClass="@stat.BgClass"
-                         TextClass="@stat.TextClass"
-                         Label="@stat.Label"
-                         Count="@stat.Count" />
-        }
     </div>
 
     <!-- ═══════════ SEARCH BAR ═══════════ -->

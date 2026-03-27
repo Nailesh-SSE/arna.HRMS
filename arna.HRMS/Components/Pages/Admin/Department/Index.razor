@@ -33,7 +33,7 @@
             </div>
         </div>
 
-        <button class="btn btn-primary btn-sm rounded-pill px-4 dept-add-btn w-100 w-sm-auto"
+        <button class="btn btn-primary btn-sm rounded-pill px-3 ms-sm-auto"
                 @onclick="@(() => NavigateTo("/department/create"))">
             <i class="bi bi-plus-lg me-1"></i>
             <span class="d-none d-sm-inline">Add Department</span>
@@ -41,19 +41,7 @@
         </button>
     </div>
 
-    <!-- ═══════════ STAT CARDS ═══════════ -->
-    <div class="row g-3 mb-4">
-    @foreach (var stat in StatCards)
-    {
-        <AppStatCard Icon="@stat.Icon"
-                     BgClass="@stat.BgClass"
-                     TextClass="@stat.TextClass"
-                     Label="@stat.Label"
-                     Count="@stat.Count" />
-    }
-</div>
-
-    <!-- ═══════════ SEARCH BAR ═══════════ -->
+    @* <!-- ═══════════ SEARCH BAR ═══════════ -->
     <div class="card border-0 shadow-sm rounded-3 mb-4">
         <div class="card-body py-3 px-3 px-md-4">
             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
@@ -80,7 +68,7 @@
                 }
             </div>
         </div>
-    </div>
+    </div> *@
 
     <!-- ═══════════ TABLE ═══════════ -->
     <div class="card border-0 shadow-sm rounded-3">
