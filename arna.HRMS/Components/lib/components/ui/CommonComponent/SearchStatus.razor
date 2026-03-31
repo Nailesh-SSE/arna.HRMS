@@ -1,0 +1,57 @@
+﻿@using arna.HRMS.Models.Enums
+
+<div class="status-wrapper">
+    <div class="status-display" @onclick="Toggle">
+        <span class="status-text">@DisplayText</span>
+        <span class="status-arrow @(IsOpen ? "open" : "")"></span>
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="status-backdrop" @onclick="Close"></div>
+
+        <div class="status-panel">
+
+            <div class="status-list">
+
+                <!-- All -->
+                <button type="button"
+                        class="status-item @(SelectedValue == null ? "active" : "")"
+                        @onclick='() => Select(null)'>
+                    All Status
+                </button>
+
+                <!-- Enum Values -->
+                @foreach (var status in Enum.GetValues<Status>())
+                {
+                    <button type="button"
+                            class="status-item @(status == SelectedValue ? "active" : "")"
+                            @onclick="() => Select(status)">
+                        @status.ToString()
+                    </button>
+                }
+
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Status? SelectedValue { get; set; }
+    [Parameter] public EventCallback<Status?> OnChanged { get; set; }
+
+    private bool IsOpen;
+
+    private string DisplayText =>
+        SelectedValue == null ? "All Status" : SelectedValue.ToString();
+
+    private void Toggle() => IsOpen = !IsOpen;
+
+    private void Close() => IsOpen = false;
+
+    private async Task Select(Status? status)
+    {
+        IsOpen = false;
+        await OnChanged.InvokeAsync(status);
+    }
+}

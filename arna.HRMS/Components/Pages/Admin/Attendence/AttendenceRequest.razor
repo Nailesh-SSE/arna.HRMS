@@ -1,4 +1,6 @@
-﻿@using arna.HRMS.Components.Loader
+﻿@page "/admin-attendance-requests"
+
+@using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Model
@@ -20,48 +22,19 @@
 
 @if (!_isLoading)
 {
-    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
-                    justify-content-between gap-2 gap-sm-3 mb-3 mb-md-4">
-        <div class="d-flex align-items-start gap-2">
-            <span class="bg-warning bg-opacity-10 text-warning rounded-2 p-2
-                             header-icon-box flex-shrink-0">
-                <i class="bi bi-inbox-fill fs-5"></i>
-            </span>
-            <div>
-                <h5 class="fw-bold mb-0 fs-6 fs-md-5">Attendance Requests</h5>
-                <p class="text-muted mb-0 small d-none d-sm-block">
-                    Review and manage employee attendance correction requests
-                </p>
-            </div>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h3 class="fw-bold mb-1 d-flex align-items-center">
+                <i class="bi bi-inbox-fill text-primary me-2"></i>
+                Attendance Requests
+            </h3>
         </div>
-
-        @if (HasActiveFilters)
-        {
-            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 w-100 w-sm-auto"
-                    @onclick="ClearFilters">
-                <i class="bi bi-x-lg me-1"></i>Clear All Filters
-            </button>
-        }
-    </div>
-
-    <!-- ═══════════ STATUS SUMMARY CARDS ═══════════ -->
-    <div class="row g-2 g-md-3 mb-3 mb-md-4">
-        @foreach (var stat in StatCards)
-        {
-            <AppStatCard Icon="@stat.Icon"
-                         BgClass="@stat.BgClass"
-                         TextClass="@stat.TextClass"
-                         Label="@stat.Label"
-                         Count="@stat.Count"
-                         CardClass="@(IsStatActive(stat.Status) ? stat.ActiveClass : "")"
-                         OnClick="() => FilterByStatus(stat.Status)" />
-        }
     </div>
 
     <!-- ═══════════ FILTER BAR ═══════════ -->
     <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
         <div class="card-body py-2 px-2 px-md-3">
-            <div class="row align-items-center g-2">
+            <div class="d-flex align-items-center flex-wrap gap-3">
 
                 <div class="col-auto">
                     <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill
@@ -71,47 +44,27 @@
                     </span>
                 </div>
 
-                <div class="col">
+                <div class="col d-flex align-items-center gap-2">
+
+                    <!-- Employee -->
                     <SearchEmployee Employees="Employees"
                                     SelectedValue="@GetEmployeeValue()"
                                     OnChanged="OnEmployeeChanged"
                                     OnNameChanged="OnEmployeeNameChanged" />
+
+                    <!-- Status -->
+                    <SearchStatus SelectedValue="_statusFilter"
+                                  OnChanged="FilterByStatus" />
+
                 </div>
+
+                <div class="flex-grow-1"></div>
 
                 @if (HasActiveFilters)
                 {
-                    <div class="col-12 col-md-auto">
-                        <div class="d-flex align-items-center gap-1 gap-md-2 flex-wrap">
-                            @if (_statusFilter.HasValue)
-                            {
-                                <span class="badge bg-light text-dark border rounded-pill
-                                                         px-2 px-md-3 py-1 py-md-2 small">
-                                    <span class="d-none d-sm-inline">Status: </span>
-                                    <strong>@_statusFilter</strong>
-                                    <button type="button"
-                                            class="btn-close btn-close-sm ms-1"
-                                            style="font-size: 0.5rem;"
-                                            @onclick="() => FilterByStatus(null)">
-                                    </button>
-                                </span>
-                            }
-                            @if (State.SelectedEmployeeId.HasValue)
-                            {
-                                <span class="badge bg-light text-dark border rounded-pill
-                                                         px-2 px-md-3 py-1 py-md-2 small">
-                                    <span class="d-none d-sm-inline">Employee: </span>
-                                    <strong>
-                                        @TruncateName(_selectedEmployeeName ?? "Selected", 15)
-                                    </strong>
-                                    <button type="button"
-                                            class="btn-close btn-close-sm ms-1"
-                                            style="font-size: 0.5rem;"
-                                            @onclick="ClearEmployeeFilter">
-                                    </button>
-                                </span>
-                            }
-                        </div>
-                    </div>
+                    <button class="btn btn-sm btn-outline-secondary rounded-pill" @onclick="ClearFilters">
+                        <i class="bi bi-x-lg me-1"></i> Clear Filters
+                    </button>
                 }
             </div>
         </div>
@@ -211,11 +164,6 @@
 }
 
 @code {
-
-    // ═══════════ PARAMETERS ═══════════
-
-    [Parameter] public EventCallback<int> OnPendingCountChanged { get; set; }
-
     // ═══════════ STATE ═══════════
 
     private bool _isLoading;
@@ -249,26 +197,20 @@
                      StringComparison.OrdinalIgnoreCase) ?? false)))
             .ToList();
 
-    private IEnumerable<StatCardModel> StatCards => new[]
-    {
-        new StatCardModel(null,            "bi-grid-fill",         "bg-primary bg-opacity-10",
-            "text-primary", "active-all",      _allRequests.Count, "All"),
-        new StatCardModel(Status.Pending,  "bi-hourglass-split",   "bg-warning bg-opacity-10",
-            "text-warning", "active-pending",  _pendingCount,      "Pending"),
-        new StatCardModel(Status.Approved, "bi-check-circle-fill", "bg-success bg-opacity-10",
-            "text-success", "active-approved", _approvedCount,     "Approved"),
-        new StatCardModel(Status.Rejected, "bi-x-circle-fill",     "bg-danger bg-opacity-10",
-            "text-danger",  "active-rejected", _rejectedCount,     "Rejected"),
-    };
-
-    // ═══════════ LIFECYCLE ═══════════
-
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
 
         try
         {
+            // Ensure we start with no filters (shared AttendanceState may persist values across pages)
+            _statusFilter = null;
+            State.SelectedEmployeeId = null;
+            State.SelectedEmployeeName = null;
+
+            _selectedEmployeeName = null;
+            _selectedEmployeeNumber = null;
+
             await Task.WhenAll(LoadEmployees(), LoadRequests());
         }
         catch (Exception ex)
@@ -294,7 +236,6 @@
                 : new();
 
             RecalculateCounts();
-            await OnPendingCountChanged.InvokeAsync(_pendingCount);
         }
         catch
         {
@@ -309,7 +250,7 @@
         {
             var result = await EmployeeService.GetEmployeesAsync();
 
-            Employees = result?.IsSuccess == true
+            Employees = result?.IsSuccess == true && result.Data != null
                 ? result.Data
                     .Select(e => new SelectOption
                     {
@@ -334,10 +275,10 @@
 
     // ═══════════ EVENTS ═══════════
 
-    private async Task FilterByStatus(Status? status)
+    private Task FilterByStatus(Status? status)
     {
         _statusFilter = status;
-        //await LoadRequests();
+        return Task.CompletedTask;
     }
 
     private async Task ClearFilters()
@@ -409,7 +350,7 @@
             {
                 await NotificationService.Success($"Request {action}d successfully.");
                 await LoadRequests();
-                RecalculateCounts();      // 🔥 update counts
+                RecalculateCounts();
                 StateHasChanged();
             }
             else

@@ -52,7 +52,12 @@ public class DashboardService : IDashboardService
                 Requests = employees
                     .SelectMany(x => x.LeaveRequests)
                     .Select(x => _mapper.Map<LeaveRequestDto>(x))
+                    .ToList(),
+                AttendanceRequests = employees
+                    .SelectMany(a => a.AttendanceRequest)
+                    .Select(x => _mapper.Map<AttendanceRequestDto>(x))
                     .ToList()
+
             };
         }
         dashboard.Attendance = await _repository.GetTodayPresentEmployeesAsync();

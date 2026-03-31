@@ -1,156 +1,230 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@page "/admin-attendance-management"
+
+
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Common
 
 @inject AttendanceState State
+@inject IAttendanceService AttendanceService
 @inject IEmployeeService EmployeeService
 @inject NotificationService NotificationService
 
 @implements IDisposable
 
-@if (!showDetail)
-{
-    <div class="att-list-animate">
 
-        <!-- SEARCH -->
-        <div class="card border-0 shadow-sm rounded-3 mb-3">
-            <div class="card-body py-2 px-3">
-                <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <div class="att-list-search">
-                        <i class="bi bi-search att-list-search-icon"></i>
-                        <input type="text"
-                               class="form-control form-control-sm rounded-pill ps-5"
-                               placeholder="Search by name, number, designation…"
-                               @bind="_searchText"
-                               @bind:event="oninput" />
-                        @if (!string.IsNullOrWhiteSpace(_searchText))
-                        {
-                            <button class="btn btn-link btn-sm att-list-search-clear"
-                                    @onclick="ClearSearch">
-                                <i class="bi bi-x-lg"></i>
-                            </button>
-                        }
-                    </div>
-                    <small class="text-muted ms-auto">
-                        Showing <span class="fw-semibold">@FilteredEmployees.Count</span>
-                        of @_allEmployees.Count employees
-                    </small>
-                </div>
+<Loader Visible="isLoading" Message="@loadingMessage" />
+
+@if (!isLoading) 
+{
+    @if (!showDetail)
+    {
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 d-flex align-items-center">
+                    <i class="bi bi-clock-history text-primary me-2"></i>
+                    Attendance
+                </h3>
             </div>
         </div>
 
-        <!-- EMPLOYEE TABLE -->
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body p-0">
-                @if (!FilteredEmployees.Any())
-                {
-                    <div class="text-center py-4 py-md-5 px-3">
-                        <div class="bg-light rounded-circle d-inline-flex
-                                            align-items-center justify-content-center
-                                            mb-2 mb-md-3"
-                             style="width: 72px; height: 72px;">
-                            <i class="bi bi-person-slash fs-2 text-muted opacity-50"></i>
+        <div class="att-list-animate">
+            <div class="card border-0 shadow-sm rounded-3">
+
+                <!-- HEADER -->
+                <div class="card-body py-2 px-3 border-bottom bg-light">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+
+                        <!-- LEFT -->
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-search text-primary"></i>
+                                <span class="fw-medium text-muted small">Filter</span>
+                            </div>
+
+                            <SearchEmployee Employees="Employees"
+                                            SelectedValue="@GetEmployeeValue()"
+                                            OnChanged="OnEmployeeChanged" />
+
+                            @if (State.SelectedEmployeeId != 0)
+                            {
+                                <SelectMonthAndYear Year="@State.Year"
+                                                    Month="@State.Month"
+                                                    OnChange="OnMonthSelected" />
+                            }
+
                         </div>
-                        <h6 class="fw-semibold text-muted mb-1">No Employees Found</h6>
-                        <p class="text-muted small mb-3 mx-auto" style="max-width: 320px;">
-                            @if (!string.IsNullOrWhiteSpace(_searchText))
-                            {
-                                <span>
-                                    No employees match "<strong>@_searchText</strong>"
-                                </span>
-                            }
-                            else
-                            {
-                                <span>No employees available.</span>
-                            }
-                        </p>
-                        @if (!string.IsNullOrWhiteSpace(_searchText))
-                        {
-                            <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
-                                    @onclick="ClearSearch">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>
-                                Clear Search
-                            </button>
-                        }
+
+                        <!-- RIGHT -->
+                        <div class="text-muted small">
+                            Showing <b>@_allAttendance.Count</b> records
+                        </div>
                     </div>
-                }
-                else
-                {
-                    <AppTable TItem="EmployeeViewModel"
-                              Items="FilteredEmployees"
-                              Columns="TableSchemas.EmployeeAttendanceOverview"
-                              EnablePagination="true"
-                              PageSize="10"
-                              WrapperClass="att-list-table">
-                        <ActionTemplate Context="emp">
-                            <AppButton ButtonClass="btn btn-sm btn-outline-primary
-                                                            rounded-pill px-3 att-list-view-btn"
-                                       OnClick="() => OpenDetail(emp)">
-                                <i class="bi bi-eye me-1"></i>
-                                <span class="d-none d-sm-inline">View</span>
-                            </AppButton>
-                        </ActionTemplate>
-                    </AppTable>
-                }
+                </div>
+
+                <!-- SMART TITLE -->
+                <div class="att-smart-header">
+                    @GetViewTitle()
+                </div>
+
+                <!-- TABLE -->
+                <div class="card-body p-0">
+                    @if (!_allAttendance.Any())
+                    {
+                        <div class="text-center py-5 px-3">
+                            <div class="empty-icon">
+                                <i class="bi bi-calendar-x"></i>
+                            </div>
+                            <h6 class="fw-semibold text-muted mt-3">
+                                @GetEmptyMessage()
+                            </h6>
+                        </div>
+                    }
+                    else
+                    {
+                        <AppTable TItem="MonthlyAttendanceViewModel"
+                                  Items="_allAttendance"
+                                  Columns="TableSchemas.EmployeesAttendanceDetail"
+                                  ShowActions="false"
+                                  WrapperClass="att-list-table"
+                                  RowClassFunc="GetRowClass">
+                        </AppTable>
+                    }
+                </div>
+
             </div>
         </div>
-    </div>
-}
-else
-{
-    <AttendenceDetailTable Employee="selectedEmployee!"
-                           Year="State.Year"
-                           Month="State.Month"
-                           OnBackClicked="BackToList" />
+    }
 }
 
 @code {
 
-    // ═══════════ PARAMETERS ═══════════
-
-    [Parameter] public EventCallback<int> OnCountChanged { get; set; }
-
     // ═══════════ STATE ═══════════
+    private List<SelectOption> Employees = new();
+    private bool isLoading = true;
+    private string loadingMessage = "Loading attendance management...";
 
     private bool showDetail;
-    private string _searchText = "";
-    private EmployeeViewModel? selectedEmployee;
-
-    private List<EmployeeViewModel> _allEmployees = new();
-
+    private List<MonthlyAttendanceViewModel> _allAttendance = new();
     private CancellationTokenSource _cts = new();
     private bool _isDisposed;
 
-    // ═══════════ COMPUTED ═══════════
-
-    private List<EmployeeViewModel> FilteredEmployees =>
-        string.IsNullOrWhiteSpace(_searchText)
-            ? _allEmployees
-            : _allEmployees.Where(e =>
-                MatchesSearch(e.FullName) ||
-                MatchesSearch(e.EmployeeNumber) ||
-                MatchesSearch(e.Position) ||
-                MatchesSearch(e.Designation.ToString())
-            ).ToList();
+    private int Year => State.Year > 0 ? State.Year : DateTime.Today.Year;
+    private int Month => State.Month > 0 ? State.Month : DateTime.Today.Month;
 
     // ═══════════ LIFECYCLE ═══════════
-
     protected override async Task OnInitializedAsync()
     {
         EnsureMonth();
         await LoadEmployees();
+
+        // ✅ Default → No employee selected
+        State.SelectedEmployeeId = 0;
+
+        await LoadData();
+        isLoading = false;
     }
 
-    // ═══════════ DATA ═══════════
+    // ═══════════ FILTER HANDLERS ═══════════
+
+    private async Task OnMonthSelected((int year, int month) value)
+    {
+        State.Year = value.year;
+        State.Month = value.month;
+        State.SelectedMonth = $"{value.year}-{value.month:D2}";
+
+        await LoadData();
+    }
+
+    private async Task OnEmployeeChanged(string? empId)
+    {
+        // ✅ Handle selection / reset
+        State.SelectedEmployeeId =
+            string.IsNullOrWhiteSpace(empId) || empId == "0"
+            ? 0
+            : int.Parse(empId);
+
+        // ✅ If employee removed → reset to current month
+        if (State.SelectedEmployeeId == 0)
+        {
+            var now = DateTime.Today;
+            State.Year = now.Year;
+            State.Month = now.Month;
+        }
+
+        await LoadData();
+    }
+
+    // ═══════════ CORE DATA LOADER ═══════════
+    private async Task LoadData()
+    {
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            bool isEmployeeSelected = State.SelectedEmployeeId != 0;
+
+            int? empId = isEmployeeSelected
+                ? State.SelectedEmployeeId
+                : null;
+
+            var result = await AttendanceService.GetAttendanceByMonthAsync(
+                Year,
+                Month,
+                empId,
+                null,
+                null
+            );
+
+            if (_cts.IsCancellationRequested || _isDisposed) return;
+
+            var rawData = result?.IsSuccess == true
+                ? result.Data ?? new()
+                : new();
+
+            // ✅ FINAL RULE
+            // No employee → only today
+            if (!isEmployeeSelected)
+            {
+                rawData = rawData
+                    .Where(d => d.Date == today)
+                    .ToList();
+            }
+
+            // ✅ FLATTEN DATA
+            _allAttendance = rawData
+                .SelectMany(day => day.Employees.Select(emp => new MonthlyAttendanceViewModel
+                {
+                    Date = day.Date,
+                    Day = day.Day,
+                    Employees = new List<EmployeeDailyAttendanceViewModel> { emp }
+                }))
+                .ToList();
+            StateHasChanged();
+        }
+        catch
+        {
+            _allAttendance = new();
+        }
+    }
+
+    // ═══════════ HELPERS ═══════════
 
     private void EnsureMonth()
     {
         var now = DateTime.Today;
+
         if (State.Year == 0) State.Year = now.Year;
         if (State.Month == 0) State.Month = now.Month;
+
         State.SelectedMonth = $"{State.Year}-{State.Month:D2}";
     }
 
@@ -159,43 +233,75 @@ else
         try
         {
             var result = await EmployeeService.GetEmployeesAsync();
-            if (_cts.IsCancellationRequested || _isDisposed) return;
 
-            _allEmployees = result?.IsSuccess == true
-                ? result.Data ?? new()
+            Employees = result?.IsSuccess == true && result.Data != null
+                ? result.Data.Select(e => new SelectOption
+                {
+                    Value = e.Id.ToString(),
+                    Text = $"{e.FullName} ({e.EmployeeNumber})"
+                }).ToList()
                 : new();
-
-            if (!_isDisposed)
-                await OnCountChanged.InvokeAsync(_allEmployees.Count);
         }
         catch
         {
-            _allEmployees = new();
+            Employees = new();
         }
     }
 
-    private void OpenDetail(EmployeeViewModel emp)
+    private static string GetRowClass(MonthlyAttendanceViewModel r)
     {
-        selectedEmployee = emp;
-        showDetail = true;
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        if (r.Date == today)
+            return "att-table-today";
+
+        if (r.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "att-table-weekend";
+
+        var status = r.Employees.FirstOrDefault()?.Status;
+
+        return status switch
+        {
+            "Absent" => "att-table-absent",
+            "Late" => "att-table-late",
+            "Holiday" => "att-table-holiday",
+            "WeeklyOff" => "att-table-weekend",
+            _ => ""
+        };
     }
 
-    private void BackToList()
+    private string GetEmployeeValue() =>
+        State.SelectedEmployeeId == 0
+            ? "0"
+            : State.SelectedEmployeeId.ToString();
+
+    private string GetViewTitle()
     {
-        showDetail = false;
-        selectedEmployee = null;
+        bool isEmployeeSelected = State.SelectedEmployeeId != 0;
+
+        if (isEmployeeSelected)
+            return "📊 Monthly Attendance (Employee View)";
+
+        return "🟢 Today's Attendance (All Employees)";
     }
 
-    private void ClearSearch() => _searchText = "";
+    private string GetEmptyMessage()
+    {
+        bool isEmployeeSelected = State.SelectedEmployeeId != 0;
 
-    private bool MatchesSearch(string? value)
-        => !string.IsNullOrWhiteSpace(value) &&
-           value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+        if (!isEmployeeSelected)
+            return "No attendance found for today";
 
+        return "No records found for selected employee";
+    }
+
+    // ═══════════ DISPOSE ═══════════
     public void Dispose()
     {
         if (_isDisposed) return;
+
         _isDisposed = true;
+
         try { _cts.Cancel(); } catch { }
         try { _cts.Dispose(); } catch { }
     }

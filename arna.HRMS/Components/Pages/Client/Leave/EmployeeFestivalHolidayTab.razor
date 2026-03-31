@@ -47,17 +47,6 @@
     </div>
 }
 
-<!-- ══════════ STATS ══════════ -->
-<div class="row g-3 mb-4">
-    @foreach (var stat in FestivalStats)
-    {
-        <AppStatCard Icon="@stat.Icon"
-                     BgClass="@stat.BgClass"
-                     TextClass="@stat.TextClass"
-                     Label="@stat.Label"
-                     Count="@stat.Count" />
-    }
-</div>
 <!-- ══════════ FILTER BAR ══════════ -->
 <div class="card border-0 shadow-sm rounded-3 mb-4">
     <div class="card-body py-2 px-3">
@@ -180,26 +169,6 @@
                      EventLegendLabel="Holiday"
                      EventLegendDotClass="bg-danger"
                      OnMonthChanged="OnCalendarMonthChanged" />
-
-    <!-- Holidays list below calendar -->
-    @if (calendarMonthHolidays.Any())
-    {
-        <div class="card border-0 shadow-sm rounded-3 mt-3">
-            <div class="card-header bg-transparent border-bottom py-3">
-                <h6 class="fw-semibold mb-0">
-                    <i class="bi bi-list-check text-primary me-2"></i>
-                    @(new DateTime(calendarYear, calendarMonth, 1).ToString("MMMM yyyy"))
-                    — Holiday List
-                </h6>
-            </div>
-            <div class="card-body p-0">
-                <AppTable TItem="FestivalHolidayViewModel"
-                          Items="calendarMonthHolidays"
-                          Columns="TableSchemas.FestivalHolidays"
-                          ShowActions="false" />
-            </div>
-        </div>
-    }
 }
 
 
@@ -234,43 +203,6 @@
     {
         await LoadFestivals();
     }
-
-    private IEnumerable<FestivalStatModel> FestivalStats => new[]
-    {
-        new FestivalStatModel(
-            FestivalStatType.Total,
-            "bi-calendar-event-fill",
-            "bg-primary bg-opacity-10",
-            "text-primary",
-            allFestivals.Count,
-            "Total"),
-
-        new FestivalStatModel(
-            FestivalStatType.SelectedMonth,
-            "bi-calendar-check-fill",
-            "bg-success bg-opacity-10",
-            "text-success",
-            filteredFestivals.Count,
-            upcomingHoliday != null
-                ? upcomingHoliday.Date.ToString("MMMM yyyy")
-                : "No Upcoming"),
-
-        new FestivalStatModel(
-            FestivalStatType.Upcoming,
-            "bi-clock-history",
-            "bg-warning bg-opacity-10",
-            "text-warning",
-            allFestivals.Count(f => f.Date >= DateTime.Today),
-            "Upcoming"),
-
-        new FestivalStatModel(
-            FestivalStatType.Past,
-            "bi-calendar-x-fill",
-            "bg-secondary bg-opacity-10",
-            "text-secondary",
-            allFestivals.Count(f => f.Date < DateTime.Today),
-            "Past")
-    };
 
     // ═══════════ DATA ═══════════
 

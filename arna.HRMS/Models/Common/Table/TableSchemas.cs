@@ -195,39 +195,25 @@ public class TableSchemas
         new() { Header = "Status",          Value = u => u.StatusId.ToString() },
     };
 
-    public static List<TableColumn<EmployeeViewModel>> EmployeeAttendanceOverview => new()
+    public static List<TableColumn<MonthlyAttendanceViewModel>> EmployeesAttendanceDetail => new()
     {
-        new ()
-        {
-            Header = "Emp. Number",
-            Value = e => e.EmployeeNumber
-        },
-        new ()
-        {
-            Header = "Employee Name",
-            Value = e => e.FullName
-        },
-        new ()
-        {
-            Header = "Department",
-            Value = e => e.DepartmentName ?? "—"
-        },
-        new()
-        {
-            Header = "Designation",
-            Value = e => e.Position,
-        }
-    };
-
-    public static List<TableColumn<MonthlyAttendanceViewModel>> EmployeeAttendence = new()
-    {
+        new() { Header = "Emp.Number", Value = u => u.Employees.FirstOrDefault()?.EmployeeNumber},
+        new() { Header = "Name", Value = u => u.Employees.FirstOrDefault()?.EmployeeName},
         new() { Header = "Date",      Value = u => u.Date.ToString("dd MMM yyyy") },
-        new() { Header = "Day",       Value = u => u.Day },
+        new() { Header = "Attendance",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
         new() { Header = "Clock In",  Value = u => FormatClockTime(u.Employees.FirstOrDefault()) },
         new() { Header = "Clock Out", Value = u => FormatClockOutTime(u.Employees.FirstOrDefault()) },
         new()
             {
-                Value  = u => u.Employees.FirstOrDefault()?.BreakDuration.ToString(@"hh\:mm\:ss") ?? "-",
+                Header = "Break",
+                Value  = u =>  {
+                    var emp = u.Employees.FirstOrDefault();
+
+                    if (emp == null || emp.Breaks == null || !emp.Breaks.Any())
+                        return "--"; 
+
+                    return emp.BreakDuration.ToString(@"hh\:mm\:ss");
+                },
                 TooltipHtml = u =>
                 {
                     var emp = u.Employees.FirstOrDefault();
@@ -263,7 +249,60 @@ public class TableSchemas
             },
         new() { Header = "Working",   Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.WorkingHours) },
         new() { Header = "Total",     Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.TotalHours) },
-        new() { Header = "Status",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
+    };
+
+    public static List<TableColumn<MonthlyAttendanceViewModel>> EmployeeAttendence = new()
+    {
+        new() { Header = "Date",      Value = u => u.Date.ToString("dd MMM yyyy") },
+        new() { Header = "Attendance",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
+        new() { Header = "Clock In",  Value = u => FormatClockTime(u.Employees.FirstOrDefault()) },
+        new() { Header = "Clock Out", Value = u => FormatClockOutTime(u.Employees.FirstOrDefault()) },
+        new()
+            {
+                Header = "Break",
+                Value  = u =>  {
+                    var emp = u.Employees.FirstOrDefault();
+
+                    if (emp == null || emp.Breaks == null || !emp.Breaks.Any())
+                        return "-";
+
+                    return emp.BreakDuration.ToString(@"hh\:mm\:ss");
+                },
+                TooltipHtml = u =>
+                {
+                    var emp = u.Employees.FirstOrDefault();
+                    if (emp?.Breaks == null || !emp.Breaks.Any()) return null;
+
+                    var rows = emp.Breaks.Select((b, i) =>
+                        $"""
+                        <tr>
+                            <td class="pe-4">
+                                {b.BreakStart:hh\:mm\:ss} – {b.BreakEnd:hh\:mm\:ss}
+                            </td>
+                        
+                            <td class="text-end fw-semibold">
+                                {b.Duration:hh\:mm\:ss}
+                            </td>
+                        </tr>
+                        """);
+
+                    return $"""
+                    <table class="table table-sm mb-0 text-white">
+                        <thead>
+                            <tr class="small text-uppercase text-muted">
+                                <th class="fw-semibold">Break Time</th>
+                                <th class="text-end fw-semibold">Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {string.Join("", rows)}
+                        </tbody>
+                    </table>
+                    """;
+                }
+            },
+        new() { Header = "Working",   Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.WorkingHours) },
+        new() { Header = "Total",     Value = u => FormatEmpHours(u.Employees.FirstOrDefault(), e => e.TotalHours) },
     };  
 
     private static string FormatEmpHours(EmployeeDailyAttendanceViewModel? emp,
@@ -347,6 +386,7 @@ public class TableSchemas
         new() { Header = "Working",      Value = x => x.WorkingHours.ToString(@"hh\:mm\:ss") },
         new()
         {
+            Header = "Break",
             Value  = u => u.BreakDuration.ToString(@"hh\:mm\:ss"),
             TooltipHtml = u =>
             {

@@ -285,7 +285,7 @@ public class AttendanceRepository
             return "Holiday";
 
         if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday && !hasAttendance)
-            return "Holiday";
+            return "WeeklyOff";
 
         if (statuses.Contains(AttendanceStatus.Present))
             return "Present";

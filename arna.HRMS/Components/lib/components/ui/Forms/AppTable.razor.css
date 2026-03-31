@@ -1,9 +1,6 @@
 ﻿/* ── Wrapper ── */
 .app-table-wrapper {
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-height: 420px;
     overflow-x: auto;
     overflow-y: auto;
     scrollbar-width: thin;

@@ -1,6 +1,5 @@
 ﻿using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.Enums;
-using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Models.ViewModels.Attendance;
 using arna.HRMS.Services.Http;
 using Microsoft.JSInterop;
