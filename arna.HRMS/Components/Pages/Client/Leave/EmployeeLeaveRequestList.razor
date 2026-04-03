@@ -152,8 +152,15 @@
         var confirm = await JsRuntime.InvokeAsync<bool>("confirm", "Cancel this leave?");
         if (!confirm) return;
 
-        var result = await LeaveService.CancelLeaveRequestAsync(req.Id, req.EmployeeId);
-        if(result?.IsSuccess != true)
+        var employeeId = GetEmployeeId();
+        if (employeeId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var result = await LeaveService.CancelLeaveRequestAsync(req.Id, employeeId);
+        if (result?.IsSuccess != true)
         {
             await NotificationService.Error(result?.Message ?? "Failed to cancel leave.");
             return;
@@ -161,7 +168,6 @@
         await RefreshAsync();
         await OnRequestChanged.InvokeAsync();
         await NotificationService.Success("Cancel Leave Successfully.");
-
     }
 
     private static string GetStatusBadgeClass(Status status) => status switch

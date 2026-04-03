@@ -7,7 +7,7 @@ namespace arna.HRMS.Services.Auth;
 
 public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
 {
-    [Inject] protected AuthenticationStateProvider AuthProvider { get; set; } = default!;
+    [Inject] protected CustomAuthStateProvider AuthProvider { get; set; } = default!;
     [Inject] protected NavigationManager Navigation { get; set; } = default!;
     [Inject] protected ILogger<AuthenticatedLayoutBase> Logger { get; set; } = default!;
 
@@ -105,7 +105,12 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out _userId);
         int.TryParse(user.FindFirst("EmployeeId")?.Value, out _employeeId);
 
-        _userName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+        if (user.Claims.Count() <= 0 || _employeeId <= 0)
+        {
+            Logger.LogWarning("Auth Fail.");
+       
+        }
+            _userName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
         _userFullName = user.FindFirst("FullName")?.Value ?? string.Empty;
         _role = user.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
         _isAuthenticated = user.Identity?.IsAuthenticated ?? false;

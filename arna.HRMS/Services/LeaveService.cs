@@ -23,7 +23,7 @@ public interface ILeaveService
     Task<ApiResult<LeaveRequestViewModel>> CreateLeaveRequestAsync(LeaveRequestViewModel model);
     Task<ApiResult<bool>> UpdateLeaveRequestAsync(int id, LeaveRequestViewModel model);
     Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id);
-    Task<ApiResult<bool>> UpdateLeaveStatusAsync(int leaveRequestId, Status status);
+    Task<ApiResult<bool>> UpdateLeaveStatusAsync(int leaveRequestId, Status status, int empId);
     Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestsByEmployeeAsync(int employeeId);
     Task<ApiResult<bool>> CancelLeaveRequestAsync(int leaveRequestId, int employeeId);
 }
@@ -96,9 +96,9 @@ public class LeaveService : ILeaveService
         return await _leaveApi.LeaveRequests.DeleteAsync(id);
     }
 
-    public async Task<ApiResult<bool>> UpdateLeaveStatusAsync(int leaveRequestId, Status status)
+    public async Task<ApiResult<bool>> UpdateLeaveStatusAsync(int leaveRequestId, Status status, int empId)
     {
-        return await _leaveApi.UpdateStatusAsync(leaveRequestId, status);
+        return await _leaveApi.UpdateStatusAsync(leaveRequestId, status, empId);
     }
 
     public async Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestsByEmployeeAsync(int employeeId)

@@ -76,11 +76,11 @@ public class TableSchemas
     {
         new() { Header = "Employee Number", Value = u => u.EmployeeNumber },
         new() { Header = "Employee Name", Value = u => u.EmployeeName },
-        new() { Header = "Leave Type Id", Value = u => u.LeaveTypeId },
+        new() { Header = "Leave Type Id", Value = u => u.LeaveTypeName },
         new() { Header = "Reason", Value = u => u.Reason },
         new() { Header = "Total Days", Value = u => u.LeaveDays },
         new() { Header = "Status", Value = u => u.StatusId },
-        new() { Header = "ApprovedBy", Value = u => u.ApprovedBy },
+        new() { Header = "ApprovedBy", Value = u => u.ApprovedByName },
         new() { Header = "Start Date", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
         new() { Header = "End Date", Value = u => u.EndDate.Date.ToString("yyyy/MM/dd") },
     };

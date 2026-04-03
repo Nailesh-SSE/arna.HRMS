@@ -6,6 +6,7 @@
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Common
 
 @inject AttendanceState State
@@ -13,6 +14,8 @@
 @inject IEmployeeService EmployeeService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
+@inherits AuthenticatedLayoutBase
+
 
 <!-- TOOLBAR -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
@@ -223,7 +226,14 @@
             "confirm", $"Are you sure you want to {newStatus} this leave request?");
         if (!confirmed) return;
 
-        var result = await LeaveService.UpdateLeaveStatusAsync(req.Id, newStatus);
+        var approverEmployeeId = GetEmployeeId();
+        if (approverEmployeeId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var result = await LeaveService.UpdateLeaveStatusAsync(req.Id, newStatus, approverEmployeeId);
         if (result?.IsSuccess == true)
         {
             req.StatusId = newStatus;

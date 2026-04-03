@@ -56,7 +56,7 @@ public class DepartmentController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpPost("{id:int}/delete")]
     public async Task<IActionResult> DeleteAsync(int id)
     {
         var result = await _service.DeleteDepartmentAsync(id);

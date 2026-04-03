@@ -257,9 +257,8 @@ public class AttendanceRequestControllerTests
         _attendanceRequestServiceMock
             .Setup(s => s.UpdateAttendanceRequestStatusAsync(1, Status.Approved, 2))
             .ReturnsAsync(ServiceResult<bool>.Success(true));
-
         // Act
-        var result = await _controller.UpdateStatusAsync(1, Status.Approved);
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99);
 
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
@@ -286,7 +285,7 @@ public class AttendanceRequestControllerTests
             .Setup(s => s.UpdateAttendanceRequestStatusAsync(1, Status.Approved, 2))
             .ReturnsAsync(ServiceResult<bool>.Fail("Error updating attendance request status"));
         // Act
-        var result = await _controller.UpdateStatusAsync(1, Status.Approved);
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99 );
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -303,7 +302,7 @@ public class AttendanceRequestControllerTests
             }
         };
         // Act
-        var result = await _controller.UpdateStatusAsync(1, Status.Approved);
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99);
         // Assert
         Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
     }
@@ -326,7 +325,7 @@ public class AttendanceRequestControllerTests
             }
         };
         // Act
-        var result = await _controller.UpdateStatusAsync(1, Status.Approved);
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99);
         // Assert
         Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
     }
@@ -352,10 +351,10 @@ public class AttendanceRequestControllerTests
             .Setup(s => s.UpdateAttendanceRequestStatusAsync(It.Is<int>(id => id <= 0), Status.Approved, 2))
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid ID"));
         // Act
-        var result = await _controller.UpdateStatusAsync(0, Status.Approved);
+        var result = await _controller.UpdateStatusAsync(0, Status.Approved, 99);
         
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
-        result = await _controller.UpdateStatusAsync(-1, Status.Approved);
+        result = await _controller.UpdateStatusAsync(-1, Status.Approved, 99);
         
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -378,7 +377,7 @@ public class AttendanceRequestControllerTests
             }
         };
         // Act
-        var result = await _controller.UpdateStatusAsync(1, (Status)999);
+        var result = await _controller.UpdateStatusAsync(1, (Status)999, 99);
         
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -409,7 +408,7 @@ public class AttendanceRequestControllerTests
             .ReturnsAsync(ServiceResult<bool>.Success(true));
 
         // Act
-        var result = await _controller.CancelAsync(1);
+        var result = await _controller.CancelAsync(1, 1);
 
         // Assert
         Assert.That(result, Is.TypeOf<OkObjectResult>());
@@ -436,7 +435,7 @@ public class AttendanceRequestControllerTests
             .Setup(s => s.CancelAttendanceRequestAsync(1, 2))
             .ReturnsAsync(ServiceResult<bool>.Fail("Error cancelling attendance request"));
         // Act
-        var result = await _controller.CancelAsync(1);
+        var result = await _controller.CancelAsync(1,10);
         // Assert
         Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
     }
@@ -468,10 +467,10 @@ public class AttendanceRequestControllerTests
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid ID"));
 
         // Act
-        var result = await _controller.CancelAsync(0);
+        var result = await _controller.CancelAsync(0, 0);
         Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
 
-        result = await _controller.CancelAsync(-1);
+        result = await _controller.CancelAsync(-1, 10);
         Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
     }
 
@@ -502,7 +501,7 @@ public class AttendanceRequestControllerTests
             .ReturnsAsync(ServiceResult<bool>.Fail("Invalid Employee ID"));
 
         // Act
-        var result = await _controller.CancelAsync(1);
+        var result = await _controller.CancelAsync(1, 1);
 
         // Assert
         Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
@@ -533,10 +532,10 @@ public async Task UpdateAttendanceRequestStatusCancel_ReturnsBadRequest_WhenBoth
             It.IsAny<int>()))
         .ReturnsAsync(ServiceResult<bool>.Fail("Invalid ID and Employee ID"));
 
-    var result = await _controller.CancelAsync(0);
+    var result = await _controller.CancelAsync(0, 0);
     Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
 
-    result = await _controller.CancelAsync(-1);
+    result = await _controller.CancelAsync(-1, 1);
     Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
 }
 

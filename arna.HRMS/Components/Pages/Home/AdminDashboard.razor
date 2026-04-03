@@ -6,6 +6,7 @@
 @using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Dashboard
 @using arna.HRMS.Services.Common
 
@@ -15,6 +16,8 @@
 @inject IDashboardService DashboardService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
+@inherits AuthenticatedLayoutBase 
+
 
 <div class="container-fluid px-3 px-md-4 py-3 dash-fade-in">
 
@@ -51,8 +54,6 @@
     <!-- ══════════ PENDING + OVERVIEW ══════════ -->
     <div class="row g-4 mb-4">
 
-        <!-- Pending Leave Requests (AppTable) -->
-        <!-- Pending Leave Requests (AppTable) -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-3 h-100">
 
@@ -87,7 +88,7 @@
                     }
                     else
                     {
-                        <a href="/admin-attendance-management"
+                        <a href="/admin-attendance-requests"
                            class="btn btn-sm btn-outline-primary rounded-pill">
                             View All <i class="bi bi-arrow-right ms-1"></i>
                         </a>
@@ -402,7 +403,14 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Approve this leave request?"))
             return;
 
-        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Approved);
+        var empId = GetEmployeeId();
+        if (empId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Approved, empId);
 
         if (res?.IsSuccess == true)
         {
@@ -423,7 +431,14 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Reject this leave request?"))
             return;
 
-        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Rejected);
+        var empId = GetEmployeeId();
+        if (empId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Rejected, empId);
 
         if (res?.IsSuccess == true)
         {
@@ -443,7 +458,14 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Approve this attendance request?"))
             return;
 
-        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Approved);
+        var employeeId = GetEmployeeId();
+        if (employeeId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Approved, employeeId);
         if (res?.IsSuccess == true)
         {
             await NotificationService.Success("Attendance approved successfully.");
@@ -462,7 +484,14 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Reject this attendance request?"))
             return;
 
-        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Rejected);
+        var employeeId = GetEmployeeId();
+        if (employeeId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Rejected, employeeId);
 
         if (res?.IsSuccess == true)
         {
