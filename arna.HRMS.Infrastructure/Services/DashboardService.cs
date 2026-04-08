@@ -59,18 +59,43 @@ public class DashboardService : IDashboardService
                     .ToList()
 
             };
+            
         }
+
         dashboard.Attendance = await _repository.GetTodayPresentEmployeesAsync();
         dashboard.PresentEmployee = dashboard.Attendance.Count;
         dashboard.AttendanceTotalRequests = dashboard.AttendanceRequests.Count;
         dashboard.AttendancePendingRequests = dashboard.AttendanceRequests.Count(x => x.StatusId == Status.Pending);
+        dashboard.LeaveEmployees = await _repository.GetTodayLeaveEmployeesAsync();
         dashboard.TotalEmployees = dashboard.Employees.Count;
+
+        var allEmployeeRecords = new List<EmployeeDailyAttendanceDto>();
+        if (dashboard.Attendance != null) allEmployeeRecords.AddRange(dashboard.Attendance);
+        if (dashboard.LeaveEmployees != null) allEmployeeRecords.AddRange(dashboard.LeaveEmployees);
+
+        if (dashboard.TotalEmployees > 0 && allEmployeeRecords.Any())
+        {
+            var totalWorkingHours = allEmployeeRecords.Sum(x => x.WorkingHours.TotalHours);
+            var totalBreakHours = allEmployeeRecords.Sum(x => x.BreakDuration.TotalHours);
+
+            dashboard.AvgWorkingHours = (int)(totalWorkingHours / dashboard.TotalEmployees);
+            dashboard.AvgBreakHours = (int)(totalBreakHours / dashboard.TotalEmployees);
+        }
+        else
+        {
+            dashboard.AvgWorkingHours = 0;
+            dashboard.AvgBreakHours = 0;
+        }
+
+        dashboard.AttendanceTotalRequests = dashboard.AttendanceRequests.Count;
+        dashboard.AttendancePendingRequests = dashboard.AttendanceRequests.Count(x => x.StatusId == Status.Pending);
+        dashboard.LeaveEmployees = dashboard.LeaveEmployees ?? new List<EmployeeDailyAttendanceDto>();
+        dashboard.AbsentEmployee = dashboard.TotalEmployees - dashboard.PresentEmployee;
         dashboard.LeaveTotalRequests = dashboard.Requests.Count;
         dashboard.LeavePendingRequests = dashboard.Requests.Count(x => x.StatusId == Status.Pending);
         dashboard.LeaveApprovedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Approved);
         dashboard.LeaveRejectedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Rejected);
         dashboard.LeaveCancledRequests = dashboard.Requests.Count(x => x.StatusId == Status.Cancelled);
-        dashboard.AbsentEmployee = dashboard.TotalEmployees - dashboard.PresentEmployee;
 
         return ServiceResult<DashboardDto>.Success(dashboard);
     }

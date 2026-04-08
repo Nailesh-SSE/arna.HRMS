@@ -16,7 +16,7 @@ public class EmployeeRepository
     public async Task<List<Employee>> GetEmployeesAsync()
     {
         return await _baseRepository.Query()
-            .Where(e => e.IsActive && !e.IsDeleted)
+            .Where(e => !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
             .OrderByDescending(e => e.Id)
@@ -26,7 +26,7 @@ public class EmployeeRepository
     public async Task<Employee?> GetEmployeeByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(e => e.Id == id && e.IsActive && !e.IsDeleted)
+            .Where(e => e.Id == id && !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
             .FirstOrDefaultAsync();
@@ -47,7 +47,6 @@ public class EmployeeRepository
         var employee = await _baseRepository.Query()
             .FirstOrDefaultAsync(e =>
                 e.Id == id &&
-                e.IsActive &&
                 !e.IsDeleted);
 
         if (employee == null)
@@ -73,7 +72,7 @@ public class EmployeeRepository
         officeEmail = officeEmail?.Trim().ToLower();
 
         return await _baseRepository.Query()
-            .Where(e => e.IsActive && !e.IsDeleted)
+            .Where(e => !e.IsDeleted)
             .AnyAsync(e =>
                e.Id != employeeId &&
                 (

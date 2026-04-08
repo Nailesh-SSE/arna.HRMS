@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Models.ViewModels.Attendance;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Models.ViewModels.Attendance;
 using arna.HRMS.Models.ViewModels.Leave;
 
 namespace arna.HRMS.Models.ViewModels;
@@ -9,6 +10,7 @@ public class DashboardViewModel
     public List<LeaveTypeViewModel> LeaveTypes { get; set; } = new();
     public List<AttendanceRequestViewModel> AttendanceRequests { get; set; } = new();
     public List<EmployeeDailyAttendanceViewModel> Attendance { get; set; } = new();
+    public List<EmployeeDailyAttendanceViewModel> LeaveEmployees { get; set; } = new();
     public List<LeaveRequestViewModel> Requests { get; set; } = new();
 
     public int AttendanceTotalRequests { get; set; }
@@ -21,4 +23,6 @@ public class DashboardViewModel
     public int PresentEmployee { get; set; }
     public int AbsentEmployee { get; set; }
     public int TotalEmployees { get; set; }
+    public int AvgWorkingHours { get; set; }
+    public int AvgBreakHours { get; set; }
 }

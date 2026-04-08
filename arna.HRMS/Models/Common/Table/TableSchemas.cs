@@ -1,4 +1,3 @@
-using arna.HRMS.Core.Entities;
 using arna.HRMS.Models.Enums;
 using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Models.ViewModels.Attendance;
@@ -15,7 +14,13 @@ public class TableSchemas
         new() { Header = "Email", Value = u => u.Email },
         new() { Header = "Name", Value = u => u.FullName },
         new() { Header = "Role", Value = u => u.Role },
-        new() { Header = "Employee", Value = u => u.EmployeeName }
+        new() { Header = "Employee", Value = u => u.EmployeeName },
+        new()
+        {
+            Header = "STATUS",
+            Value = u => u.IsActive ? "Active" : "Inactive",
+            CssClassFunc = u => u.IsActive ? "badge bg-success" : "badge bg-danger"
+        }
     };
 
     // DEPARTMENT TABLE
@@ -30,12 +35,18 @@ public class TableSchemas
     // EMPLOYEES TABLE
     public static List<TableColumn<EmployeeViewModel>> Employees = new()
     {
-        new() { Header = "Number", Value = u => u.EmployeeNumber },
+        new() { Header = "Emp#", Value = u => u.EmployeeNumber },
         new() { Header = "Name", Value = u => u.FullName },
         new() { Header = "Office Email", Value = u => u.OfficeEmail},
-        new() { Header = "Department Code", Value = u => u.DepartmentCode, CssClass = "badge bg-info" },
+        new() { Header = "Dep. Code", Value = u => u.DepartmentCode, CssClass = "badge bg-info" },
         new() { Header = "Manager Name", Value = u => u.ManagerFullName },
-        new() { Header = "Designation", Value = u => u.Position }
+        new() { Header = "Designation", Value = u => u.Position },
+        new()
+        {
+            Header = "STATUS",
+            Value = u => u.IsActive ? "Active" : "Inactive",
+            CssClassFunc = u => u.IsActive ? "badge bg-success" : "badge bg-danger"
+        }
     };
 
 
@@ -74,7 +85,7 @@ public class TableSchemas
 
     public static List<TableColumn<LeaveRequestViewModel>> LeaveRequest = new()
     {
-        new() { Header = "Employee Number", Value = u => u.EmployeeNumber },
+        new() { Header = "Emp#", Value = u => u.EmployeeNumber },
         new() { Header = "Employee Name", Value = u => u.EmployeeName },
         new() { Header = "Leave Type Id", Value = u => u.LeaveTypeName },
         new() { Header = "Reason", Value = u => u.Reason },
@@ -89,7 +100,7 @@ public class TableSchemas
     {
         new()
         {
-            Header = "Employee",
+            Header = "Emp#",
             Value = u => $"{u.EmployeeNumber}"
         },
          new()
@@ -197,7 +208,7 @@ public class TableSchemas
 
     public static List<TableColumn<MonthlyAttendanceViewModel>> EmployeesAttendanceDetail => new()
     {
-        new() { Header = "Emp.Number", Value = u => u.Employees.FirstOrDefault()?.EmployeeNumber},
+        new() { Header = "Emp#", Value = u => u.Employees.FirstOrDefault()?.EmployeeNumber},
         new() { Header = "Name", Value = u => u.Employees.FirstOrDefault()?.EmployeeName},
         new() { Header = "Date",      Value = u => u.Date.ToString("dd MMM yyyy") },
         new() { Header = "Attendance",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
@@ -328,7 +339,8 @@ public class TableSchemas
 
     public static List<TableColumn<AttendanceRequestViewModel>> EmployeeAttendenceRequestTable = new()
     {
-        new() { Header = "Date Range",  Value = u => $"{u.FromDate?.ToString("dd MMM yyyy") ?? "--"} ? {u.ToDate?.ToString("dd MMM yyyy") ?? "--"}" },
+         new() { Header = "Employee", Value = u => $"{u.EmployeeName}" },
+        new() { Header = "Date Range",  Value = u => $"{u.FromDate?.ToString("dd MMM yyyy") ?? "--"}" },
         new() { Header = "Reason",      Value = u => u.ReasonTypeId?.ToString() ?? "--" },
         new() { Header = "Location",    Value = u => u.LocationId?.ToString() ?? "--" },
         new() { Header = "Clock In",    Value = u => u.ClockIn?.ToString("hh:mm tt") ?? "--" },
@@ -367,7 +379,7 @@ public class TableSchemas
 
     public static List<TableColumn<EmployeeAttendanceReportViewModel>> EmployeeReport = new()
     {
-        new() {Header = "Employee Number" , Value = u => u.EmployeeNumber},
+        new() {Header = "Emp#" , Value = u => u.EmployeeNumber},
         new() {Header = "Employee Name" , Value = u => u.EmployeeName},
         new() {Header  = "Total WorkDays" , Value = u => u.TotalWorkDays},
         new () {Header = "Total Present" , Value = u => u.TotalPresent},
@@ -379,7 +391,7 @@ public class TableSchemas
 
     public static List<TableColumn<EmployeeDailyAttendanceViewModel>> PresentEmployee = new()
     {
-        new() { Header = "Employee Number",       Value = x => x.EmployeeNumber },
+        new() { Header = "Emp#",       Value = x => x.EmployeeNumber },
         new() { Header = "Name",         Value = x => x.EmployeeName },
         new() { Header = "Clock In",     Value = x => x.ClockIn.HasValue ? x.ClockIn.Value.ToString(@"hh\:mm\:ss") : "--" },
         new() { Header = "Clock Out",    Value = x => x.ClockOut.HasValue ? x.ClockOut.Value.ToString(@"hh\:mm\:ss") : "--" },
@@ -422,6 +434,14 @@ public class TableSchemas
             }
         },
         new() { Header = "Total",        Value = x => x.TotalHours.ToString(@"hh\:mm\:ss") },
+    };
+
+    public static List<TableColumn<EmployeeDailyAttendanceViewModel>> LeaveEmployee = new()
+    {
+        new() { Header = "Emp#",       Value = x => x.EmployeeNumber },
+        new() { Header = "Name",         Value = x => x.EmployeeName },
+        new() { Header = "Resone",         Value = x => x.Note },
+        new() { Header = "Status",         Value = x => x.Status },
     };
 
 

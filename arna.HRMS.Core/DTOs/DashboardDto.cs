@@ -6,6 +6,7 @@ public class DashboardDto
     public List<LeaveTypeDto> LeaveTypes { get; set; } = new();
     public List<AttendanceRequestDto> AttendanceRequests { get; set; } = new();
     public List<EmployeeDailyAttendanceDto> Attendance { get; set; } = new();
+    public List<EmployeeDailyAttendanceDto> LeaveEmployees { get; set; } = new();
     public List<LeaveRequestDto> Requests { get; set; } = new();
 
     public int AttendanceTotalRequests { get; set; }
@@ -18,4 +19,6 @@ public class DashboardDto
     public int PresentEmployee { get; set; }
     public int AbsentEmployee { get; set; }
     public int TotalEmployees { get; set; }
+    public int AvgWorkingHours { get; set; }
+    public int AvgBreakHours { get; set; }
 }

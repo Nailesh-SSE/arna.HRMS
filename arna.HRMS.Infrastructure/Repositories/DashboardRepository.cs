@@ -37,6 +37,8 @@ public class DashboardRepository
             .Where(x => x.IsActive && !x.IsDeleted)
             .ToListAsync();
     }
+
+    
     public async Task<List<EmployeeDailyAttendanceDto>> GetTodayPresentEmployeesAsync()
     {
         var today = DateTime.Now.Date;
@@ -129,5 +131,75 @@ public class DashboardRepository
         }
 
         return employee;
+    }
+
+    public async Task<List<EmployeeDailyAttendanceDto>> GetTodayLeaveEmployeesAsync()
+    {
+        var today = DateTime.Now.Date;
+
+        var allEmployees = await _employeeRepository.Query()
+            .Where(e => e.IsActive && !e.IsDeleted)
+            .ToListAsync();
+
+        var todaysAttendances = await _attendanceRepository.Query()
+            .Where(a => a.IsActive && !a.IsDeleted && a.Date == today)
+            .Include(a => a.Employee)
+            .ToListAsync();
+
+        var presentEmployeeIds = todaysAttendances
+            .Where(a => a.IsActive && !a.IsDeleted &&
+                        (a.ClockIn != null || a.ClockOut != null))
+            .Select(a => a.EmployeeId)
+            .Distinct()
+            .ToHashSet();
+
+        var leaveEmployees = todaysAttendances
+            .Where(a => !presentEmployeeIds.Contains(a.EmployeeId))
+            .GroupBy(a => a.EmployeeId)
+            .Select(g =>
+            {
+                var att = g.First();
+                return new EmployeeDailyAttendanceDto
+                {
+                    Date = today,
+                    EmployeeId = att.EmployeeId,
+                    EmployeeNumber = att.Employee?.EmployeeNumber ?? string.Empty,
+                    EmployeeName = att.Employee != null
+                        ? $"{att.Employee.FirstName} {att.Employee.LastName}".Trim()
+                        : "Unknown",
+                    ClockIn = att.ClockIn?.TimeOfDay,
+                    ClockOut = att.ClockOut?.TimeOfDay,
+                    WorkingHours = att.TotalHours ?? TimeSpan.Zero,
+                    TotalHours = att.TotalHours ?? TimeSpan.Zero,
+                    Status = att.StatusId.ToString(),
+                    Note = string.IsNullOrWhiteSpace(att.Notes) ? null : att.Notes
+                };
+            })
+            .ToList();
+
+        var recordedEmployeeIds = todaysAttendances.Select(a => a.EmployeeId).Distinct().ToHashSet();
+        var absentEmployees = allEmployees
+            .Where(e => !presentEmployeeIds.Contains(e.Id) &&
+                        !todaysAttendances.Any(a => a.EmployeeId == e.Id))
+            .Select(e => new EmployeeDailyAttendanceDto
+            {
+                Date = today,
+                EmployeeId = e.Id,
+                EmployeeNumber = e.EmployeeNumber,
+                EmployeeName = $"{e.FirstName} {e.LastName}".Trim(),
+                ClockIn = null,
+                ClockOut = null,
+                WorkingHours = TimeSpan.Zero,
+                TotalHours = TimeSpan.Zero,
+                Status = "Absent",
+                Note = null
+            })
+            .ToList();
+
+        var result = new List<EmployeeDailyAttendanceDto>(leaveEmployees.Count + absentEmployees.Count);
+        result.AddRange(leaveEmployees);
+        result.AddRange(absentEmployees);
+
+        return result;
     }
 }

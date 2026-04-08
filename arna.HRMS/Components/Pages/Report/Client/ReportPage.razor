@@ -342,6 +342,7 @@ else
     {
         try
         {
+            await base.OnInitializedAsync();
             isLoading = true;
             StateHasChanged();
 

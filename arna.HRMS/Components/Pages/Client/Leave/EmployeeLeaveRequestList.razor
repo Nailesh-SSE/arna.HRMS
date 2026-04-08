@@ -107,6 +107,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        await base.OnInitializedAsync();
         if (firstRender && !_loaded)
         {
             _loaded = true;

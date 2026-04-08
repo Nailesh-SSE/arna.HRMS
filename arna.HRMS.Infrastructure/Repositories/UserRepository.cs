@@ -18,7 +18,7 @@ public class UserRepository
     public async Task<List<User>> GetUsersAsync()
     {
         return await _baseRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .Where(x => !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.Role)
             .OrderByDescending(x => x.Id)
@@ -28,7 +28,7 @@ public class UserRepository
     public async Task<User?> GetUserByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(x => x.Id == id && x.IsActive && !x.IsDeleted)
+            .Where(x => x.Id == id && !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.Role)
             .FirstOrDefaultAsync();
@@ -49,7 +49,6 @@ public class UserRepository
         var user = await _baseRepository.Query()
             .FirstOrDefaultAsync(x =>
                 x.Id == id &&
-                x.IsActive &&
                 !x.IsDeleted);
 
         if (user == null)
@@ -73,7 +72,7 @@ public class UserRepository
         phoneNumber = phoneNumber?.Trim();
 
         return await _baseRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .Where(x => !x.IsDeleted)
             .AnyAsync(x =>
                 x.Id != id &&
                 (
@@ -133,7 +132,6 @@ public class UserRepository
     {
         return await _baseRepository.Query()
             .Where(u => u.EmployeeId == employeeId
-                        && u.IsActive
                         && !u.IsDeleted)
             .FirstOrDefaultAsync();
     }

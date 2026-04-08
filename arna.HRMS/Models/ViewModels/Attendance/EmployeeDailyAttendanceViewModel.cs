@@ -13,4 +13,5 @@ public class EmployeeDailyAttendanceViewModel
     public TimeSpan BreakDuration => TimeSpan.FromSeconds(Breaks.Sum(b => b.Duration.TotalSeconds));
     public TimeSpan TotalHours { get; set; }
     public string? Status { get; set; }
+    public string? Note { get; set; }
 }

@@ -126,6 +126,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         await LoadEmployees();
         await LoadRequests();
     }
@@ -222,6 +223,13 @@
 
     private async Task UpdateStatus(LeaveRequestViewModel req, Status newStatus)
     {
+        // Ensure component is fully initialized before proceeding
+        if (!IsInitialized)
+        {
+            await NotificationService.Error("Component is not fully initialized. Please refresh and try again.");
+            return;
+        }
+
         bool confirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm", $"Are you sure you want to {newStatus} this leave request?");
         if (!confirmed) return;

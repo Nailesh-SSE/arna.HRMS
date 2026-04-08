@@ -35,7 +35,9 @@
                      BgClass="bg-success bg-opacity-10"
                      TextClass="text-success"
                      Label="On Leave Today"
-                     Count="@onLeaveToday" />
+                     Count="@onLeaveToday" 
+                     OnClick="() => showLeaveModal = true"
+                     CardClass="cursor-pointer" />
 
         <AppStatCard Icon="bi-hourglass-split"
                      BgClass="bg-warning bg-opacity-25"
@@ -211,6 +213,7 @@
     </div>
 
 </div>
+
 @if (showPresentModal)
 {
     <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4);">
@@ -223,6 +226,19 @@
                         Present Employees Today
                         <span class="badge bg-primary rounded-pill ms-2">@PresentEmployees</span>
                     </h6>
+                    <div class="d-flex justify-content-end gap-3 px-3 py-2 border-bottom">
+
+                        <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                            <i class="bi bi-clock me-1"></i>
+                            Avg Work: @AvgWorkingHours hrs
+                        </div>
+
+                        <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                            <i class="bi bi-cup-hot me-1"></i>
+                            Avg Break: @AvgBreakHours hrs
+                        </div>
+
+                    </div>
                     <button type="button" class="btn-close"
                             @onclick="() => showPresentModal = false" />
                 </div>
@@ -256,6 +272,54 @@
     </div>
 }
 
+@if (showLeaveModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+
+                <!-- HEADER -->
+                <div class="modal-header border-bottom py-3 bg-success bg-opacity-10">
+                    <h6 class="modal-title fw-semibold mb-0 text-success">
+                        <i class="bi bi-calendar-check-fill text-success me-2"></i>
+                        On Leave Today
+                        <span class="badge bg-success rounded-pill ms-2">@onLeaveToday</span>
+                    </h6>
+
+                    <button type="button" class="btn-close"
+                            @onclick="() => showLeaveModal = false" />
+                </div>
+
+                <!-- BODY -->
+                <div class="modal-body p-lg-2">
+
+                    @if (EmployeeLeave != null && EmployeeLeave.Any())
+                    {
+                        <AppTable TItem="EmployeeDailyAttendanceViewModel"
+                                  Items="EmployeeLeave"
+                                  Columns="TableSchemas.LeaveEmployee"
+                                  ShowActions="false" />
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="empty-icon mb-2 text-success fs-2">
+                                <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <div class="fw-semibold text-success">No Employees on Leave</div>
+                            <small class="text-muted">
+                                All employees are present today
+                            </small>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
 @code {
 
     [Parameter] public string UserFullName { get; set; } = "";
@@ -266,6 +330,7 @@
     private DashboardViewModel? _dashboard;
 
     private bool showPresentModal = false;
+    private bool showLeaveModal = false;
 
     private List<LeaveTypeViewModel> leaveTypes = new();
     private Dictionary<int, string> leaveTypeNames = new();
@@ -274,6 +339,7 @@
     private List<LeaveRequestViewModel> recentApproved = new();
     private List<LeaveRequestViewModel> recentRejected = new();
     private List<EmployeeDailyAttendanceViewModel> EmployeePresent = new();
+    private List<EmployeeDailyAttendanceViewModel> EmployeeLeave = new();
 
     private List<AttendanceRequestViewModel> allAttendanceRequest = new();
     private List<AttendanceRequestViewModel> pendingAttendanceRequests = new();
@@ -289,6 +355,8 @@
     private int rejectedTotal;
     private int cancelledTotal;
     private int AttendancePendingCount;
+    private int AvgWorkingHours;
+    private int AvgBreakHours;
 
     // ── Overview ──
     private record OverviewItem(string Label, int Count, string DotClass, string BarClass);
@@ -312,9 +380,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         SetGreeting();
         await LoadDashboard();
-        ProcessDashboardData();
+        await ProcessDashboardData();
         BuildOverview();
     }
 
@@ -365,12 +434,15 @@
         onLeaveToday = _dashboard.AbsentEmployee;
 
         EmployeePresent = _dashboard.Attendance;
+        EmployeeLeave = _dashboard.LeaveEmployees;
 
         AttendancePendingCount = _dashboard.AttendancePendingRequests;
         pendingCount = _dashboard.LeavePendingRequests;
         approvedTotal = _dashboard.LeaveApprovedRequests;
         rejectedTotal = _dashboard.LeaveRejectedRequests;
         cancelledTotal = _dashboard.LeaveCancledRequests;
+        AvgWorkingHours = _dashboard.AvgWorkingHours;
+        AvgBreakHours = _dashboard.AvgBreakHours;
 
         approvedThisMonth = allLeaveRequests.Count(r =>
             r.StatusId == Status.Approved &&
