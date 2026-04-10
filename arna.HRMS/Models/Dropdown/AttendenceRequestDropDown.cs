@@ -6,10 +6,10 @@ public static class AttendenceRequestDropDown
 {
     public static List<SelectOption> ReasonOption => new()
     {
-        new SelectOption { Value = "1", Text = "Forgot To ClockOut" },
-        new SelectOption { Value = "2", Text = "Forgot To ClockIn" },
-        new SelectOption { Value = "3", Text = "Early ClockOut" },
-        new SelectOption { Value = "4", Text = "Late ClockIn" },
+        new SelectOption { Value = "1", Text = "Forgot To ClockIn" },
+        new SelectOption { Value = "2", Text = "Forgot To ClockOut" },
+        new SelectOption { Value = "3", Text = "Late ClockIn" },
+        new SelectOption { Value = "4", Text = "Early ClockOut" },
         new SelectOption { Value = "5", Text = "Client Visit" },
         new SelectOption { Value = "6", Text = "Work From Home" },
         new SelectOption { Value = "7", Text = "Technical Issue" },
