@@ -15,8 +15,8 @@ public interface IAttendanceRequestService
     Task<ApiResult<AttendanceRequestViewModel>> CreateAttendanceRequestAsync(AttendanceRequestViewModel model);
     Task<ApiResult<bool>> UpdateAttendanceRequestAsync(AttendanceRequestViewModel model);
     Task<ApiResult<bool>> DeleteAttendanceRequestAsync(int id);
-    Task<ApiResult<bool>> UpdateRequestStatusAsync(int id, Status status);
-    Task<ApiResult<bool>> CancelRequestAsync(int id);
+    Task<ApiResult<bool>> UpdateRequestStatusAsync(int id, Status status, int Empid);
+    Task<ApiResult<bool>> CancelRequestAsync(int id, int empId);
 }
 
 public class AttendanceRequestService : IAttendanceRequestService
@@ -68,13 +68,13 @@ public class AttendanceRequestService : IAttendanceRequestService
         return await _attendanceRequest.DeleteAsync(id);
     }
 
-    public async Task<ApiResult<bool>> UpdateRequestStatusAsync(int id, Status status)
+    public async Task<ApiResult<bool>> UpdateRequestStatusAsync(int id, Status status, int EmpId)
     {
-        return await _attendanceRequest.UpdateStatusAsync(id, status);
+        return await _attendanceRequest.UpdateStatusAsync(id, status, EmpId);
     }
 
-    public async Task<ApiResult<bool>> CancelRequestAsync(int id)
+    public async Task<ApiResult<bool>> CancelRequestAsync(int id, int empId)
     {
-        return await _attendanceRequest.CancelRequestAsync(id); 
+        return await _attendanceRequest.CancelRequestAsync(id, empId); 
     }
 }

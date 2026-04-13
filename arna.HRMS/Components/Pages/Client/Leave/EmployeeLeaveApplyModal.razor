@@ -128,8 +128,9 @@
 
     private bool IsEditMode => SelectedRequest != null;
 
-    protected override void OnParametersSet()
+    protected async override void OnParametersSet()
     {
+        await base.OnInitializedAsync();
         if (ShowModal == false)
             return;
 

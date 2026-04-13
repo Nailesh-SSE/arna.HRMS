@@ -12,6 +12,7 @@
         <!-- popup -->
         <div class="myp-panel" @onclick:stopPropagation="true">
 
+            <!-- HEADER -->
             <div class="myp-header">
                 <button type="button" class="nav-btn" @onclick="PrevYear">‹</button>
                 <span class="year-text">@CurrentYear</span>
@@ -20,10 +21,12 @@
 
             <div class="myp-divider"></div>
 
+            <!-- MONTH GRID -->
             <div class="myp-grid">
                 @for (int i = 1; i <= 12; i++)
                 {
                     var monthIndex = i;
+
                     <button type="button"
                             class="myp-month @(monthIndex == SelectedMonth ? "active" : "")"
                             @onclick="() => OnMonthClick(monthIndex)">
@@ -36,10 +39,12 @@
 </div>
 
 @code {
+    // ═══════════ PARAMETERS ═══════════
     [Parameter] public int Year { get; set; }
     [Parameter] public int Month { get; set; }
     [Parameter] public EventCallback<(int year, int month)> OnChange { get; set; }
 
+    // ═══════════ STATE ═══════════
     private bool IsOpen;
     private int CurrentYear;
     private int SelectedMonth;
@@ -50,6 +55,7 @@
         "July","August","September","October","November","December"
     };
 
+    // ═══════════ LIFECYCLE ═══════════
     protected override void OnParametersSet()
     {
         var newYear = Year > 0 ? Year : DateTime.Now.Year;
@@ -59,14 +65,28 @@
         SelectedMonth = newMonth;
     }
 
+    // ═══════════ DISPLAY ═══════════
     private string DisplayText =>
         SelectedMonth is >= 1 and <= 12 && CurrentYear > 0
             ? $"{MonthNames[SelectedMonth - 1]} {CurrentYear}"
             : "Select Month";
 
+    // ═══════════ UI HANDLERS ═══════════
     private void Toggle() => IsOpen = !IsOpen;
-    private void PrevYear() => CurrentYear--;
-    private void NextYear() => CurrentYear++;
+
+    private async Task PrevYear()
+    {
+        CurrentYear--;
+
+        await NotifyChange();
+    }
+
+    private async Task NextYear()
+    {
+        CurrentYear++;
+
+        await NotifyChange();
+    }
 
     private async Task OnMonthClick(int month)
     {
@@ -75,8 +95,13 @@
 
         SelectedMonth = month;
 
-        await OnChange.InvokeAsync((CurrentYear, month));
+        await NotifyChange();
 
-        IsOpen = false;
+        IsOpen = false; 
+    }
+
+    private async Task NotifyChange()
+    {
+        await OnChange.InvokeAsync((CurrentYear, SelectedMonth));
     }
 }

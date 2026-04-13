@@ -6,6 +6,7 @@
 @using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Dashboard
 @using arna.HRMS.Services.Common
 
@@ -15,6 +16,8 @@
 @inject IDashboardService DashboardService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
+@inherits AuthenticatedLayoutBase 
+
 
 <div class="container-fluid px-3 px-md-4 py-3 dash-fade-in">
 
@@ -23,34 +26,36 @@
         <AppStatCard Icon="bi-people-fill"
                      BgClass="bg-primary bg-opacity-10"
                      TextClass="text-primary"
-                     Label="Total Employees"
-                     Count="@totalEmployees" />
+                     Label="Present Today"
+                     Count="@PresentEmployees"
+                     OnClick="() => showPresentModal = true"
+                     CardClass="cursor-pointer" />
 
         <AppStatCard Icon="bi-calendar-check-fill"
                      BgClass="bg-success bg-opacity-10"
                      TextClass="text-success"
                      Label="On Leave Today"
-                     Count="@onLeaveToday" />
+                     Count="@onLeaveToday" 
+                     OnClick="() => showLeaveModal = true"
+                     CardClass="cursor-pointer" />
 
         <AppStatCard Icon="bi-hourglass-split"
                      BgClass="bg-warning bg-opacity-25"
                      TextClass="text-warning"
-                     Label="Pending Requests"
+                     Label="Leave Pending Requests"
                      Count="@pendingCount" />
 
-        <AppStatCard Icon="bi-check2-all"
-                     BgClass="bg-info bg-opacity-10"
-                     TextClass="text-info"
-                     Label="Approved (Month)"
-                     Count="@approvedThisMonth" />
+        <AppStatCard Icon="bi-hourglass-split"
+                     BgClass="bg-warning bg-opacity-25"
+                     TextClass="text-warning"
+                     Label="Attendance Pending Requests"
+                     Count="@AttendancePendingCount" />
 
     </div>
 
     <!-- ══════════ PENDING + OVERVIEW ══════════ -->
     <div class="row g-4 mb-4">
 
-        <!-- Pending Leave Requests (AppTable) -->
-        <!-- Pending Leave Requests (AppTable) -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-3 h-100">
 
@@ -85,7 +90,7 @@
                     }
                     else
                     {
-                        <a href="/admin-attendance-management"
+                        <a href="/admin-attendance-requests"
                            class="btn btn-sm btn-outline-primary rounded-pill">
                             View All <i class="bi bi-arrow-right ms-1"></i>
                         </a>
@@ -209,6 +214,112 @@
 
 </div>
 
+@if (showPresentModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+
+                <div class="modal-header border-bottom py-3">
+                    <h6 class="modal-title fw-semibold mb-0">
+                        <i class="bi bi-people-fill text-primary me-2"></i>
+                        Present Employees Today
+                        <span class="badge bg-primary rounded-pill ms-2">@PresentEmployees</span>
+                    </h6>
+                    <div class="d-flex justify-content-end gap-3 px-3 py-2 border-bottom">
+
+                        <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                            <i class="bi bi-clock me-1"></i>
+                            Avg Work: @AvgWorkingHours hrs
+                        </div>
+
+                        <div class="badge bg-primary bg-opacity-10 text-primary px-3 py-2">
+                            <i class="bi bi-cup-hot me-1"></i>
+                            Avg Break: @AvgBreakHours hrs
+                        </div>
+
+                    </div>
+                    <button type="button" class="btn-close"
+                            @onclick="() => showPresentModal = false" />
+                </div>
+
+                <div class="modal-body p-lg-2">
+
+                    @if (EmployeePresent != null && EmployeePresent.Any())
+                    {
+                        <AppTable TItem="EmployeeDailyAttendanceViewModel"
+                                  Items="EmployeePresent"
+                                  Columns="TableSchemas.PresentEmployee"
+                                  ShowActions="false" />
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="empty-icon mb-2">
+                                <i class="bi bi-people"></i>
+                            </div>
+                            <div class="fw-semibold">No Employees Found</div>
+                            <small class="text-muted">
+                                No one has clocked in today
+                            </small>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@if (showLeaveModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.4);">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+
+                <!-- HEADER -->
+                <div class="modal-header border-bottom py-3 bg-success bg-opacity-10">
+                    <h6 class="modal-title fw-semibold mb-0 text-success">
+                        <i class="bi bi-calendar-check-fill text-success me-2"></i>
+                        On Leave Today
+                        <span class="badge bg-success rounded-pill ms-2">@onLeaveToday</span>
+                    </h6>
+
+                    <button type="button" class="btn-close"
+                            @onclick="() => showLeaveModal = false" />
+                </div>
+
+                <!-- BODY -->
+                <div class="modal-body p-lg-2">
+
+                    @if (EmployeeLeave != null && EmployeeLeave.Any())
+                    {
+                        <AppTable TItem="EmployeeDailyAttendanceViewModel"
+                                  Items="EmployeeLeave"
+                                  Columns="TableSchemas.LeaveEmployee"
+                                  ShowActions="false" />
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="empty-icon mb-2 text-success fs-2">
+                                <i class="bi bi-calendar-check"></i>
+                            </div>
+                            <div class="fw-semibold text-success">No Employees on Leave</div>
+                            <small class="text-muted">
+                                All employees are present today
+                            </small>
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
 @code {
 
     [Parameter] public string UserFullName { get; set; } = "";
@@ -218,10 +329,17 @@
     // ── Dashboard Data ──
     private DashboardViewModel? _dashboard;
 
+    private bool showPresentModal = false;
+    private bool showLeaveModal = false;
+
     private List<LeaveTypeViewModel> leaveTypes = new();
     private Dictionary<int, string> leaveTypeNames = new();
     private List<LeaveRequestViewModel> allLeaveRequests = new();
     private List<LeaveRequestViewModel> pendingLeaveRequests = new();
+    private List<LeaveRequestViewModel> recentApproved = new();
+    private List<LeaveRequestViewModel> recentRejected = new();
+    private List<EmployeeDailyAttendanceViewModel> EmployeePresent = new();
+    private List<EmployeeDailyAttendanceViewModel> EmployeeLeave = new();
 
     private List<AttendanceRequestViewModel> allAttendanceRequest = new();
     private List<AttendanceRequestViewModel> pendingAttendanceRequests = new();
@@ -229,13 +347,16 @@
     private void SetTab(string tab) => activeTab = tab;
 
     // ── Stats ──
-    private int totalEmployees;
+    private int PresentEmployees;
     private int onLeaveToday;
     private int pendingCount;
     private int approvedThisMonth;
     private int approvedTotal;
     private int rejectedTotal;
     private int cancelledTotal;
+    private int AttendancePendingCount;
+    private int AvgWorkingHours;
+    private int AvgBreakHours;
 
     // ── Overview ──
     private record OverviewItem(string Label, int Count, string DotClass, string BarClass);
@@ -250,6 +371,7 @@
         new("Departments", "bi bi-building",       "/department", "bg-success bg-opacity-10",   "text-success"),
         new("Leave Types", "bi bi-calendar-range", "/admin-leave-management", "bg-warning bg-opacity-25", "text-warning"),
         new("Attendance",  "bi bi-clipboard-data", "/admin-attendance-management", "bg-info bg-opacity-10",      "text-info"),
+        new("AttendanceRequest",  "bi bi-calendar-check", "/admin-attendance-requests", "bg-info bg-opacity-10",      "text-info"),
         new("Roles",       "bi bi-shield-lock",    "/role",       "bg-danger bg-opacity-10",    "text-danger"),
         new("Users",       "bi bi-person-gear",    "/user",       "bg-secondary bg-opacity-10", "text-secondary"),
         new("Report",       "bi bi-clipboard-data",    "/admin-report-management",       "bg-secondary bg-opacity-10", "text-secondary"),
@@ -258,9 +380,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         SetGreeting();
         await LoadDashboard();
-        ProcessDashboardData();
+        await ProcessDashboardData();
         BuildOverview();
     }
 
@@ -289,12 +412,12 @@
             leaveTypes = new();
             leaveTypeNames = new();
             allLeaveRequests = new();
-            totalEmployees = 0;
+            PresentEmployees = 0;
             return;
         }
 
         // Employees
-        totalEmployees = _dashboard.TotalEmployees;
+        PresentEmployees = _dashboard.PresentEmployee;
 
         // Leave Types
         leaveTypes = _dashboard.LeaveTypes ?? new();
@@ -308,15 +431,18 @@
         var today = DateTime.Today;
         var monthStart = new DateTime(today.Year, today.Month, 1);
 
-        onLeaveToday = allLeaveRequests.Count(r =>
-            r.StatusId == Status.Approved &&
-            today >= r.StartDate.Date &&
-            today <= r.EndDate.Date);
+        onLeaveToday = _dashboard.AbsentEmployee;
 
-        pendingCount = _dashboard.PendingRequests;
-        approvedTotal = _dashboard.ApprovedRequests;
-        rejectedTotal = _dashboard.RejectedRequests;
-        cancelledTotal = _dashboard.CancledRequests;
+        EmployeePresent = _dashboard.Attendance;
+        EmployeeLeave = _dashboard.LeaveEmployees;
+
+        AttendancePendingCount = _dashboard.AttendancePendingRequests;
+        pendingCount = _dashboard.LeavePendingRequests;
+        approvedTotal = _dashboard.LeaveApprovedRequests;
+        rejectedTotal = _dashboard.LeaveRejectedRequests;
+        cancelledTotal = _dashboard.LeaveCancledRequests;
+        AvgWorkingHours = _dashboard.AvgWorkingHours;
+        AvgBreakHours = _dashboard.AvgBreakHours;
 
         approvedThisMonth = allLeaveRequests.Count(r =>
             r.StatusId == Status.Approved &&
@@ -337,22 +463,26 @@
         overviewItems = new()
         {
             new("Approved",  approvedTotal,  "bg-success",   "bg-success"),
-            new("Pending",   pendingCount,   "bg-warning",   "bg-warning"),
+            new("Leave Pending Request",   pendingCount,   "bg-warning",   "bg-warning"),
+            new("Attendance Pending Request",   AttendancePendingCount,   "bg-warning",   "bg-warning"),
             new("Rejected",  rejectedTotal,  "bg-danger",    "bg-danger"),
             new("Cancelled", cancelledTotal, "bg-secondary", "bg-secondary"),
         };
     }
-
-    // ═══════════════════════════════════════════════
-    // ACTIONS
-    // ═══════════════════════════════════════════════
 
     private async Task ApproveLeave(LeaveRequestViewModel req)
     {
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Approve this leave request?"))
             return;
 
-        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Approved);
+        var empId = GetEmployeeId();
+        if (empId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Approved, empId);
 
         if (res?.IsSuccess == true)
         {
@@ -373,7 +503,14 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Reject this leave request?"))
             return;
 
-        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Rejected);
+        var empId = GetEmployeeId();
+        if (empId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await LeaveService.UpdateLeaveStatusAsync(req.Id, Status.Rejected, empId);
 
         if (res?.IsSuccess == true)
         {
@@ -393,7 +530,14 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Approve this attendance request?"))
             return;
 
-        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Approved);
+        var employeeId = GetEmployeeId();
+        if (employeeId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Approved, employeeId);
         if (res?.IsSuccess == true)
         {
             await NotificationService.Success("Attendance approved successfully.");
@@ -412,7 +556,14 @@
         if (!await JsRuntime.InvokeAsync<bool>("confirm", "Reject this attendance request?"))
             return;
 
-        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Rejected);
+        var employeeId = GetEmployeeId();
+        if (employeeId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var res = await AttendanceRequestService.UpdateRequestStatusAsync(req.Id, Status.Rejected, employeeId);
 
         if (res?.IsSuccess == true)
         {

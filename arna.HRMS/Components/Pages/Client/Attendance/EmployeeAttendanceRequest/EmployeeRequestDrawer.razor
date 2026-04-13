@@ -138,8 +138,9 @@
     private bool isVisible;
     private bool isClosing;
 
-    protected override void OnParametersSet()
+    protected async override void OnParametersSet()
     {
+        await base.OnInitializedAsync();
         // Initialize EditContext if null
         if (editContext == null || editContext.Model != request)
             editContext = new EditContext(request);

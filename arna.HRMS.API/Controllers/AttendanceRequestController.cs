@@ -59,7 +59,7 @@ public class AttendanceRequestController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    [HttpDelete("{id:int}")]
+    [HttpPost("{id:int}/delete")]
     public async Task<IActionResult> DeleteAsync(int id)
     {
         var result = await _service.DeleteAttendanceRequestAsync(id);
@@ -68,35 +68,26 @@ public class AttendanceRequestController : ControllerBase
     }
 
     [HttpPost("{id:int}/cancel")]
-    public async Task<IActionResult> CancelAsync(int id)
+    public async Task<IActionResult> CancelAsync(int id, [FromQuery] int employeeId)
     {
-        if (!TryGetEmployeeId(out var employeeId))
-            return Unauthorized("Invalid EmployeeId claim.");
-
         var result = await _service.CancelAttendanceRequestAsync(id, employeeId);
 
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
     [HttpPost("{id:int}/status")]
-    [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> UpdateStatusAsync(int id, [FromQuery] Status status)
+    public async Task<IActionResult> UpdateStatusAsync(
+    int id,
+    [FromQuery] Status status,
+    [FromQuery] int approvedBy)
     {
         if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status.");
-
-        if (!TryGetEmployeeId(out var approvedBy))
-            return Unauthorized("Invalid EmployeeId claim.");
 
         var result = await _service.UpdateAttendanceRequestStatusAsync(id, status, approvedBy);
 
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    private bool TryGetEmployeeId(out int employeeId)
-    {
-        employeeId = 0;
-        var claim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
-        return int.TryParse(claim, out employeeId);
-    }
+    
 }

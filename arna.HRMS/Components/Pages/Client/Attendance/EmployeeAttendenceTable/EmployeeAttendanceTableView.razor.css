@@ -1,4 +1,212 @@
-﻿/* ─── Empty State ─── */
+﻿/* ─────────────────────────────────────
+   GLOBAL OVERFLOW FIX (IMPORTANT)
+───────────────────────────────────── */
+
+/* Allow tooltip to escape all containers */
+.card,
+.card-body,
+.app-table-wrapper,
+.att-table-scroll,
+.att-list-table {
+    overflow-y: visible !important;
+}
+
+/* Keep horizontal scroll where needed */
+.app-table-wrapper,
+.att-table-scroll,
+.att-list-table {
+    overflow-x: auto;
+}
+
+
+/* ─────────────────────────────────────
+   TABLE WRAPPER
+───────────────────────────────────── */
+
+.app-table-wrapper {
+    white-space: nowrap;
+    max-height: 420px;
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 transparent;
+}
+
+    .app-table-wrapper::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+    }
+
+    .app-table-wrapper::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .app-table-wrapper::-webkit-scrollbar-thumb {
+        background-color: #dee2e6;
+        border-radius: 10px;
+    }
+
+
+/* ─────────────────────────────────────
+   TABLE LAYOUT
+───────────────────────────────────── */
+
+.custom-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.sticky-th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bs-light, #f8f9fa) !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+.custom-td {
+    font-size: 15px;
+}
+
+
+/* ─────────────────────────────────────
+   PAGINATION
+───────────────────────────────────── */
+
+::deep .pagination .page-link {
+    border: none;
+    color: #6c757d;
+    padding: 4px 10px;
+    font-size: .85rem;
+}
+
+::deep .pagination .page-item.active .page-link {
+    background: #4e73df;
+    color: #fff;
+    border-radius: 6px;
+}
+
+::deep .pagination .page-link:hover {
+    background: #e9ecef;
+    border-radius: 6px;
+}
+
+
+/* ══════════════════════════════════════
+   TOOLTIP (BREAK DURATION)
+══════════════════════════════════════ */
+
+/* Host */
+.att-tip-host {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Trigger */
+.att-tip-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: default;
+}
+
+/* Icon */
+.att-tip-icon {
+    font-size: 0.7rem;
+    color: #6c757d;
+    opacity: 0.5;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.att-tip-host:hover .att-tip-icon {
+    opacity: 1;
+    color: #4e73df;
+}
+
+/* Tooltip box */
+.att-tip-box {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e2a3a;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-width: 220px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+    z-index: 999999;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+    /* Arrow */
+    .att-tip-box::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: #1e2a3a;
+    }
+
+/* Show */
+.att-tip-host:hover .att-tip-box {
+    display: block;
+}
+
+
+/* Tooltip content */
+
+.att-tip-header {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #94a3b8;
+    font-weight: 700;
+    margin-bottom: 7px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.att-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+    .att-tip-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+.att-tip-label {
+    color: #94a3b8;
+    font-size: 0.72rem;
+    min-width: 50px;
+}
+
+.att-tip-range {
+    flex: 1;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #f1f5f9;
+}
+
+.att-tip-dur {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+
+/* ─────────────────────────────────────
+   EMPTY STATE
+───────────────────────────────────── */
+
 .att-table-empty-icon {
     width: 64px;
     height: 64px;
@@ -8,13 +216,11 @@
     max-width: 300px;
 }
 
-/* ─── Scrollable Area ─── */
-.att-table-scroll {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
 
-/* ─── Row Highlights ─── */
+/* ─────────────────────────────────────
+   ROW HIGHLIGHTS
+───────────────────────────────────── */
+
 ::deep .att-table-weekend {
     background-color: rgba(var(--bs-secondary-rgb), 0.05) !important;
 }
@@ -30,8 +236,14 @@
 ::deep .att-table-holiday {
     background-color: rgba(var(--bs-info-rgb), 0.05) !important;
 }
+::deep .att-table-weekend td {
+    background: repeating-linear-gradient( 135deg, #e5e7eb, #e5e7eb 6px, #d1d5db 6px, #d1d5db 7px );
+}
 
-/* ─── Mobile ─── */
+/* ─────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────── */
+
 @media (max-width: 575.98px) {
     .att-table-empty-icon {
         width: 52px;
@@ -39,20 +251,18 @@
     }
 
     .att-table-scroll {
-        max-height: 55vh;
+        max-height: none; /* prevent clipping */
     }
 }
 
-/* ─── Tablet ─── */
 @media (min-width: 576px) and (max-width: 991.98px) {
     .att-table-scroll {
-        max-height: 60vh;
+        max-height: none;
     }
 }
 
-/* ─── Desktop ─── */
 @media (min-width: 992px) {
     .att-table-scroll {
-        max-height: 65vh;
+        max-height: none;
     }
 }

@@ -1,6 +1,5 @@
 ﻿using arna.HRMS.Models.ViewModels.Auth;
 using arna.HRMS.Services.Http;
-using Microsoft.Extensions.Logging;
 
 namespace arna.HRMS.Services.Auth;
 
@@ -23,27 +22,27 @@ public sealed class AuthService : IAuthService
 
     public async Task<bool> LoginAsync(LoginViewModel request)
     {
-            var result = await _authApi.LoginAsync(request);
+        var result = await _authApi.LoginAsync(request);
 
-            if (!result.IsSuccess || result.Data is null)
-                return false;
+        if (!result.IsSuccess || result.Data is null)
+            return false;
 
         if (string.IsNullOrWhiteSpace(result.Data.AccessToken) || string.IsNullOrWhiteSpace(result.Data.RefreshToken))
-                return false;
+            return false;
 
-            await _authStateProvider.LoginAsync(
-                result.Data.UserId,
-                result.Data.AccessToken,
-                result.Data.RefreshToken);
+        await _authStateProvider.LoginAsync(
+            result.Data.UserId,
+            result.Data.AccessToken,
+            result.Data.RefreshToken,
+            result.Data.EmployeeId);
 
-            return true;
-        }
+        return true;
+    }
 
     public async Task<bool> LogoutAsync(int userId)
     {
         try
         {
-
             if (userId <= 0)
             {
                 return false;
@@ -51,14 +50,15 @@ public sealed class AuthService : IAuthService
 
             try
             {
-                var result = await _authApi.LogoutAsync(userId);
-                
+                await _authApi.LogoutAsync(userId);
             }
             catch (Exception ex)
-            {            }
+            {
+                // Log but continue with logout
+            }
 
             await _authStateProvider.LogoutAsync();
-            
+
             return true;
         }
         catch (Exception ex)

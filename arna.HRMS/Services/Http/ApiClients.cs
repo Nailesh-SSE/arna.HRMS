@@ -106,7 +106,7 @@ public sealed class ApiClients
 
         public async Task<ApiResult<bool>> DeleteAsync(int id)
         {
-            return await Http.DeleteAsync<bool>($"{Url}/{id}");
+            return await Http.PostAsync<bool>($"{Url}/{id}/delete", new { });
         }
     }
 
@@ -302,14 +302,18 @@ public sealed class ApiClients
             return await Filter(empId, status);
         }
 
-        public async Task<ApiResult<bool>> UpdateStatusAsync(int id, Status status)
+        public async Task<ApiResult<bool>> UpdateStatusAsync(int id, Status status, int empId)
         {
-            return await Http.PostAsync<bool>($"{Url}/{id}/status?status={status}", new { });
+            return await Http.PostAsync<bool>(
+                $"{Url}/{id}/status?status={status}&approvedBy={empId}",
+                new { });
         }
 
-        public async Task<ApiResult<bool>> CancelRequestAsync(int id)
+        public async Task<ApiResult<bool>> CancelRequestAsync(int id, int empId)
         {
-            return await Http.PostAsync<bool>($"{Url}/{id}/cancel", new { }); 
+            return await Http.PostAsync<bool>(
+                $"{Url}/{id}/cancel?employeeId={empId}",
+                new { });
         }
     }
 
@@ -338,9 +342,11 @@ public sealed class ApiClients
             public CrudApi(HttpService http, string url) : base(http, url) { }
         }
 
-        public async Task<ApiResult<bool>> UpdateStatusAsync(int id, Status status)
+        public async Task<ApiResult<bool>> UpdateStatusAsync(int id, Status status, int empId)
         {
-            return await _http.PostAsync<bool>($"{BaseUrl}/requests/{id}/status?status={status}", new { });
+            return await _http.PostAsync<bool>(
+                $"{BaseUrl}/requests/{id}/status?status={status}&approvedBy={empId}",
+                new { });
         }
 
         public async Task<ApiResult<List<LeaveRequestViewModel>>> GetByFilterAsync(Status? status, int? empId)

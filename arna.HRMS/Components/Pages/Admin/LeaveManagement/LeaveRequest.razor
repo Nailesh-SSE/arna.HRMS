@@ -6,6 +6,7 @@
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Common
 
 @inject AttendanceState State
@@ -13,6 +14,8 @@
 @inject IEmployeeService EmployeeService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
+@inherits AuthenticatedLayoutBase
+
 
 <!-- TOOLBAR -->
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
@@ -25,41 +28,40 @@
     </div>
 </div>
 
-<!-- STATUS SUMMARY CARDS -->
-<div class="row g-3 mb-4">
-    @foreach (var stat in StatCards)
-    {
-        <AppStatCard Icon="@stat.Icon"
-                     BgClass="@stat.BgClass"
-                     TextClass="@stat.TextClass"
-                     Label="@stat.Label"
-                     Count="@stat.Count"
-                     CardClass="@(statusFilter == stat.Status ? stat.ActiveClass : "")"
-                     OnClick="() => FilterByStatus(stat.Status)" />
-    }
-</div>
 
 <!-- FILTER BAR -->
 <div class="card border-0 shadow-sm rounded-3 mb-3">
     <div class="card-body py-2">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center flex-wrap gap-3">
 
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-funnel text-primary"></i>
-                <span class="fw-medium text-muted small">Filter</span>
-            </div>
+            <!-- Filter Label -->
+            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill
+                                     px-2 px-md-3 py-2">
+                <i class="bi bi-funnel-fill me-0 me-md-1"></i>
+                <span class="d-none d-md-inline">Filters</span>
+            </span>
 
-            <div style="min-width:280px;">
+            <!-- Employee -->
+            <div style="min-width:200px;">
                 <SearchEmployee Employees="Employees"
                                 SelectedValue="@GetEmployeeValue()"
                                 OnChanged="OnEmployeeChanged"
                                 OnNameChanged="OnEmployeeNameChanged" />
             </div>
 
+            <!-- Status Dropdown -->
+            <div style="min-width:200px;">
+                <SearchStatus SelectedValue="statusFilter"
+                              OnChanged="OnStatusChanged" />
+            </div>
+
+            <!-- Spacer pushes button to right -->
+            <div class="flex-grow-1"></div>
+
+            <!-- Clear Button -->
             @if (statusFilter != null || State.SelectedEmployeeId != null)
             {
-                <button class="btn btn-sm btn-outline-secondary rounded-pill"
-                        @onclick="ClearFilters">
+                <button class="btn btn-sm btn-outline-secondary rounded-pill" @onclick="ClearFilters">
                     <i class="bi bi-x-lg me-1"></i> Clear Filters
                 </button>
             }
@@ -124,8 +126,15 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         await LoadEmployees();
         await LoadRequests();
+    }
+
+    private Task OnStatusChanged(Status? status)
+    {
+        statusFilter = status;
+        return Task.CompletedTask;
     }
 
     private async Task LoadEmployees()
@@ -143,45 +152,6 @@
         }
         catch { Employees = new(); }
     }
-
-    private IEnumerable<StatCardModel> StatCards => new[]
-{
-    new StatCardModel(
-        null,
-        "bi-grid-fill",
-        "bg-primary bg-opacity-10",
-        "text-primary",
-        "active-all",
-        allRequests.Count,
-        "All"),
-
-    new StatCardModel(
-        Status.Pending,
-        "bi-hourglass-split",
-        "bg-warning bg-opacity-10",
-        "text-warning",
-        "active-pending",
-        pendingCount,
-        "Pending"),
-
-    new StatCardModel(
-        Status.Approved,
-        "bi-check-circle-fill",
-        "bg-success bg-opacity-10",
-        "text-success",
-        "active-approved",
-        approvedCount,
-        "Approved"),
-
-    new StatCardModel(
-        Status.Rejected,
-        "bi-x-circle-fill",
-        "bg-danger bg-opacity-10",
-        "text-danger",
-        "active-rejected",
-        rejectedCount,
-        "Rejected")
-};
 
     private async Task LoadRequests()
     {
@@ -253,11 +223,25 @@
 
     private async Task UpdateStatus(LeaveRequestViewModel req, Status newStatus)
     {
+        // Ensure component is fully initialized before proceeding
+        if (!IsInitialized)
+        {
+            await NotificationService.Error("Component is not fully initialized. Please refresh and try again.");
+            return;
+        }
+
         bool confirmed = await JsRuntime.InvokeAsync<bool>(
             "confirm", $"Are you sure you want to {newStatus} this leave request?");
         if (!confirmed) return;
 
-        var result = await LeaveService.UpdateLeaveStatusAsync(req.Id, newStatus);
+        var approverEmployeeId = GetEmployeeId();
+        if (approverEmployeeId <= 0)
+        {
+            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+            return;
+        }
+
+        var result = await LeaveService.UpdateLeaveStatusAsync(req.Id, newStatus, approverEmployeeId);
         if (result?.IsSuccess == true)
         {
             req.StatusId = newStatus;

@@ -35,6 +35,17 @@ public class NavigationHelper
             Route = "/attendance",
             AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
         },
+
+        new()
+        {
+            Id = "attendanceRequest",
+            Label = "Attendance Request",
+            Icon = "bi bi-calendar-check",
+            Section = "Main",
+            Route = "/admin-attendance-requests",
+            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager}
+        },
+
         new()
         {
             Id = "leave-management",

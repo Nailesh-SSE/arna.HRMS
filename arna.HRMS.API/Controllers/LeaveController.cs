@@ -2,7 +2,6 @@
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -80,7 +79,7 @@ public class LeaveController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    [HttpDelete("types/{id:int}")]
+    [HttpPost("types/{id:int}/delete")]
     public async Task<IActionResult> DeleteTypeAsync(int id)
     {
         var result = await _service.DeleteLeaveTypeAsync(id);
@@ -149,7 +148,7 @@ public class LeaveController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    [HttpDelete("requests/{id:int}")]
+    [HttpPost("requests/{id:int}/delete")]
     public async Task<IActionResult> DeleteRequestAsync(int id)
     {
         var result = await _service.DeleteLeaveRequestAsync(id);
@@ -158,16 +157,10 @@ public class LeaveController : ControllerBase
     }
 
     [HttpPost("requests/{id:int}/status")]
-    [Authorize(Roles = UserRoleGroups.AdminRoles)]
-    public async Task<IActionResult> UpdateStatusAsync(int id, [FromQuery] Status status)
+    public async Task<IActionResult> UpdateStatusAsync(int id, [FromQuery] Status status, [FromQuery] int approvedBy)
     {
         if (status is not (Status.Approved or Status.Rejected))
             return BadRequest("Invalid status.");
-
-        var employeeIdClaim = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
-
-        if (!int.TryParse(employeeIdClaim, out var approvedBy))
-            return Unauthorized("Invalid EmployeeId claim.");
 
         var result = await _service.UpdateLeaveRequestStatusAsync(id, status, approvedBy);
 

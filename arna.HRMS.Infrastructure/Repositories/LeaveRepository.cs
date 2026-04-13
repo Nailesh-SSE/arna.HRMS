@@ -78,6 +78,8 @@ public class LeaveRepository
         return await _leaveRequestRepository.Query()
             .Where(x => x.IsActive && !x.IsDeleted)
             .Include(x => x.Employee)
+            .Include(x => x.LeaveType)
+            .Include(x => x.ApprovedByEmployee)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
@@ -107,6 +109,7 @@ public class LeaveRepository
             .Where(x => x.Id == id && x.IsActive && !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.LeaveType)
+            .Include(x => x.ApprovedByEmployee)
             .FirstOrDefaultAsync();
     }
 
@@ -120,6 +123,7 @@ public class LeaveRepository
                 x.StatusId != Status.Cancelled)
             .Include(x => x.Employee)
             .Include(x => x.LeaveType)
+            .Include(x => x.ApprovedByEmployee)
             .OrderByDescending(x => x.Id)
             .ToListAsync(); 
     }

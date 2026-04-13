@@ -136,7 +136,7 @@
                         <div>
                             <h6 class="fw-semibold mb-0 small">Job Details</h6>
                             <small class="text-muted d-none d-md-block">
-                                Position, department, and compensation
+                                designation, department, and compensation
                             </small>
                         </div>
                     </div>
@@ -145,7 +145,7 @@
                     <div class="row g-3">
 
                         <div class="col-12 col-md-6">
-                            <AppSelect Label="Position"
+                            <AppSelect Label="Designation"
                                        Options="@_designationOptions"
                                        Value="@_employee.Designation.ToString()"
                                        ValueChanged="OnPositionChanged"
@@ -225,6 +225,35 @@
                     </div>
                 </div>
             </div>
+
+            @if (IsEditMode)
+            {
+                <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
+                    <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="user-form-section-icon bg-success bg-opacity-10 text-success
+                                                         rounded-2 d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-toggle-on"></i>
+                            </span>
+                            <div>
+                                <h6 class="fw-semibold mb-0 small">Status</h6>
+                                <small class="text-muted d-none d-md-block">
+                                    User account activation status
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body px-3 px-md-4 py-3">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <AppCheckBox Label="Active"
+                                             Value="@_employee.IsActive"
+                                             ValueChanged="@(v => _employee.IsActive = v)" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
 
             <!-- ═══════════ ACTION BUTTONS ═══════════ -->
             <div class="card border-0 shadow-sm rounded-3">

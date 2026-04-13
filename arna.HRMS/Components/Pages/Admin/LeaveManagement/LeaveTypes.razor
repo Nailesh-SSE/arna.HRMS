@@ -132,25 +132,6 @@ else
     </div>
 }
 
-<!-- Also show table view -->
-@if (leaveTypes.Any())
-{
-    <div class="card border-0 shadow-sm rounded-3">
-        <div class="card-header bg-transparent border-bottom py-3">
-            <h6 class="fw-semibold mb-0">
-                <i class="bi bi-table text-primary me-2"></i>
-                All Leave Types (Table View)
-            </h6>
-        </div>
-        <div class="card-body p-0">
-            <AppTable TItem="LeaveTypeViewModel"
-                      Items="leaveTypes"
-                      Columns="TableSchemas.LeaveTypes"
-                      OnEdit="EditLeaveType"
-                      OnDelete="DeleteLeaveType" />
-        </div>
-    </div>
-}
 
 <!-- MODAL -->
 <LeaveTypeModal ShowModal="showModal"

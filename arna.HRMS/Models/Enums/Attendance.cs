@@ -27,7 +27,8 @@ public enum AttendanceStatus
     Late = 3,
     HalfDay = 4,
     OnLeave = 5,
-    Holiday = 6
+    Holiday = 6,
+    WeeklyOff = 7,
 }
 
 public enum DeviceType

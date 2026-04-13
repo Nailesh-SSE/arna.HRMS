@@ -9,8 +9,10 @@ public class EmployeeDailyAttendanceDto
     public TimeSpan? ClockIn { get; set; }
     public TimeSpan? ClockOut { get; set; }
     public TimeSpan WorkingHours { get; set; }
-    public TimeSpan BreakDuration { get; set; }
+    public List<BreakDto> Breaks { get; set; } = new();
+    public TimeSpan BreakDuration => TimeSpan.FromSeconds(Breaks.Sum(b => b.Duration.TotalSeconds));
     public TimeSpan TotalHours { get; set; }
     public string? Status { get; set; }
+    public string? Note { get; set; }
 }
 

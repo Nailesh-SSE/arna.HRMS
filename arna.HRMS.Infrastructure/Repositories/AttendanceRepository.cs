@@ -144,7 +144,7 @@ public class AttendanceRepository
                                 ClockIn = null,
                                 ClockOut = null,
                                 WorkingHours = TimeSpan.Zero,
-                                BreakDuration = TimeSpan.Zero,
+                                Breaks = new List<BreakDto>(),
                                 TotalHours = TimeSpan.Zero,
                                 Status = CalculateStatus(
                                     Enumerable.Empty<AttendanceStatus>(),
@@ -153,28 +153,40 @@ public class AttendanceRepository
                             };
                         }
 
-                        var clockIn = records
+                        var clockIns = records
                             .Where(x => x.ClockIn.HasValue)
-                            .Min(x => x.ClockIn);
+                            .Select(x => x.ClockIn!.Value)
+                            .OrderBy(x => x)
+                            .ToList();
 
-                        var clockOut = records
+                        var clockOuts = records
                             .Where(x => x.ClockOut.HasValue)
-                            .Max(x => x.ClockOut);
+                            .Select(x => x.ClockOut!.Value)
+                            .OrderBy(x => x)
+                            .ToList();
+
+                        var breaks = clockOuts
+                            .Zip(clockIns.Skip(1), (sessionEnd, nextStart) => new { sessionEnd, nextStart })
+                            .Where(pair => pair.nextStart > pair.sessionEnd)
+                            .Select(pair => new BreakDto
+                            {
+                                BreakStart = pair.sessionEnd.TimeOfDay,
+                                BreakEnd = pair.nextStart.TimeOfDay,
+                                Duration = pair.nextStart - pair.sessionEnd
+                            })
+                            .ToList();
 
                         var workingSeconds = records
                             .Where(x => x.TotalHours.HasValue)
                             .Sum(x => x.TotalHours!.Value.TotalSeconds);
 
-                        var totalSeconds =
-                            (clockIn.HasValue && clockOut.HasValue)
-                                ? (clockOut.Value - clockIn.Value).TotalSeconds
-                                : 0;
+                        var breakSeconds = breaks.Sum(b => b.Duration.TotalSeconds);
+                        var totalSeconds = workingSeconds + breakSeconds;
 
-                        var breakSeconds = Math.Max(0, totalSeconds - workingSeconds);
+                        var firstClockIn = clockIns.Any() ? clockIns.First().TimeOfDay : (TimeSpan?)null;
+                        var lastClockOut = clockOuts.Any() ? clockOuts.Last().TimeOfDay : (TimeSpan?)null;
 
-                        var statuses = records
-                            .Select(x => x.StatusId)
-                            .Distinct();
+                        var statuses = records.Select(x => x.StatusId).Distinct();
 
                         return new EmployeeDailyAttendanceDto
                         {
@@ -182,15 +194,15 @@ public class AttendanceRepository
                             EmployeeId = employeeId,
                             EmployeeName = emp.FullName ?? "Unknown",
                             EmployeeNumber = emp.EmployeeNumber ?? string.Empty,
-                            ClockIn = clockIn?.TimeOfDay,
-                            ClockOut = clockOut?.TimeOfDay,
+                            ClockIn = firstClockIn,
+                            ClockOut = lastClockOut,
                             WorkingHours = TimeSpan.FromSeconds(workingSeconds),
-                            BreakDuration = TimeSpan.FromSeconds(breakSeconds),
                             TotalHours = TimeSpan.FromSeconds(totalSeconds),
+                            Breaks = breaks,   // ← THIS is what was missing
                             Status = CalculateStatus(
-                                statuses,
-                                isFestivalHoliday,
-                                DateOnly.FromDateTime(date))
+                                                 statuses,
+                                                 isFestivalHoliday,
+                                                 DateOnly.FromDateTime(date))
                         };
                     })
                     .ToList();
@@ -273,7 +285,7 @@ public class AttendanceRepository
             return "Holiday";
 
         if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday && !hasAttendance)
-            return "Holiday";
+            return "WeeklyOff";
 
         if (statuses.Contains(AttendanceStatus.Present))
             return "Present";
