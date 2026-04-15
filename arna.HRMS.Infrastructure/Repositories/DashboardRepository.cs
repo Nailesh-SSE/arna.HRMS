@@ -9,19 +9,13 @@ namespace arna.HRMS.Infrastructure.Repositories;
 public class DashboardRepository
 {
     private readonly IBaseRepository<Employee> _employeeRepository;
-    private readonly IBaseRepository<LeaveType> _leaveTypeRepository;
-    private readonly IBaseRepository<LeaveRequest> _leaveRequestRepository;
     private readonly IBaseRepository<Attendance> _attendanceRepository;
 
     public DashboardRepository(
         IBaseRepository<Employee> employeeRepository,
-        IBaseRepository<LeaveType> leaveTypeRepository,
-        IBaseRepository<LeaveRequest> leaveRequestRepository,
         IBaseRepository<Attendance> attendanceRepository)
     {
         _employeeRepository = employeeRepository;
-        _leaveTypeRepository = leaveTypeRepository;
-        _leaveRequestRepository = leaveRequestRepository;
         _attendanceRepository = attendanceRepository;
     }
 

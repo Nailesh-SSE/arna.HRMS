@@ -278,6 +278,10 @@ public class LeaveService : ILeaveService
 
         foreach (var date in leaveDates)
         {
+            if (date <= DateTime.Now)
+            {
+                await _attendanceRepository.DeleteAttendanceAsync(date, leaveRequest.EmployeeId);
+            }
             await _attendanceRepository.CreateAttendanceAsync(new Attendance
             {
                 EmployeeId = leaveRequest.EmployeeId,

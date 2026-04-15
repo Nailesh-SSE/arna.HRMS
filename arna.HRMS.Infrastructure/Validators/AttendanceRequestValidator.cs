@@ -88,11 +88,8 @@ public class AttendanceRequestValidator
 
         if (dto.FromDate != null && dto.ToDate != null)
         {
-            if (dto.FromDate.Value.Date >= DateTime.Now.Date)
-                errors.Add("Future or current From Date is not allowed");
-
-            if (dto.ToDate.Value.Date >= DateTime.Now.Date)
-                errors.Add("Future or current To Date is not allowed");
+            if (dto.FromDate.Value.Date > DateTime.Now.Date || dto.ToDate.Value.Date > DateTime.Now.Date)
+                errors.Add("Future Date is not allowed");
 
             if (dto.FromDate.Value.Date > dto.ToDate.Value.Date)
                 errors.Add("From Date cannot be greater than To Date");
@@ -125,22 +122,7 @@ public class AttendanceRequestValidator
         if (dto.Description?.Length > 500)
             errors.Add("Description cannot exceed 500 characters");
 
-        /*// Clock times should fall within the from/to dates when provided
-        if (dto.ClockIn != null && dto.FromDate != null && dto.ToDate != null)
-        {
-            var cinDate = dto.ClockIn.Value.Date;
-            if (cinDate < dto.FromDate.Value.Date || cinDate > dto.ToDate.Value.Date)
-                errors.Add("ClockIn date must be within FromDate and ToDate range");
-        }
-
-        if (dto.ClockOut != null && dto.FromDate != null && dto.ToDate != null)
-        {
-            var coutDate = dto.ClockOut.Value.Date;
-            if (coutDate < dto.FromDate.Value.Date || coutDate > dto.ToDate.Value.Date)
-                errors.Add("ClockOut date must be within FromDate and ToDate range");
-        }*/
-
-        // Break duration and total hours basic sanity checks
+      // Break duration and total hours basic sanity checks
         if (dto.BreakDuration != null && dto.TotalHours < dto.BreakDuration)
             errors.Add("Break duration cannot be greater than total hours");
 

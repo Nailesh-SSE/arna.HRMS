@@ -271,8 +271,27 @@ public class AttendanceRepository
             .ToListAsync();
     }
 
+    public async Task<bool> DeleteAttendanceAsync(DateTime date, int empId)
+    {
+        var entity = await _baseRepository.Query()
+            .FirstOrDefaultAsync(ar =>
+                ar.Date == date &&
+                ar.EmployeeId == empId &&
+                ar.IsActive &&
+                !ar.IsDeleted);
 
-        #region Helpers
+        if (entity == null)
+            return false;
+
+        entity.IsActive = false;
+        entity.IsDeleted = true;
+        entity.UpdatedOn = DateTime.Now;
+
+        await _baseRepository.UpdateAsync(entity);
+        return true;
+    }
+
+    #region Helpers
 
     private static string CalculateStatus(
         IEnumerable<AttendanceStatus> statuses,
