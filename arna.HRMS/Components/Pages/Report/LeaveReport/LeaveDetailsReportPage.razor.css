@@ -1,0 +1,74 @@
+﻿.att-detail-animated {
+    animation: fadeSlideUp 0.4s ease both;
+}
+
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.att-detail-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.att-detail-stat {
+    height: 100%;
+    min-height: 140px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .att-detail-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    }
+
+.att-detail-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 1.5rem;
+}
+
+.att-detail-progress {
+    height: 8px;
+}
+
+    .att-detail-progress .progress-bar {
+        transition: width 0.6s ease;
+    }
+
+.att-detail-table tbody tr.table-danger {
+    background-color: rgba(220, 53, 69, 0.08) !important;
+}
+
+.att-detail-table tbody tr.table-warning {
+    background-color: rgba(255, 193, 7, 0.08) !important;
+}
+
+@media (max-width: 576px) {
+    .att-detail-avatar {
+        width: 52px;
+        height: 52px;
+        font-size: 1.1rem;
+    }
+}
