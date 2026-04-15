@@ -12,78 +12,8 @@
 }
 else
 {
-    <div class="container-fluid px-3 px-md-4 py-3 attendence-fade-in">
 
-        <!-- ══════════ HEADER ══════════ -->
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <h3 class="fw-bold mb-1">
-                    <i class="bi bi-clock-history text-primary me-2"></i>
-                    Report Management
-                </h3>
-                <p class="text-muted mb-0">
-                    Monitor daily attendance, clock-in/out records & summaries
-                </p>
-            </div>
-        </div>
-
-        <!-- ══════════ TAB NAVIGATION ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-body p-0">
-                <ul class="nav nav-tabs attendence-tabs px-3 pt-3" role="tablist">
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link @(activeTab == Tab.AttendanceReport ? "active" : "")"
-                                @onclick="() => SetTab(Tab.AttendanceReport)">
-                            <i class="bi bi-calendar-day me-2"></i>
-                            Attendance Report
-                            @if (AttendanceReportCount > 0)
-                            {
-                                <span class="badge bg-primary bg-opacity-10 text-primary
-                                                             rounded-pill ms-2">
-                                    @AttendanceReportCount
-                                </span>
-                            }
-                        </button>
-                    </li>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link @(activeTab == Tab.LeaveReport ? "active" : "")"
-                                @onclick="() => SetTab(Tab.LeaveReport)">
-                            <i class="bi bi-inbox me-2"></i>
-                            Leave Report
-                            @if (LeaveReportCount > 0)
-                            {
-                                <span class="badge bg-warning text-dark
-                                                             rounded-pill ms-2">
-                                    @LeaveReportCount
-                                </span>
-                            }
-                        </button>
-                    </li>
-
-                </ul>
-            </div>
-        </div>
-
-        <!-- ══════════ TAB CONTENT ══════════ -->
-        <div class="tab-content">
-
-            @if (activeTab == Tab.AttendanceReport)
-            {
-                <ReportPage @ref="AttendanceReport"
-                            OnCountChanged="c => { AttendanceReportCount = c; StateHasChanged(); }" />
-            }
-
-            @if (activeTab == Tab.LeaveReport)
-            {
-                <LeaveReport @ref="LeaveReport"
-                             OnPendingCountChanged="c => { LeaveReportCount = c; StateHasChanged(); }" />
-            }
-
-        </div>
-
-    </div>
+    <ReportPage />
 }
 
 
@@ -92,25 +22,10 @@ else
     private string loadingMessage = "Loading Report Management....";
     private bool isLoading = true;
 
-    private enum Tab { AttendanceReport, LeaveReport }
-    private Tab activeTab = Tab.AttendanceReport;
-
-    // ── Badge counts ──
-    private int AttendanceReportCount;
-    private int LeaveReportCount;
-
-    // ── Tab refs ──
-    private ReportPage? AttendanceReport;
-    private LeaveReport? LeaveReport;
-
     protected override async Task OnInitializedAsync()
     {
+        isLoading = true;
         await base.OnInitializedAsync();
         isLoading = false;
-    }
-
-    private void SetTab(Tab tab)
-    {
-        activeTab = tab;
     }
 }

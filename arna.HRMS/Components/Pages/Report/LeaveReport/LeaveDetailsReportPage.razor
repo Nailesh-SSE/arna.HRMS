@@ -17,27 +17,29 @@
 }
 else
 {
-    <div class="att-animate">
+    <div class="att-detail-animated">
 
         <!-- ══════════ BACK + BREADCRUMB ══════════ -->
-        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 att-detail-back-btn"
-                    @onclick="HandleBack">
-                <i class="bi bi-arrow-left me-1"></i>Back
-            </button>
-            <nav>
-                <ol class="breadcrumb mb-0 small">
-                    <li class="breadcrumb-item">
-                        <a href="javascript:void(0)" @onclick="HandleBack"
-                           class="text-decoration-none text-primary">
-                            Report Card
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active text-muted">@Employee.FullName</li>
-                </ol>
-            </nav>
-        </div>
-
+        @if (ShowBackButton == true)
+        {
+            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 att-detail-back-btn"
+                        @onclick="HandleBack">
+                    <i class="bi bi-arrow-left me-1"></i>Back
+                </button>
+                <nav>
+                    <ol class="breadcrumb mb-0 small">
+                        <li class="breadcrumb-item">
+                            <a href="javascript:void(0)" @onclick="HandleBack"
+                               class="text-decoration-none text-primary">
+                                Report Card
+                            </a>
+                        </li>
+                        <li class="breadcrumb-item active text-muted">@Employee.FullName</li>
+                    </ol>
+                </nav>
+            </div>
+        }
         <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="row align-items-center g-3">
@@ -65,124 +67,6 @@ else
             </div>
         </div>
 
-        <!-- ══════════ FILTER CARD ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-body p-3 p-md-4">
-                <div class="row align-items-end g-3">
-
-                    <!-- Filter Mode Toggle -->
-                    <div class="col-12 col-sm-auto">
-                        <label class="form-label small fw-semibold text-muted mb-1">
-                            <i class="bi bi-funnel me-1"></i>Filter By
-                        </label>
-                        <div class="btn-group btn-group-sm d-flex" role="group">
-                            <button type="button"
-                                    class="btn @(filterMode == "month" ? "btn-primary shadow-sm" : "btn-outline-primary")"
-                                    @onclick='() => SwitchFilterMode("month")'>
-                                <i class="bi bi-calendar3 me-1"></i>Monthly
-                            </button>
-                            <button type="button"
-                                    class="btn @(filterMode == "dateRange" ? "btn-primary shadow-sm" : "btn-outline-primary")"
-                                    @onclick='() => SwitchFilterMode("dateRange")'>
-                                <i class="bi bi-calendar-range me-1"></i>Date Range
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Month & Year -->
-                    @if (filterMode == "month")
-                    {
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">Month</label>
-                            <select class="form-select form-select-sm"
-                                    value="@selectedMonth"
-                                    @onchange="OnMonthChanged">
-                                @for (int m = 1; m <= 12; m++)
-                                {
-                                    <option value="@m">@MonthName(m)</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">Year</label>
-                            <select class="form-select form-select-sm"
-                                    value="@selectedYear"
-                                    @onchange="OnYearChanged">
-                                @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 1; y++)
-                                {
-                                    <option value="@y">@y</option>
-                                }
-                            </select>
-                        </div>
-                    }
-
-                    <!-- Date Range (DD/MM/YY) -->
-                    @if (filterMode == "dateRange")
-                    {
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">From</label>
-                            <input type="text"
-                                   class="form-control form-control-sm @(fromDateError ? "is-invalid" : "")"
-                                   placeholder="DD/MM/YY"
-                                   maxlength="8"
-                                   value="@FormatDate(fromDate)"
-                                   @onchange="OnFromDateChanged" />
-                            @if (fromDateError)
-                            {
-                                <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
-                            }
-                        </div>
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">To</label>
-                            <input type="text"
-                                   class="form-control form-control-sm @(toDateError ? "is-invalid" : "")"
-                                   placeholder="DD/MM/YY"
-                                   maxlength="8"
-                                   value="@FormatDate(toDate)"
-                                   @onchange="OnToDateChanged" />
-                            @if (toDateError)
-                            {
-                                <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
-                            }
-                        </div>
-                    }
-
-                    <!-- Reset -->
-                    <div class="col-auto">
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                @onclick="ResetFilters"
-                                title="Reset to current month">
-                            <i class="bi bi-arrow-counterclockwise me-1 d-none d-sm-inline"></i>Reset
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Active Filter Summary -->
-                <div class="mt-3 pt-2 border-top border-light">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle me-1"></i>
-                        @if (filterMode == "month")
-                        {
-                            <span>
-                                Showing data for
-                                <strong class="text-primary">@MonthName(selectedMonth) @selectedYear</strong>
-                            </span>
-                        }
-                        else
-                        {
-                            <span>
-                                Showing data from
-                                <strong class="text-primary">@FormatDate(fromDate)</strong>
-                                to
-                                <strong class="text-primary">@FormatDate(toDate)</strong>
-                                <span class="text-muted ms-1">(@((toDate - fromDate).Days + 1) days)</span>
-                            </span>
-                        }
-                    </small>
-                </div>
-            </div>
-        </div>
-
         <!-- ══════════ NO DATA STATE ══════════ -->
         @if (!cachedFilteredRecords.Any())
         {
@@ -193,7 +77,7 @@ else
                     </div>
                     <h5 class="fw-semibold text-muted mb-2">No Records Found</h5>
                     <p class="text-muted small mb-3">
-                        No attendance data available for <strong>@Employee.FullName</strong>
+                        No Leave data available for <strong>@Employee.FullName</strong>
                         @if (filterMode == "month")
                         {
                             <span>in <strong>@MonthName(selectedMonth) @selectedYear</strong></span>
@@ -236,16 +120,97 @@ else
 
             <!-- ══════════ TABLE ══════════ -->
             <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-                <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <h6 class="fw-semibold mb-0">
-                            <i class="bi bi-table text-primary me-2"></i>Leave Records
-                        </h6>
-                        <span class="badge bg-light text-dark rounded-pill px-3 py-1 border">
-                            <i class="bi bi-list-ul me-1"></i>@DisplayRecords.Count records
-                        </span>
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="row align-items-end g-3">
+
+                            <!-- Filter Mode Toggle -->
+                            <div class="col-12 col-sm-auto">
+                                <label class="form-label small fw-semibold text-muted mb-1">
+                                    <i class="bi bi-funnel me-1"></i>Filter By
+                                </label>
+                                <div class="btn-group btn-group-sm d-flex" role="group">
+                                    <button type="button"
+                                            class="btn @(filterMode == "month" ? "btn-primary shadow-sm" : "btn-outline-primary")"
+                                            @onclick='() => SwitchFilterMode("month")'>
+                                        <i class="bi bi-calendar3 me-1"></i>Monthly
+                                    </button>
+                                    <button type="button"
+                                            class="btn @(filterMode == "dateRange" ? "btn-primary shadow-sm" : "btn-outline-primary")"
+                                            @onclick='() => SwitchFilterMode("dateRange")'>
+                                        <i class="bi bi-calendar-range me-1"></i>Date Range
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Month & Year -->
+                            @if (filterMode == "month")
+                            {
+                                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Month</label>
+                                    <select class="form-select form-select-sm"
+                                            value="@selectedMonth"
+                                            @onchange="OnMonthChanged">
+                                        @for (int m = 1; m <= 12; m++)
+                                        {
+                                            <option value="@m">@MonthName(m)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1">Year</label>
+                                    <select class="form-select form-select-sm"
+                                            value="@selectedYear"
+                                            @onchange="OnYearChanged">
+                                        @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 1; y++)
+                                        {
+                                            <option value="@y">@y</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+
+                            <!-- Date Range (DD/MM/YY) -->
+                            @if (filterMode == "dateRange")
+                            {
+                                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1">From</label>
+                                    <InputDate TValue="DateTime"
+                                               Value="fromDate"
+                                               ValueChanged="@(async (DateTime value) => await OnFromDateChanged(value))"
+                                               ValueExpression="() => fromDate"
+                                               class="form-control form-control-sm" />
+                                    @if (fromDateError)
+                                    {
+                                        <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
+                                    }
+                                </div>
+                                <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+                                    <label class="form-label small fw-semibold text-muted mb-1">To</label>
+                                    <InputDate TValue="DateTime"
+                                               Value="toDate"
+                                               ValueChanged="@(async (DateTime value) => await OnToDateChanged(value))"
+                                               ValueExpression="() => toDate"
+                                               class="form-control form-control-sm" />
+                                    @if (toDateError)
+                                    {
+                                        <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
+                                    }
+                                </div>
+                            }
+
+                            <!-- Reset -->
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                        @onclick="ResetFilters"
+                                        title="Reset to current month">
+                                    <i class="bi bi-arrow-counterclockwise me-1 d-none d-sm-inline"></i>Reset
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <div class="card-body p-0">
                     @if (!DisplayRecords.Any())
                     {
@@ -268,8 +233,8 @@ else
                                   ShowActions="false"
                                   EnablePagination="true"
                                   PageSize="10"
-                                  WrapperClass="att-detail-table"/>
-                                  
+                                  WrapperClass="att-detail-table" />
+
                     }
                 </div>
             </div>
@@ -289,6 +254,7 @@ else
     [Parameter] public DateTime? InitialToDate { get; set; }
     [Parameter] public string? EmployeeNumber { get; set; }
     [Parameter] public int? EmployeeId { get; set; }
+    [Parameter] public bool? ShowBackButton { get; set; } = true;
 
     private string filterMode = "month";
     private int selectedYear;
@@ -388,7 +354,7 @@ else
             }
 
             var result = await ReportService.GetEmployeeLeaveDetailsReportAsync(
-                yearParam, monthParam, fromParam, toParam, Employee.Id,Employee.EmployeeNumber);
+                yearParam, monthParam, fromParam, toParam, Employee.Id, Employee.EmployeeNumber);
 
             if (result?.IsSuccess == true && result.Data != null)
             {
@@ -525,38 +491,26 @@ else
         }
     }
 
-    private async Task OnFromDateChanged(ChangeEventArgs e)
+    private async Task OnFromDateChanged(DateTime value)
     {
-        var val = e.Value?.ToString();
-        if (TryParseDate(val, out var d))
-        {
-            fromDate = d;
-            fromDateError = false;
-            selectedStatusFilter = null;
-            if (fromDate > toDate) toDate = fromDate;
-            await LoadDataAsync();
-        }
-        else
-        {
-            fromDateError = true;
-        }
+        fromDate = value;
+        selectedStatusFilter = null;
+
+        if (fromDate > toDate)
+            toDate = fromDate;
+
+        await LoadDataAsync();
     }
 
-    private async Task OnToDateChanged(ChangeEventArgs e)
+    private async Task OnToDateChanged(DateTime value)
     {
-        var val = e.Value?.ToString();
-        if (TryParseDate(val, out var d))
-        {
-            toDate = d;
-            toDateError = false;
-            selectedStatusFilter = null;
-            if (toDate < fromDate) fromDate = toDate;
-            await LoadDataAsync();
-        }
-        else
-        {
-            toDateError = true;
-        }
+        toDate = value;
+        selectedStatusFilter = null;
+
+        if (toDate < fromDate)
+            fromDate = toDate;
+
+        await LoadDataAsync();
     }
 
     private async Task ResetFilters()
@@ -608,7 +562,11 @@ else
     };
 
     /* ───── Navigation ───── */
-    private async Task HandleBack() => await OnBackClicked.InvokeAsync();
+    private async Task HandleBack()
+    {
+        if (OnBackClicked.HasDelegate)
+            await OnBackClicked.InvokeAsync();
+    }
 
     /* ───── Helpers ───── */
     private static string GetInitials(string name)

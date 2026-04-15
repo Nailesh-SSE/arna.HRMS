@@ -84,12 +84,30 @@ public class NavigationHelper
         },
          new()
         {
-            Id = "report-management",
-            Label = "Report",
+            Id = "attendanceSummaryReport",
+            Label = "Attendance Report",
             Icon = "bi bi-clipboard-data me-2",
             Section = "Report",
             Route = "/report-management",
             AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
+        },
+         new()
+        {
+            Id = "leaveSummaryReport",
+            Label = "Leave Report",
+            Icon = "bi bi-clipboard-data me-2",
+            Section = "Report",
+            Route = "/leave-report",
+            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager}
+        },
+         new()
+        {
+            Id = "employeeleaveReport",
+            Label = "Leave Report",
+            Icon = "bi bi-clipboard-data me-2",
+            Section = "Report",
+            Route = "/employee-leave-report",
+            AllowedRoles = new() { UserRole.Employee }
         },
         new()
         {
@@ -140,7 +158,7 @@ public class NavigationHelper
                     ? "/emp-attendance-management"
                     : "/admin-attendance-management",
 
-            "report-management" => 
+            "attendanceSummaryReport" => 
                 role == UserRole.Employee 
                     ? "/employee-report"
                     : role == UserRole.SuperAdmin || role == UserRole.Admin

@@ -440,7 +440,7 @@ public class TableSchemas
     {
         new() {Header = "EmployeeNumber" , Value = u => u.EmployeeNumber},
         new() {Header = "EmployeeName" , Value = u => u.EmployeeName},
-        new () {Header = "LeaveName" , Value = u => u.LeaveNameId},
+        new () {Header = "LeaveName" , Value = u => (LeaveName)u.LeaveNameId},
         new () {Header = "MaxPerYear" , Value = u => u.MaxPerYear},
         new () {Header = "UsedLeave" , Value = u => u.UsedLeave},
     };
@@ -449,12 +449,12 @@ public class TableSchemas
     {
         new() {Header = "EmployeeNumber" , Value = u => u.EmployeeNumber},
         new() {Header = "EmployeeName" , Value = u => u.EmployeeName},
-        new () {Header = "LeaveType" , Value = u => u.LeaveNameId},
+        new () {Header = "LeaveType" , Value = u => (LeaveName)u.LeaveNameId},
         new () {Header = "Reason" , Value = u => u.Reason ?? "—"},
         new () {Header = "StartDate" , Value = u => u.StartDate.ToString("dd MMM yyyy")},
         new () {Header = "EndDate" , Value = u => u.EndDate.ToString("dd MMM yyyy")},
         new () {Header = "TotalDays" , Value = u => u.LeaveDays},
-        new () {Header = "Status" , Value = u => u.StatusId.ToString()},
+        new () {Header = "Status" , Value = u => (Status)u.StatusId},
     };
     public static List<TableColumn<EmployeeDailyAttendanceViewModel>> LeaveEmployee = new()
     {
