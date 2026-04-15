@@ -51,7 +51,7 @@ public class ReportController : ControllerBase
 
     [HttpGet("leave-summary-report")]
     public async Task<IActionResult> LeaveSummaryReportAsync(
-        [FromQuery] int year,
+        [FromQuery] int? year,
         [FromQuery] int? month,
         [FromQuery] int? departmentId,
         [FromQuery] DateTime? FromDate,
@@ -66,7 +66,7 @@ public class ReportController : ControllerBase
     }
     [HttpGet("employee-leave-details-report")]
     public async Task<IActionResult> EmployeeLeaveDetailsReportAsync(
-        [FromQuery] int year,
+        [FromQuery] int? year,
         [FromQuery] int? month,
         [FromQuery] DateTime? FromDate,
         [FromQuery] DateTime? ToDate,

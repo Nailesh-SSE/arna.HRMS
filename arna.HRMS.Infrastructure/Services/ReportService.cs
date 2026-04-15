@@ -32,7 +32,7 @@ public class ReportService : IReportService
 
         return ServiceResult<List<EmployeeAttendanceReportDto>>.Success(reportData);
     }
-    public async Task<ServiceResult<List<LeaveSummaryReportDto>>> GetLeaveSummaryReport(int year, int? month, int? departmentId, DateTime? FromDate, DateTime? ToDate)
+    public async Task<ServiceResult<List<LeaveSummaryReportDto>>> GetLeaveSummaryReport(int? year, int? month, int? departmentId, DateTime? FromDate, DateTime? ToDate)
     {
         var reportData = await _reportRepository.GetLeaveSummaryReportAsync(year, month,  FromDate, ToDate, departmentId);
         if (reportData == null || !reportData.Any())
@@ -40,7 +40,7 @@ public class ReportService : IReportService
 
         return ServiceResult<List<LeaveSummaryReportDto>>.Success(reportData);
     }
-    public async Task<ServiceResult<List<EmployeeLeaveDetailsReportDto>>> GetEmployeeLeaveDetailsReport(int year, int? month, DateTime? FromDate, DateTime? ToDate, int? employeeId, string? employeeNumber)
+    public async Task<ServiceResult<List<EmployeeLeaveDetailsReportDto>>> GetEmployeeLeaveDetailsReport(int? year, int? month, DateTime? FromDate, DateTime? ToDate, int? employeeId, string? employeeNumber)
     {
         var reportData = await _reportRepository.GetEmployeeLeaveDetailsReportAsync(year, month, FromDate, ToDate, employeeId ,employeeNumber);
         if (reportData == null || !reportData.Any())

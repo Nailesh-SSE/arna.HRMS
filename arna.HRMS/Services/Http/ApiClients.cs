@@ -484,7 +484,8 @@ public sealed class ApiClients
             DateTime? ToDate)
         {
             var query = new List<string>();
-            query.Add($"year={year}");
+            if(year.HasValue)
+                query.Add($"year={year}");
             if (month.HasValue)
                 query.Add($"month={month}");
             if (departmentId.HasValue)
@@ -508,7 +509,8 @@ public sealed class ApiClients
             DateTime? ToDate)
         {
             var query = new List<string>();
-            query.Add($"year={year}");
+            if(year.HasValue)
+                query.Add($"year={year}");
             if (month.HasValue)
                 query.Add($"month={month}");
             if (employeeId.HasValue)

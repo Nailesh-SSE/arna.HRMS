@@ -81,7 +81,7 @@ public class ReportRepository
     }
 
     public async Task<List<LeaveSummaryReportDto>> GetLeaveSummaryReportAsync(
-        int year,
+        int? year,
         int? month,
         DateTime? fromDate, 
         DateTime? toDate,
