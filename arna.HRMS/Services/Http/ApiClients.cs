@@ -432,10 +432,10 @@ public sealed class ApiClients
                 query.Add($"device={device}");
 
             if (FromDate.HasValue)
-                query.Add($"FromDate={FromDate}");
+                query.Add($"FromDate={FromDate.Value:yyyy-MM-dd}");
 
             if (ToDate.HasValue)
-                query.Add($"ToDate={ToDate}");
+                query.Add($"ToDate={ToDate.Value:yyyy-MM-dd}");
 
             var qs = query.Any()
                 ? "?" + string.Join("&", query)
@@ -464,10 +464,10 @@ public sealed class ApiClients
                 query.Add($"employeeId={employeeId}");
 
             if (FromDate.HasValue)
-                query.Add($"FromDate={FromDate}");
+                query.Add($"FromDate={FromDate.Value:yyyy-MM-dd}");
 
             if (ToDate.HasValue)
-                query.Add($"ToDate={ToDate}");
+                query.Add($"ToDate={ToDate.Value:yyyy-MM-dd}");
 
             var qs = query.Any()
                 ? "?" + string.Join("&", query)

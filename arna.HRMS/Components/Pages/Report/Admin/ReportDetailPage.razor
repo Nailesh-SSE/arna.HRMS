@@ -237,29 +237,17 @@ else
                         {
                             <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                                 <label class="form-label small fw-semibold text-muted mb-1">From</label>
-                                <input type="text"
-                                       class="form-control form-control-sm @(fromDateError ? "is-invalid" : "")"
-                                       placeholder="DD/MM/YY"
-                                       maxlength="8"
-                                       value="@FormatDate(fromDate)"
+                                <input type="date"
+                                       class="form-control form-control-sm"
+                                       value="@fromDate.ToString("yyyy-MM-dd")"
                                        @onchange="OnFromDateChanged" />
-                                @if (fromDateError)
-                                {
-                                    <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
-                                }
                             </div>
                             <div class="col-6 col-sm-4 col-md-3 col-lg-2">
                                 <label class="form-label small fw-semibold text-muted mb-1">To</label>
-                                <input type="text"
-                                       class="form-control form-control-sm @(toDateError ? "is-invalid" : "")"
-                                       placeholder="DD/MM/YY"
-                                       maxlength="8"
-                                       value="@FormatDate(toDate)"
+                                <input type="date"
+                                       class="form-control form-control-sm"
+                                       value="@toDate.ToString("yyyy-MM-dd")"
                                        @onchange="OnToDateChanged" />
-                                @if (toDateError)
-                                {
-                                    <div class="invalid-feedback">Invalid date (DD/MM/YY)</div>
-                                }
                             </div>
                         }
 
@@ -320,14 +308,12 @@ else
     private int selectedMonth;
     private DateTime fromDate;
     private DateTime toDate;
-    private bool fromDateError;
-    private bool toDateError;
     private bool isLoading;
     private string loadingMessage = "Loading attendance details…";
     private string? selectedStatusFilter;
     private List<AttendanceReportViewModel> allRecords = new();
     private List<AttendanceReportViewModel> cachedFilteredRecords = new();
-    private int presentCount, absentCount, lateCount, halfDayCount, onLeaveCount, holidayCount;
+    private int presentCount, lateCount, halfDayCount;
     private double weightedPresentDays, averageCount, attendanceRate;
     private int totalWorkingDays;
     private int _prevYear, _prevMonth;
@@ -468,14 +454,11 @@ else
         var records = cachedFilteredRecords;
 
         presentCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Present);
-        absentCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Absent);
         lateCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Late);
         halfDayCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.HalfDay);
-        onLeaveCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.OnLeave);
-        holidayCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Holiday);
 
         weightedPresentDays = presentCount + lateCount + (halfDayCount * 0.5);
-        totalWorkingDays = records.Count - holidayCount;
+        totalWorkingDays = records.Count - records.Count(r => r.AttendanceStatus == AttendanceStatus.Holiday);
 
         attendanceRate = totalWorkingDays > 0
             ? Math.Min(100, Math.Round((weightedPresentDays / totalWorkingDays) * 100, 1))
@@ -488,32 +471,12 @@ else
     private static string FormatDate(DateTime date)
         => date.ToString("dd/MM/yy");
 
-    private static bool TryParseDate(string? input, out DateTime result)
-    {
-        result = default;
-        if (string.IsNullOrWhiteSpace(input)) return false;
-
-        string[] formats = {
-            "dd/MM/yy", "dd-MM-yy", "dd.MM.yy",
-            "dd/MM/yyyy", "dd-MM-yyyy", "dd.MM.yyyy"
-        };
-
-        return DateTime.TryParseExact(
-            input.Trim(),
-            formats,
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.None,
-            out result);
-    }
-
     /* ───── Filter Actions ───── */
     private async Task SwitchFilterMode(string mode)
     {
         if (filterMode == mode) return;
         filterMode = mode;
         selectedStatusFilter = null;
-        fromDateError = false;
-        toDateError = false;
 
         if (mode == "month")
         {
@@ -555,34 +518,24 @@ else
     private async Task OnFromDateChanged(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
-        if (TryParseDate(val, out var d))
+        if (!string.IsNullOrWhiteSpace(val) && DateTime.TryParse(val, out var d))
         {
             fromDate = d;
-            fromDateError = false;
             selectedStatusFilter = null;
             if (fromDate > toDate) toDate = fromDate;
             await LoadDataAsync();
-        }
-        else
-        {
-            fromDateError = true;
         }
     }
 
     private async Task OnToDateChanged(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
-        if (TryParseDate(val, out var d))
+        if (!string.IsNullOrWhiteSpace(val) && DateTime.TryParse(val, out var d))
         {
             toDate = d;
-            toDateError = false;
             selectedStatusFilter = null;
             if (toDate < fromDate) fromDate = toDate;
             await LoadDataAsync();
-        }
-        else
-        {
-            toDateError = true;
         }
     }
 
@@ -593,8 +546,6 @@ else
         selectedMonth = DateTime.Today.Month;
         SetDefaultDateRange();
         selectedStatusFilter = null;
-        fromDateError = false;
-        toDateError = false;
         await LoadDataAsync();
     }
 
@@ -606,33 +557,7 @@ else
                               DateTime.DaysInMonth(today.Year, today.Month));
     }
 
-    private void ToggleStatusFilter(string? status)
-    {
-        if (status == null) { selectedStatusFilter = null; return; }
-        selectedStatusFilter = selectedStatusFilter == status ? null : status;
-    }
-
     private void ClearStatusFilter() => selectedStatusFilter = null;
-
-    /* ───── Stat Card Builder ───── */
-    private record StatCardModel(string Label, int Count, string Icon,
-                                  string TextClass, string BgClass, string? FilterValue);
-
-    private List<StatCardModel> BuildStatCards() => new()
-    {
-        new("Total Days", cachedFilteredRecords.Count, "bi bi-calendar-check-fill",
-            "text-primary", "bg-primary bg-opacity-10", null),
-        new("Present", presentCount, "bi bi-check-circle-fill",
-            "text-success", "bg-success bg-opacity-10", nameof(AttendanceStatus.Present)),
-        new("Absent", absentCount, "bi bi-x-circle-fill",
-            "text-danger", "bg-danger bg-opacity-10", nameof(AttendanceStatus.Absent)),
-        new("Late", lateCount, "bi bi-clock-fill",
-            "text-warning", "bg-warning bg-opacity-10", nameof(AttendanceStatus.Late)),
-        new("Half Day", halfDayCount, "bi bi-hourglass-split",
-            "text-info", "bg-info bg-opacity-10", nameof(AttendanceStatus.HalfDay)),
-        new("On Leave", onLeaveCount, "bi bi-calendar2-x-fill",
-            "text-secondary", "bg-secondary bg-opacity-10", nameof(AttendanceStatus.OnLeave)),
-    };
 
     /* ───── Navigation ───── */
     private async Task HandleBack() => await OnBackClicked.InvokeAsync();
@@ -678,22 +603,4 @@ else
             AttendanceStatus.HalfDay => "table-info",
             _ => ""
         };
-
-    private string GetDeviceName(DeviceType d) => d switch
-    {
-        DeviceType.Mobile => "Mobile",
-        DeviceType.Tablet => "Tablet",
-        DeviceType.LaptopDesktop => "Laptop / Desktop",
-        DeviceType.UnknownDevice => "Unknown",
-        _ => d.ToString()
-    };
-
-    private string GetDeviceNames(string? csv)
-    {
-        if (string.IsNullOrWhiteSpace(csv)) return "–";
-        return string.Join(", ",
-            csv.Split(',', StringSplitOptions.RemoveEmptyEntries)
-               .Select(x => Enum.TryParse<DeviceType>(x.Trim(), out var d)
-                   ? GetDeviceName(d) : "Unknown"));
-    }
 }

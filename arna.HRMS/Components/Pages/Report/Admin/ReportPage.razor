@@ -85,10 +85,9 @@ else if (!showDetail)
                             <label class="form-label small fw-semibold text-muted mb-1">
                                 From Date
                             </label>
-                            <input type="text"
-                                   class="form-control form-control-sm @(fromDateError ? "is-invalid" : "")"
-                                   value="@FormatDate(fromDate)"
-                                   @onchange="OnFromDateInput" />
+                            <input type="date"
+                                   class="form-control form-control-sm"
+                                   @bind="FromDatePicker" />
                         </div>
 
                         <!-- To Date -->
@@ -96,10 +95,9 @@ else if (!showDetail)
                             <label class="form-label small fw-semibold text-muted mb-1">
                                 To Date
                             </label>
-                            <input type="text"
-                                   class="form-control form-control-sm @(toDateError ? "is-invalid" : "")"
-                                   value="@FormatDate(toDate)"
-                                   @onchange="OnToDateInput" />
+                            <input type="date"
+                                   class="form-control form-control-sm"
+                                   @bind="ToDatePicker" />
                         </div>
 
                         <!-- Reset -->
@@ -333,45 +331,30 @@ else
             out result);
     }
 
-    /* ───── From Date Handler ───── */
-    private async Task OnFromDateInput(ChangeEventArgs e)
+    private DateTime FromDatePicker
     {
-        var val = e.Value?.ToString();
-
-        if (TryParseDate(val, out var d))
+        get => fromDate;
+        set
         {
-            fromDate = d;
-            fromDateError = false;
+            if (fromDate == value) return;
+            fromDate = value;
             isCustomDateRange = true;
-
             if (fromDate > toDate) toDate = fromDate;
-
-            await LoadEmployees();
-        }
-        else
-        {
-            fromDateError = true;
+            // fire and forget (UI-driven)
+            _ = LoadEmployees();
         }
     }
 
-    /* ───── To Date Handler ───── */
-    private async Task OnToDateInput(ChangeEventArgs e)
+    private DateTime ToDatePicker
     {
-        var val = e.Value?.ToString();
-
-        if (TryParseDate(val, out var d))
+        get => toDate;
+        set
         {
-            toDate = d;
-            toDateError = false;
+            if (toDate == value) return;
+            toDate = value;
             isCustomDateRange = true;
-
             if (toDate < fromDate) fromDate = toDate;
-
-            await LoadEmployees();
-        }
-        else
-        {
-            toDateError = true;
+            _ = LoadEmployees();
         }
     }
 
