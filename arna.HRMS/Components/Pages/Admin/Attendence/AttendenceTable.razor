@@ -95,7 +95,9 @@
                                   Columns="TableSchemas.EmployeesAttendanceDetail"
                                   ShowActions="false"
                                   WrapperClass="att-list-table"
-                                  RowClassFunc="GetRowClass">
+                                  RowClassFunc="GetRowClass"
+                                  OnRowClick="HandleRowClick"
+                                  RowClickable="true">
                         </AppTable>
                     }
                 </div>
@@ -304,5 +306,18 @@
 
         try { _cts.Cancel(); } catch { }
         try { _cts.Dispose(); } catch { }
+    }
+
+    private async Task HandleRowClick(MonthlyAttendanceViewModel item)
+    {
+        var emp = item.Employees.FirstOrDefault();
+        if (emp == null) return;
+
+        State.SelectedEmployeeId = emp.EmployeeId;
+
+        State.Year = item.Date.Year;
+        State.Month = item.Date.Month;
+
+        await LoadData();
     }
 }
