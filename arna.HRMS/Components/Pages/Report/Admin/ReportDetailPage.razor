@@ -10,7 +10,7 @@
 
 @inject IReportService ReportService
 @inject NotificationService NotificationService
-
+@inject IFestivalHolidayService festivalHolidayService
 @if (isLoading)
 {
     <Loader Visible="isLoading" Message="@loadingMessage" />
@@ -119,10 +119,10 @@ else
                                 <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-2 py-1 small">
                                     Half: @halfDayCount × 0.5
                                 </span>
-                            </div>
+                            </div> 
                             <div class="d-flex align-items-baseline justify-content-between mb-2">
                                 <span class="fs-3 fw-bold text-primary">@averageCount</span>
-                                <small class="text-muted">of @cachedFilteredRecords.Count days</small>
+                                <small class="text-muted">of @totalWorkingDays days</small>
                             </div>
                             <div class="progress rounded-pill" style="height:7px;">
                                 <div class="progress-bar bg-primary rounded-pill att-bar-transition"
@@ -319,6 +319,8 @@ else
     private int _prevYear, _prevMonth;
     private int? _prevEmployeeId;
 
+    private List<FestivalHolidayViewModel> holidayList = new();
+
     private List<AttendanceReportViewModel> DisplayRecords =>
         string.IsNullOrEmpty(selectedStatusFilter)
             ? cachedFilteredRecords
@@ -413,6 +415,27 @@ else
                 // if (result?.IsSuccess == false)
                 //     await NotificationService.Info("Failed to load attendance report.");
             }
+
+            var holidayResult = await festivalHolidayService
+            .GetFestivalHolidayByMonthAsync(selectedYear, selectedMonth);
+
+            if (holidayResult?.IsSuccess == true && holidayResult.Data != null)
+            {
+                if (filterMode == "dateRange")
+                {
+                    holidayList = holidayResult.Data
+                        .Where(h => h.Date >= fromDate && h.Date <= toDate)
+                        .ToList();
+                }
+                else
+                {
+                    holidayList = holidayResult.Data;
+                }
+            }
+            else
+            {
+                holidayList = new();
+            }
         }
         catch (Exception ex)
         {
@@ -452,13 +475,32 @@ else
     private void ComputeStatistics()
     {
         var records = cachedFilteredRecords;
+        int totalDays;
+        int weekendDays;
+
+        if (filterMode == "month")
+        {
+            totalDays = DateTime.DaysInMonth(selectedYear, selectedMonth);
+            weekendDays = GetWeekendDays(selectedYear, selectedMonth);
+        }
+        else
+        {
+            totalDays = (toDate.Date - fromDate.Date).Days + 1;
+            weekendDays = GetWeekendDays(fromDate, toDate);
+        }
+
+        var holidayCount = holidayList.Count(h =>
+            h.Date.DayOfWeek != DayOfWeek.Saturday &&
+            h.Date.DayOfWeek != DayOfWeek.Sunday
+        );
 
         presentCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Present);
         lateCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Late);
         halfDayCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.HalfDay);
 
         weightedPresentDays = presentCount + lateCount + (halfDayCount * 0.5);
-        totalWorkingDays = records.Count - records.Count(r => r.AttendanceStatus == AttendanceStatus.Holiday);
+        // totalWorkingDays = records.Count - records.Count(r => r.AttendanceStatus == AttendanceStatus.Holiday);
+        totalWorkingDays = totalDays - weekendDays - holidayCount;
 
         attendanceRate = totalWorkingDays > 0
             ? Math.Min(100, Math.Round((weightedPresentDays / totalWorkingDays) * 100, 1))
@@ -584,7 +626,7 @@ else
 
     private double ComputeProgressWidth() =>
         cachedFilteredRecords.Count > 0
-            ? Math.Min(100, (weightedPresentDays / cachedFilteredRecords.Count) * 100)
+            ? Math.Min(100, (weightedPresentDays / totalWorkingDays) * 100)
             : 0;
 
     private static string RateTextColor(double r) =>
@@ -603,4 +645,37 @@ else
             AttendanceStatus.HalfDay => "table-info",
             _ => ""
         };
+    private int GetWeekendDays(int year, int month)
+    {
+        int weekendCount = 0;
+        int daysInMonth = DateTime.DaysInMonth(year, month);
+
+        for (int day = 1; day <= daysInMonth; day++)
+        {
+            var date = new DateTime(year, month, day);
+
+            if (date.DayOfWeek == DayOfWeek.Saturday ||
+                date.DayOfWeek == DayOfWeek.Sunday)
+            {
+                weekendCount++;
+            }
+        }
+
+        return weekendCount;
+    }
+    private int GetWeekendDays(DateTime startDate, DateTime endDate)
+    {
+        int weekendCount = 0;
+
+        for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+        {
+            if (date.DayOfWeek == DayOfWeek.Saturday ||
+                date.DayOfWeek == DayOfWeek.Sunday)
+            {
+                weekendCount++;
+            }
+        }
+
+        return weekendCount;
+    }
 }
