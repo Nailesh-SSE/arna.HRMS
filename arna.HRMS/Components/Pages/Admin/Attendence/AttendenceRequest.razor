@@ -82,13 +82,73 @@
                     <span class="d-none d-sm-inline">Request Details</span>
                     <span class="d-sm-none">Requests</span>
                 </h6>
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill
-                                     px-2 px-md-3 small">
-                    @FilteredRequests.Count
-                    <span class="d-none d-sm-inline">requests</span>
-                </span>
+                <div class="d-flex align-items-center gap-2 gap-md-3">
+                    @{
+                        var pendingRequests = _allRequests.Count(r => r.StatusId == Status.Pending);
+                    }
+                    @if (pendingRequests > 0)
+                    {
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="acceptAllSwitch"
+                                   @bind="AcceptAllChecked"
+                                   disabled="@_isUpdating" />
+                            <label class="form-check-label small text-muted" for="acceptAllSwitch">
+                                Accept all pending
+                            </label>
+                        </div>
+                    }
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill
+                                         px-2 px-md-3 small">
+                        @FilteredRequests.Count
+                        <span class="d-none d-sm-inline">requests</span>
+                    </span>
+                </div>
             </div>
         </div>
+
+        <!-- ═══════════ ACCEPT ALL CONFIRMATION MODAL ═══════════ -->
+        @if (_showAcceptAllModal)
+        {
+            <div class="modal d-block" style="background-color: rgba(0, 0, 0, 0.5);">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-0 rounded-3 shadow-lg">
+                        <div class="modal-header border-0 bg-light rounded-top-3">
+                            <h5 class="modal-title fw-semibold">
+                                <i class="bi bi-exclamation-circle text-warning me-2"></i>
+                                Accept All Pending Requests?
+                            </h5>
+                            <button type="button" class="btn-close" @onclick="OnAcceptAllCancel"></button>
+                        </div>
+                        <div class="modal-body py-3 py-md-4">
+                            <p class="mb-2">
+                                You are about to approve <strong>@(_allRequests.Count(r => r.StatusId == Status.Pending))</strong> pending attendance request(s).
+                            </p>
+                        </div>
+                        <div class="modal-footer border-0 bg-light rounded-bottom-3 gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill"
+                                    @onclick="OnAcceptAllCancel"
+                                    disabled="@_isUpdating">
+                                <i class="bi bi-x-lg me-1"></i>Cancel
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success rounded-pill"
+                                    @onclick="ApproveAllPendingAsync"
+                                    disabled="@_isUpdating">
+                                @if (_isUpdating)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Approving...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    <span>Accept All</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
 
         <div class="card-body p-0">
             @if (!FilteredRequests.Any())
@@ -182,6 +242,9 @@
     private int _pendingCount;
     private int _approvedCount;
     private int _rejectedCount;
+
+    private bool _acceptAllChecked;
+    private bool _showAcceptAllModal;
 
     // ═══════════ COMPUTED ═══════════
 
@@ -405,4 +468,112 @@
         string ActiveClass,
         int Count,
         string Label);
+
+
+    private async Task ApproveAllPendingAsync()
+    {
+        var pendingRequests = _allRequests.Where(r => r.StatusId == Status.Pending).ToList();
+
+        if (!pendingRequests.Any())
+        {
+            await NotificationService.Warning("No pending requests to approve.");
+            OnAcceptAllCancel();
+            return;
+        }
+
+        _isUpdating = true;
+        StateHasChanged();
+
+        try
+        {
+            var employeeId = GetEmployeeId();
+            if (employeeId <= 0)
+            {
+                await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+                return;
+            }
+
+            int successCount = 0;
+            int failCount = 0;
+
+            foreach (var request in pendingRequests)
+            {
+                var result = await AttendanceRequestService
+                    .UpdateRequestStatusAsync(request.Id, Status.Approved, employeeId);
+
+                if (result?.IsSuccess == true)
+                    successCount++;
+                else
+                    failCount++;
+            }
+
+            await LoadRequests();
+            RecalculateCounts();
+            StateHasChanged();
+
+            if (failCount == 0)
+            {
+                await NotificationService.Success(
+                    $"Successfully approved {successCount} request(s).");
+            }
+            else if (successCount == 0)
+            {
+                await NotificationService.Error(
+                    $"Failed to approve {failCount} request(s). Please try again.");
+            }
+            else
+            {
+                await NotificationService.Warning(
+                    $"Approved {successCount} request(s), but {failCount} failed.");
+            }
+
+            OnAcceptAllCancel();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.Error($"Error approving requests: {ex.Message}");
+        }
+        finally
+        {
+            _isUpdating = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool AcceptAllChecked
+    {
+        get => _acceptAllChecked;
+        set
+        {
+            if (value)
+            {
+                var pendingCount = _allRequests.Count(r => r.StatusId == Status.Pending);
+                if (pendingCount == 0)
+                {
+                    // reset and notify
+                    _acceptAllChecked = false;
+                    _ = NotificationService.Warning("No pending requests to approve.");
+                    _ = InvokeAsync(StateHasChanged);
+                    return;
+                }
+
+                _acceptAllChecked = true;
+                _showAcceptAllModal = true;
+            }
+            else
+            {
+                _acceptAllChecked = false;
+                _showAcceptAllModal = false;
+            }
+
+            _ = InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async void OnAcceptAllCancel()
+    {
+        AcceptAllChecked = false;
+        _showAcceptAllModal = false;
+        await InvokeAsync(StateHasChanged);
+    }
 }
