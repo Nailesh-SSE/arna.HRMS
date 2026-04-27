@@ -36,7 +36,8 @@
             {
                 @foreach (var item in DisplayItems)
                 {
-                    <tr class="@(RowClassFunc?.Invoke(item) ?? "")">
+                    <tr class="@(RowClassFunc?.Invoke(item) ?? "") @(RowClickable ? "att-row-clickable" : "")"
+                        @onclick="RowClickable ? (() => HandleRowClick(item)) : null">
                         @foreach (var col in Columns)
                         {
                             <td class="px-3 py-2 text-start custom-td">
@@ -181,6 +182,8 @@
     [Parameter] public List<TableColumn<TItem>> Columns { get; set; } = new();
     [Parameter] public EventCallback<TItem> OnEdit { get; set; }
     [Parameter] public EventCallback<TItem> OnDelete { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
+    [Parameter] public bool RowClickable { get; set; } = false;
     [Parameter] public bool ShowActions { get; set; } = true;
     [Parameter] public RenderFragment<TItem>? ActionTemplate { get; set; }
 
@@ -223,4 +226,14 @@
     }
         
     private int GetColSpan() => Columns.Count + (ShowActions ? 1 : 0);
+
+    private async Task HandleRowClick(TItem item)
+    {
+        if (!RowClickable) return;
+
+        if (OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(item);
+        }
+    }
 }

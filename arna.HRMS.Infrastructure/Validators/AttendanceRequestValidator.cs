@@ -103,10 +103,13 @@ public class AttendanceRequestValidator
 
         if (dto.ClockIn != null && dto.ClockOut != null)
         {
-            if (dto.ClockOut <= dto.ClockIn)
-                errors.Add("ClockOut must be greater than ClockIn");
+            if (dto.FromDate == dto.ToDate && dto.ClockOut <= dto.ClockIn)
+                errors.Add("ClockOut must be greater than ClockIn for same-day requests");
         }
-
+        
+        if (dto.TotalHours > TimeSpan.FromHours(24))
+            errors.Add("Shift cannot be more then 24hr");
+        
         if (dto.LocationId == null)
             errors.Add("Location is required");
 

@@ -92,8 +92,8 @@ public class TableSchemas
         new() { Header = "Total Days", Value = u => u.LeaveDays },
         new() { Header = "Status", Value = u => u.StatusId },
         new() { Header = "ApprovedBy", Value = u => u.ApprovedByName },
-        new() { Header = "Start Date", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
-        new() { Header = "End Date", Value = u => u.EndDate.Date.ToString("yyyy/MM/dd") },
+        new() { Header = "Start Date", Value = u => u.StartDate.ToString("dd MMM yyyy") },
+        new() { Header = "End Date", Value = u => u.EndDate.Date.ToString("dd MMM yyyy") },
     };
 
     public static List<TableColumn<LeaveRequestViewModel>> DashboardPendingLeaves = new()
@@ -155,7 +155,7 @@ public class TableSchemas
         new()
         {
             Header = "Date",
-            Value = f => f.Date.ToString("MMM dd, yyyy")
+            Value = f => f.Date.ToString("dd MMM yyyy")
         },
         new()
         {
@@ -179,13 +179,13 @@ public class TableSchemas
         new() { Header = "Leave Type", Value = u => u.LeaveTypeName },
         new() { Header = "Reason", Value = u => string.IsNullOrWhiteSpace(u.Reason) ? "-" : u.Reason },
         new() { Header = "Total Days", Value = u => u.LeaveDays.ToString() },
-        new() { Header = "Start Date", Value = u => u.StartDate.ToString("yyyy/MM/dd") },
-        new() { Header = "End Date", Value = u => u.EndDate.ToString("yyyy/MM/dd") },
+        new() { Header = "Start Date", Value = u => u.StartDate.ToString("dd MMM yyyy") },
+        new() { Header = "End Date", Value = u => u.EndDate.ToString("dd MMM yyyy") },
     };
 
     public static List<TableColumn<MonthlyAttendanceViewModel>> GetAttendanceColumns(int employeeId) => new()
     {
-        new() { Header = "Date",           Value = u => u.Date.ToString("yyyy-MM-dd") },
+        new() { Header = "Date",           Value = u => u.Date.ToString("dd MMM yyyy") },
         new() { Header = "Day",            Value = u => u.Day },
         new() { Header = "Clock In",       Value = u => GetEmp(u, employeeId)?.ClockIn?.ToString(@"hh\:mm\:ss") ?? "-" },
         new() { Header = "Clock Out",      Value = u => GetEmp(u, employeeId)?.ClockOut?.ToString(@"hh\:mm\:ss") ?? "-" },
@@ -198,8 +198,8 @@ public class TableSchemas
     public static List<TableColumn<AttendanceRequestViewModel>> AttendanceRequest = new()
     {
         new() { Header = "Employee Name",   Value = u => u.EmployeeName },
-        new() { Header = "From Date",       Value = u => u.FromDate },
-        new() { Header = "To Date",         Value = u => u.ToDate },
+        new() { Header = "From Date",       Value = u => u.FromDate?.ToString("dd MMM yyyy") },
+        new() { Header = "To Date",         Value = u => u.ToDate?.ToString("dd MMM yyyy") },
         new() { Header = "Clock In",        Value = u => u.ClockIn?.ToString(@"hh\:mm tt") ?? "-" },
         new() { Header = "Clock Out",       Value = u => u.ClockOut?.ToString(@"hh\:mm tt") ?? "-" },
         new() { Header = "Reason",          Value = u => u.ReasonTypeId },
@@ -340,7 +340,22 @@ public class TableSchemas
     public static List<TableColumn<AttendanceRequestViewModel>> EmployeeAttendenceRequestTable = new()
     {
          new() { Header = "Employee", Value = u => $"{u.EmployeeName}" },
-        new() { Header = "Date Range",  Value = u => $"{u.FromDate?.ToString("dd MMM yyyy") ?? "--"}" },
+        new() { Header = "Date Range",   Value = u =>
+        {
+            if (u.FromDate == null) return "--";
+
+            var from = u.FromDate.Value;
+            var to = u.ToDate;
+
+            if (from != to)
+            {
+                return $"{from:dd}-{to.Value:dd MMM yyyy}";
+            }
+            else
+            {
+                return from.ToString("dd MMM yyyy");
+            }
+        }},
         new() { Header = "Reason",      Value = u => u.ReasonTypeId?.ToString() ?? "--" },
         new() { Header = "Location",    Value = u => u.LocationId?.ToString() ?? "--" },
         new() { Header = "Clock In",    Value = u => u.ClockIn?.ToString("hh:mm tt") ?? "--" },

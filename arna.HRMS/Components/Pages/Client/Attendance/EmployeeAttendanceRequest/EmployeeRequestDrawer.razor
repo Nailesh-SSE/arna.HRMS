@@ -62,7 +62,7 @@
                         <AppInput Label="Clockin Time"
                                   Type="time"
                                   Value="@request.ClockIn?.ToString("HH:mm")"
-                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockIn = d))"
+                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockIn = d,false))"
                                   ValidationExpression="@(() => request.ClockIn)" />
                     </div>
 
@@ -70,7 +70,7 @@
                         <AppInput Label="Clockout Time"
                                   Type="time"
                                   Value="@request.ClockOut?.ToString("HH:mm")"
-                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockOut = d))"
+                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockOut = d,true))"
                                   ValidationExpression="@(() => request.ClockOut)" />
                     </div>
                 </div>
@@ -84,7 +84,7 @@
                     <div class="col-6">
                         <AppInput Label="Total Worked Time"
                                   Type="text"
-                                  Value="@((request.ClockOut - request.ClockIn)?.ToString(@"hh\:mm") ?? "00:00")"
+                                  Value="@((request.TotalHours + request.BreakDuration)?.ToString(@"hh\:mm") ?? "00:00")"
                                   ReadOnly="true" />
                     </div>
 
@@ -246,19 +246,29 @@
         {
             if (request.ClockIn.HasValue)
                 request.ClockIn = request.FromDate.Value.Date.Add(request.ClockIn.Value.TimeOfDay);
-            if (request.ClockOut.HasValue)
-                request.ClockOut = request.FromDate.Value.Date.Add(request.ClockOut.Value.TimeOfDay);
         }
+        StateHasChanged();
         CalculationFinalWork();
     }
 
-    private void OnToDateChanged(DateTime? date) => request.ToDate = date;
-
-    private void OnClockTimeChanged(string? value, Action<DateTime?> setter)
+    private void OnToDateChanged(DateTime? date)
+    {
+        request.ToDate = date;
+        if (request.ToDate.HasValue)
+        {
+            if (request.ClockOut.HasValue)
+                request.ClockOut = request.ToDate.Value.Date.Add(request.ClockOut.Value.TimeOfDay);
+        }
+        StateHasChanged(); 
+        CalculationFinalWork();
+    }
+    private void OnClockTimeChanged(string? value, Action<DateTime?> setter, bool isClockOut = false)
     {
         if (TimeSpan.TryParse(value, out var time))
         {
-            var baseDate = request.FromDate ?? DateTime.Today;
+            var baseDate = isClockOut
+            ? (request.ToDate ?? DateTime.Today)
+            : (request.FromDate ?? DateTime.Today);
             setter(baseDate.Date.Add(time));
         }
         else setter(null);
@@ -275,14 +285,22 @@
     }
 
     private void CalculationFinalWork()
-    {
-        if (!request.ClockIn.HasValue || !request.ClockOut.HasValue || request.ClockOut <= request.ClockIn)
+   {
+        if (!request.ClockIn.HasValue || !request.ClockOut.HasValue) 
         {
             request.TotalHours = TimeSpan.Zero;
             return;
         }
+        var clockIn = request.ClockIn.Value;
+        var clockOut = request.ClockOut.Value;
 
-        var totalWorked = request.ClockOut.Value - request.ClockIn.Value;
+        if (request.FromDate == request.ToDate && clockOut <= clockIn)
+        {
+                request.TotalHours = TimeSpan.Zero;
+                return;   
+        }
+
+        var totalWorked = clockOut - clockIn;
         var breakDuration = request.BreakDuration ?? TimeSpan.Zero;
         var final = totalWorked - breakDuration;
 
