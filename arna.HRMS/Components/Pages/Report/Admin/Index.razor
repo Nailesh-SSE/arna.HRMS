@@ -1,0 +1,31 @@
+﻿@page "/admin-report-management"
+
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Core.Entities
+@using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Components.Pages.Report.LeaveReport
+
+@if (isLoading)
+{
+    <Loader Visible="isLoading" Message="@loadingMessage" />
+}
+else
+{
+
+    <ReportPage />
+}
+
+
+@code
+{
+    private string loadingMessage = "Loading Report Management....";
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        await base.OnInitializedAsync();
+        isLoading = false;
+    }
+}

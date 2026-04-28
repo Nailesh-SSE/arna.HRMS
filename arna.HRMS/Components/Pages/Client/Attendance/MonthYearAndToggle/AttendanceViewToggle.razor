@@ -1,0 +1,28 @@
+﻿<div class="view-toggle">
+    <button class="icon-btn @(ActiveView == TableView ? "active" : "")"
+            @onclick="() => OnChange.InvokeAsync(TableView)"
+            title="Table View">
+        📊
+    </button>
+
+    <button class="icon-btn @(ActiveView == CalendarView ? "active" : "")"
+            @onclick="() => OnChange.InvokeAsync(CalendarView)"
+            title="Calendar View">
+        📅
+    </button>
+</div>
+
+@code {
+    /* ================= PARAMETERS ================= */
+
+    [Parameter, EditorRequired]
+    public string ActiveView { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnChange { get; set; }
+
+    /* ================= CONSTANTS ================= */
+
+    private const string TableView = "table";
+    private const string CalendarView = "calendar";
+}

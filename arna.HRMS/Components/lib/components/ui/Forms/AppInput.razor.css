@@ -1,0 +1,16 @@
+﻿/* ═══════════════════════════════════════════
+   Base Input Styling
+   ═══════════════════════════════════════════ */
+input.form-control {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+    input.form-control:focus {
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.15);
+    }
+
+    input.form-control:disabled,
+    input.form-control[readonly] {
+        background-color: var(--bs-secondary-bg, #e9ecef);
+        opacity: 0.7;
+    }

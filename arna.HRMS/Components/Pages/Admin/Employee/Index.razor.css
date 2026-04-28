@@ -1,0 +1,162 @@
+﻿/* ═══════════════════════════════════════════════════════════
+   EMPLOYEE PAGE STYLES (CLEAN VERSION)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Header Icon ─── */
+.emp-header-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+/* ─── Add Button ─── */
+.emp-add-btn {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.15);
+}
+
+    .emp-add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(var(--bs-primary-rgb), 0.3);
+    }
+
+    .emp-add-btn:active {
+        transform: translateY(0);
+    }
+
+/* ─── Empty State ─── */
+.emp-empty-icon {
+    width: 80px;
+    height: 80px;
+    background-color: #f8f9fa;
+    border-radius: 16px;
+}
+
+.emp-empty-text {
+    max-width: 360px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* ─── Table Scroll ─── */
+.emp-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 16px 16px;
+}
+
+    /* Scrollbar styling */
+    .emp-table-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .emp-table-scroll::-webkit-scrollbar-track {
+        background: #f1f3f5;
+        border-radius: 10px;
+    }
+
+    .emp-table-scroll::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+
+        .emp-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+
+/* ─── Search Bar ─── */
+.form-control-sm {
+    transition: all 0.2s ease;
+}
+
+    .form-control-sm:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.1);
+    }
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE (<576px)
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 575.98px) {
+
+    .emp-header-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+        .emp-header-icon i {
+            font-size: 1.1rem !important;
+        }
+
+    .emp-table-scroll {
+        max-height: 50vh;
+    }
+
+    .emp-empty-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .emp-empty-text {
+        font-size: 0.9rem;
+        max-width: 280px;
+    }
+
+    .emp-add-btn {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.9rem;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TABLET (576px–991px)
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 576px) and (max-width: 991.98px) {
+
+    .emp-table-scroll {
+        max-height: 60vh;
+    }
+
+    .emp-header-icon {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP (≥992px)
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 992px) {
+
+    .emp-table-scroll {
+        max-height: 65vh;
+    }
+
+    .emp-header-icon {
+        width: 52px;
+        height: 52px;
+    }
+
+        .emp-header-icon i {
+            font-size: 1.5rem !important;
+        }
+}
+
+/* ─── Print Mode ─── */
+@media print {
+
+    .emp-add-btn,
+    .form-control-sm,
+    .btn-outline-secondary {
+        display: none;
+    }
+
+    .emp-table-scroll {
+        max-height: none;
+        overflow: visible;
+    }
+}

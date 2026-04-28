@@ -1,4 +1,7 @@
-﻿namespace arna.HRMS.Core.Entities;
+﻿using arna.HRMS.Core.Common.Base;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace arna.HRMS.Core.Entities;
 
 public class Employee : BaseEntity
 {
@@ -6,6 +9,7 @@ public class Employee : BaseEntity
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Email { get; set; }
+    public string OfficeEmail { get; set; }
     public string PhoneNumber { get; set; }
     public DateTime DateOfBirth { get; set; }
     public DateTime HireDate { get; set; }
@@ -14,6 +18,9 @@ public class Employee : BaseEntity
     public string Position { get; set; }
     public decimal Salary { get; set; }
 
+    [NotMapped]
+    public string FullName => $"{FirstName} {LastName}";
+
     // Navigation Properties
     public Department Department { get; set; }
     public Employee Manager { get; set; }
@@ -21,4 +28,7 @@ public class Employee : BaseEntity
     public ICollection<Attendance> Attendances { get; set; }
     public ICollection<LeaveRequest> LeaveRequests { get; set; }
     public ICollection<Timesheet> Timesheets { get; set; }
+    public ICollection<AttendanceRequest> AttendanceRequest { get; set; }
+    public ICollection<AttendanceRequest> AttendanceRequestsApproved { get; set; }
+    public ICollection<LeaveRequest> ApprovedLeaveRequests { get; set; }
 }

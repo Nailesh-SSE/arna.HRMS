@@ -1,0 +1,417 @@
+﻿@page "/emp-attendance-management"
+
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.Pages.Client.Attendance.EmployeeAttendanceRequest
+@using arna.HRMS.Components.Pages.Client.Attendance.Calendar
+@using arna.HRMS.Components.Pages.Client.Attendance.EmployeeAttendenceTable
+@using arna.HRMS.Components.Pages.Client.Attendance.MonthYearAndToggle
+@using arna.HRMS.Components.Pages.Client.Attendance.Summary
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Helper.Attendance
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.State.Attendance
+@using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
+
+@inherits AuthenticatedLayoutBase
+
+@inject AttendanceState State
+@inject NotificationService NotificationService
+@inject IAttendanceService AttendanceService
+@inject IAttendanceRequestService AttendanceRequestService
+@inject IJSRuntime JsRuntime
+
+<Loader Visible="@_isLoading" Message="@_loaderMessage" />
+
+@if (!_isLoading)
+{
+    <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
+
+        <!-- ================= HEADER ================= -->
+        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
+                                justify-content-between gap-2 gap-sm-3 mb-4">
+
+            <div class="d-flex align-items-start gap-2">
+                <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
+                                         p-2 d-inline-flex align-items-center justify-content-center">
+                    <i class="bi bi-calendar-check-fill fs-5"></i>
+                </span>
+
+                <div>
+                    <h5 class="fw-bold mb-0">Attendance</h5>
+                    <p class="text-muted mb-0 small d-none d-sm-block">
+                        View and track your daily attendance records
+                    </p>
+                </div>
+            </div>
+
+            <button class="btn btn-primary btn-sm rounded-pill px-4"
+                    @onclick="OpenNewRequest">
+                <i class="bi bi-plus-lg me-1"></i>
+                New Request
+            </button>
+        </div>
+
+        <!-- ================= TAB NAVIGATION ================= -->
+        <div class="py-3 attendence-fade-in">
+            <div class="card border-0 shadow-sm rounded-3 mb-4 ">
+                <div class="card-body p-0">
+                    <ul class="nav nav-tabs attendence-tabs px-3 pt-3">
+
+                        <li class="nav-item">
+                            <button class="nav-link @(_activeTab == Tab.Attendance ? "active" : "")"
+                                    @onclick="() => SetTab(Tab.Attendance)">
+                                <i class="bi bi-calendar-check me-2"></i>
+                                Attendance
+
+                                @if (_attendanceCount > 0)
+                                {
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-2">
+                                        @_attendanceCount
+                                    </span>
+                                }
+                            </button>
+                        </li>
+
+                        <li class="nav-item">
+                            <button class="nav-link @(_activeTab == Tab.Requests ? "active" : "")"
+                                    @onclick="() => SetTab(Tab.Requests)">
+                                <i class="bi bi-inbox me-2"></i>
+                                Attendance Requests
+
+                                @if (_pendingRequestCount > 0)
+                                {
+                                    <span class="badge bg-warning text-dark rounded-pill ms-2">
+                                        @_pendingRequestCount
+                                    </span>
+                                }
+                            </button>
+                        </li>
+
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- ================= TAB CONTENT ================= -->
+        <div class="tab-content">
+
+            @if (_activeTab == Tab.Attendance)
+            {
+                <!-- Month + Toggle -->
+                <div class="card border-0 shadow-sm rounded-3 mb-4">
+                    <div class="card-body">
+
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <SelectMonthAndYear Year="@State.Year"
+                                                    Month="@State.Month"
+                                                    OnChange="OnMonthSelected" />
+                                <span class="system-leave-badge">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                    System Triggered Leave (@_leaveCount)
+                                </span>
+                            </div>
+                            <AttendanceViewToggle ActiveView="@_attendanceViewMode"
+                                                  OnChange="SetAttendanceView" />
+                        </div>
+
+                        <div class="mt-3">
+                            @switch (_attendanceViewMode)
+                            {
+                                case AttendanceState.TABLE:
+                                    <EmployeeAttendanceTableView Attendance="State.AttendanceList" />
+                                    break;
+
+                                case AttendanceState.CALENDAR:
+                                    <AttendanceCalendar Year="@State.Year"
+                                                        Month="@State.Month"
+                                                        AttendanceLookup="State.AttendanceLookup" />
+                                    break;
+                            }
+                        </div>
+
+                    </div>
+                </div>
+
+            }
+
+            @if (_activeTab == Tab.Requests)
+            {
+                <AttendanceRequestList Requests="State.AttendanceRequestList"
+                                       EditClicked="HandleEditRequest"
+                                       CancelClicked="HandleCancelRequest" />
+            }
+
+        </div>
+
+        <!-- ================= DRAWER ================= -->
+        <EmployeeRequestDrawer IsOpen="@_isDrawerOpen"
+                               IsOpenChanged="OnDrawerOpenChanged"
+                               Title="@(_editModel != null
+                                                               ? "Edit Attendance Request"
+                                                               : "New Attendance Request")"
+                           EditModel="_editModel" />
+</div>
+}
+@code {
+
+    // ═══════════ CONSTANTS ═══════════
+
+    private const int ExpectedDailyHours = 8;
+    private int _leaveCount;
+
+    // ═══════════ STATE ═══════════
+
+    private bool _isLoading = true;
+    private bool _isDrawerOpen;
+    private string _loaderMessage = "Loading attendance information...";
+
+    private AttendanceRequestViewModel? _editModel;
+    private string _attendanceViewMode = AttendanceState.TABLE;
+
+    private enum Tab { Attendance, Requests }
+    private Tab _activeTab = Tab.Attendance;
+
+    // ── Badge counts ──
+    private int _attendanceCount;
+    private int _pendingRequestCount;
+
+    // ═══════════ LIFECYCLE ═══════════
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        if (!IsAuthenticated()) return;
+
+        EnsureSelectedMonth();
+        await LoadData();
+
+        _isLoading = false;
+    }
+
+    // ═══════════ DATA LOADING ═══════════
+
+    private void EnsureSelectedMonth()
+    {
+        var now = DateTime.Today;
+        State.Year = now.Year;
+        State.Month = now.Month;
+        State.SelectedMonth = $"{now.Year}-{now.Month:D2}";
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var empId = GetEmployeeId();
+
+            await Task.WhenAll(
+                LoadAttendanceAsync(empId),
+                LoadAttendanceRequests(empId)
+            );
+
+            BuildAttendanceLookup();
+            CalculateTotalHours();
+            BuildSummary();
+            UpdateBadgeCounts();
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.Error(ex.Message);
+        }
+    }
+
+    private async Task LoadAttendanceAsync(int empId)
+    {
+        var result = await AttendanceService.GetAttendanceByMonthAsync(State.Year, State.Month, empId, State.SelectedDate, null);
+        _leaveCount = result.Data!
+            .SelectMany(e => e.Employees ?? Enumerable.Empty<dynamic>())
+            .Count(emp => emp.Status != null && emp.Status.ToString() == "Leave");
+        State.AttendanceList = result?.IsSuccess == true ? result.Data ?? new() : new();
+    }
+
+    private async Task LoadAttendanceRequests(int empId)
+    {
+        var result = await AttendanceRequestService.GetAllAsync(empId);
+        State.AttendanceRequestList =
+            result?.IsSuccess == true ? result.Data ?? new() : new();
+    }
+
+    private void BuildAttendanceLookup()
+    {
+        State.AttendanceLookup = State.AttendanceList
+            .GroupBy(x => x.Date)
+            .ToDictionary(g => g.Key, g => g.First());
+    }
+
+    private void CalculateTotalHours()
+    {
+        // Sum only WorkingHours (exclude breaks/total hours which include breaks)
+        State.TotalWorkingHours = State.AttendanceList
+            .SelectMany(d => d.Employees ?? Enumerable.Empty<dynamic>())
+            .Aggregate(TimeSpan.Zero, (t, e) => t + (e?.WorkingHours ?? TimeSpan.Zero));
+    }
+
+    private void BuildSummary()
+    {
+        State.SummaryCards = AttendanceSummaryBuilder.Build(State.AttendanceList);
+    }
+
+    private void UpdateBadgeCounts()
+    {
+        _attendanceCount = State.AttendanceList?.Count ?? 0;
+        _pendingRequestCount = State.AttendanceRequestList?
+            .Count(r => r.StatusId == Status.Pending) ?? 0;
+    }
+
+    private void SetTab(Tab tab)
+    {
+        if (_activeTab == tab) return;
+        _activeTab = tab;
+    }
+
+    private async Task SetAttendanceView(string mode)
+    {
+        if (mode == AttendanceState.REQUEST)
+        {
+            _activeTab = Tab.Requests;
+            return;
+        }
+
+        _attendanceViewMode = mode;
+        State.ViewMode = mode;
+        await LoadData();
+    }
+
+    private async Task OnMonthSelected((int year, int month) value)
+    {
+        State.Year = value.year;
+        State.Month = value.month;
+        State.SelectedMonth = $"{value.year}-{value.month:D2}";
+        await LoadData();
+    }
+
+    private void OpenNewRequest()
+    {
+        _editModel = null;
+        _isDrawerOpen = true;
+    }
+
+    private void HandleEditRequest(AttendanceRequestViewModel req)
+    {
+        _editModel = req;
+        _isDrawerOpen = true;
+    }
+
+    private async Task HandleCancelRequest(AttendanceRequestViewModel req)
+    {
+        var confirmed = await JsRuntime.InvokeAsync<bool>(
+            "confirm",
+            "Are you sure you want to cancel this attendance request?");
+
+        if (!confirmed) return;
+
+        try
+        {
+            var empId = GetEmployeeId();
+            if (empId <= 0)
+            {
+                await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
+                return;
+            }
+
+            var result = await AttendanceRequestService.CancelRequestAsync(req.Id, empId);
+
+            if (result?.IsSuccess == true)
+            {
+                await NotificationService.Success("Request cancelled successfully.");
+                await LoadData();
+            }
+            else
+            {
+                await NotificationService.Error(result?.Message ?? "Failed to cancel request.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.Error($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task OnDrawerOpenChanged(bool isOpen)
+    {
+        _isDrawerOpen = isOpen;
+        if (!isOpen)
+        {
+            _editModel = null;
+            await LoadData();
+        }
+    }
+
+    private int GetWorkingHoursPercent()
+    {
+        var workingDays = State.AttendanceList.Count(d =>
+        {
+            var empRecord = d.Employees?.FirstOrDefault();
+            if (empRecord == null) return false;
+
+            var status = empRecord.Status?.ToString() ?? "";
+            return status == "Present" || status == "Late" || status == "HalfDay";
+        });
+
+        if (workingDays == 0) return 0;
+
+        var expected = workingDays * ExpectedDailyHours;
+        var actual = State.TotalWorkingHours.TotalHours;
+        var percent = (int)Math.Round(actual / expected * 100);
+
+        return Math.Min(percent, 100);
+    }
+
+    private string GetExpectedHours()
+    {
+        var workingDays = State.AttendanceList.Count(d =>
+        {
+            var empRecord = d.Employees?.FirstOrDefault();
+            if (empRecord == null) return false;
+
+            var status = empRecord.Status?.ToString() ?? "";
+            return status == "Present" || status == "Late" || status == "HalfDay";
+        });
+
+        var expected = workingDays * ExpectedDailyHours;
+        return $"{expected}:00";
+    }
+
+    private string GetViewIcon() => _attendanceViewMode switch
+    {
+        AttendanceState.TABLE => "bi-table",
+        AttendanceState.CALENDAR => "bi-calendar3",
+        _ => "bi-grid"
+    };
+
+    private string GetViewLabel() => _attendanceViewMode switch
+    {
+        AttendanceState.TABLE => "Table View",
+        AttendanceState.CALENDAR => "Calendar View",
+        _ => "View"
+    };
+
+    private static string GetMonthName(int m)
+        => System.Globalization.CultureInfo.CurrentCulture
+            .DateTimeFormat.GetMonthName(m);
+
+    private string FormatTotalWorkingHours()
+    {
+        var ts = State.TotalWorkingHours;
+        int totalHours = (int)ts.TotalHours;
+        int minutes = ts.Minutes;
+        int seconds = ts.Seconds;
+        return $"{totalHours}:{minutes:D2}:{seconds:D2}";
+    }
+}

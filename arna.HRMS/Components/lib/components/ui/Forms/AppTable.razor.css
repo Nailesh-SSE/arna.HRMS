@@ -1,0 +1,176 @@
+﻿/* ── Wrapper ── */
+.app-table-wrapper {
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #dee2e6 transparent;
+}
+
+.app-table-wrapper::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+.app-table-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.app-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: #dee2e6;
+    border-radius: 10px;
+}
+
+/* ── Table layout ── */
+.custom-table {
+    table-layout: auto; 
+    width: max-content; 
+    min-width: 100%; 
+}
+
+/* ── Sticky header ── */
+.sticky-th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bs-light, #f8f9fa) !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* ── TD font ── */
+.custom-td {
+    font-size: 15px;
+}
+
+/* ── Pagination ── */
+::deep .pagination .page-link {
+    border: none;
+    color: #6c757d;
+    padding: 4px 10px;
+    font-size: .85rem;
+}
+
+::deep .pagination .page-item.active .page-link {
+    background: #4e73df;
+    color: #fff;
+    border-radius: 6px;
+}
+
+::deep .pagination .page-link:hover {
+    background: #e9ecef;
+    border-radius: 6px;
+}
+
+/* ══════════════════════════════════════
+   BREAK DURATION TOOLTIP
+══════════════════════════════════════ */
+
+/* Host — wraps the value + tooltip box together */
+.att-tip-host {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* The visible cell content row */
+.att-tip-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: default;
+}
+
+/* Small info icon next to the value */
+.att-tip-icon {
+    font-size: 0.7rem;
+    color: #6c757d;
+    opacity: 0.5;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.att-tip-host:hover .att-tip-icon {
+    opacity: 1;
+    color: #4e73df;
+}
+
+/* Arrow pointing down toward the cell */
+.att-tip-box::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e2a3a;
+}
+/* ADD THIS */
+.att-tip-box {
+    display: none;
+    position: fixed;
+    background: #1e2a3a;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-width: 220px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+    z-index: 9999;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+    /* ADD THIS */
+    .att-tip-box.visible {
+        display: block;
+    }
+
+/* ── Tooltip inner layout ── */
+.att-tip-header {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #94a3b8;
+    font-weight: 700;
+    margin-bottom: 7px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.att-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.att-tip-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* "Break 1" label */
+.att-tip-label {
+    color: #94a3b8;
+    font-size: 0.72rem;
+    min-width: 50px;
+}
+
+/* "09:00 – 10:00" range */
+.att-tip-range {
+    flex: 1;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #f1f5f9;
+}
+
+/* "01:00" duration in amber */
+.att-tip-dur {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+.custom-table td {
+    position: relative;
+    overflow: visible !important;
+}

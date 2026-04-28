@@ -1,0 +1,139 @@
+﻿@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Forms
+
+@if (ShowWrapper)
+{
+    <div class="@WrapperClass">
+        @if (!string.IsNullOrWhiteSpace(Label))
+        {
+            <label class="form-label @LabelClass">@Label</label>
+        }
+
+        <input type="@Type"
+               class="@InputCssClass"
+               value="@Value"
+               readonly="@ReadOnly"
+               disabled="@Disabled"
+               @onchange="OnChange"
+               @oninput="OnInput"
+               @onfocus="OnFocus"
+               @onblur="OnBlur"
+               @attributes="AdditionalAttributes" />
+
+        @if (ValidationExpression != null && ShowValidation)
+        {
+            <ValidationMessage For="ValidationExpression" />
+        }
+
+        @ChildContent
+    </div>
+}
+else
+{
+    <input type="@Type"
+           class="@InputCssClass"
+           value="@Value"
+           readonly="@ReadOnly"
+           disabled="@Disabled"
+           @onchange="OnChange"
+           @oninput="OnInput"
+           @onfocus="OnFocus"
+           @onblur="OnBlur"
+           @attributes="AdditionalAttributes" />
+}
+
+@code {
+    [CascadingParameter] private EditContext? EditContext { get; set; }
+
+    // ── Label ──
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string LabelClass { get; set; } = "";
+
+    // ── Input ──
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public string CssClass { get; set; } = "";
+    [Parameter] public string Size { get; set; } = "";
+
+    // ── Value Binding ──
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    // ── Validation ──
+    [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
+    [Parameter] public bool ShowValidation { get; set; } = true;
+
+    // ── Wrapper ──
+    [Parameter] public bool ShowWrapper { get; set; } = true;
+    [Parameter] public string WrapperClass { get; set; } = "mb-3";
+
+    // ── States ──
+    [Parameter] public bool ReadOnly { get; set; } = false;
+    [Parameter] public bool Disabled { get; set; } = false;
+
+    // ── Content ──
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // ── Events ──
+    [Parameter] public EventCallback OnFocus { get; set; }
+    [Parameter] public EventCallback OnBlur { get; set; }
+
+    // ── Unmatched ──
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private FieldIdentifier _fieldIdentifier;
+
+    private string InputCssClass
+    {
+        get
+        {
+            var baseClass = "form-control";
+
+            if (!string.IsNullOrWhiteSpace(Size))
+                baseClass += $" form-control-{Size}";
+
+            if (!string.IsNullOrWhiteSpace(CssClass))
+                baseClass += $" {CssClass}";
+
+            if (EditContext != null && ValidationExpression != null)
+            {
+                var isValid = !EditContext.GetValidationMessages(_fieldIdentifier).Any();
+                var isModified = EditContext.IsModified(_fieldIdentifier);
+
+                if (isModified)
+                    baseClass += isValid ? " is-valid" : " is-invalid";
+            }
+
+            return baseClass;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (EditContext != null && ValidationExpression != null)
+        {
+            _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+        }
+    }
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        if (ReadOnly || Disabled) return;
+
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+        NotifyFieldChanged();
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        if (ReadOnly || Disabled) return;
+
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+    }
+
+    private void NotifyFieldChanged()
+    {
+        if (ValidationExpression != null)
+            EditContext?.NotifyFieldChanged(_fieldIdentifier);
+    }
+}

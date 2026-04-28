@@ -1,3 +1,14 @@
+
+:root {
+    --primary: #2563eb;
+    --primary-soft: #e0e7ff;
+    --bg: #f8fafc;
+    --card-bg: #ffffff;
+    --border: #e5e7eb;
+    --text-dark: #0f172a;
+    --text-muted: #64748b;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -48,4 +59,75 @@ h1:focus {
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
+}
+/* POPUP CONTAINER */
+.popup-overlay {
+    position: fixed;
+    top: 90px; /* below top bar */
+    right: 24px;
+    z-index: 3000;
+}
+
+/* POPUP CARD */
+.popup-card {
+    width: 360px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    padding: 16px;
+    animation: slideIn 0.25s ease-out;
+}
+
+/* ANIMATION */
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+/* FULL PAGE OVERLAY */
+.loader-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* block scrolling */
+body.loading {
+    overflow: hidden;
+}
+
+.clock-alert {
+    animation: hrms-pulse 1s infinite;
+    color: #ffc107 !important;
+}
+
+@keyframes hrms-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .35;
+    }
+}
+
+@keyframes hrms-fade {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }

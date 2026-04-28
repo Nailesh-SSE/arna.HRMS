@@ -1,0 +1,543 @@
+﻿using arna.HRMS.API.Controllers;
+using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Interfaces.Service;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using NUnit.Framework;
+using System.Security.Claims;
+
+namespace arna.HRMS.Tests.Unit.Controllers;
+
+[TestFixture]
+public class AttendanceRequestControllerTests
+{
+    private Mock<IAttendanceRequestService> _attendanceRequestServiceMock = null!;
+    private AttendanceRequestController _controller = null!;
+
+    [SetUp]
+    public void Setup()
+    {
+        _attendanceRequestServiceMock = new Mock<IAttendanceRequestService>();
+        _controller = new AttendanceRequestController(_attendanceRequestServiceMock.Object);
+    }
+
+    [Test]
+    public async Task GetAttendanceRequests_ReturnsOkResult()
+    {
+        var Data = new List<AttendanceRequestDto>
+                {
+                    new AttendanceRequestDto { Id = 1, EmployeeId = 1, StatusId = Status.Pending },
+                    new AttendanceRequestDto { Id = 2, EmployeeId = 5, StatusId = Status.Approved },
+                    new AttendanceRequestDto { Id = 3, EmployeeId = 3, StatusId = Status.Cancelled },
+                    new AttendanceRequestDto { Id = 4, EmployeeId = 2, StatusId = Status.Rejected }
+                };
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.GetAttendanceRequestsAsync(null, null))
+            .ReturnsAsync(ServiceResult<List<AttendanceRequestDto>>.Success(Data));
+        // Act
+        var result = await _controller.GetAsync(null, null);
+        // Assert
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task GetAttendanceRequests_ReturnsBadRequest()
+    {
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.GetAttendanceRequestsAsync(null, null))
+            .ReturnsAsync(ServiceResult<List<AttendanceRequestDto>>.Fail("Error fetching attendance requests"));
+        // Act
+        var result = await _controller.GetAsync(null, null);
+        // Assert
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task GetAttendanceRequestById_ReturnsOkResult()
+    {
+        var Data = new AttendanceRequestDto { Id = 1, EmployeeId = 1, StatusId = Status.Pending };
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.GetAttendanceRequestByIdAsync(1))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto?>.Success(Data));
+        // Act
+        var result = await _controller.GetByIdAsync(1);
+        // Assert
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task GetAttendanceRequestById_ReturnsNotFound()
+    {
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.GetAttendanceRequestByIdAsync(1))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto?>.Fail("Attendance request not found"));
+        // Act
+        var result = await _controller.GetByIdAsync(1);
+        // Assert
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+    }
+
+    [Test]
+    public async Task GetAttendanceRequestById_ShouldFail_WhenIdIsZeroOrFail()
+    {
+        _attendanceRequestServiceMock.Setup(s => s.GetAttendanceRequestByIdAsync(It.Is<int>(id => id <= 0)))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto?>.Fail("Invalid ID"));
+
+        var result = await _controller.GetByIdAsync(0);
+        
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+
+        result = await _controller.GetByIdAsync(-1);
+
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+    }
+
+    [Test]
+    public async Task CreateAttendanceRequest_ReturnsOkResult()
+    {
+        var requestDto = new AttendanceRequestDto { EmployeeId = 1, StatusId = Status.Pending };
+        var createdDto = new AttendanceRequestDto { Id = 1, EmployeeId = 1, StatusId = Status.Pending };
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.CreateAttendanceRequestAsync(requestDto))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto>.Success(createdDto));
+        // Act
+        var result = await _controller.CreateAsync(requestDto);
+        // Assert
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task CreateAttendanceRequest_ReturnsBadRequest()
+    {
+        var requestDto = new AttendanceRequestDto { EmployeeId = 1, StatusId = Status.Pending };
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.CreateAttendanceRequestAsync(requestDto))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto>.Fail("Error creating attendance request"));
+        // Act
+        var result = await _controller.CreateAsync(requestDto);
+        // Assert
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task CreateAttendanceRequest_ReturnsBadRequest_WhenModelStateIsInvalid()
+    {
+        var requestDto = new AttendanceRequestDto { EmployeeId = 1, StatusId = Status.Pending };
+
+        _controller.ModelState.AddModelError("EmployeeId", "EmployeeId is required");
+
+        var result = await _controller.CreateAsync(requestDto);
+
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequest_ReturnsOkResult()
+    {
+        var requestDto = new AttendanceRequestDto { Id = 1, EmployeeId = 1, StatusId = Status.Pending };
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.UpdateAttendanceRequestAsync(requestDto))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto>.Success(requestDto));
+        // Act
+        var result = await _controller.UpdateAsync(1, requestDto);
+        // Assert
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequest_ReturnsBadRequest()
+    {
+        var requestDto = new AttendanceRequestDto { Id = 1, EmployeeId = 1, StatusId = Status.Pending };
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.UpdateAttendanceRequestAsync(requestDto))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto>.Fail("Error updating attendance request"));
+        // Act
+        var result = await _controller.UpdateAsync(1, requestDto);
+        // Assert
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequest_ReturnsBadRequest_WhenModelStateIsInvalid()
+    {
+        var requestDto = new AttendanceRequestDto { Id = 1, StatusId = Status.Pending };
+
+        _controller.ModelState.AddModelError("EmployeeId", "EmployeeId is required");
+
+        var result = await _controller.UpdateAsync(1, requestDto);
+
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequest_ReturnsBadRequest_WhenIdMismatch()
+    {
+        var requestDto = new AttendanceRequestDto { Id = 2, EmployeeId = 1, StatusId = Status.Pending };
+
+        _attendanceRequestServiceMock.Setup(s => s.UpdateAttendanceRequestAsync(requestDto))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto>.Fail("Error updating attendance request"));
+
+        var result = await _controller.UpdateAsync(1, requestDto);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequest_ReturnsBadRequest_WhenIdIsZeroOrNegative()
+    {
+        var requestDto = new AttendanceRequestDto { Id = 0, EmployeeId = 1, StatusId = Status.Pending };
+        _attendanceRequestServiceMock.Setup(s => s.UpdateAttendanceRequestAsync(requestDto))
+            .ReturnsAsync(ServiceResult<AttendanceRequestDto>.Fail("Error updating attendance request"));
+        var result = await _controller.UpdateAsync(0, requestDto);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        requestDto.Id = -1;
+        result = await _controller.UpdateAsync(-1, requestDto);
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task DeleteAttendanceRequest_ReturnsOkResult()
+    {
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.DeleteAttendanceRequestAsync(1))
+            .ReturnsAsync(ServiceResult<bool>.Success(true));
+        // Act
+        var result = await _controller.DeleteAsync(1);
+        // Assert
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task DeleteAttendanceRequest_ReturnsNotFound()
+    {
+        // Arrange
+        _attendanceRequestServiceMock.Setup(s => s.DeleteAttendanceRequestAsync(1))
+            .ReturnsAsync(ServiceResult<bool>.Fail("Error deleting attendance request"));
+        // Act
+        var result = await _controller.DeleteAsync(1);
+        // Assert
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+    }
+
+    [Test]
+    public async Task DeleteAttendanceRequest_ReturnsBadRequest_WhenIdIsZeroOrNegative()
+    {
+        _attendanceRequestServiceMock.Setup(s => s.DeleteAttendanceRequestAsync(It.Is<int>(id => id <= 0)))
+            .ReturnsAsync(ServiceResult<bool>.Fail("Invalid ID"));
+        var result = await _controller.DeleteAsync(0);
+        
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+
+        result = await _controller.DeleteAsync(-1);
+        Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatus_ReturnsOkResult()
+    {
+        // Arrange
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "2")
+        };
+
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+
+        _attendanceRequestServiceMock
+            .Setup(s => s.UpdateAttendanceRequestStatusAsync(1, Status.Approved, 2))
+            .ReturnsAsync(ServiceResult<bool>.Success(true));
+        // Act
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
+
+    [Test]
+    public  async Task UpdateAttendanceRequestStatus_ReturnsBadRequest()
+    {
+        // Arrange
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "2")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+        _attendanceRequestServiceMock
+            .Setup(s => s.UpdateAttendanceRequestStatusAsync(1, Status.Approved, 2))
+            .ReturnsAsync(ServiceResult<bool>.Fail("Error updating attendance request status"));
+        // Act
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99 );
+        // Assert
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatus_ReturnsBadRequest_WhenUserIdNotInClaims()
+    {
+        // Arrange
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity())
+            }
+        };
+        // Act
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99);
+        // Assert
+        Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatus_ReturnsBadRequest_WhenUserIdIsInvalid()
+    {
+        // Arrange
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "invalid")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+        // Act
+        var result = await _controller.UpdateStatusAsync(1, Status.Approved, 99);
+        // Assert
+        Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatus_ReturnsBadRequest_WhenIdIsZeroOrNegative()
+    {
+        // Arrange
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "2")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+        _attendanceRequestServiceMock
+            .Setup(s => s.UpdateAttendanceRequestStatusAsync(It.Is<int>(id => id <= 0), Status.Approved, 2))
+            .ReturnsAsync(ServiceResult<bool>.Fail("Invalid ID"));
+        // Act
+        var result = await _controller.UpdateStatusAsync(0, Status.Approved, 99);
+        
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+        result = await _controller.UpdateStatusAsync(-1, Status.Approved, 99);
+        
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatus_ReturnsBadRequest_WhenStatusIsInvalid()
+    {
+        // Arrange
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "2")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+        // Act
+        var result = await _controller.UpdateStatusAsync(1, (Status)999, 99);
+        
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatusCancel_ReturnsOkResult_WhenRequestIsCancelledSuccessfully()
+    {
+        // Arrange
+        var claims = new List<Claim>
+    {
+        new Claim("EmployeeId", "2") // ✅ FIXED
+    };
+
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+
+        _attendanceRequestServiceMock
+            .Setup(s => s.CancelAttendanceRequestAsync(1, 2))
+            .ReturnsAsync(ServiceResult<bool>.Success(true));
+
+        // Act
+        var result = await _controller.CancelAsync(1, 1);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<OkObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatusCancel_ReturnsBadRequest()
+    {
+        var claims = new List<Claim>
+        {
+            new Claim("EmployeeId", "2")
+        };
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+        // Arrange
+        _attendanceRequestServiceMock
+            .Setup(s => s.CancelAttendanceRequestAsync(1, 2))
+            .ReturnsAsync(ServiceResult<bool>.Fail("Error cancelling attendance request"));
+        // Act
+        var result = await _controller.CancelAsync(1,10);
+        // Assert
+        Assert.That(result, Is.TypeOf<BadRequestObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatusCancel_ReturnsBadRequest_WhenIdIsZeroOrNegative()
+    {
+        // Arrange → provide valid employeeId = 2 via claims
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "2") // must match controller expectation
+        };
+
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+
+        _attendanceRequestServiceMock
+            .Setup(s => s.CancelAttendanceRequestAsync(
+                It.Is<int>(id => id <= 0),
+                2))
+            .ReturnsAsync(ServiceResult<bool>.Fail("Invalid ID"));
+
+        // Act
+        var result = await _controller.CancelAsync(0, 0);
+        Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
+
+        result = await _controller.CancelAsync(-1, 10);
+        Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
+    }
+
+    [Test]
+    public async Task UpdateAttendanceRequestStatusCancel_ReturnsBadRequest_WhenEmployeeIdIsZeroOrNegative()
+    {
+        // Arrange → set employeeId = 0 in claims
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.NameIdentifier, "0") // simulate invalid employeeId
+        };
+
+        var identity = new ClaimsIdentity(claims, "TestAuthType");
+        var claimsPrincipal = new ClaimsPrincipal(identity);
+
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = claimsPrincipal
+            }
+        };
+
+        _attendanceRequestServiceMock
+            .Setup(s => s.CancelAttendanceRequestAsync(
+                It.IsAny<int>(),
+                It.Is<int>(employeeId => employeeId <= 0)))
+            .ReturnsAsync(ServiceResult<bool>.Fail("Invalid Employee ID"));
+
+        // Act
+        var result = await _controller.CancelAsync(1, 1);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
+    }
+
+    [Test]
+public async Task UpdateAttendanceRequestStatusCancel_ReturnsBadRequest_WhenBothIdIsZeroOrNegative()
+{
+    var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, "2") // ✅ FIXED
+    };
+
+    var identity = new ClaimsIdentity(claims, "TestAuthType");
+    var claimsPrincipal = new ClaimsPrincipal(identity);
+
+    _controller.ControllerContext = new ControllerContext
+    {
+        HttpContext = new DefaultHttpContext
+        {
+            User = claimsPrincipal
+        }
+    };
+
+    _attendanceRequestServiceMock
+        .Setup(s => s.CancelAttendanceRequestAsync(
+            It.IsAny<int>(), 
+            It.IsAny<int>()))
+        .ReturnsAsync(ServiceResult<bool>.Fail("Invalid ID and Employee ID"));
+
+    var result = await _controller.CancelAsync(0, 0);
+    Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
+
+    result = await _controller.CancelAsync(-1, 1);
+    Assert.That(result, Is.TypeOf<UnauthorizedObjectResult>());
+}
+
+}
+

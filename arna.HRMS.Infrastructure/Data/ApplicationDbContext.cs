@@ -1,7 +1,9 @@
-﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data.Configurations;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection.Emit;
 
 namespace arna.HRMS.Infrastructure.Data
 {
@@ -19,7 +21,18 @@ namespace arna.HRMS.Infrastructure.Data
         public DbSet<Timesheet> Timesheets { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
+        public DbSet<AttendanceRequest> AttendanceRequest { get; set; } 
+        public DbSet<FestivalHoliday> FestivalHoliday { get; set; }
+        public DbSet<LeaveType> LeaveTypes { get; set; }
 
+        [NotMapped]
+        public DbSet<AttendanceReportDto> AttendanceReport { get; set; }
+        [NotMapped]
+        public DbSet<EmployeeAttendanceReportDto> EmployeeAttendanceReport { get; set; }
+        [NotMapped]
+        public DbSet<LeaveSummaryReportDto> LeaveSummaryReports { get; set; }
+        [NotMapped]
+        public DbSet<EmployeeLeaveDetailsReportDto> EmployeeLeaveDetails { get; set; }
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -31,60 +44,25 @@ namespace arna.HRMS.Infrastructure.Data
             builder.ApplyConfiguration(new LeaveRequestConfiguration());
             builder.ApplyConfiguration(new TimesheetConfiguration());
             builder.ApplyConfiguration(new UserConfiguration());
+            builder.ApplyConfiguration(new AttendanceRequestConfiguration());
+            builder.ApplyConfiguration(new FestivalHolidayConfiguration()); 
+            builder.ApplyConfiguration(new LeaveTypeConfiguration());
 
-            // ===== Users =====
-            builder.Entity<User>().HasData(
-                new User
-                {
-                    Id = 1,
-                    Username = "SuperAdmin",
-                    Email = "superadmin123@gmail.com",
-                    PasswordHash = HashPassword("superadmin@123"),
-                    FirstName = "Super",
-                    LastName = "Admin",
-                    PhoneNumber = "9999999999",
-                    Role = UserRole.SuperAdmin,
-                    RefreshToken = null,
-                    RefreshTokenExpiryTime = null,
-                    Password = "superadmin@123"
-                }
-            );
+            builder.Entity<AttendanceReportDto>()
+                   .HasNoKey()
+                   .ToView(null);
 
-            // ===== Departments =====
-            builder.Entity<Department>().HasData(
-                new Department
-                {
-                    Id = 1,
-                    Name = "Human Resources",
-                    Code = "HR",
-                    Description = "Handles recruitment, payroll, and employee relations",
-                    ParentDepartmentId = 1
-                },
-                new Department
-                {
-                    Id = 2,
-                    Name = "Information Technology",
-                    Code = "IT",
-                    Description = "Manages IT infrastructure and software systems",
-                    ParentDepartmentId = 2
-                },
-                new Department
-                {
-                    Id = 3,
-                    Name = "Finance",
-                    Code = "FIN",
-                    Description = "Responsible for accounting and financial management",
-                    ParentDepartmentId = 3
-                },
-                new Department
-                {
-                    Id = 4,
-                    Name = "Administration",
-                    Code = "ADMIN",
-                    Description = "Office administration and facilities management",
-                    ParentDepartmentId = 4
-                }
-            );
+            builder.Entity<EmployeeAttendanceReportDto>()
+                   .HasNoKey()
+                   .ToView(null);
+
+            builder.Entity<LeaveSummaryReportDto>()
+                   .HasNoKey()
+                   .ToView(null);
+
+            builder.Entity<EmployeeLeaveDetailsReportDto>()
+                   .HasNoKey()
+                   .ToView(null);
 
             // ===== Roles =====
             builder.Entity<Role>().HasData(
@@ -103,22 +81,66 @@ namespace arna.HRMS.Infrastructure.Data
                 new Role
                 {
                     Id = 3,
-                    Name = "HR",
-                    Description = "Human Resources role"
-                },
-                new Role
-                {
-                    Id = 4,
                     Name = "Manager",
                     Description = "Manager role with team oversight"
                 },
                 new Role
                 {
-                    Id = 5,
+                    Id = 4,
                     Name = "Employee",
                     Description = "Standard employee role"
                 }
             );
+
+            // ===== Users =====
+            builder.Entity<User>().HasData(
+                new User
+                {
+                    Id = 1,
+                    Username = "SuperAdmin",
+                    Email = "superadmin123@gmail.com",
+                    PasswordHash = HashPassword("superadmin@123"),
+                    FirstName = "Super",
+                    LastName = "Admin",
+                    PhoneNumber = "9999999999",
+                    RoleId = 1,
+                    RefreshToken = null,
+                    RefreshTokenExpiryTime = null,
+                    Password = "superadmin@123",
+                    EmployeeId = null
+                }
+            );
+
+            // ===== Departments =====
+            builder.Entity<Department>().HasData(
+                new Department
+                {
+                    Id = 1,
+                    Name = "Information Technology",
+                    Code = "IT",
+                    Description = "Manages IT infrastructure and software systems",
+                    ParentDepartmentId = 1
+                },
+                new Department
+                {
+                    Id = 2,
+                    Name = "Quality Assurance",
+                    Code = "QA",
+                    Description = "Tests software and ensures quality standards are met before release",
+                    ParentDepartmentId = 2
+                },
+                new Department
+                {
+                    Id = 3,
+                    Name = "Administration",
+                    Code = "ADMIN",
+                    Description = "Manages facilities, office administration, and general services",
+                    ParentDepartmentId = 3
+                }
+            );
+
+       
+
         }
 
         private string HashPassword(string password)
@@ -128,7 +150,6 @@ namespace arna.HRMS.Infrastructure.Data
             var hash = sha.ComputeHash(bytes);
             return Convert.ToBase64String(hash);
         }
-
     }
 
 }

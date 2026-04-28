@@ -1,0 +1,14 @@
+﻿@if (Inline)
+{
+    <span class="@CssClass">@Text</span>
+}
+else
+{
+    <p class="@CssClass">@Text</p>
+}
+
+@code {
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public bool Inline { get; set; }
+    [Parameter] public string CssClass { get; set; } = "text-muted";
+}

@@ -1,0 +1,155 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using arna.HRMS.Components.Pages.Client.ClockInAndOut
+@using arna.HRMS.Services.Auth
+
+@implements IDisposable
+@inject IJSRuntime JS
+@inherits AuthenticatedLayoutBase
+
+<div class="header-root bg-white border-bottom shadow-sm">
+
+    <!-- Row 1 — always visible -->
+    <div class="header-row d-flex align-items-center gap-1 gap-sm-2
+                px-2 px-sm-3 px-lg-4">
+
+        <!-- Toggle Button -->
+        <button class="header-toggle btn btn-light border-0 rounded-circle
+                       d-flex align-items-center justify-content-center
+                       flex-shrink-0"
+                @onclick="OnToggleSidebar"
+                aria-label="Toggle Sidebar">
+            <i class="bi d-lg-none
+                      @(SidebarActive ? "bi-x-lg" : "bi-list")
+                      header-toggle-icon"></i>
+            <i class="bi d-none d-lg-inline
+                      @(SidebarActive
+                                         ? "bi-list"
+                                         : "bi-layout-sidebar-inset")
+                      header-toggle-icon"></i>
+        </button>
+
+        <!-- Time & Greeting -->
+        <div class="d-flex flex-column lh-sm me-auto overflow-hidden">
+
+            <!-- Time + Day -->
+            <div class="d-flex align-items-baseline gap-1 gap-sm-2
+                        flex-wrap">
+
+                <!-- Time — always visible -->
+                <span class="fw-semibold header-time-text">
+                    @CurrentTime
+                </span>
+
+                <!-- Day — hidden on very small, shown sm+ -->
+                <span class="text-muted d-none d-sm-inline header-day-text">
+                    @GetDayLabel()
+                </span>
+            </div>
+
+            <!-- Greeting — hidden on mobile, shown md+ -->
+            <span class="text-muted d-none d-md-inline fw-medium
+                         text-truncate header-hello-text">
+                @Greeting@(!string.IsNullOrEmpty(GetUserFullName())
+                                ? $", {GetUserFullName()}"
+                                : "")
+            </span>
+        </div>
+
+        <!-- Right actions -->
+        <div class="d-flex align-items-center gap-1 gap-sm-2
+                    flex-shrink-0">
+
+            <!-- Clock — desktop only -->
+            <AuthorizeView Roles="Employee">
+                <Authorized>
+                    <div class="d-none d-lg-flex align-items-center gap-2">
+                        <ClockInAndOut />
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+            <!-- Notifications -->
+            <NotificationDrawer />
+
+            <!-- User Menu -->
+            <UserMenu />
+        </div>
+    </div>
+
+    <!-- Row 2 — clock bar, mobile & tablet only -->
+    <AuthorizeView Roles="Employee">
+        <Authorized>
+            <div class="header-clock-bar d-flex d-lg-none
+                        align-items-center justify-content-center
+                        gap-2 px-2 px-sm-3 border-top">
+                <ClockInAndOut />
+            </div>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnToggleSidebar { get; set; }
+    [Parameter] public bool SidebarActive { get; set; }
+
+    private string Greeting = string.Empty;
+    private string CurrentTime = "";
+    private CancellationTokenSource? _cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        SetGreeting();
+        CurrentTime = DateTime.Now.ToString("hh:mm:ss tt");
+        StartHeaderClock();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try { await JS.InvokeVoidAsync("hrmsSetHeaderHeight"); }
+        catch { }
+    }
+
+    private void StartHeaderClock()
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var ct = _cts.Token;
+        var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (await timer.WaitForNextTickAsync(ct))
+                {
+                    CurrentTime = DateTime.Now.ToString("hh:mm:ss tt");
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch (OperationCanceledException) { }
+            finally { timer.Dispose(); }
+        }, ct);
+    }
+
+    private void SetGreeting()
+    {
+        var hour = DateTime.Now.Hour;
+        Greeting = hour switch
+        {
+            >= 5 and < 12 => "Good Morning",
+            >= 12 and < 17 => "Good Afternoon",
+            >= 17 and < 21 => "Good Evening",
+            _ => "Good Night"
+        };
+    }
+
+    private string GetDayLabel() =>
+        DateTime.Now.ToString("ddd, dd MMM yyyy");
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

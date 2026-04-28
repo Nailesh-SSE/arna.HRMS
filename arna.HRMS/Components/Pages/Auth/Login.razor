@@ -1,5 +1,277 @@
-﻿<h3>Login</h3>
+﻿@page "/login"
+@layout LoginLayout
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Authorization
+@using arna.HRMS.Components.Layout
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.ViewModels.Auth
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
+
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NotificationService NotificationService
+
+<PageTitle>Arna Technosoft - Login</PageTitle>
+
+<div class="container-fluid p-0">
+    <div class="row g-0 min-vh-100">
+
+        <!-- ══════════ LEFT BRAND PANEL (Desktop only) ══════════ -->
+        <div class="col-lg-6 d-none d-lg-flex align-items-center
+                    justify-content-center text-white position-relative
+                    overflow-hidden login-brand-bg">
+
+            <div class="text-center p-5 position-relative z-1">
+
+                <div class="bg-white bg-opacity-25 rounded-circle
+                            d-inline-flex align-items-center justify-content-center
+                            mb-4 p-4">
+                    <i class="bi bi-building-fill-gear display-3"></i>
+                </div>
+
+                <h2 class="fw-bold mb-3">Arna HRMS</h2>
+                <p class="lead opacity-75 mb-4 px-4">
+                    Streamline your workforce management with our
+                    comprehensive HR solution
+                </p>
+
+                <div class="d-flex gap-4 justify-content-center mt-4">
+                    <div class="text-center">
+                        <div class="bg-white bg-opacity-10 rounded-circle
+                                    d-flex align-items-center justify-content-center
+                                    mx-auto mb-2 login-stat-icon">
+                            <i class="bi bi-people-fill fs-4"></i>
+                        </div>
+                        <small class="opacity-75">Employees</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-white bg-opacity-10 rounded-circle
+                                    d-flex align-items-center justify-content-center
+                                    mx-auto mb-2 login-stat-icon">
+                            <i class="bi bi-calendar-check fs-4"></i>
+                        </div>
+                        <small class="opacity-75">Attendance</small>
+                    </div>
+                    <div class="text-center">
+                        <div class="bg-white bg-opacity-10 rounded-circle
+                                    d-flex align-items-center justify-content-center
+                                    mx-auto mb-2 login-stat-icon">
+                            <i class="bi bi-bar-chart-fill fs-4"></i>
+                        </div>
+                        <small class="opacity-75">Reports</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decorative shapes -->
+            <div class="login-shape login-shape-1"></div>
+            <div class="login-shape login-shape-2"></div>
+        </div>
+
+        <!-- ══════════ RIGHT FORM PANEL ══════════ -->
+        <div class="col-12 col-lg-6 d-flex align-items-center
+                    justify-content-center bg-light p-3 p-sm-4 p-lg-5">
+
+            <div class="w-100" style="max-width: 440px;">
+
+                <div class="card border-0 shadow rounded-4 overflow-hidden">
+
+                    <!-- Accent bar -->
+                    <div class="login-accent-bar"></div>
+
+                    <div class="card-body p-4 p-sm-5">
+
+                        <!-- Logo -->
+                        <div class="text-center mb-4">
+                            <div class="bg-primary bg-opacity-10 rounded-circle
+                                        d-inline-flex align-items-center
+                                        justify-content-center mb-3 login-logo-circle">
+                                <img src="Images/ArnaLogo.png"
+                                     alt="Arna Technosoft"
+                                     class="login-logo-img" />
+                            </div>
+                            <h4 class="fw-bold mb-1">Welcome Back</h4>
+                            <p class="text-muted small mb-0">
+                                Sign in to continue to your dashboard
+                            </p>
+                        </div>
+
+                        <!-- Error -->
+                        @if (!string.IsNullOrWhiteSpace(errorMessage))
+                        {
+                            <div class="alert alert-danger border-0 rounded-3
+                                            d-flex align-items-center gap-2
+                                            py-2 px-3 small fade show">
+                                <i class="bi bi-exclamation-triangle-fill
+                                              flex-shrink-0"></i>
+                                <span>@errorMessage</span>
+                                <AppButton Type="button"
+                                        Buttonclass="btn-close ms-auto"
+                                        Onclick="() => errorMessage = null"
+                                        aria-label="Close">
+                                </AppButton>
+                            </div>
+                        }
+
+                        <!-- Form -->
+                        <EditForm Model="@loginModel"
+                                  OnValidSubmit="HandleLogin">
+                            <DataAnnotationsValidator />
+
+                            <!-- Username -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small
+                                              text-secondary">
+                                    Username
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white
+                                                 border-end-0 text-muted">
+                                        <i class="bi bi-person"></i>
+                                    </span>
+                                    <AppInput @bind-Value="loginModel.UserName"
+                                              Type="text"
+                                              ShowWrapper="false"
+                                              CssClass="border-start-0 ps-0"
+                                              placeholder="Enter your username"
+                                              autofocus="true" />
+                                </div>
+                                <ValidationMessage For="@(() => loginModel.UserName)"
+                                                   class="text-danger small mt-1" />
+                            </div>
+
+                            <!-- Password -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold small
+                                              text-secondary">
+                                    Password
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white
+                                                 border-end-0 text-muted">
+                                        <i class="bi bi-lock"></i>
+                                    </span>
+                                    <AppInput @bind-Value="loginModel.Password"
+                                              Type="@passwordInputType"
+                                              ShowWrapper="false"
+                                              CssClass="border-start-0 border-end-0 ps-0"
+                                              placeholder="Enter your password" />
+                                    <AppButton Type="button"
+                                               ButtonClass="btn btn-outline-light
+                                                   border text-muted"
+                                            Onclick="TogglePasswordVisibility"
+                                            tabindex="-1">
+                                        <i class="bi @(showPassword
+                                                                                       ? "bi-eye-slash"
+                                                                                       : "bi-eye")"></i>
+                                    </AppButton>
+                                </div>
+                                <ValidationMessage For="@(() => loginModel.Password)"
+                                                   class="text-danger small mt-1" />
+                            </div>
+
+                            <!-- Submit -->
+                            <div class="d-grid mb-3">
+                                <AppButton Type="submit"
+                                           ButtonClass="btn btn-primary btn-lg
+                                               fw-semibold rounded-3"
+                                        disabled="@isLoading">
+                                    @if (isLoading)
+                                    {
+                                        <span class="spinner-border
+                                                         spinner-border-sm me-2"
+                                              role="status"></span>
+                                        <span>Signing in…</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-box-arrow-in-right
+                                                      me-2"></i>
+                                        <span>Sign In</span>
+                                    }
+                                </AppButton>
+                            </div>
+                        </EditForm>
+
+                        <!-- Info -->
+                        <div class="text-center mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Contact your admin if you forgot credentials
+                            </small>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="card-footer bg-body-secondary border-0
+                                text-center py-3">
+                        <small class="text-muted">
+                            <i class="bi bi-shield-lock-fill me-1
+                                      text-success"></i>
+                            Secured by
+                            <span class="fw-semibold">Arna Technosoft</span>
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Copyright -->
+                <p class="text-center text-muted mt-3 mb-0 small">
+                    &copy; @DateTime.Now.Year Arna Technosoft.
+                    All rights reserved.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
 
 @code {
+    private LoginViewModel loginModel = new();
+    private string? errorMessage;
+    private bool isLoading;
+    private bool showPassword;
 
+    private string passwordInputType =>
+        showPassword ? "text" : "password";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider
+            .GetAuthenticationStateAsync();
+
+        if (state.User.Identity?.IsAuthenticated == true)
+            NavigationManager.NavigateTo("/", true);
+    }
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+        isLoading = true;
+
+        try
+        {
+            var success = await AuthService.LoginAsync(loginModel);
+
+            if (!success)
+            {
+                errorMessage = "Invalid username or password.";
+                return;
+            }
+
+            await NotificationService.Success(
+                "User Login Successfully!");
+            NavigationManager.NavigateTo("/", true);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void TogglePasswordVisibility() =>
+        showPassword = !showPassword;
 }

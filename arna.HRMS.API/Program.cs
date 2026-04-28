@@ -1,170 +1,71 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Data;
-using arna.HRMS.Infrastructure.Handler;
-using arna.HRMS.Infrastructure.Interfaces;
-using arna.HRMS.Infrastructure.Repositories;
-using arna.HRMS.Infrastructure.Services;
-using arna.HRMS.Models.DTOs;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using arna.HRMS.Infrastructure.Dependency;
+using arna.HRMS.Infrastructure.Dependency.Identity;
+using arna.HRMS.Infrastructure.Middleware;
 
-namespace arna.HRMS.API;
-
-public class Program
+namespace arna.HRMS.API
 {
-    public static void Main(string[] args)
+    public class Program
     {
-        var builder = WebApplication.CreateBuilder(args);
-
-        // Add HttpClient if needed
-        builder.Services.AddScoped(sp =>
-            new HttpClient
-            {
-                BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"])
-            });
-
-        // JWT Authentication Configuration
-        var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured in appsettings.json");
-
-        builder.Services.AddAuthentication(options =>
+        public static void Main(string[] args)
         {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
+            var builder = WebApplication.CreateBuilder(args);
+
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+
+            builder.Services.AddCors(options =>
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings["Issuer"] ?? "EmployeeManagementAPI",
-                ValidAudience = jwtSettings["Audience"] ?? "EmployeeManagementUsers",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                ClockSkew = TimeSpan.Zero
-            };
-        });
-
-        // Add Authorization
-        builder.Services.AddAuthorization();
-
-        // Add controllers & Swagger
-        builder.Services.AddControllers();
-        builder.Services.AddEndpointsApiExplorer();
-
-        // Configure Swagger to include JWT Authentication
-        builder.Services.AddSwaggerGen(c =>
-        {
-            c.SwaggerDoc("v1", new()
-            {
-                Title = "Employee Management API",
-                Version = "v1",
-                Description = "API for managing employees with JWT authentication and role-based authorization"
-            });
-
-            c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Description = "JWT Authorization header using the Bearer scheme. Example: &quot;Authorization: Bearer {token}&quot;",
-                Name = "Authorization",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-                Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-                Scheme = "Bearer"
-            });
-
-            c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-            {
+                options.AddPolicy("AllowBlazorApp", policy =>
                 {
-                    new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-                    {
-                        Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                        {
-                            Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
+                    policy
+                      .WithOrigins(
+                          "https://hrms.arnatechnosoft.com",
+                          "https://www.hrms.arnatechnosoft.com",
+                          "http://hrms.arnatechnosoft.com",
+                          "https://hrms-api.arnatechnosoft.com",
+                          "https://www.hrms-api.arnatechnosoft.com",
+                          "http://hrms-api.arnatechnosoft.com"
+                      )
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+                });
             });
-        });
 
-        // ✅ AutoMapper INLINE configuration (NO extra files)
-        builder.Services.AddAutoMapper(cfg =>
-        {
-            // INSERT
-            cfg.CreateMap<CreateEmployeeRequest, Employee>();
+            builder.Services.AddSwaggerWithJwt();
+            builder.Services.AddDatabase(builder.Configuration);
+            builder.Services.AddJwtAuthentication(builder.Configuration);
 
-            // UPDATE and ".ForMember(dest => dest.ManagerId, opt => opt.Ignore());" is for testing because it not accept ManagerID as null or 0
-            cfg.CreateMap<UpdateEmployeeRequest, Employee>(); 
+            builder.Services.AddInfrastructureServices();
 
-            // RESPONSE
-            cfg.CreateMap<Employee, EmployeeDto>();
-        });
+            var app = builder.Build();
 
-        builder.Services.AddAutoMapper(cfg =>
-        {
-            // INSERT
-            cfg.CreateMap<CreateDepartmentRequest, Department>();
+            if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
-            // UPDATE 
-            cfg.CreateMap<UpdateDepartmentRequest, Department>();
+            // ✅ FIX #1: CORS MUST come BEFORE UseHttpsRedirection
+            // Otherwise preflight OPTIONS requests get redirected (301) before CORS headers
+            // are applied → browser treats as CORS failure → appears as Unauthorized
+            app.UseCors("AllowBlazorApp");
 
-            // RESPONSE
-            cfg.CreateMap<Department, DepartmentDto>();
-        });
+            app.UseHttpsRedirection();
 
-        builder.Services.AddAutoMapper(cfg =>
-        {
-            // INSERT
-            cfg.CreateMap<CreateUserRequest, User>();
+            // ✅ FIX #2: TestAuthHeaderMiddleware REMOVED from production
+            // The static TestTokenStore.Token is shared across ALL users on the server
+            // causing cross-user token injection. Only use in Development.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseMiddleware<TestAuthHeaderMiddleware>();
+            }
 
-            // UPDATE and ".ForMember(dest => dest.ManagerId, opt => opt.Ignore());" is for testing because it not accept ManagerID as null or 0
-            cfg.CreateMap<UpdateUserRequest, User>();
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-            // RESPONSE
-            cfg.CreateMap<User, UserDto>();
-        });
-
-        // Register DbContext
-        builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(
-                builder.Configuration.GetConnectionString("DefaultConnection"),
-                sqlOptions => sqlOptions.MigrationsAssembly("arna.HRMS.Infrastructure")
-            )
-        );
-
-
-        // Register repositories & services
-        builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
-        builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-        builder.Services.AddScoped<IDepartmentService, DepartmentService>();
-        builder.Services.AddScoped<IUserServices, UserServices>();
-        builder.Services.AddScoped<DepartmentRepository>();
-        builder.Services.AddScoped<EmployeeRepository>();
-        builder.Services.AddScoped<UserRepository>();
-
-        // Register Authentication & JWT Services
-        builder.Services.AddScoped<IAuthService, AuthService>();
-        builder.Services.AddScoped<IJwtService, JwtService>();
-
-        var app = builder.Build();
-
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger();
-            app.UseSwaggerUI();
+            app.MapControllers();
+            app.Run();
         }
-
-        app.UseMiddleware<TestAuthHeaderMiddleware>();
-        app.UseHttpsRedirection();
-        app.UseAuthentication();
-        app.UseAuthorization();
-        app.MapControllers();
-        app.Run();
     }
-    
 }

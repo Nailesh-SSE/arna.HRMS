@@ -1,0 +1,72 @@
+﻿
+.custom-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(6px);
+}
+.modal {
+    pointer-events: auto;
+}
+
+body.modal-open {
+    overflow: hidden !important;
+}
+
+.modal-content {
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ══════════ HEADER ══════════ */
+.modal-header .btn-close-white {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+    .modal-header .btn-close-white:hover {
+        opacity: 1;
+    }
+
+/* ══════════ TOTAL DAYS ALERT ══════════ */
+.alert-info {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ══════════ SUBMIT BUTTON ══════════ */
+.btn-primary.rounded-pill {
+    transition: all 0.2s ease;
+}
+
+    .btn-primary.rounded-pill:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+    }
+
+    .btn-primary.rounded-pill:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+    }

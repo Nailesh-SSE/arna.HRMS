@@ -1,0 +1,36 @@
+﻿/* ══════════ UPCOMING BANNER ══════════ */
+.upcoming-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.upcoming-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+}
+
+/* ══════════ SCROLL ══════════ */
+.festival-scroll-area {
+    max-height: 420px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+    .festival-scroll-area::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .festival-scroll-area::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 10px;
+    }
+
+.festival-scroll-area {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}

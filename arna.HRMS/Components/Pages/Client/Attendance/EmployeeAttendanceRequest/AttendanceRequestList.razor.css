@@ -1,0 +1,149 @@
+﻿/* ─── Header Icon ─── */
+.req-list-header-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+/* ─── Filter Buttons ─── */
+.req-list-filter-btn {
+    transition: all 0.2s ease;
+    font-size: 0.8rem;
+}
+
+    .req-list-filter-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+/* ─── Chip Close ─── */
+.req-list-chip-close {
+    font-size: 0.45rem;
+    vertical-align: middle;
+}
+
+/* ─── Empty State ─── */
+.req-list-empty-icon {
+    width: 72px;
+    height: 72px;
+}
+
+.req-list-empty-text {
+    max-width: 320px;
+    line-height: 1.5;
+}
+
+/* ─── Table Scroll ─── */
+.req-list-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+    .req-list-table-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .req-list-table-scroll::-webkit-scrollbar-track {
+        background: #f1f3f5;
+    }
+
+    .req-list-table-scroll::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 10px;
+    }
+
+        .req-list-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+
+/* ═══════════════════════════════════════════
+   Action Buttons (Pending — Icon Only)
+   ═══════════════════════════════════════════ */
+.req-action-btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+    .req-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .req-action-btn:active {
+        transform: translateY(0);
+        box-shadow: none;
+    }
+
+    /* ── Warning button contrast fix ── */
+    .req-action-btn.btn-outline-warning {
+        color: #b45309;
+        border-color: #d97706;
+    }
+
+        .req-action-btn.btn-outline-warning:hover {
+            background-color: #d97706;
+            border-color: #d97706;
+            color: #fff;
+        }
+
+/* ═══════════════════════════════════════════
+   Status Icons (Non-Pending — Icon Only)
+   ═══════════════════════════════════════════ */
+.req-status-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+}
+
+.req-icon-approved {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #0f7b4f;
+}
+
+.req-icon-rejected {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #c62828;
+}
+
+.req-icon-cancelled {
+    background-color: rgba(108, 117, 125, 0.1);
+    color: #5a6268;
+}
+
+/* ═══════════════════════════════════════════
+   Responsive — Small phones (≤ 575px)
+   ═══════════════════════════════════════════ */
+@media (max-width: 575.98px) {
+    .req-action-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+
+    .req-status-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
+    }
+}
+
+/* ═══════════════════════════════════════════
+   Responsive — Desktop (≥ 992px)
+   ═══════════════════════════════════════════ */
+@media (min-width: 992px) {
+    .req-action-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 0.9rem;
+    }
+
+    .req-status-icon {
+        width: 34px;
+        height: 34px;
+        font-size: 0.95rem;
+    }
+}

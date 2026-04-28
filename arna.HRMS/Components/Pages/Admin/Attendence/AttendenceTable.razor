@@ -1,0 +1,323 @@
+﻿@page "/admin-attendance-management"
+
+
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.State.Attendance
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
+
+@inject AttendanceState State
+@inject IAttendanceService AttendanceService
+@inject IEmployeeService EmployeeService
+@inject NotificationService NotificationService
+
+@implements IDisposable
+
+
+<Loader Visible="isLoading" Message="@loadingMessage" />
+
+@if (!isLoading) 
+{
+    @if (!showDetail)
+    {
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 d-flex align-items-center">
+                    <i class="bi bi-clock-history text-primary me-2"></i>
+                    Attendance
+                </h3>
+            </div>
+        </div>
+
+        <div class="att-list-animate">
+            <div class="card border-0 shadow-sm rounded-3">
+
+                <!-- HEADER -->
+                <div class="card-body py-2 px-3 border-bottom bg-light">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+
+                        <!-- LEFT -->
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-search text-primary"></i>
+                                <span class="fw-medium text-muted small">Filter</span>
+                            </div>
+
+                            <SearchEmployee Employees="Employees"
+                                            SelectedValue="@GetEmployeeValue()"
+                                            OnChanged="OnEmployeeChanged" />
+
+                            @if (State.SelectedEmployeeId != 0)
+                            {
+                                <SelectMonthAndYear Year="@State.Year"
+                                                    Month="@State.Month"
+                                                    OnChange="OnMonthSelected" />
+                            }
+
+                        </div>
+
+                        <!-- RIGHT -->
+                        <div class="text-muted small">
+                            Showing <b>@_allAttendance.Count</b> records
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SMART TITLE -->
+                <div class="att-smart-header">
+                    @GetViewTitle()
+                </div>
+
+                <!-- TABLE -->
+                <div class="card-body p-0">
+                    @if (!_allAttendance.Any())
+                    {
+                        <div class="text-center py-5 px-3">
+                            <div class="empty-icon">
+                                <i class="bi bi-calendar-x"></i>
+                            </div>
+                            <h6 class="fw-semibold text-muted mt-3">
+                                @GetEmptyMessage()
+                            </h6>
+                        </div>
+                    }
+                    else
+                    {
+                        <AppTable TItem="MonthlyAttendanceViewModel"
+                                  Items="_allAttendance"
+                                  Columns="TableSchemas.EmployeesAttendanceDetail"
+                                  ShowActions="false"
+                                  WrapperClass="att-list-table"
+                                  RowClassFunc="GetRowClass"
+                                  OnRowClick="HandleRowClick"
+                                  RowClickable="true">
+                        </AppTable>
+                    }
+                </div>
+
+            </div>
+        </div>
+    }
+}
+
+@code {
+
+    // ═══════════ STATE ═══════════
+    private List<SelectOption> Employees = new();
+    private bool isLoading = true;
+    private string loadingMessage = "Loading attendance management...";
+
+    private bool showDetail;
+    private List<MonthlyAttendanceViewModel> _allAttendance = new();
+    private CancellationTokenSource _cts = new();
+    private bool _isDisposed;
+
+    private int Year => State.Year > 0 ? State.Year : DateTime.Today.Year;
+    private int Month => State.Month > 0 ? State.Month : DateTime.Today.Month;
+
+    // ═══════════ LIFECYCLE ═══════════
+    protected override async Task OnInitializedAsync()
+    {
+        EnsureMonth();
+        await LoadEmployees();
+
+        // ✅ Default → No employee selected
+        State.SelectedEmployeeId = 0;
+
+        await LoadData();
+        isLoading = false;
+    }
+
+    // ═══════════ FILTER HANDLERS ═══════════
+
+    private async Task OnMonthSelected((int year, int month) value)
+    {
+        State.Year = value.year;
+        State.Month = value.month;
+        State.SelectedMonth = $"{value.year}-{value.month:D2}";
+
+        await LoadData();
+    }
+
+    private async Task OnEmployeeChanged(string? empId)
+    {
+        // ✅ Handle selection / reset
+        State.SelectedEmployeeId =
+            string.IsNullOrWhiteSpace(empId) || empId == "0"
+            ? 0
+            : int.Parse(empId);
+
+        // ✅ If employee removed → reset to current month
+        if (State.SelectedEmployeeId == 0)
+        {
+            var now = DateTime.Today;
+            State.Year = now.Year;
+            State.Month = now.Month;
+        }
+
+        await LoadData();
+    }
+
+    // ═══════════ CORE DATA LOADER ═══════════
+    private async Task LoadData()
+    {
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+
+            bool isEmployeeSelected = State.SelectedEmployeeId != 0;
+
+            int? empId = isEmployeeSelected
+                ? State.SelectedEmployeeId
+                : null;
+
+            var result = await AttendanceService.GetAttendanceByMonthAsync(
+                Year,
+                Month,
+                empId,
+                null,
+                null
+            );
+
+            if (_cts.IsCancellationRequested || _isDisposed) return;
+
+            var rawData = result?.IsSuccess == true
+                ? result.Data ?? new()
+                : new();
+
+            // ✅ FINAL RULE
+            // No employee → only today
+            if (!isEmployeeSelected)
+            {
+                rawData = rawData
+                    .Where(d => d.Date == today)
+                    .ToList();
+            }
+
+            // ✅ FLATTEN DATA
+            _allAttendance = rawData
+                .SelectMany(day => day.Employees.Select(emp => new MonthlyAttendanceViewModel
+                {
+                    Date = day.Date,
+                    Day = day.Day,
+                    Employees = new List<EmployeeDailyAttendanceViewModel> { emp }
+                }))
+                .ToList();
+            StateHasChanged();
+        }
+        catch
+        {
+            _allAttendance = new();
+        }
+    }
+
+    // ═══════════ HELPERS ═══════════
+
+    private void EnsureMonth()
+    {
+        var now = DateTime.Today;
+
+        if (State.Year == 0) State.Year = now.Year;
+        if (State.Month == 0) State.Month = now.Month;
+
+        State.SelectedMonth = $"{State.Year}-{State.Month:D2}";
+    }
+
+    private async Task LoadEmployees()
+    {
+        try
+        {
+            var result = await EmployeeService.GetEmployeesAsync();
+
+            Employees = result?.IsSuccess == true && result.Data != null
+                ? result.Data.Select(e => new SelectOption
+                {
+                    Value = e.Id.ToString(),
+                    Text = $"{e.FullName} ({e.EmployeeNumber})"
+                }).ToList()
+                : new();
+        }
+        catch
+        {
+            Employees = new();
+        }
+    }
+
+    private static string GetRowClass(MonthlyAttendanceViewModel r)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        if (r.Date == today)
+            return "att-table-today";
+
+        if (r.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "att-table-weekend";
+
+        var status = r.Employees.FirstOrDefault()?.Status;
+
+        return status switch
+        {
+            "Absent" => "att-table-absent",
+            "Late" => "att-table-late",
+            "Holiday" => "att-table-holiday",
+            "WeeklyOff" => "att-table-weekend",
+            _ => ""
+        };
+    }
+
+    private string GetEmployeeValue() =>
+        State.SelectedEmployeeId == 0
+            ? "0"
+            : State.SelectedEmployeeId.ToString();
+
+    private string GetViewTitle()
+    {
+        bool isEmployeeSelected = State.SelectedEmployeeId != 0;
+
+        if (isEmployeeSelected)
+            return "📊 Monthly Attendance (Employee View)";
+
+        return "🟢 Today's Attendance (All Employees)";
+    }
+
+    private string GetEmptyMessage()
+    {
+        bool isEmployeeSelected = State.SelectedEmployeeId != 0;
+
+        if (!isEmployeeSelected)
+            return "No attendance found for today";
+
+        return "No records found for selected employee";
+    }
+
+    // ═══════════ DISPOSE ═══════════
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+
+        _isDisposed = true;
+
+        try { _cts.Cancel(); } catch { }
+        try { _cts.Dispose(); } catch { }
+    }
+
+    private async Task HandleRowClick(MonthlyAttendanceViewModel item)
+    {
+        var emp = item.Employees.FirstOrDefault();
+        if (emp == null) return;
+
+        State.SelectedEmployeeId = emp.EmployeeId;
+
+        State.Year = item.Date.Year;
+        State.Month = item.Date.Month;
+
+        await LoadData();
+    }
+}

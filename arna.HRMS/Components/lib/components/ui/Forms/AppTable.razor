@@ -1,0 +1,239 @@
+﻿@typeparam TItem
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+
+<div class="app-table-wrapper @WrapperClass">
+    <table class="table table-hover align-middle mb-0 @TableClass custom-table">
+        <thead>
+            <tr>
+                @foreach (var col in Columns)
+                {
+                    <th class="bg-light text-muted text-uppercase small fw-semibold py-3 px-3 border-bottom text-start sticky-th">
+                        @col.Header
+                    </th>
+                }
+                @if (ShowActions)
+                {
+                    <th class="bg-light text-muted text-uppercase small fw-semibold py-3 px-3 text-center border-0 sticky-th">
+                        Action
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (Items == null || Items.Count == 0)
+            {
+                <tr>
+                    <td colspan="@GetColSpan()" class="text-center py-5">
+                        <div class="d-flex flex-column align-items-center justify-content-center">
+                            <i class="bi bi-inbox fs-1 mb-2 text-muted opacity-50"></i>
+                            <span class="text-muted">No data found</span>
+                        </div>
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in DisplayItems)
+                {
+                    <tr class="@(RowClassFunc?.Invoke(item) ?? "") @(RowClickable ? "att-row-clickable" : "")"
+                        @onclick="RowClickable ? (() => HandleRowClick(item)) : null">
+                        @foreach (var col in Columns)
+                        {
+                            <td class="px-3 py-2 text-start custom-td">
+                                @{
+                                    var tipHtml = col.TooltipHtml?.Invoke(item);
+                                    var cssClass = col.CssClassFunc?.Invoke(item) ?? col.CssClass;
+                                    var cellVal = col.Value(item);
+                                }
+                                @if (!string.IsNullOrWhiteSpace(tipHtml))
+                                {
+                                    <div class="att-tip-host">
+                                        <span class="att-tip-trigger @cssClass">
+                                            @cellVal
+                                            <i class="bi bi-info-circle att-tip-icon"></i>
+                                        </span>
+                                        <div class="att-tip-box">
+                                            @((MarkupString)tipHtml)
+                                        </div>
+                                    </div>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(cssClass))
+                                {
+                                    <span class="@cssClass">@cellVal</span>
+                                }
+                                else
+                                {
+                                    @cellVal
+                                }
+                            </td>
+                        }
+                        @if (ShowActions)
+                        {
+                            <td class="text-center px-3 py-2">
+                                <div class="d-inline-flex gap-2">
+                                    @if (ActionTemplate != null)
+                                    {
+                                        @ActionTemplate(item)
+                                    }
+                                    else
+                                    {
+                                        <AppButton ButtonClass="req-action-btn btn btn-outline-primary btn-sm rounded-circle
+                                                               d-inline-flex align-items-center justify-content-center"
+                                                   OnClick="() => OnEdit.InvokeAsync(item)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </AppButton>
+                                        <AppButton ButtonClass="req-action-btn btn btn-outline-danger btn-sm rounded-circle
+                                                               d-inline-flex align-items-center justify-content-center"
+                                                   OnClick="() => OnDelete.InvokeAsync(item)">
+                                            <i class="bi bi-trash"></i>
+                                        </AppButton>
+                                    }
+                                </div>
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    @if (EnablePagination && TotalPages > 1)
+    {
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 px-3 py-2 bg-light border-top">
+            <small class="text-muted">
+                Showing @(((currentPage - 1) * PageSize) + 1)–@(Math.Min(currentPage * PageSize, Items.Count))
+                of @Items.Count
+            </small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0 gap-1">
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <button class="page-link border-0 rounded" @onclick="() => GoToPage(currentPage - 1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    </li>
+                    @foreach (var p in GetVisiblePages())
+                    {
+                        var page = p;
+                        <li class="page-item @(page == currentPage ? "active" : "")">
+                            <button class="page-link border-0 rounded" @onclick="() => GoToPage(page)">
+                                @p
+                            </button>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage >= TotalPages ? "disabled" : "")">
+                        <button class="page-link border-0 rounded" @onclick="() => GoToPage(currentPage + 1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+<!-- At the bottom of App.razor, before </body> -->
+<script>
+    (function () {
+        let box = null;
+
+        document.addEventListener('mouseover', function (e) {
+            const host = e.target.closest('.att-tip-host');
+            if (!host) { hide(); return; }
+            const tip = host.querySelector('.att-tip-box');
+            if (!tip || tip === box) return;
+            hide();
+            box = tip;
+
+            // Measure dimensions while invisible
+            box.style.visibility = 'hidden';
+            box.classList.add('visible');
+
+            const r = host.querySelector('.att-tip-trigger').getBoundingClientRect();
+            let top  = r.top - box.offsetHeight - 8;
+            let left = r.left + r.width / 2 - box.offsetWidth / 2;
+
+            // Flip below if clips top of screen
+            if (top < 4) top = r.bottom + 8;
+            // Keep inside viewport horizontally
+            left = Math.max(8, Math.min(left, window.innerWidth - box.offsetWidth - 8));
+
+            box.style.top  = top  + 'px';
+            box.style.left = left + 'px';
+            box.style.visibility = '';
+        });
+
+        document.addEventListener('mouseout', function (e) {
+            const host = e.target.closest('.att-tip-host');
+            if (host && !host.contains(e.relatedTarget)) hide();
+        });
+
+        function hide() {
+            if (box) {
+                box.classList.remove('visible');
+                box.style.top = box.style.left = box.style.visibility = '';
+                box = null;
+            }
+        }
+    })();
+</script>
+
+@code {
+    [Parameter] public List<TItem> Items { get; set; } = new();
+    [Parameter] public List<TableColumn<TItem>> Columns { get; set; } = new();
+    [Parameter] public EventCallback<TItem> OnEdit { get; set; }
+    [Parameter] public EventCallback<TItem> OnDelete { get; set; }
+    [Parameter] public EventCallback<TItem> OnRowClick { get; set; }
+    [Parameter] public bool RowClickable { get; set; } = false;
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public RenderFragment<TItem>? ActionTemplate { get; set; }
+
+    [Parameter] public bool EnablePagination { get; set; } = false;
+    [Parameter] public int PageSize { get; set; } = 10;
+
+    [Parameter] public string WrapperClass { get; set; } = "";
+    [Parameter] public string TableClass { get; set; } = "";
+    [Parameter] public Func<TItem, string>? RowClassFunc { get; set; }
+
+    private int currentPage = 1;
+
+    private List<TItem> DisplayItems => EnablePagination
+        ? Items.Skip((currentPage - 1) * PageSize).Take(PageSize).ToList()
+        : Items;
+
+    private int TotalPages => EnablePagination && Items.Count > 0
+        ? (int)Math.Ceiling(Items.Count / (double)PageSize) : 1;
+
+    protected override void OnParametersSet()
+    {
+        if (currentPage > TotalPages)
+            currentPage = Math.Max(1, TotalPages);
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+            currentPage = page;
+    }
+
+    private IEnumerable<int> GetVisiblePages()
+    {
+        if (TotalPages <= 5)
+            return Enumerable.Range(1, TotalPages);
+        var start = Math.Max(1, currentPage - 2);
+        var end = Math.Min(TotalPages, start + 4);
+        start = Math.Max(1, end - 4);
+        return Enumerable.Range(start, end - start + 1);
+    }
+        
+    private int GetColSpan() => Columns.Count + (ShowActions ? 1 : 0);
+
+    private async Task HandleRowClick(TItem item)
+    {
+        if (!RowClickable) return;
+
+        if (OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(item);
+        }
+    }
+}

@@ -1,4 +1,5 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Common.Base;
+using arna.HRMS.Core.Enums;
 
 namespace arna.HRMS.Core.Entities;
 
@@ -9,9 +10,11 @@ public class Attendance : BaseEntity
     public DateTime? ClockIn { get; set; }
     public DateTime? ClockOut { get; set; }
     public TimeSpan? TotalHours { get; set; }
-    public AttendanceStatus Status { get; set; }
+    public AttendanceStatus StatusId { get; set; }
     public string Notes { get; set; }
+    public Double? Latitude { get; set; }
+    public Double? Longitude { get; set; }
+    public DeviceType? DeviceId { get; set; }
 
-    // Navigation Properties
     public Employee Employee { get; set; }
 }

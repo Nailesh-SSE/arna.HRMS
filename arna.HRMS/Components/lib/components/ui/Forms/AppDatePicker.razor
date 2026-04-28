@@ -1,0 +1,83 @@
+﻿@using System.Linq.Expressions
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="mb-3">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="form-label">@Label</label>
+    }
+
+    <div class="position-relative">
+        <input type="date"
+               class="form-control"
+               value="@FormattedValue"
+               min="2000-01-01"
+               max="2100-12-31"
+               @onchange="OnChange" />
+
+        @if (!Value.HasValue)
+        {
+            <span class="date-placeholder">
+                @PlaceholderText
+            </span>
+        }
+    </div>
+
+    @if (ValidationExpression != null)
+    {
+        <ValidationMessage For="ValidationExpression" />
+    }
+</div>
+
+@code {
+    [CascadingParameter] private EditContext? EditContext { get; set; }
+
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public DateTime? Value { get; set; }
+    [Parameter] public EventCallback<DateTime?> ValueChanged { get; set; }
+
+    // ⭐ Date disable rule
+    [Parameter] public Func<DateTime, bool>? IsDateDisabled { get; set; }
+
+    [Parameter] public string DefaultPlaceholder { get; set; } = "";
+    [Parameter] public string? Placeholder { get; set; }
+
+    [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
+
+    private FieldIdentifier _fieldIdentifier;
+
+    private string PlaceholderText =>
+        string.IsNullOrWhiteSpace(Placeholder) ? DefaultPlaceholder : Placeholder;
+
+    private string? FormattedValue =>
+        Value.HasValue && Value.Value.Year > 1900
+            ? Value.Value.ToString("yyyy-MM-dd")
+            : null;
+
+    protected override void OnParametersSet()
+    {
+        if (EditContext != null && ValidationExpression != null)
+            _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+    }
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        if (!DateTime.TryParse(e.Value?.ToString(), out var selectedDate))
+        {
+            await ValueChanged.InvokeAsync(null);
+            return;
+        }
+
+        if (IsDateDisabled?.Invoke(selectedDate.Date) == true)
+        {
+            return;
+        }
+
+        // ✅ THIS WAS MISSING — invoke the parent callback with the selected date
+        await ValueChanged.InvokeAsync(selectedDate.Date);
+
+        if (ValidationExpression != null)
+            EditContext?.NotifyFieldChanged(_fieldIdentifier);
+    }
+}

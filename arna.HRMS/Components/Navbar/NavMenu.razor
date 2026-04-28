@@ -1,0 +1,118 @@
+﻿@using arna.HRMS.Models.Enums
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Helper.Navigation
+@using System.Collections.Generic
+@using System.Linq
+
+@inherits AuthenticatedLayoutBase
+@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<div class="navmenu d-flex flex-column h-100 text-white">
+
+    <!-- ── Brand ── -->
+    <div class="navmenu-brand d-flex align-items-center justify-content-between
+                px-3 py-3 border-bottom border-white border-opacity-10">
+        <div class="d-flex align-items-center gap-2">
+            <img src="companyLogo/arna_logo.svg" alt="Arna HRMS" class="navmenu-logo" />
+        </div>
+        <button class="navmenu-close btn btn-sm text-white-50 d-lg-none border-0 p-1"
+                @onclick="OnClose" aria-label="Close sidebar">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+
+    <!-- ── Navigation ── -->
+    <nav class="navmenu-scroll flex-grow-1 overflow-auto px-3 py-3">
+
+        @if (_menuItemsBySection != null && _menuItemsBySection.Count > 0)
+        {
+            @foreach (var menuSection in _menuItemsBySection)
+            {
+                <span class="navmenu-label @(menuSection.Key != "Main" ? "navmenu-label-gap" : "")">@menuSection.Key</span>
+
+                @foreach (var item in menuSection.Value)
+                {
+                    var route = NavigationHelper.GetRouteForRole(item, _userRole);
+                    var isActive = IsActive(route, item.ExactMatch);
+
+                    <button class="navmenu-item @isActive" @onclick='() => GoTo(route)' title="@item.Label">
+                        <span class="navmenu-icon"><i class="@item.Icon"></i></span>
+                        <span class="navmenu-text">@item.Label</span>
+                        <span class="navmenu-indicator"></span>
+                    </button>
+                }
+            }
+        }
+
+    </nav>
+
+    <!-- ── Footer ── -->
+    <div class="navmenu-footer px-3 py-2 border-top border-white border-opacity-10 text-center">
+        <small class="text-white-50">© 2025 Arna HRMS</small>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string _currentPath = "";
+    private UserRole _userRole = UserRole.Employee;
+    private IReadOnlyDictionary<string, List<NavMenuItem>> _menuItemsBySection = new Dictionary<string, List<NavMenuItem>>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentPath = GetRelativePath();
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        await base.OnInitializedAsync();
+        var roleString = GetUserRole();
+        if (Enum.TryParse<UserRole>(roleString, out var parsedRole))
+        {
+            _userRole = parsedRole;
+        }
+        InitializeMenuItems();
+    }
+
+    private void InitializeMenuItems()
+    {
+        _menuItemsBySection = NavigationHelper.GetMenuItemsGroupedBySection(_userRole);
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _currentPath = GetRelativePath();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string GetRelativePath()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        return uri.AbsolutePath.TrimEnd('/');
+    }
+
+    private string IsActive(string href, bool exact = false)
+    {
+        var current = _currentPath;
+        var target = href.TrimEnd('/');
+
+        if (exact)
+            return (current == target || (target == "" && current == "")) ? "active" : "";
+
+        if (string.IsNullOrEmpty(target))
+            return current == "" ? "active" : "";
+
+        return (current == target || current.StartsWith(target + "/")) ? "active" : "";
+    }
+
+    private void GoTo(string path)
+    {
+        NavigationManager.NavigateTo(path);
+        _ = OnClose.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+}

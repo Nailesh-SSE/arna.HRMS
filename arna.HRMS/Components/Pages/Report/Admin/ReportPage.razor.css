@@ -1,0 +1,57 @@
+﻿.emp-report-fade-in {
+    animation: empReportFadeIn 0.3s ease-out;
+}
+
+@keyframes empReportFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ─── Stat Cards ─── */
+.emp-report-stat-card {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .emp-report-stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.1) !important;
+    }
+
+/* ─── Table Wrapper ─── */
+.emp-report-table {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+    /* ─── Table Row Hover ─── */
+    .emp-report-table ::deep tr {
+        transition: background-color 0.15s ease;
+    }
+
+    .emp-report-table ::deep tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.04);
+    }
+
+/* ─── Search Input Focus ─── */
+.emp-report-fade-in .form-control:focus {
+    border-color: rgba(13, 110, 253, 0.5);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+/* ─── Date Input Sizing ─── */
+.emp-report-fade-in input[type="date"] {
+    min-width: 140px;
+}
+
+/* ─── Filter Summary Bar ─── */
+.emp-report-fade-in .border-top.border-light {
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}

@@ -25,15 +25,22 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(e => e.Email)
             .IsRequired()
             .HasMaxLength(100);
+        
+        builder.Property(e => e.OfficeEmail)
+            .IsRequired()
+            .HasMaxLength(255);
 
+        builder.Property(e => e.PhoneNumber)
+            .IsRequired()
+            .HasMaxLength(10);
+        
         builder.Property(e => e.Salary)
-            .HasPrecision(18, 2); // <--- Added precision to avoid EF warning
+            .HasPrecision(18, 2); 
 
         builder.HasOne(e => e.Department)
             .WithMany(d => d.Employees)
             .HasForeignKey(e => e.DepartmentId)
-            .OnDelete(DeleteBehavior.Restrict); // <-- Prevent cascade delete conflicts
-
+            .OnDelete(DeleteBehavior.Restrict); 
 
         builder.HasOne(e => e.Manager)
             .WithMany(m => m.Subordinates)
@@ -45,16 +52,32 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(e => e.LeaveRequests)
-            .WithOne(l => l.Employee)
-            .HasForeignKey(l => l.EmployeeId)
-            .OnDelete(DeleteBehavior.Cascade);
+             .WithOne(l => l.Employee)
+             .HasForeignKey(l => l.EmployeeId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(e => e.ApprovedLeaveRequests)
+            .WithOne(l => l.ApprovedByEmployee)
+            .HasForeignKey(l => l.ApprovedBy)
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(e => e.Timesheets)
             .WithOne(t => t.Employee)
             .HasForeignKey(t => t.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(e => e.AttendanceRequest)
+            .WithOne(t => t.Employee)
+            .HasForeignKey(t => t.EmployeeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(e => e.AttendanceRequestsApproved)
+            .WithOne(t => t.ApprovedByEmployee)
+            .HasForeignKey(t => t.ApprovedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasIndex(e => e.EmployeeNumber).IsUnique();
         builder.HasIndex(e => e.Email).IsUnique();
+        builder.HasIndex(e => e.OfficeEmail).IsUnique();
     }
 }

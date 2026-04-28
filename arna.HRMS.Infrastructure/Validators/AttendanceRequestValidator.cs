@@ -1,0 +1,136 @@
+﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Enums;
+using arna.HRMS.Infrastructure.Repositories;
+
+namespace arna.HRMS.Infrastructure.Validators;
+
+public class AttendanceRequestValidator
+{
+    private readonly AttendanceRequestRepository _repository;
+
+    public AttendanceRequestValidator(AttendanceRequestRepository repository)
+    {
+        _repository = repository;
+    }
+
+    // =============================
+    // CREATE
+    // =============================
+    public async Task<ValidationResult> ValidateCreateAsync(AttendanceRequestDto dto)
+    {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
+        return await ValidateCommonAsync(dto);
+    }
+
+    // =============================
+    // UPDATE
+    // =============================
+    public async Task<ValidationResult> ValidateUpdateAsync(AttendanceRequestDto dto)
+    {
+        if (dto == null)
+            return ValidationResult.Fail("Invalid request");
+        if (dto.Id <= 0)
+            return ValidationResult.Fail("Invalid Attendance Request ID");
+        if (dto.EmployeeId > 0)
+        {
+            var exits = _repository.GetAttendanceRequestByIdAsync(dto.Id);
+            if (exits.Result == null)
+                return ValidationResult.Fail("No Data Found");
+        }
+
+        return await ValidateCommonAsync(dto);
+    }
+
+    // =============================
+    // STATUS UPDATE
+    // =============================
+    public async Task<ValidationResult> ValidateStatusUpdateAsync(int id, Status status, int approvedBy)
+    {
+        if (id <= 0)
+            return ValidationResult.Fail("Invalid AttendanceRequest ID");
+
+        var exist = _repository.GetAttendanceRequestByIdAsync(id);
+        if (exist.Result == null)
+            return ValidationResult.Fail("Invalid Attendance Request ID");
+
+        if (status == Status.Cancelled)
+            return ValidationResult.Fail("Not Allow to Cancel");
+
+        if (status == Status.Pending)
+            return ValidationResult.Fail("Not Allow to Pending");
+
+        if (approvedBy <= 0)
+            return ValidationResult.Fail("Invalid Approved ID");
+
+        return ValidationResult.Success();
+    }
+
+    // =============================
+    // COMMON FIELD VALIDATION
+    // =============================
+    private Task<ValidationResult> ValidateCommonAsync(AttendanceRequestDto dto)
+    {
+        if (dto == null)
+            return Task.FromResult(ValidationResult.Fail("Invalid request"));
+
+        var errors = new List<string>();
+
+        if (dto.EmployeeId <= 0)
+            errors.Add("EmployeeId is required");
+
+        if (dto.FromDate == null)
+            errors.Add("From Date is required");
+
+        if (dto.ToDate == null)
+            errors.Add("To Date is required");
+
+        if (dto.FromDate != null && dto.ToDate != null)
+        {
+            if (dto.FromDate.Value.Date > DateTime.Now.Date || dto.ToDate.Value.Date > DateTime.Now.Date)
+                errors.Add("Future Date is not allowed");
+
+            if (dto.FromDate.Value.Date > dto.ToDate.Value.Date)
+                errors.Add("From Date cannot be greater than To Date");
+        }
+
+        if (dto.ClockIn == null)
+            errors.Add("ClockIn is required");
+
+        if (dto.ClockOut == null)
+            errors.Add("ClockOut is required");
+
+        if (dto.ClockIn != null && dto.ClockOut != null)
+        {
+            if (dto.FromDate == dto.ToDate && dto.ClockOut <= dto.ClockIn)
+                errors.Add("ClockOut must be greater than ClockIn for same-day requests");
+        }
+        
+        if (dto.TotalHours > TimeSpan.FromHours(24))
+            errors.Add("Shift cannot be more then 24hr");
+        
+        if (dto.LocationId == null)
+            errors.Add("Location is required");
+
+        if (dto.ReasonTypeId == null)
+            errors.Add("Reason is required");
+
+        if (dto.BreakDuration == null)
+            errors.Add("Break duration is required");
+
+        if(string.IsNullOrWhiteSpace(dto.Description))
+            errors.Add("Description is requied");
+
+        if (dto.Description?.Length > 500)
+            errors.Add("Description cannot exceed 500 characters");
+
+      // Break duration and total hours basic sanity checks
+        if (dto.BreakDuration != null && dto.TotalHours < dto.BreakDuration)
+            errors.Add("Break duration cannot be greater than total hours");
+
+        return errors.Any()
+                ? Task.FromResult(ValidationResult.Fail(errors.ToArray()))
+                : Task.FromResult(ValidationResult.Success());
+    }
+}

@@ -1,151 +1,152 @@
-﻿using arna.HRMS.Core.DTOs.Responses;
+using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs.Auth;
 using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
-using Microsoft.AspNetCore.Identity.Data;
-using RegisterRequest = arna.HRMS.Core.DTOs.Requests.RegisterRequest;
+using arna.HRMS.Core.Interfaces.Service;
+using arna.HRMS.Infrastructure.Data;
+using arna.HRMS.Infrastructure.Dependency.Identity;
+using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace arna.HRMS.Infrastructure.Services;
 
 public class AuthService : IAuthService
 {
     private readonly IJwtService _jwtService;
-    private readonly IUserServices _userServices; 
+    private readonly IUserServices _userServices;
+    private readonly IMapper _mapper;
+    private readonly JwtSettings _jwtSettings;
+    private readonly ApplicationDbContext _context;
 
-    public AuthService(IJwtService jwtService, IUserServices userServices)
+    public AuthService(
+        IJwtService jwtService,
+        IUserServices userServices,
+        IMapper mapper,
+        IOptions<JwtSettings> jwtSettings,
+        ApplicationDbContext context)
     {
         _jwtService = jwtService;
         _userServices = userServices;
+        _mapper = mapper;
+        _jwtSettings = jwtSettings.Value;
+        _context = context;
     }
 
-    public async Task<AuthResponse> LoginAsync(LoginRequest request)
+    public async Task<ServiceResult<AuthResponse>> LoginAsync(LoginDto request)
     {
-        try
+        if (request == null || string.IsNullOrWhiteSpace(request.UserName) || string.IsNullOrWhiteSpace(request.Password))
         {
-            // Find user by username
-            var user = await _userServices.GetUserByUserNameAndEmail(request.Email);
-
-            if (user == null)
-            {
-                return new AuthResponse
-                {
-                    IsSuccess = false,
-                    Message = "Invalid username or password"
-                };
-            }
-
-            // Verify password (assuming PasswordHash contains hashed password)
-            if (!VerifyPassword(request.Password, user.PasswordHash))
-            {
-                return new AuthResponse
-                {
-                    IsSuccess = false,
-                    Message = "Invalid username or password"
-                };
-            }
-
-            // Generate tokens
-            var accessToken = _jwtService.GenerateAccessToken(user);
-            var refreshToken = _jwtService.GenerateRefreshToken();
-
-            // Save refresh token
-            await _jwtService.SaveRefreshTokenAsync(user.Id, refreshToken);
-
-            return new AuthResponse
-            {
-                Token = accessToken,
-                RefreshToken = refreshToken,
-                Expiration = DateTime.UtcNow.AddDays(8),
-                UserId = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                FullName = user.FullName,
-                Password = user.Password,
-                Role = user.Role,
-                IsSuccess = true,
-                Message = "Login successful"
-            };
+            return ServiceResult<AuthResponse>.Fail("Username and password are required.");
         }
-        catch (Exception)
-        {
-            return new AuthResponse
-            {
-                IsSuccess = false,
-                Message = "An error occurred during login"
-            };
-        }
+
+        var user = await _userServices.GetUserByUserNameOrEmailAsync(request.UserName);
+
+        // ✅ FIX: VerifyPassword now hashes input before comparing
+        // Previously: inputPassword == userPassword (plaintext vs hash = always false on prod)
+        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
+            return ServiceResult<AuthResponse>.Fail("Invalid username or password.");
+
+        var authResponse = await GenerateAuthResponseAsync(user);
+
+        return ServiceResult<AuthResponse>.Success(authResponse, "Login successful.");
     }
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+    public async Task<ServiceResult<AuthResponse>> RegisterAsync(UserDto dto)
     {
-        try
+        if (dto == null)
+            return ServiceResult<AuthResponse>.Fail("Invalid request.");
+
+        if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
         {
-            // Check if user already exists
-            if (await _userServices.UserExistsAsync(request.Username, request.Email))
-            {
-                return new AuthResponse
-                {
-                    IsSuccess = false,
-                    Message = "Username or email already exists"
-                };
-            }
-
-            var user = new User
-            {
-                Username = request.Username,
-                Email = request.Email,
-                PasswordHash = HashPassword(request.Password),
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Role = request.Role,
-                PhoneNumber = request.PhoneNumber,
-                Password = request.Password,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _userServices.CreateUserAsync(user);
-
-            // Generate tokens
-            var accessToken = _jwtService.GenerateAccessToken(user);
-            var refreshToken = _jwtService.GenerateRefreshToken();
-
-            // Save refresh token
-            await _jwtService.SaveRefreshTokenAsync(user.Id, refreshToken);
-
-            return new AuthResponse
-            {
-                Token = accessToken,
-                RefreshToken = refreshToken,
-                Expiration = DateTime.UtcNow.AddDays(8),
-                UserId = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                FullName = user.FullName,
-                Role = user.Role,
-                IsSuccess = true,
-                Message = "Registration successful"
-            };
+            return ServiceResult<AuthResponse>.Fail("Username, email and password are required.");
         }
-        catch (Exception)
-        {
-            return new AuthResponse
-            {
-                IsSuccess = false,
-                Message = "An error occurred during registration"
-            };
-        }
+
+        if (dto.Password.Length < 6)
+            return ServiceResult<AuthResponse>.Fail("Password must be at least 6 characters.");
+
+        if (await _userServices.UserExistsAsync(dto.Email, dto.PhoneNumber, dto.Id))
+            return ServiceResult<AuthResponse>.Fail("Email or phone number already exists.");
+
+        dto.Password = HashPassword(dto.Password);
+
+        var user = await _userServices.CreateUserEntityAsync(dto);
+
+        if (user == null)
+            return ServiceResult<AuthResponse>.Fail("User creation failed.");
+
+        var authResponse = await GenerateAuthResponseAsync(user);
+
+        return ServiceResult<AuthResponse>.Success(authResponse, "Registration successful.");
     }
 
-    private bool VerifyPassword(string password, string passwordHash)
+    public async Task<ServiceResult<AuthResponse>> RefreshTokenAsync(RefreshTokenDto request)
     {
-        return HashPassword(password) == passwordHash;
+        if (request == null || request.UserId <= 0 || string.IsNullOrWhiteSpace(request.RefreshToken))
+        {
+            return ServiceResult<AuthResponse>.Fail("Invalid request.");
+        }
+
+        var user = await _context.Users
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(x => x.Id == request.UserId);
+
+        if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+        {
+            return ServiceResult<AuthResponse>.Fail("Invalid or expired refresh token.");
+        }
+
+        var authResponse = await GenerateAuthResponseAsync(user);
+
+        return ServiceResult<AuthResponse>.Success(authResponse, "Token refreshed successfully.");
     }
 
-    private string HashPassword(string password)
+    public async Task<ServiceResult<bool>> LogoutAsync(int userId)
+    {
+        if (userId <= 0)
+            return ServiceResult<bool>.Fail("Invalid user id.");
+
+        await _jwtService.RevokeRefreshTokenAsync(userId);
+
+        return ServiceResult<bool>.Success(true, "Logged out successfully.");
+    }
+
+    private async Task<AuthResponse> GenerateAuthResponseAsync(User user)
+    {
+        var accessToken = _jwtService.GenerateAccessToken(user);
+        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        await _jwtService.SaveRefreshTokenAsync(user.Id, refreshToken);
+
+        return new AuthResponse
+        {
+            IsSuccess = true,
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            Expiration = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpirationInMinutes),
+            UserId = user.Id,
+            Username = user.Username ?? string.Empty,
+            FullName = user.FullName ?? string.Empty,
+            Email = user.Email ?? string.Empty,
+            EmployeeId = user.EmployeeId,
+            Role = user.Role?.Name ?? string.Empty
+        };
+    }
+
+    private static string HashPassword(string password)
     {
         using var sha = System.Security.Cryptography.SHA256.Create();
         var bytes = System.Text.Encoding.UTF8.GetBytes(password);
         var hash = sha.ComputeHash(bytes);
         return Convert.ToBase64String(hash);
+    }
+
+    // ✅ FIX: Hash the input password before comparing to stored hash
+    // Old code: return inputPassword == userPassword;  ← WRONG (plaintext vs hash)
+    // New code: hash input first, then compare both as hashes
+    private static bool VerifyPassword(string inputPassword, string storedPassword)
+    {
+        var hashedInput = HashPassword(inputPassword);
+        return hashedInput == storedPassword;
     }
 }

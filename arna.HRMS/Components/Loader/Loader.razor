@@ -1,0 +1,19 @@
+﻿@if (Visible)
+{
+    <div class="loader-backdrop">
+        <div class="loader-card">
+            <div class="loader-ring">
+                <div class="loader-ring-inner"></div>
+            </div>
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <p class="loader-msg">@Message</p>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public string? Message { get; set; }
+}

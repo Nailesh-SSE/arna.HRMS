@@ -1,0 +1,60 @@
+﻿@page "/"
+
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Services.Auth
+
+@inherits AuthenticatedLayoutBase
+@inject NavigationManager Nav
+
+<Loader Visible="isLoading" Message="@loadingMessage" />
+
+@if (!isLoading)
+{
+    @if (IsAdmin() || IsSuperAdmin())
+    {
+        <AdminDashboard UserFullName="@GetUserFullName()" />
+    }
+    else if (IsEmployee())
+    {
+        <EmployeeDashboard UserFullName="@GetUserFullName()"
+                           EmployeeId="@GetEmployeeId()" />
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private string loadingMessage = " ";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+
+            if (!IsAuthenticated())
+            {
+                Nav.NavigateTo("/login");
+                return;
+            }
+
+            // ── Set role-based loading message ──
+            if (IsAdmin() || IsSuperAdmin())
+            {
+                loadingMessage = "Admin Dashboard is loading...";
+            }
+            else 
+            {
+                loadingMessage = "Employee Dashboard is loading...";
+            }
+        }
+        catch
+        {
+            Nav.NavigateTo("/login");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

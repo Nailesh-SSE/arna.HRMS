@@ -12,7 +12,7 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(d => d.Username)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(255);
 
         builder.Property(d => d.Email)
             .IsRequired()
@@ -21,6 +21,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(d => d.PasswordHash)
             .IsRequired()
             .HasMaxLength(255);
+
+        builder.Property(d => d.Password)
+            .IsRequired()
+            .HasMaxLength(50);
 
         builder.Property(d => d.FirstName)
             .IsRequired()
@@ -34,12 +38,25 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(20);
 
-        builder.Property(d => d.Role)
+        builder.Property(d => d.RoleId)
             .IsRequired();
 
         builder.Property(d => d.RefreshToken)
             .HasMaxLength(255);
 
         builder.Property(d => d.RefreshTokenExpiryTime);
+
+        builder.Property(d => d.EmployeeId)
+            .IsRequired(false);
+
+        builder.HasOne(d => d.Employee)
+            .WithMany()
+            .HasForeignKey(d => d.EmployeeId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(d => d.Role)
+            .WithMany()
+            .HasForeignKey(d => d.RoleId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

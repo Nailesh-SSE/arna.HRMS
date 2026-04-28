@@ -1,0 +1,169 @@
+﻿/* ─────────────────────────────
+   HEADER ICON
+───────────────────────────── */
+.dept-header-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+}
+
+/* ─────────────────────────────
+   ADD BUTTON
+───────────────────────────── */
+.dept-add-btn {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(var(--bs-primary-rgb), 0.15);
+}
+
+    .dept-add-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(var(--bs-primary-rgb), 0.3);
+    }
+
+    .dept-add-btn:active {
+        transform: translateY(0);
+    }
+
+/* ─────────────────────────────
+   EMPTY STATE
+───────────────────────────── */
+.dept-empty-icon {
+    width: 80px;
+    height: 80px;
+    background-color: #f8f9fa;
+    border-radius: 16px;
+}
+
+.dept-empty-text {
+    max-width: 360px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* ─────────────────────────────
+   TABLE SCROLL
+───────────────────────────── */
+.dept-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 16px 16px;
+}
+
+    .dept-table-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .dept-table-scroll::-webkit-scrollbar-track {
+        background: #f1f3f5;
+        border-radius: 10px;
+    }
+
+    .dept-table-scroll::-webkit-scrollbar-thumb {
+        background: #dee2e6;
+        border-radius: 10px;
+        transition: background 0.2s ease;
+    }
+
+        .dept-table-scroll::-webkit-scrollbar-thumb:hover {
+            background: #adb5bd;
+        }
+
+/* ─────────────────────────────
+   SEARCH BAR
+───────────────────────────── */
+.form-control-sm {
+    transition: all 0.2s ease;
+}
+
+    .form-control-sm:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.1);
+    }
+
+/* ─────────────────────────────
+   MOBILE (<576px)
+───────────────────────────── */
+@media (max-width: 575.98px) {
+
+    .dept-header-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+        .dept-header-icon i {
+            font-size: 1.1rem !important;
+        }
+
+    .dept-table-scroll {
+        max-height: 50vh;
+    }
+
+    .dept-empty-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .dept-empty-text {
+        font-size: 0.9rem;
+        max-width: 280px;
+    }
+
+    .dept-add-btn {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.9rem;
+    }
+}
+
+/* ─────────────────────────────
+   TABLET (576px–991px)
+───────────────────────────── */
+@media (min-width: 576px) and (max-width: 991.98px) {
+
+    .dept-table-scroll {
+        max-height: 60vh;
+    }
+
+    .dept-header-icon {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* ─────────────────────────────
+   DESKTOP (≥992px)
+───────────────────────────── */
+@media (min-width: 992px) {
+
+    .dept-table-scroll {
+        max-height: 65vh;
+    }
+
+    .dept-header-icon {
+        width: 52px;
+        height: 52px;
+    }
+
+        .dept-header-icon i {
+            font-size: 1.5rem !important;
+        }
+}
+
+/* ─────────────────────────────
+   PRINT
+───────────────────────────── */
+@media print {
+
+    .dept-add-btn,
+    .form-control-sm,
+    .btn-outline-secondary {
+        display: none;
+    }
+
+    .dept-table-scroll {
+        max-height: none;
+        overflow: visible;
+    }
+}

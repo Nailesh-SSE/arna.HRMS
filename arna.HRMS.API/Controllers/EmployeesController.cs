@@ -1,75 +1,66 @@
-﻿using arna.HRMS.Core.DTOs.Requests;
-using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
-using arna.HRMS.Models.DTOs;
-using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
+﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 
 namespace arna.HRMS.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class EmployeesController : ControllerBase
 {
-    private readonly IEmployeeService _employeeService;
-    private readonly IMapper _mapper;
+    private readonly IEmployeeService _service;
 
-    public EmployeesController(IEmployeeService employeeService, IMapper mapper)
+    public EmployeesController(IEmployeeService service)
     {
-        _employeeService = employeeService;
-        _mapper = mapper;
+        _service = service;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployees()
+    public async Task<IActionResult> GetAsync()
     {
-        var employees = await _employeeService.GetEmployeesAsync(); 
-        return Ok(_mapper.Map<IEnumerable<EmployeeDto>>(employees));
+        var result = await _service.GetEmployeesAsync();
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<EmployeeDto>> GetEmployee(int id)
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetByIdAsync(int id)
     {
-        var employee = await _employeeService.GetEmployeeByIdAsync(id);
-        if (employee == null) return NotFound();
-        return Ok(employee);
+        var result = await _service.GetEmployeeByIdAsync(id);
+
+        return result.IsSuccess ? Ok(result) : NotFound(result.Message);
     }
 
     [HttpPost]
-    //[Authorize(Roles = "Admin,HR")]
-    public async Task<ActionResult<EmployeeDto>> CreateEmployee(CreateEmployeeRequest employeeDto)
+    public async Task<IActionResult> CreateAsync([FromBody] EmployeeDto dto)
     {
-        var employee = _mapper.Map<Employee>(employeeDto);
-        var createdEmployee = await _employeeService.CreateEmployeeAsync(employee);
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        return CreatedAtAction(
-            nameof(GetEmployee),
-            new { id = createdEmployee.Id },
-            _mapper.Map<EmployeeDto>(createdEmployee));
-    }
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteEmployee(int id)
-    {
-        var deleted = await _employeeService.DeleteEmployeeAsync(id);
+        var result = await _service.CreateEmployeeAsync(dto);
 
-        if (!deleted)
-            return NotFound();
-
-        return NoContent();
+        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    [HttpPut("{id}")]
-    //[Authorize(Roles = "Admin,HR")]
-    public async Task<IActionResult> UpdateEmployee(int id, UpdateEmployeeRequest employeeDto)
+    [HttpPost("{id:int}")]
+    public async Task<IActionResult> UpdateAsync(int id, [FromBody] EmployeeDto dto)
     {
-        if (id != employeeDto.Id) return BadRequest();
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        var employee = _mapper.Map<Employee>(employeeDto);
+        if (id != dto.Id)
+            return BadRequest("Invalid employee ID.");
 
-        await _employeeService.UpdateEmployeeAsync(employee);
+        var result = await _service.UpdateEmployeeAsync(dto);
 
-        return NoContent();
+        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+    }
+
+    [HttpPost("{id:int}/delete")]
+    public async Task<IActionResult> DeleteAsync(int id)
+    {
+        var result = await _service.DeleteEmployeeAsync(id);
+
+        return result.IsSuccess ? Ok(result) : NotFound(result.Message);
     }
 }

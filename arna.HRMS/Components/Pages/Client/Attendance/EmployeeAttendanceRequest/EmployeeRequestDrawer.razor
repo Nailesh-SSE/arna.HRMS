@@ -1,0 +1,333 @@
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.Dropdown
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
+
+@inject IAttendanceRequestService AttendanceRequestService
+@inject NotificationService NotificationService
+@inherits AuthenticatedLayoutBase
+
+@if (isVisible)
+{
+    <EditForm EditContext="@editContext" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="drawer d-flex flex-column p-3 @(isClosing ? "drawer-closing" : "drawer-open")">
+
+            <div class="d-flex align-items-center justify-content-between border-bottom px-4 py-3">
+                <h5 class="mb-0 fw-semibold">@Title</h5>
+
+                <AppButton Text="X"
+                           ButtonClass="btn btn-danger"
+                           OnClick="CloseDrawer" />
+            </div>
+
+            <div class="drawer-body flex-grow-1 overflow-auto p-3">
+
+                <AppSelect Label="Reason*"
+                           Placeholder="Select Reason"
+                           Options="reason"
+                           Value="@SelectedReason"
+                           ValueChanged="@(v => OnValueChanged(v, "Reason"))"
+                           ValidationExpression="@(() => request.ReasonTypeId)" />
+
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <AppDatePicker Label="From Date"
+                                       Value="@DateHelper.Normalize(request.FromDate)"
+                                       ValueChanged="OnFromDateChanged"
+                                       ValidationExpression="@(() => request.FromDate)" />
+                    </div>
+                    <div class="col-6">
+                        <AppDatePicker Label="To Date"
+                                       Value="@DateHelper.Normalize(request.ToDate)"
+                                       ValueChanged="OnToDateChanged"
+                                       ValidationExpression="@(() => request.ToDate)" />
+                    </div>
+                </div>
+
+                <AppSelect Label="Location*"
+                           Placeholder="Select Location"
+                           Options="location"
+                           Value="@SelectedLocation"
+                           ValueChanged="@(v => OnValueChanged(v, "Location"))"
+                           ValidationExpression="@(() => request.LocationId)" />
+
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <AppInput Label="Clockin Time"
+                                  Type="time"
+                                  Value="@request.ClockIn?.ToString("HH:mm")"
+                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockIn = d,false))"
+                                  ValidationExpression="@(() => request.ClockIn)" />
+                    </div>
+
+                    <div class="col-6">
+                        <AppInput Label="Clockout Time"
+                                  Type="time"
+                                  Value="@request.ClockOut?.ToString("HH:mm")"
+                                  ValueChanged="@(v => OnClockTimeChanged(v, d => request.ClockOut = d,true))"
+                                  ValidationExpression="@(() => request.ClockOut)" />
+                    </div>
+                </div>
+
+                <AppInput Label="Break Duration (HH:mm)"
+                          Type="text"
+                          Value="@(request.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")"
+                          ValueChanged="@(v => OnTimeSpanChanged(v, t => request.BreakDuration = t))" />
+
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <AppInput Label="Total Worked Time"
+                                  Type="text"
+                                  Value="@((request.TotalHours + request.BreakDuration)?.ToString(@"hh\:mm") ?? "00:00")"
+                                  ReadOnly="true" />
+                    </div>
+
+                    <div class="col-6">
+                        <AppInput Label="Final Work Duration"
+                                  Type="text"
+                                  Value="@request.TotalHours.ToString(@"hh\:mm")"
+                                  ReadOnly="true" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <AppTextArea Label="Message"
+                                 IsRequired="true"
+                                 Rows="3"
+                                 Placeholder="Enter message"
+                                 Value="@request.Description"
+                                 ValueChanged="@(v => request.Description = v)"
+                                 ValidationExpression="@(() => request.Description)" />
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3">
+                    <AppButton Text="Submit"
+                               Type="submit"
+                               ButtonClass="btn btn-secondary" />
+
+                    <AppButton Text="Cancel"
+                               ButtonClass="btn btn-dark"
+                               OnClick="CloseDrawer" />
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public EventCallback<bool> IsOpenChanged { get; set; }
+    [Parameter] public string Title { get; set; } = "Attendance Request";
+    [Parameter] public AttendanceRequestViewModel? EditModel { get; set; }
+
+    private AttendanceRequestViewModel request = new();
+    private EditContext editContext = default!;
+
+    private List<SelectOption> reason = new();
+    private List<SelectOption> location = new();
+
+    private string? SelectedReason;
+    private string? SelectedLocation;
+
+    private bool isVisible;
+    private bool isClosing;
+
+    protected async override void OnParametersSet()
+    {
+        await base.OnInitializedAsync();
+        // Initialize EditContext if null
+        if (editContext == null || editContext.Model != request)
+            editContext = new EditContext(request);
+
+        if (IsOpen && !isVisible) // Triggered only when transitioning from closed to open
+        {
+            isVisible = true;
+            isClosing = false;
+
+            reason = AttendenceRequestDropDown.ReasonOption;
+            location = AttendenceRequestDropDown.LocationOption;
+
+            if (EditModel != null)
+            {
+                LoadEditData();
+            }
+            else
+            {
+                ResetForm();
+            }
+        }
+    }
+
+    private void LoadEditData()
+    {
+        request.Id = EditModel!.Id;
+        request.EmployeeId = EditModel.EmployeeId;
+        request.EmployeeName = EditModel.EmployeeName;
+        request.FromDate = EditModel.FromDate;
+        request.ToDate = EditModel.ToDate;
+        request.ReasonTypeId = EditModel.ReasonTypeId;
+        request.LocationId = EditModel.LocationId;
+        request.ClockIn = EditModel.ClockIn;
+        request.ClockOut = EditModel.ClockOut;
+        request.BreakDuration = EditModel.BreakDuration ?? TimeSpan.Zero;
+        request.TotalHours = EditModel.TotalHours;
+        request.Description = EditModel.Description;
+        request.CreatedOn = EditModel.CreatedOn;
+
+        SelectedReason = request.ReasonTypeId.HasValue ? ((int)request.ReasonTypeId.Value).ToString() : null;
+        SelectedLocation = request.LocationId.HasValue ? ((int)request.LocationId.Value).ToString() : null;
+
+        CalculationFinalWork();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        CalculationFinalWork();
+        request.EmployeeId = GetEmployeeId();
+
+        if (request.Id > 0)
+        {
+            var result = await AttendanceRequestService.UpdateAttendanceRequestAsync(request);
+            if (result.IsSuccess)
+            {
+                await NotificationService.Success("Updated successfully.");
+                await CloseDrawer();
+            }
+            else
+            {
+                await NotificationService.Error(result.Message ?? "Operation failed.");
+            }
+        }
+        else
+        {
+            var result = await AttendanceRequestService.CreateAttendanceRequestAsync(request);
+            if (result.IsSuccess)
+            {
+                await NotificationService.Success("Submitted successfully.");
+                await CloseDrawer();
+            }
+            else
+            {
+                await NotificationService.Error(result.Message ?? "Operation failed.");
+            }
+        }
+
+    }
+
+    private Task OnValueChanged(string? value, string source)
+    {
+        if (source == "Reason")
+        {
+            SelectedReason = value;
+            if (int.TryParse(value, out var r))
+                request.ReasonTypeId = (AttendanceReasonType)r;
+        }
+        else if (source == "Location")
+        {
+            SelectedLocation = value;
+            if (int.TryParse(value, out var l))
+                request.LocationId = (AttendanceLocation)l;
+        }
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private void OnFromDateChanged(DateTime? date)
+    {
+        request.FromDate = date;
+        if (request.FromDate.HasValue)
+        {
+            if (request.ClockIn.HasValue)
+                request.ClockIn = request.FromDate.Value.Date.Add(request.ClockIn.Value.TimeOfDay);
+        }
+        StateHasChanged();
+        CalculationFinalWork();
+    }
+
+    private void OnToDateChanged(DateTime? date)
+    {
+        request.ToDate = date;
+        if (request.ToDate.HasValue)
+        {
+            if (request.ClockOut.HasValue)
+                request.ClockOut = request.ToDate.Value.Date.Add(request.ClockOut.Value.TimeOfDay);
+        }
+        StateHasChanged(); 
+        CalculationFinalWork();
+    }
+    private void OnClockTimeChanged(string? value, Action<DateTime?> setter, bool isClockOut = false)
+    {
+        if (TimeSpan.TryParse(value, out var time))
+        {
+            var baseDate = isClockOut
+            ? (request.ToDate ?? DateTime.Today)
+            : (request.FromDate ?? DateTime.Today);
+            setter(baseDate.Date.Add(time));
+        }
+        else setter(null);
+
+        CalculationFinalWork();
+    }
+
+    private void OnTimeSpanChanged(string? value, Action<TimeSpan?> setter)
+    {
+        if (TimeSpan.TryParse(value, out var ts)) setter(ts);
+        else setter(TimeSpan.Zero);
+
+        CalculationFinalWork();
+    }
+
+    private void CalculationFinalWork()
+   {
+        if (!request.ClockIn.HasValue || !request.ClockOut.HasValue) 
+        {
+            request.TotalHours = TimeSpan.Zero;
+            return;
+        }
+        var clockIn = request.ClockIn.Value;
+        var clockOut = request.ClockOut.Value;
+
+        if (request.FromDate == request.ToDate && clockOut <= clockIn)
+        {
+                request.TotalHours = TimeSpan.Zero;
+                return;   
+        }
+
+        var totalWorked = clockOut - clockIn;
+        var breakDuration = request.BreakDuration ?? TimeSpan.Zero;
+        var final = totalWorked - breakDuration;
+
+        request.TotalHours = final > TimeSpan.Zero ? final : TimeSpan.Zero;
+    }
+
+    private async Task CloseDrawer()
+    {
+        isClosing = true;
+        isVisible = false;
+        isClosing = false;
+        EditModel = null;
+        ResetForm();
+        await IsOpenChanged.InvokeAsync(false);
+    }
+
+    private void ResetForm()
+    {
+        request = new AttendanceRequestViewModel { FromDate = DateTime.Today, ToDate = DateTime.Today, BreakDuration = TimeSpan.Zero };
+        editContext = new EditContext(request);
+        SelectedReason = null;
+        SelectedLocation = null;
+    }
+
+    public static class DateHelper
+    {
+        public static DateTime? Normalize(DateTime? date)
+            => (date.HasValue && date.Value.Year >= 1900) ? date : null;
+    }
+}

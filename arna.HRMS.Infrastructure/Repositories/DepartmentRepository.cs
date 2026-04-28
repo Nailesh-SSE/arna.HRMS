@@ -1,5 +1,6 @@
 ﻿using arna.HRMS.Core.Entities;
-using arna.HRMS.Infrastructure.Interfaces;
+using arna.HRMS.Core.Interfaces.Repository;
+using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
 
@@ -12,15 +13,20 @@ public class DepartmentRepository
         _baseRepository = baseRepository;
     }
 
-    public Task<IEnumerable<Department>> GetDepartmentAsync()
+    public async Task<List<Department>> GetDepartmentsAsync()
     {
-        return _baseRepository.GetAllAsync();
+        return await _baseRepository.Query()
+            .Where(d => d.IsActive && !d.IsDeleted)
+            .Include(d => d.ParentDepartment)
+            .OrderByDescending(d => d.Id) 
+            .ToListAsync();
     }
 
     public async Task<Department?> GetDepartmentByIdAsync(int id)
     {
-        var department = await _baseRepository.GetByIdAsync(id).ConfigureAwait(false);
-        return department;
+        return await _baseRepository.Query()
+            .Where(d => d.Id == id && d.IsActive && !d.IsDeleted)
+            .FirstOrDefaultAsync();
     }
 
     public Task<Department> CreateDepartmentAsync(Department department)
@@ -33,8 +39,37 @@ public class DepartmentRepository
         return _baseRepository.UpdateAsync(department);
     }
 
-    public Task<bool> DeleteDepartmentAsync(int id)
+    public async Task<bool> DeleteDepartmentAsync(int id)
     {
-        return _baseRepository.DeleteAsync(id);
+        var department = await _baseRepository.Query()
+            .FirstOrDefaultAsync(d =>
+                d.Id == id &&
+                d.IsActive &&
+                !d.IsDeleted);
+
+        if (department == null)
+            return false;
+
+        department.IsActive = false;
+        department.IsDeleted = true;
+        department.UpdatedOn = DateTime.Now;
+
+        await _baseRepository.UpdateAsync(department);
+        return true;
+    }
+
+    public async Task<bool> DepartmentExistsAsync(string name, int? id)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return false;
+
+        name = name.Trim().ToLower();
+
+        return await _baseRepository.Query()
+            .Where(d => d.IsActive && !d.IsDeleted)
+            .AnyAsync(d =>
+                d.Id != id &&
+                d.Name.Trim().ToLower() == name
+            );
     }
 }

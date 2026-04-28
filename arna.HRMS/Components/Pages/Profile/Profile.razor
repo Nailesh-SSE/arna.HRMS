@@ -1,0 +1,448 @@
+﻿@page "/profile"
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
+@using arna.HRMS.Services.Common
+
+@inject IEmployeeService EmployeeService
+@inject IDepartmentService DepartmentService
+@inject IUserService UserService
+@inject NotificationService NotificationService
+@inherits AuthenticatedLayoutBase
+
+<Loader Visible="isLoading" Message="@loadingMessage" />
+
+@if (!isLoading && profile != null)
+{
+    <div class="container-fluid py-4 px-3 px-md-4">
+
+        <div class="row g-4">
+
+            <!-- ========== LEFT CARD ========== -->
+            <div class="@(isFullEmployeeProfile ? "col-12 col-lg-4" : "col-12 col-md-8 mx-auto")">
+                <div class="card border-0 shadow-sm rounded-4">
+
+                    <!-- Gradient Top -->
+                    <div class="profile-banner rounded-top-4"></div>
+
+                    <!-- Avatar -->
+                    <div class="text-center" style="margin-top:-50px;">
+                        <div class="avatar-wrapper d-inline-block position-relative">
+                            <div class="avatar-circle">@Initials</div>
+                        </div>
+                    </div>
+
+                    <!-- Name & Role -->
+                    <div class="text-center px-3 pt-2 pb-3">
+                        <h5 class="fw-bold mb-0">@profile.FullName</h5>
+                        @if (!string.IsNullOrEmpty(profile.Position))
+                        {
+                            <p class="text-muted small mb-2">@profile.Position</p>
+                        }
+                        <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-3 py-2 rounded-pill">
+                            <i class="bi bi-shield-check me-1"></i>@GetUserRole()
+                        </span>
+                    </div>
+
+                    <hr class="mx-4 my-0 text-secondary opacity-25" />
+
+                    <!-- Contact Details -->
+                    <div class="card-body px-4">
+                        <p class="text-uppercase text-muted fw-bold small mb-3"
+                           style="font-size:.7rem; letter-spacing:.05em;">
+                            Contact Details
+                        </p>
+
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <span class="contact-icon bg-primary bg-opacity-10 text-primary rounded-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-envelope-fill"></i>
+                            </span>
+                            <div class="text-truncate">
+                                <small class="text-muted d-block" style="font-size:.7rem;">Email</small>
+                                <span class="fw-medium small">@profile.Email</span>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(profile.PhoneNumber))
+                        {
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <span class="contact-icon bg-success bg-opacity-10 text-success rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-telephone-fill"></i>
+                                </span>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size:.7rem;">Phone</small>
+                                    <span class="fw-medium small">@profile.PhoneNumber</span>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(profile.DepartmentName))
+                        {
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <span class="contact-icon bg-warning bg-opacity-10 text-warning rounded-3 d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-building-fill"></i>
+                                </span>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size:.7rem;">Department</small>
+                                    <span class="fw-medium small">@profile.DepartmentName</span>
+                                </div>
+                            </div>
+                        }
+
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="contact-icon bg-info bg-opacity-10 text-info rounded-3 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-calendar-event-fill"></i>
+                            </span>
+                            <div>
+                                <small class="text-muted d-block" style="font-size:.7rem;">Joined</small>
+                                <span class="fw-medium small">@profile.CreatedOn.ToString("MMM dd, yyyy")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (isFullEmployeeProfile)
+                    {
+                        <hr class="mx-4 my-0 text-secondary opacity-25" />
+
+                        <!-- Quick Stats -->
+                        <div class="card-body px-4">
+                            <div class="row g-2 text-center">
+                                <div class="col-4">
+                                    <div class="bg-light rounded-3 py-2">
+                                        <div class="fw-bold text-primary">@ExperienceYears</div>
+                                        <small class="text-muted" style="font-size:.65rem;">Years Exp</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="bg-light rounded-3 py-2">
+                                        <div class="fw-bold text-primary">@(profile.DepartmentCode ?? "—")</div>
+                                        <small class="text-muted" style="font-size:.65rem;">Dept Code</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="bg-light rounded-3 py-2">
+                                        <span class="badge rounded-circle @(profile.IsActive ? "bg-success" : "bg-danger") p-1">&nbsp;</span>
+                                        <small class="text-muted d-block mt-1" style="font-size:.65rem;">
+                                            @(profile.IsActive ? "Active" : "Inactive")
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (isFullEmployeeProfile)
+            {
+                <!-- ========== RIGHT CARD ========== -->
+                <div class="col-12 col-lg-8">
+                    <div class="card border-0 shadow-sm rounded-4">
+
+                        <!-- Header with Edit Button -->
+                        <div class="card-body pb-0 px-4 pt-4">
+                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1">Profile Information</h5>
+                                    <p class="text-muted small mb-0">Manage your personal details</p>
+                                </div>
+
+                                @if (activeTab == ProfileTab.Personal)
+                                {
+                                    <div class="d-flex gap-2">
+                                        @if (isEditMode)
+                                        {
+                                            <button class="btn btn-light btn-sm px-3 rounded-3"
+                                                    @onclick="CancelEdit">
+                                                <i class="bi bi-x-lg me-1"></i> Cancel
+                                            </button>
+                                            <button class="btn btn-primary btn-sm px-3 rounded-3"
+                                                    @onclick="SaveProfile">
+                                                <i class="bi bi-check2 me-1"></i> Save
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-primary btn-sm px-3 rounded-3"
+                                                    @onclick="EnterEditMode">
+                                                <i class="bi bi-pencil-square me-1"></i> Edit
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Tab Navigation -->
+                            <div class="profile-fade-in">
+                                <ul class="nav nav-tabs profile-tabs px-3 pt-3">
+                                    @foreach (ProfileTab tab in Enum.GetValues(typeof(ProfileTab)))
+                                    {
+                                        <li class="nav-item">
+                                            <button class="nav-link @(activeTab == tab ? "active fw-semibold" : "text-muted") @(isEditMode && tab != ProfileTab.Personal ? "disabled" : "")"
+                                                    @onclick="() => SwitchTab(tab)"
+                                                    disabled="@(isEditMode && tab != ProfileTab.Personal)">
+                                                <i class="bi @GetTabIcon(tab) me-1"></i>@tab
+                                            </button>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div class="card-body px-4 pt-4">
+                            <div class="row g-4">
+                                @switch (activeTab)
+                                {
+                                    case ProfileTab.Personal:
+                                        @EditableField("First Name", profile.FirstName, v => profile.FirstName = v)
+                                        @EditableField("Last Name", profile.LastName, v => profile.LastName = v)
+                                        @EditableField("Email Address", profile.Email, v => profile.Email = v, "email")
+                                        @EditableField("Phone Number", profile.PhoneNumber, v => profile.PhoneNumber = v, "tel")
+                                        break;
+
+                                    case ProfileTab.Work:
+                                        @StaticField("Employee ID", profile.EmployeeNumber)
+                                        @StaticField("Office Email", profile.OfficeEmail)
+                                        @StaticField("Department", profile.DepartmentName)
+                                        @StaticField("Position", profile.Position)
+                                        @StaticField("Manager", profile.ManagerFullName)
+                                        @StaticField("Hire Date", profile.HireDate?.ToString("MMM dd, yyyy"))
+                                        break;
+
+                                    case ProfileTab.Others:
+                                        @StaticField("Company", "Arna Technosoft")
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label text-muted small fw-semibold text-uppercase"
+                                                   style="font-size:.7rem; letter-spacing:.04em;">
+                                                Status
+                                            </label>
+                                            <div class="pt-1">
+                                                <span class="badge rounded-pill px-3 py-2 @(profile.IsActive ? "bg-success bg-opacity-10 text-success" : "bg-danger bg-opacity-10 text-danger")">
+                                                    <i class="bi @(profile.IsActive ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1"></i>
+                                                    @(profile.IsActive ? "Active" : "Inactive")
+                                                </span>
+                                            </div>
+                                        </div>
+                                        @StaticField("Experience", ExperienceString)
+                                        @StaticField("Account Created", profile.CreatedOn.ToString("MMM dd, yyyy"))
+                                        break;
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+
+    private RenderFragment EditableField(string label, string? value, Action<string> onChanged, string type = "text") => __builder =>
+    {
+        <div class="col-12 col-md-6">
+            <label class="form-label field-label">@label</label>
+
+            @if (isEditMode)
+            {
+                <input type="@type"
+                       class="form-control"
+                       value="@value"
+                       placeholder="Enter @label.ToLower()"
+                       @onchange="@(e => onChanged(e.Value?.ToString() ?? ""))" />
+            }
+            else
+            {
+                <div class="field-value">
+                    @(string.IsNullOrWhiteSpace(value) ? "—" : value)
+                </div>
+            }
+        </div>
+    };
+
+    private RenderFragment StaticField(string label, string? value, bool fullWidth = false) => __builder =>
+    {
+        <div class="@(fullWidth ? "col-12" : "col-12 col-md-6")">
+            <label class="form-label text-muted small fw-semibold text-uppercase"
+                   style="font-size:.7rem; letter-spacing:.04em;">
+                @label
+            </label>
+            <p class="fw-medium mb-0 pb-2 border-bottom border-light">
+                @(string.IsNullOrWhiteSpace(value) ? "—" : value)
+            </p>
+        </div>
+    };
+}
+
+@code {
+    private ProfileViewModel? profile;
+    private ProfileTab activeTab = ProfileTab.Personal;
+    private bool isEditMode;
+    private EmployeeViewModel? employee;
+    private bool isLoading = true;
+    private string loadingMessage = "Loading Your Profile...";
+    private ProfileSnapshot? originalSnapshot;
+
+    private bool isFullEmployeeProfile => profile?.IsEmployee ?? false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await base.OnInitializedAsync();
+            var employeeId = GetEmployeeId();
+
+            if (employeeId > 0)
+            {
+                var result = await EmployeeService.GetEmployeeByIdAsync(employeeId);
+                if (result.IsSuccess && result.Data != null)
+                {
+                    employee = result.Data;
+                    profile = new ProfileViewModel(result.Data);
+
+                    var dept = await DepartmentService.GetDepartmentByIdAsync(result.Data.DepartmentId ?? 0);
+                    if (dept?.Data != null)
+                    {
+                        profile.DepartmentName = dept.Data.Name;
+                        profile.DepartmentCode = dept.Data.Code;
+                    }
+                }
+            }
+            else
+            {
+                var userId = GetUserId();
+                var user = await UserService.GetUserByIdAsync(userId);
+                if (user?.Data != null)
+                    profile = new ProfileViewModel(user.Data);
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.Error(ex.Message ?? "Operation Failed.");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void EnterEditMode()
+    {
+        originalSnapshot = new ProfileSnapshot(profile!);
+        isEditMode = true;
+    }
+
+    private async Task SaveProfile()
+    {
+        if (!HasChanges())
+        {
+            isEditMode = false;
+            return;
+        }
+
+        var updated = MapProfileToEmployee(profile!, employee!);
+        var result = await EmployeeService.UpdateEmployeeAsync(updated.Id, updated);
+
+        if (!result.IsSuccess)
+        {
+            await NotificationService.Error(result.Message ?? "Unable to update profile.");
+            return;
+        }
+
+        originalSnapshot = new ProfileSnapshot(profile!);
+        await NotificationService.Success("Profile updated successfully.");
+        isEditMode = false;
+    }
+
+    private void CancelEdit()
+    {
+        if (originalSnapshot != null && profile != null)
+        {
+            profile.FirstName = originalSnapshot.FirstName;
+            profile.LastName = originalSnapshot.LastName;
+            profile.Email = originalSnapshot.Email;
+            profile.PhoneNumber = originalSnapshot.PhoneNumber;
+        }
+        isEditMode = false;
+    }
+
+    private void SwitchTab(ProfileTab tab)
+    {
+        if (!isEditMode)
+            activeTab = tab;
+    }
+
+    private bool HasChanges()
+    {
+        if (originalSnapshot == null || profile == null) return false;
+        return originalSnapshot.FirstName != profile.FirstName?.Trim()
+            || originalSnapshot.LastName != profile.LastName?.Trim()
+            || originalSnapshot.Email != profile.Email?.Trim()
+            || originalSnapshot.PhoneNumber != profile.PhoneNumber?.Trim();
+    }
+
+    private string GetTabIcon(ProfileTab tab) => tab switch
+    {
+        ProfileTab.Personal => "bi-person",
+        ProfileTab.Work => "bi-briefcase",
+        ProfileTab.Others => "bi-gear",
+        _ => "bi-circle"
+    };
+
+    private string Initials =>
+        $"{profile?.FirstName?.FirstOrDefault() ?? 'U'}{profile?.LastName?.FirstOrDefault() ?? ' '}".Trim().ToUpper();
+
+    private string ExperienceYears
+    {
+        get
+        {
+            var start = profile?.HireDate ?? DateTime.Today;
+            var y = DateTime.Today.Year - start.Year;
+            if (DateTime.Today < start.AddYears(y)) y--;
+            return Math.Max(0, y).ToString();
+        }
+    }
+
+    private string ExperienceString
+    {
+        get
+        {
+            var start = profile?.HireDate ?? DateTime.Today;
+            var end = DateTime.Today;
+            if (end < start) return "0 Y 0 M 0 D";
+            int y = end.Year - start.Year, m = end.Month - start.Month, d = end.Day - start.Day;
+            if (d < 0) { m--; d += DateTime.DaysInMonth(end.AddMonths(-1).Year, end.AddMonths(-1).Month); }
+            if (m < 0) { y--; m += 12; }
+            return $"{y} Y {m} M {d} D";
+        }
+    }
+
+    private enum ProfileTab { Personal, Work, Others }
+
+    private record ProfileSnapshot
+    {
+        public string? FirstName { get; init; }
+        public string? LastName { get; init; }
+        public string? Email { get; init; }
+        public string? PhoneNumber { get; init; }
+        public ProfileSnapshot(ProfileViewModel p)
+        {
+            FirstName = p.FirstName?.Trim();
+            LastName = p.LastName?.Trim();
+            Email = p.Email?.Trim();
+            PhoneNumber = p.PhoneNumber?.Trim();
+        }
+    }
+
+    private static EmployeeViewModel MapProfileToEmployee(ProfileViewModel p, EmployeeViewModel e)
+    {
+        e.FirstName = p.FirstName;
+        e.LastName = p.LastName;
+        e.Email = p.Email;
+        e.PhoneNumber = p.PhoneNumber;
+        return e;
+    }
+}

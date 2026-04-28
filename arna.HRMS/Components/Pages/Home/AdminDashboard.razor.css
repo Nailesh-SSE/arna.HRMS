@@ -1,0 +1,193 @@
+﻿═══════════════════════════════════════════ */
+.dash-fade-in {
+    animation: dashFadeIn 0.4s ease-out;
+}
+
+@keyframes dashFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ═══════════════════════════════════════════
+   SCROLL AREAS
+   ═══════════════════════════════════════════ */
+.dash-scroll-area {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.dash-scroll-area-sm {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+/* ═══════════════════════════════════════════
+   PENDING TABLE — Override AppTable Styles
+   ═══════════════════════════════════════════ */
+
+/* Table font family & base size */
+::deep .dash-pending-table {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.82rem;
+}
+
+    /* Header cells */
+    ::deep .dash-pending-table th {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        padding: 0.6rem 0.75rem;
+        white-space: nowrap;
+        color: #6b7280;
+        background-color: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    /* Body cells */
+    ::deep .dash-pending-table td {
+        font-size: 0.8rem;
+        padding: 0.55rem 0.75rem;
+        color: #374151;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    /* Row hover */
+    ::deep .dash-pending-table tbody tr:hover {
+        background-color: rgba(var(--bs-primary-rgb), 0.03);
+    }
+
+    /* Alternate row striping (optional) */
+    ::deep .dash-pending-table tbody tr:nth-child(even) {
+        background-color: #fafbfc;
+    }
+
+        ::deep .dash-pending-table tbody tr:nth-child(even):hover {
+            background-color: rgba(var(--bs-primary-rgb), 0.04);
+        }
+
+    /* Empty state */
+    ::deep .dash-pending-table .bi-inbox {
+        color: #d1d5db;
+    }
+
+    /* Action buttons inside table */
+    ::deep .dash-pending-table .btn-sm {
+        font-size: 0.72rem;
+        padding: 0.2rem 0.45rem;
+    }
+
+/* ═══════════════════════════════════════════
+   PENDING TABLE — Responsive
+   ═══════════════════════════════════════════ */
+
+/* Mobile */
+@media (max-width: 575.98px) {
+    ::deep .dash-pending-table {
+        font-size: 0.75rem;
+    }
+
+        ::deep .dash-pending-table th {
+            font-size: 0.65rem;
+            padding: 0.45rem 0.5rem;
+        }
+
+        ::deep .dash-pending-table td {
+            font-size: 0.73rem;
+            padding: 0.4rem 0.5rem;
+        }
+
+        ::deep .dash-pending-table .btn-sm {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.35rem;
+        }
+}
+
+/* Tablet */
+@media (min-width: 576px) and (max-width: 991.98px) {
+    ::deep .dash-pending-table {
+        font-size: 0.78rem;
+    }
+
+        ::deep .dash-pending-table th {
+            font-size: 0.68rem;
+        }
+
+        ::deep .dash-pending-table td {
+            font-size: 0.76rem;
+        }
+}
+
+/* Desktop */
+@media (min-width: 992px) {
+    ::deep .dash-pending-table {
+        font-size: 0.82rem;
+    }
+}
+
+/* ═══════════════════════════════════════════
+   STATUS DOT (Leave Overview)
+   ═══════════════════════════════════════════ */
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   AVATAR (Approved/Rejected Lists)
+   ═══════════════════════════════════════════ */
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    color: #fff;
+}
+
+.avatar-green {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.avatar-red {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* ═══════════════════════════════════════════
+   ACTION TILES (Quick Access)
+   ═══════════════════════════════════════════ */
+.action-tile {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .action-tile:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08) !important;
+    }
+
+.action-icon-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}

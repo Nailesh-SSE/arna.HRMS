@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Enums;
+﻿using arna.HRMS.Core.Common.Base;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -31,7 +31,7 @@ public class User : BaseEntity
     public string PhoneNumber { get; set; }
 
     [Required]
-    public UserRole Role { get; set; }
+    public int RoleId { get; set; } 
 
     [Required]
     [MaxLength(50)]
@@ -44,4 +44,9 @@ public class User : BaseEntity
 
     [NotMapped]
     public string FullName => $"{FirstName} {LastName}";
+
+    public int? EmployeeId { get; set; }  
+
+    public Employee? Employee { get; set; }
+    public Role? Role { get; set; }
 }
