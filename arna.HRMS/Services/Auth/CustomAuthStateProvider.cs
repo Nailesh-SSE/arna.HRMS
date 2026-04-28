@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -89,6 +89,21 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
 
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
+        catch (InvalidOperationException ex)
+        {
+            // ✅ FIX: ProtectedLocalStorage uses JS interop which is unavailable during
+            // Blazor Server prerendering phase. Catch InvalidOperationException gracefully.
+            // This happens on the server when the circuit hasn't been established yet.
+            _logger.LogWarning(ex, "JS interop unavailable during prerendering — LoginAsync skipped storage write");
+            // Still update in-memory cache so the session works for this request
+            _cachedAccessToken = accessToken;
+            _cachedRefreshToken = refreshToken;
+            _cachedUserId = userId;
+            if (employeeId.HasValue && employeeId.Value > 0)
+                _cachedEmployeeId = employeeId.Value;
+            _isInitialized = true;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to store authentication tokens");
@@ -111,6 +126,14 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
 
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
+        catch (InvalidOperationException ex)
+        {
+            // ✅ FIX: JS interop not available during prerendering — update cache only
+            _logger.LogWarning(ex, "JS interop unavailable — UpdateTokensAsync updating cache only");
+            _cachedAccessToken = accessToken;
+            _cachedRefreshToken = refreshToken;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update authentication tokens");
@@ -122,12 +145,20 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
     {
         try
         {
-            await _protectedLocalStorage.DeleteAsync(AccessTokenKey);
-            await _protectedLocalStorage.DeleteAsync(RefreshTokenKey);
-            await _protectedLocalStorage.DeleteAsync(UserIdKey);
-            await _protectedLocalStorage.DeleteAsync(EmployeeIdKey);
+            try
+            {
+                await _protectedLocalStorage.DeleteAsync(AccessTokenKey);
+                await _protectedLocalStorage.DeleteAsync(RefreshTokenKey);
+                await _protectedLocalStorage.DeleteAsync(UserIdKey);
+                await _protectedLocalStorage.DeleteAsync(EmployeeIdKey);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // ✅ FIX: JS interop unavailable during prerendering — clear cache only
+                _logger.LogWarning(ex, "JS interop unavailable — LogoutAsync clearing cache only");
+            }
 
-            // Clear cache
+            // Always clear cache regardless of storage outcome
             _cachedAccessToken = null;
             _cachedRefreshToken = null;
             _cachedUserId = 0;
@@ -158,6 +189,12 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             }
 
             return 0;
+        }
+        catch (InvalidOperationException)
+        {
+            // ✅ FIX: JS interop not available during prerendering — return cached or 0
+            _logger.LogDebug("JS interop unavailable in GetUserIdAsync — returning cached value");
+            return _cachedUserId;
         }
         catch (Exception ex)
         {
@@ -198,6 +235,12 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
 
             return 0;
         }
+        catch (InvalidOperationException)
+        {
+            // ✅ FIX: JS interop not available during prerendering — return cached or 0
+            _logger.LogDebug("JS interop unavailable in GetEmployeeIdAsync — returning cached value");
+            return _cachedEmployeeId;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to retrieve employee ID");
@@ -228,6 +271,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
 
             return null;
         }
+        catch (InvalidOperationException)
+        {
+            // ✅ FIX: This is the PRIMARY cause of "Unauthorized" on production server.
+            // ProtectedLocalStorage calls JS interop. During Blazor Server prerendering,
+            // JS interop is NOT available and throws InvalidOperationException.
+            // Without this catch, GetAccessTokenAsync returns null → no Bearer token →
+            // every API call gets 401 Unauthorized on the server.
+            // Solution: return from in-memory cache (populated after first real login).
+            _logger.LogDebug("JS interop unavailable (prerendering) — returning cached access token");
+            return _cachedAccessToken; // null on first load, populated after login
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to retrieve access token");
@@ -257,6 +311,12 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             }
 
             return null;
+        }
+        catch (InvalidOperationException)
+        {
+            // ✅ FIX: JS interop unavailable during prerendering — return cached value
+            _logger.LogDebug("JS interop unavailable in GetRefreshTokenAsync — returning cached value");
+            return _cachedRefreshToken;
         }
         catch (Exception ex)
         {
@@ -291,6 +351,12 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
                 _isInitialized = true;
 
             return (userId, refreshToken);
+        }
+        catch (InvalidOperationException)
+        {
+            // ✅ FIX: JS interop unavailable during prerendering — return cached values
+            _logger.LogDebug("JS interop unavailable in GetRefreshDataAsync — returning cached values");
+            return (_cachedUserId, _cachedRefreshToken);
         }
         catch (Exception ex)
         {

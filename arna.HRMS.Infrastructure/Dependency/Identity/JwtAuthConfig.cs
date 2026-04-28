@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -35,7 +35,12 @@ public static class JwtAuthConfig
                         Encoding.UTF8.GetBytes(jwtSettings.SecretKey)
                     ),
 
-                    ClockSkew = TimeSpan.Zero
+                    // ✅ FIX: Changed from TimeSpan.Zero to 2 minutes
+                    // ClockSkew.Zero means ZERO tolerance for clock difference between servers.
+                    // On separate production servers, even a 1-second drift causes valid tokens
+                    // to be rejected with 401 Unauthorized.
+                    // 2 minutes is the standard safe tolerance for distributed systems.
+                    ClockSkew = TimeSpan.FromMinutes(2)
                 };
             });
 

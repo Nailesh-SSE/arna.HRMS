@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using System.Security.Claims;
@@ -56,6 +56,12 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     // MUST be async void (event handler pattern)
     private async void HandleAuthStateChanged(Task<AuthenticationState> task)
     {
+        // ✅ FIX: Guard against disposed component receiving auth state change events.
+        // On production Blazor Server, circuits disconnect more aggressively under load.
+        // The event handler can fire AFTER Dispose() was called (handler is mid-flight
+        // when component is torn down). This check prevents ObjectDisposedException.
+        if (_disposed) return;
+
         try
         {
             var authState = await task;
@@ -72,7 +78,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         }
         catch (JSDisconnectedException)
         {
-            // Blazor Server circuit disconnected
+            // Blazor Server circuit disconnected — this is the "disposed" error you see in logs
         }
         catch (Exception ex)
         {
@@ -105,12 +111,15 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out _userId);
         int.TryParse(user.FindFirst("EmployeeId")?.Value, out _employeeId);
 
+        // ✅ FIX: Moved all assignments INSIDE a clear scope — the original code had a
+        // misplaced brace that made it look like assignments were inside the if-block
+        // but they were actually always executed. Made explicit now for clarity.
         if (user.Claims.Count() <= 0 || _employeeId <= 0)
         {
-            Logger.LogWarning("Auth Fail.");
-       
+            Logger.LogWarning("Auth Fail — no claims or missing EmployeeId.");
         }
-            _userName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+
+        _userName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
         _userFullName = user.FindFirst("FullName")?.Value ?? string.Empty;
         _role = user.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
         _isAuthenticated = user.Identity?.IsAuthenticated ?? false;

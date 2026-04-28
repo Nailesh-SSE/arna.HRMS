@@ -1,9 +1,8 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.ViewModels.Auth;
 using arna.HRMS.Services.Auth;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 
@@ -12,20 +11,28 @@ namespace arna.HRMS.Services.Http;
 public sealed class HttpService
 {
     private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly CustomAuthStateProvider _authProvider;
     private readonly ILogger<HttpService> _logger;
     private ApiClients? _apiClients;
 
-    private static readonly SemaphoreSlim _refreshLock = new(1, 1);
+    // ✅ FIX: Removed 'static' — was shared across ALL users on Blazor Server.
+    // Static SemaphoreSlim means if User A triggers a refresh, User B is BLOCKED.
+    // If the semaphore was never released (exception), ALL users would deadlock.
+    // Each scoped HttpService instance now has its own lock.
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
+
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNameCaseInsensitive = true };
 
     public HttpService(
         HttpClient httpClient,
+        IHttpClientFactory httpClientFactory,
         CustomAuthStateProvider authProvider,
         ILogger<HttpService> logger)
     {
         _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
         _authProvider = authProvider;
         _logger = logger;
     }
@@ -120,12 +127,12 @@ public sealed class HttpService
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
 
-        var token = await _authProvider.GetAccessTokenAsync();
-
-        if (!string.IsNullOrWhiteSpace(token))
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
+        // ✅ FIX: Removed duplicate manual token injection here.
+        // AuthHeaderHandler (registered as DelegatingHandler on "AuthorizedClient") already
+        // injects the Bearer token at the pipeline level. Having both caused double-header
+        // attempts and race conditions during token refresh scenarios.
+        // The AuthHeaderHandler checks: if (request.Headers.Authorization is null) → sets it.
+        // So we just let the pipeline handle it cleanly.
 
         return await _httpClient.SendAsync(request, ct);
     }
@@ -136,9 +143,6 @@ public sealed class HttpService
 
     private async Task<bool> TryRefreshTokenAsync()
     {
-        if (_apiClients == null)
-            return false;
-
         await _refreshLock.WaitAsync();
 
         try
@@ -148,17 +152,49 @@ public sealed class HttpService
             if (userId <= 0 || string.IsNullOrWhiteSpace(refreshToken))
                 return false;
 
-            var result = await _apiClients.Auth.RefreshTokenAsync(
-                new RefreshToken
-                {
-                    UserId = userId,
-                    Token = refreshToken
-                });
+            // ✅ FIX: Use the dedicated "RefreshClient" (no AuthHeaderHandler attached)
+            // instead of going through _apiClients which uses the same HttpService pipeline.
+            // Using _apiClients.Auth.RefreshTokenAsync() here caused an INFINITE LOOP:
+            //   SendAsync → 401 → TryRefreshTokenAsync → RefreshTokenAsync → SendAsync
+            //   → 401 (refresh endpoint also returns 401 with expired token) → infinite loop
+            // → eventually causes ObjectDisposedException / stack overflow on the server.
+            var refreshHttpClient = _httpClientFactory.CreateClient("RefreshClient");
 
-            if (!result.IsSuccess || result.Data == null)
+            var requestBody = JsonSerializer.Serialize(new
+            {
+                UserId = userId,
+                // ✅ Also fixes: Frontend RefreshToken VM had "Token" property but backend expects "RefreshToken"
+                RefreshToken = refreshToken
+            }, JsonOptions);
+
+            var response = await refreshHttpClient.PostAsync(
+                "api/auth/refresh",
+                new StringContent(requestBody, Encoding.UTF8, "application/json"));
+
+            if (!response.IsSuccessStatusCode)
                 return false;
 
-            await _authProvider.UpdateTokensAsync(result.Data.AccessToken, result.Data.RefreshToken ?? refreshToken);
+            var raw = await response.Content.ReadAsStringAsync();
+
+            if (string.IsNullOrWhiteSpace(raw))
+                return false;
+
+            var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
+
+            if (wrapper == null || !wrapper.IsSuccess)
+                return false;
+
+            if (wrapper.Data.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                return false;
+
+            var data = JsonSerializer.Deserialize<AuthResponse>(wrapper.Data.GetRawText(), JsonOptions);
+
+            if (data == null || string.IsNullOrWhiteSpace(data.AccessToken))
+                return false;
+
+            await _authProvider.UpdateTokensAsync(
+                data.AccessToken,
+                data.RefreshToken ?? refreshToken);
 
             return true;
         }

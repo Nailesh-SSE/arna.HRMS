@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Infrastructure.Dependency;
+using arna.HRMS.Infrastructure.Dependency;
 using arna.HRMS.Infrastructure.Dependency.Identity;
 using arna.HRMS.Infrastructure.Middleware;
 
@@ -46,11 +46,20 @@ namespace arna.HRMS.API
                 app.UseSwaggerUI();
             }
 
-            app.UseMiddleware<TestAuthHeaderMiddleware>();
+            // ✅ FIX #1: CORS MUST come BEFORE UseHttpsRedirection
+            // Otherwise preflight OPTIONS requests get redirected (301) before CORS headers
+            // are applied → browser treats as CORS failure → appears as Unauthorized
+            app.UseCors("AllowBlazorApp");
+
             app.UseHttpsRedirection();
 
-            // Use CORS middleware
-            app.UseCors("AllowBlazorApp");
+            // ✅ FIX #2: TestAuthHeaderMiddleware REMOVED from production
+            // The static TestTokenStore.Token is shared across ALL users on the server
+            // causing cross-user token injection. Only use in Development.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseMiddleware<TestAuthHeaderMiddleware>();
+            }
 
             app.UseAuthentication();
             app.UseAuthorization();

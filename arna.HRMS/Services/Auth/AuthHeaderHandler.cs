@@ -19,11 +19,21 @@ public sealed class AuthHeaderHandler : DelegatingHandler
         {
             try
             {
-                var token = await _authProvider.GetAccessTokenAsync();
-
-                if (!string.IsNullOrWhiteSpace(token))
+                if (!request.Headers.Contains("User-Agent"))
+                    request.Headers.Add("User-Agent", "arna.HRMS/1.0");
+                if (request.Headers.Authorization is null)
                 {
-                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    try
+                    {
+                        var token = await _authProvider.GetAccessTokenAsync();
+                        if (!string.IsNullOrWhiteSpace(token))
+                            request.Headers.Authorization =
+                                new AuthenticationHeaderValue("Bearer", token);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to add authorization header");
+                    }
                 }
             }
             catch (Exception ex)

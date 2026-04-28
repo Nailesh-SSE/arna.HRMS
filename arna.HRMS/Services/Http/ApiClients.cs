@@ -164,7 +164,7 @@ public sealed class ApiClients
             return await _http.PostAsync<AuthResponse>($"{Url}/login", request);
         }
 
-        public async Task<ApiResult<AuthResponse>> RefreshTokenAsync(RefreshToken request)
+        public async Task<ApiResult<AuthResponse>> RefreshTokenAsync(RefreshTokenDTO request)
         {
             return await _http.PostAsync<AuthResponse>($"{Url}/refresh", request);
         }

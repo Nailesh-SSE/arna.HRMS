@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.DTOs.Auth;
 using arna.HRMS.Core.Entities;
@@ -42,7 +42,9 @@ public class AuthService : IAuthService
 
         var user = await _userServices.GetUserByUserNameOrEmailAsync(request.UserName);
 
-        if (user == null || !VerifyPassword(request.Password, user.Password))
+        // ✅ FIX: VerifyPassword now hashes input before comparing
+        // Previously: inputPassword == userPassword (plaintext vs hash = always false on prod)
+        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
             return ServiceResult<AuthResponse>.Fail("Invalid username or password.");
 
         var authResponse = await GenerateAuthResponseAsync(user);
@@ -139,8 +141,12 @@ public class AuthService : IAuthService
         return Convert.ToBase64String(hash);
     }
 
-    private static bool VerifyPassword(string inputPassword, string userPassword)
+    // ✅ FIX: Hash the input password before comparing to stored hash
+    // Old code: return inputPassword == userPassword;  ← WRONG (plaintext vs hash)
+    // New code: hash input first, then compare both as hashes
+    private static bool VerifyPassword(string inputPassword, string storedPassword)
     {
-        return inputPassword == userPassword; 
+        var hashedInput = HashPassword(inputPassword);
+        return hashedInput == storedPassword;
     }
 }

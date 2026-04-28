@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Components;
+using arna.HRMS.Components;
 using arna.HRMS.Models.State.Attendance;
 using arna.HRMS.Services;
 using arna.HRMS.Services.Auth;
@@ -43,21 +43,27 @@ public class Program
         // Register AuthHeaderHandler
         builder.Services.AddScoped<AuthHeaderHandler>();
 
-        // Authorized Client with token handler
+        // Authorized Client with token handler (used for all normal API calls)
         builder.Services.AddHttpClient("AuthorizedClient", client =>
         {
             client.BaseAddress = new Uri(baseUrl);
             client.Timeout = TimeSpan.FromHours(2);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("User-Agent", "arna.HRMS/1.0"); // ← add this
         })
         .AddHttpMessageHandler<AuthHeaderHandler>()
-        .SetHandlerLifetime(TimeSpan.FromMinutes(5)); // Prevent handler caching issues
+        .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
-        // Refresh Client (no token handler)
+        // ✅ FIX: RefreshClient has NO AuthHeaderHandler attached.
+        // This is the dedicated client used ONLY for token refresh calls in HttpService.
+        // Using the AuthorizedClient for refresh creates an infinite retry loop:
+        //   401 → TryRefreshTokenAsync → uses same client → 401 → loop → ObjectDisposedException
+        // The RefreshClient bypasses the auth handler entirely, hitting /api/auth/refresh directly.
         builder.Services.AddHttpClient("RefreshClient", client =>
         {
             client.BaseAddress = new Uri(baseUrl);
             client.Timeout = TimeSpan.FromSeconds(30);
+            client.DefaultRequestHeaders.Add("User-Agent", "arna.HRMS/1.0"); // ← add this
         });
 
         // Default injected HttpClient = AuthorizedClient
@@ -69,6 +75,9 @@ public class Program
         // Core App Services
         // ==========================
         builder.Services.AddScoped<NotificationService>();
+
+        // ✅ FIX: HttpService now requires IHttpClientFactory to create the RefreshClient
+        // internally for token refresh (preventing infinite refresh loop).
         builder.Services.AddScoped<HttpService>();
 
         builder.Services.AddScoped<ApiClients>(sp =>
