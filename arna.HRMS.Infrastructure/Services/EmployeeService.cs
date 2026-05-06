@@ -98,8 +98,16 @@ public class EmployeeService : IEmployeeService
             return ServiceResult<bool>.Fail("Invalid employee ID.");
 
         var deleted = await _repository.DeleteEmployeeAsync(id);
-        var UserId = _userServices.GetuserByEmployeeAsync(id);
-        await _userServices.DeleteUserAsync(UserId.Result.Data!.Id);
+
+        if (!deleted)
+            return ServiceResult<bool>.Fail("Employee not found.");
+
+        var userResult = await _userServices.GetuserByEmployeeAsync(id);
+
+        if (userResult.IsSuccess && userResult.Data != null)
+        {
+            await _userServices.DeleteUserAsync(userResult.Data.Id);
+        }
 
         return deleted
             ? ServiceResult<bool>.Success(true, "Employee deleted successfully.")

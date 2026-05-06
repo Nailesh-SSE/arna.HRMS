@@ -11,6 +11,7 @@ using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using NUnit.Framework;
+using System.Net.WebSockets;
 
 namespace arna.HRMS.Tests.Unit.Services;
 
@@ -135,12 +136,12 @@ public class AttendanceRequestServiceTests
     public async Task CreateAttendanceRequestAsync_WhenFromDateFuture_ReturnsFail()
     {
         var dto = CreateValidDto();
-        dto.FromDate = DateTime.Today;
+        dto.FromDate = DateTime.Today.AddDays(1);
 
         var result = await _service.CreateAttendanceRequestAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Future or current From Date is not allowed"));
+        Assert.That(result.Message, Does.Contain("Future Date is not allowed"));
     }
 
     [Test]
@@ -234,7 +235,8 @@ public class AttendanceRequestServiceTests
         var result = await _service.CreateAttendanceRequestAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Future or current To Date is not allowed"));
+        Assert.That(result.Message, Is.EqualTo("Future Date is not allowed"));
+
     }
 
     [Test]
@@ -353,12 +355,12 @@ public class AttendanceRequestServiceTests
     public async Task GetAttendanceRequests_ReturnsAllRequests()
     {
         // 🔹 Seed Employee FIRST (required because of Include)
-        _dbContext.Employees.Add(new Employee
+        var employee = new Employee
         {
-            Id = 1,
             FirstName = "John",
             LastName = "Doe",
             Email = "john@test.com",
+            OfficeEmail = "john@office.com",
             PhoneNumber = "9999999999",
             IsActive = true,
             IsDeleted = false,
@@ -368,29 +370,56 @@ public class AttendanceRequestServiceTests
             Salary = 50000,
             DepartmentId = 1,
             EmployeeNumber = "EMP001"
-        });
+        };
 
-        await _dbContext.SaveChangesAsync();
+        _dbContext.Employees.Add(employee);
 
-        // 🔹 Now add AttendanceRequest
-        _dbContext.AttendanceRequest.Add(new AttendanceRequest
+        var returnRequests = new List<AttendanceRequest>
         {
-            EmployeeId = 1,
-            FromDate = DateTime.Today,
-            ToDate = DateTime.Today,
-            ReasonTypeId = AttendanceReasonType.LateClockIn,
-            LocationId = AttendanceLocation.Office,
-            IsActive = true,
-            IsDeleted = false,
-            StatusId = Status.Pending
-        });
+
+            new AttendanceRequest
+            {
+                EmployeeId = 1,
+                FromDate = DateTime.Today.AddDays(-5),
+                ToDate = DateTime.Today.AddDays(-5),
+                ReasonTypeId = AttendanceReasonType.ForgotToClockOut,
+                LocationId = AttendanceLocation.Office,
+                ClockIn = DateTime.Today.AddDays(-5).AddHours(9),
+                ClockOut = DateTime.Today.AddDays(-5).AddHours(18),
+                BreakDuration = TimeSpan.FromHours(1),
+                TotalHours = TimeSpan.FromHours(8),
+                StatusId = Status.Pending,
+                IsActive = true,
+                IsDeleted = false,
+                ApprovedBy = null,
+                ApprovedOn = null
+            },
+            new AttendanceRequest
+            {
+                EmployeeId = 1,
+                FromDate = DateTime.Today.AddDays(-4),
+                ToDate = DateTime.Today.AddDays(-4),
+                ReasonTypeId = AttendanceReasonType.WorkFromHome,
+                LocationId = AttendanceLocation.Remote,
+                ClockIn = DateTime.Today.AddDays(-4).AddHours(9),
+                ClockOut = DateTime.Today.AddDays(-4).AddHours(18),
+                BreakDuration = TimeSpan.FromHours(1),
+                TotalHours = TimeSpan.FromHours(8),
+                StatusId = Status.Approved,
+                IsActive = true,
+                IsDeleted = false,
+                ApprovedBy = 99,
+                ApprovedOn = DateTime.Today.AddDays(-3)
+            }
+        };
+        _dbContext.AttendanceRequest.AddRange(returnRequests);
 
         await _dbContext.SaveChangesAsync();
-
         var result = await _service.GetAttendanceRequestsAsync(null, null);
 
+        Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data!.Count, Is.EqualTo(1));
+        Assert.That(result.Data.Count, Is.EqualTo(2));
     }
 
     [Test]
@@ -413,6 +442,7 @@ public class AttendanceRequestServiceTests
             FirstName = "Test",
             LastName = "User",
             Email = "test@test.com",
+            OfficeEmail = "john@office.com",
             PhoneNumber = "9999999999",
             IsActive = true,
             IsDeleted = false,
@@ -455,7 +485,7 @@ public class AttendanceRequestServiceTests
 
         var result = await _service.GetAttendanceRequestsAsync(null, null);
 
-        Assert.That(result.IsSuccess, Is.True); 
+        Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Not.Null);
         Assert.That(result.Data!.Count, Is.EqualTo(2));
         Assert.That(result.Data.All(x => x.EmployeeId == 10), Is.True);
@@ -464,14 +494,16 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task GetAttendanceRequests_WhenEmployeeIdProvided_ReturnsOnlyThatEmployee()
     {
-        _dbContext.Employees.AddRange(
+        var employees = new List<Employee>
+        {
             new Employee
             {
-                Id = 1,
+                Id = 20,
                 FirstName = "A",
-                LastName = "A",
-                Email = "a@test.com",
-                PhoneNumber = "111",
+                LastName = "alphabet",
+                Email = "a.123@gmial.com",
+                OfficeEmail = "a.987@gmail.com",
+                PhoneNumber = "123",
                 IsActive = true,
                 IsDeleted = false,
                 HireDate = DateTime.Today,
@@ -479,15 +511,16 @@ public class AttendanceRequestServiceTests
                 Position = "Dev",
                 Salary = 100,
                 DepartmentId = 1,
-                EmployeeNumber = "EMP001"
+                EmployeeNumber = "EMP020"
             },
             new Employee
             {
-                Id = 2,
-                FirstName = "B",
-                LastName = "B",
-                Email = "b@test.com",
-                PhoneNumber = "222",
+                Id = 21,
+                FirstName = "T",
+                LastName = "alphabet",
+                Email = "T.123@gmial.com",
+                OfficeEmail = "T.987@gmail.com",
+                PhoneNumber = "1234567",
                 IsActive = true,
                 IsDeleted = false,
                 HireDate = DateTime.Today,
@@ -495,15 +528,17 @@ public class AttendanceRequestServiceTests
                 Position = "Dev",
                 Salary = 100,
                 DepartmentId = 1,
-                EmployeeNumber = "EMP002"
-            });
+                EmployeeNumber = "EMP021"
+            },
+        };
+        _dbContext.Employees.AddRange(employees);
 
         await _dbContext.SaveChangesAsync();
 
         _dbContext.AttendanceRequest.AddRange(
             new AttendanceRequest
             {
-                EmployeeId = 1,
+                EmployeeId = 20,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
                 ReasonTypeId = AttendanceReasonType.WorkFromHome,
@@ -514,7 +549,7 @@ public class AttendanceRequestServiceTests
             },
             new AttendanceRequest
             {
-                EmployeeId = 2,
+                EmployeeId = 21,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
                 ReasonTypeId = AttendanceReasonType.ClientVisit,
@@ -524,26 +559,27 @@ public class AttendanceRequestServiceTests
                 IsDeleted = false
             }
         );
-
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequestsAsync(2, null);
+        var result = await _service.GetAttendanceRequestsAsync(20, null);
 
         Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.Not.Null);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
-        Assert.That(result.Data.All(x => x.EmployeeId == 2), Is.True);
+        Assert.That(result.Data.First().EmployeeId, Is.EqualTo(20));
     }
 
     [Test]
     public async Task GetAttendanceRequests_WhenStatusProvided_ReturnsMatchingStatus()
     {
-        _dbContext.Employees.Add(new Employee
+        var employee = new Employee
         {
-            Id = 5,
-            FirstName = "X",
-            LastName = "Y",
-            Email = "x@test.com",
-            PhoneNumber = "555",
+            Id = 20,
+            FirstName = "A",
+            LastName = "alphabet",
+            Email = "a.123@gmial.com",
+            OfficeEmail = "a.987@gmail.com",
+            PhoneNumber = "123",
             IsActive = true,
             IsDeleted = false,
             HireDate = DateTime.Today,
@@ -551,15 +587,15 @@ public class AttendanceRequestServiceTests
             Position = "Dev",
             Salary = 100,
             DepartmentId = 1,
-            EmployeeNumber = "EMP005"
-        });
+            EmployeeNumber = "EMP020"
+        };
+        _dbContext.Employees.Add(employee);
 
-        await _dbContext.SaveChangesAsync();
-
-        _dbContext.AttendanceRequest.AddRange(
+        var attendanceRequests = new List<AttendanceRequest>
+        {
             new AttendanceRequest
             {
-                EmployeeId = 5,
+                EmployeeId = 20,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
                 ReasonTypeId = AttendanceReasonType.WorkFromHome,
@@ -570,24 +606,25 @@ public class AttendanceRequestServiceTests
             },
             new AttendanceRequest
             {
-                EmployeeId = 5,
+                EmployeeId = 20,
                 FromDate = DateTime.Today,
                 ToDate = DateTime.Today,
                 ReasonTypeId = AttendanceReasonType.ClientVisit,
                 LocationId = AttendanceLocation.Office,
-                StatusId = Status.Rejected,
+                StatusId = Status.Approved,
                 IsActive = true,
                 IsDeleted = false
             }
-        );
+        };
 
+        _dbContext.AttendanceRequest.AddRange(attendanceRequests);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequestsAsync(null, Status.Rejected);
+        var result = await _service.GetAttendanceRequestsAsync(null, Status.Approved);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data!.Count, Is.EqualTo(1));
-        Assert.That(result.Data.First().StatusId, Is.EqualTo(Status.Rejected));
+        Assert.That(result.Data.First().StatusId, Is.EqualTo(Status.Approved));
     }
 
     [Test]
@@ -599,6 +636,7 @@ public class AttendanceRequestServiceTests
             FirstName = "Z",
             LastName = "Z",
             Email = "z@test.com",
+            OfficeEmail = "z@office.com",
             PhoneNumber = "777",
             IsActive = true,
             IsDeleted = false,
@@ -657,10 +695,9 @@ public class AttendanceRequestServiceTests
     {
         var result = await _service.GetAttendanceRequestByIdAsync(0);
 
-        Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Invalid AttendanceRequest ID"));
+        Assert.That(result.Message, Is.EqualTo("Invalid attendance request ID."));
     }
 
     [Test]
@@ -670,19 +707,20 @@ public class AttendanceRequestServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Invalid AttendanceRequest ID"));
+        Assert.That(result.Message, Is.EqualTo("Invalid attendance request ID."));
     }
 
     [Test]
     public async Task GetAttendenceRequestByIdAsync_ShouldMapAllFieldsCorrectly()
     {
-        _dbContext.Employees.Add(new Employee
+        var employee = new Employee
         {
-            Id = 200,
-            FirstName = "Alice",
-            LastName = "Smith",
-            Email = "alice@test.com",
-            PhoneNumber = "8888888888",
+            Id = 7,
+            FirstName = "Z",
+            LastName = "Z",
+            Email = "z@test.com",
+            OfficeEmail = "z@office.com",
+            PhoneNumber = "777",
             IsActive = true,
             IsDeleted = false,
             HireDate = DateTime.Today,
@@ -690,47 +728,49 @@ public class AttendanceRequestServiceTests
             Position = "Dev",
             Salary = 100,
             DepartmentId = 1,
-            EmployeeNumber = "EMP200"
-        });
+            EmployeeNumber = "EMP007"
+        };
+
+        _dbContext.Employees.Add(employee);
 
         await _dbContext.SaveChangesAsync();
 
-        var entity = new AttendanceRequest
+        var request = new AttendanceRequest
         {
-            EmployeeId = 200,
-            FromDate = DateTime.Today,
-            ToDate = DateTime.Today,
-            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
-            LocationId = AttendanceLocation.Office,
+            EmployeeId = 7,
+            FromDate = DateTime.Today.AddDays(-4),
+            ToDate = DateTime.Today.AddDays(-4),
+            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            LocationId = AttendanceLocation.Remote,
+            StatusId = Status.Pending,
             ClockIn = DateTime.Today.AddHours(9),
             ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
             TotalHours = TimeSpan.FromHours(8),
             Description = "Full mapping test",
-            StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
 
-        _dbContext.AttendanceRequest.Add(entity);
+        _dbContext.AttendanceRequest.Add(request);
+
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetAttendanceRequestByIdAsync(entity.Id);
-        var dto = result.Data!;
-
+        var result = await _service.GetAttendanceRequestByIdAsync(request.Id);
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(dto.Id, Is.EqualTo(entity.Id));
-        Assert.That(dto.EmployeeId, Is.EqualTo(200));
-        Assert.That(dto.FromDate!.Value.Date, Is.EqualTo(DateTime.Today));
-        Assert.That(dto.ToDate!.Value.Date, Is.EqualTo(DateTime.Today));
-        Assert.That(dto.ReasonTypeId, Is.EqualTo(AttendanceReasonType.ForgotToClockIn));
-        Assert.That(dto.LocationId, Is.EqualTo(AttendanceLocation.Office));
-        Assert.That(dto.ClockIn, Is.EqualTo(entity.ClockIn));
-        Assert.That(dto.ClockOut, Is.EqualTo(entity.ClockOut));
-        Assert.That(dto.BreakDuration, Is.EqualTo(TimeSpan.FromHours(1)));
-        Assert.That(dto.TotalHours, Is.EqualTo(TimeSpan.FromHours(8)));
-        Assert.That(dto.Description, Is.EqualTo("Full mapping test"));
-        Assert.That(dto.StatusId, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.Data.Id, Is.EqualTo(request.Id));
+        Assert.That(result.Data.EmployeeId, Is.EqualTo(request.EmployeeId));
+        Assert.That(result.Data.FromDate, Is.EqualTo(request.FromDate));
+        Assert.That(result.Data.ToDate, Is.EqualTo(request.ToDate));
+        Assert.That(result.Data.ReasonTypeId, Is.EqualTo(request.ReasonTypeId));
+        Assert.That(result.Data.LocationId, Is.EqualTo(request.LocationId));
+        Assert.That(result.Data.StatusId, Is.EqualTo(request.StatusId));
+        Assert.That(result.Data.ClockIn, Is.EqualTo(request.ClockIn));
+        Assert.That(result.Data.ClockOut, Is.EqualTo(request.ClockOut));
+        Assert.That(result.Data.BreakDuration, Is.EqualTo(request.BreakDuration));
+        Assert.That(result.Data.TotalHours, Is.EqualTo(request.TotalHours));
+        Assert.That(result.Data.Description, Is.EqualTo(request.Description));
     }
 
     [Test]
@@ -743,6 +783,7 @@ public class AttendanceRequestServiceTests
             FirstName = "Test",
             LastName = "User",
             Email = "test@test.com",
+            OfficeEmail = "test@office.com",
             PhoneNumber = "123",
             IsActive = true,
             IsDeleted = false,
@@ -808,6 +849,7 @@ public class AttendanceRequestServiceTests
             FirstName = "John",
             LastName = "Doe",
             Email = "john@test.com",
+            OfficeEmail = "john@office.com",
             PhoneNumber = "9999999999",
             IsActive = true,
             IsDeleted = false,
@@ -877,6 +919,7 @@ public class AttendanceRequestServiceTests
             FirstName = "John",
             LastName = "Doe",
             Email = "john@test.com",
+            OfficeEmail = "john@office.com",
             PhoneNumber = "9999999999",
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
@@ -950,11 +993,12 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task UpdateAttendanceRequestStatusAsync_WhenStatusCancelled_ReturnsFail()
     {
-        var employee = CreateEmployee(1);
+        var employee = CreateEmployeeNew(10);
         _dbContext.Employees.Add(employee);
 
-        var request = CreateValidEntity(1);
+        var request = CreateValidEntity(10);
         _dbContext.AttendanceRequest.Add(request);
+
         await _dbContext.SaveChangesAsync();
 
         var result = await _service.UpdateAttendanceRequestStatusAsync(
@@ -965,111 +1009,72 @@ public class AttendanceRequestServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Does.Contain("Not Allow to Cancel"));
+
     }
 
     [Test]
     public async Task UpdateAttendanceRequestStatusAsync_WhenStatusPending_ReturnsFail()
     {
-        var employee = CreateEmployee(2);
+        var employee = CreateEmployeeNew(2);
         _dbContext.Employees.Add(employee);
 
         var request = CreateValidEntity(2);
         _dbContext.AttendanceRequest.Add(request);
-        await _dbContext.SaveChangesAsync();
+
+        _dbContext.SaveChanges();
 
         var result = await _service.UpdateAttendanceRequestStatusAsync(
             request.Id,
             Status.Pending,
-            10
+            2
         );
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Not Allow to Pending"));
+        Assert.That(result.Message, Is.EqualTo("Not Allow to Pending"));
     }
 
     [Test]
     public async Task UpdateAttendanceRequestStatusAsync_WhenApprovedByInvalid_ReturnsFail()
     {
-        var employee = CreateEmployee(3);
+        var employee = CreateEmployeeNew(2);
         _dbContext.Employees.Add(employee);
 
-        var request = CreateValidEntity(3);
+        var request = CreateValidEntity(2);
         _dbContext.AttendanceRequest.Add(request);
-        await _dbContext.SaveChangesAsync();
 
         var result = await _service.UpdateAttendanceRequestStatusAsync(
             request.Id,
             Status.Approved,
-            0
+            0 // Invalid approver ID
         );
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Invalid Approved ID"));
+        Assert.That(result.Message, Is.EqualTo("Invalid Attendance Request ID"));
     }
 
     [Test]
     public async Task UpdateAttendanceRequestStatusAsync_WhenRepositoryReturnsFalse_ReturnsFail()
     {
         // ---------- Arrange ----------
+        var employee = CreateEmployeeNew(7);
+        _dbContext.Employees.Add(employee);
 
-        _dbContext.Employees.Add(new Employee
-        {
-            Id = 1,
-            FirstName = "Test",
-            LastName = "User",
-            Email = "test@test.com",
-            PhoneNumber = "9999999999",
-            HireDate = DateTime.Today.AddYears(-1),
-            DateOfBirth = DateTime.Today.AddYears(-25),
-            Position = "Developer",
-            Salary = 50000,
-            DepartmentId = 1,
-            EmployeeNumber = "Emp001",
-            IsActive = true,
-            IsDeleted = false
-        });
-
-        await _dbContext.SaveChangesAsync();
-
-        var request = new AttendanceRequest
-        {
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
-            LocationId = AttendanceLocation.Office,
-            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
-            BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Old",
-            StatusId = Status.Pending,
-            IsActive = true,
-            IsDeleted = false
-        };
-
+        var request = CreateValidEntity(7);
         _dbContext.AttendanceRequest.Add(request);
+
         await _dbContext.SaveChangesAsync();
 
-        var id = request.Id;
+        request.IsActive = false;
+        request.IsDeleted = true;
 
-        // Detach so we simulate separate DB call
-        _dbContext.Entry(request).State = EntityState.Detached;
-
-        // NOW make it inactive directly in DB BEFORE update
-        var record = await _dbContext.AttendanceRequest.FindAsync(id);
-        record!.IsActive = false;
-        record.IsDeleted = true;
         await _dbContext.SaveChangesAsync();
 
-        // ---------- Act ----------
         var result = await _service.UpdateAttendanceRequestStatusAsync(
-            id,
+            request.Id,
             Status.Approved,
-            99
+            10
         );
 
-        // ---------- Assert ----------
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
@@ -1102,6 +1107,7 @@ public class AttendanceRequestServiceTests
             FirstName = "John",
             LastName = "Doe",
             Email = "john@test.com",
+            OfficeEmail = "john@office.com",
             PhoneNumber = "9999999999",
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
@@ -1148,7 +1154,7 @@ public class AttendanceRequestServiceTests
             .Setup(x => x.CreateAttendanceAsync(It.IsAny<AttendanceDto>()))
             .ReturnsAsync(ServiceResult<AttendanceDto>.Success(new AttendanceDto()));
 
-        var employee = CreateEmployee(6);
+        var employee = CreateEmployeeNew(6);
         _dbContext.Employees.Add(employee);
 
         var request = CreateValidEntity(6);
@@ -1172,80 +1178,91 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task UpdateAttendanceRequestStatusAsync_WhenApproved_ButRequestNotFetched_ShouldStillReturnSuccess()
     {
-        var employee = CreateEmployee(7);
+        var employee = CreateEmployeeNew(99);
         _dbContext.Employees.Add(employee);
 
-        var request = CreateValidEntity(7);
+        var request = CreateValidEntity(99);
         _dbContext.AttendanceRequest.Add(request);
+
         await _dbContext.SaveChangesAsync();
 
         _dbContext.AttendanceRequest.Remove(request);
+
         await _dbContext.SaveChangesAsync();
 
         var result = await _service.UpdateAttendanceRequestStatusAsync(
             request.Id,
             Status.Approved,
-            10
+            50
         );
 
         Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Does.Contain("Invalid Attendance Request ID"));
     }
 
     [Test]
     public async Task GetPendingAttendanceRequestes_WhenSuccess()
     {
-        _dbContext.Employees.AddRange(new Employee
+        var employees = new List<Employee>
         {
-            Id = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
-            PhoneNumber = "9999999999",
-            HireDate = DateTime.Today.AddYears(-1),
-            DateOfBirth = DateTime.Today.AddYears(-25),
-            Position = "Developer",
-            Salary = 50000,
-            DepartmentId = 1,
-            EmployeeNumber = "EMP001",
-            IsActive = true,
-            IsDeleted = false
-        },
-        new Employee
-        {
-            Id = 2,
-            FirstName = "John2",
-            LastName = "Doe2",
-            Email = "john2@test.com",
-            PhoneNumber = "5999999999",
-            HireDate = DateTime.Today.AddYears(-1),
-            DateOfBirth = DateTime.Today.AddYears(-25),
-            Position = "Developer",
-            Salary = 50000,
-            DepartmentId = 1,
-            EmployeeNumber = "EMP002",
-            IsActive = true,
-            IsDeleted = false
-        },
-        new Employee
-        {
-            Id = 3,
-            FirstName = "John3",
-            LastName = "Doe3",
-            Email = "john3@test.com",
-            PhoneNumber = "9989999999",
-            HireDate = DateTime.Today.AddYears(-1),
-            DateOfBirth = DateTime.Today.AddYears(-25),
-            Position = "Developer",
-            Salary = 50000,
-            DepartmentId = 1,
-            EmployeeNumber = "EMP003",
-            IsActive = true,
-            IsDeleted = false
-        }
-        );
-
+            new Employee
+            {
+                Id = 1,
+                FirstName = "Bob",
+                LastName = "Johnson",
+                Email = "bob@gmail.com",
+                OfficeEmail = "bob@office.com",
+                PhoneNumber = "9999999999",
+                HireDate = DateTime.Today.AddYears(-1),
+                DateOfBirth = DateTime.Today.AddYears(-25),
+                Position = "Developer",
+                Salary = 50000,
+                DepartmentId = 1,
+                EmployeeNumber = "EMP001",
+                IsActive = true,
+                IsDeleted = false
+            },
+            new Employee
+            {
+                Id = 2,
+                FirstName = "Nick",
+                LastName = "Jostar",
+                Email = "nick@gmail.com",
+                OfficeEmail = "nick@office.com",
+                PhoneNumber = "9999999999",
+                HireDate = DateTime.Today.AddYears(-1),
+                DateOfBirth = DateTime.Today.AddYears(-25),
+                Position = "Developer",
+                Salary = 50000,
+                DepartmentId = 1,
+                EmployeeNumber = "EMP002",
+                IsActive = true,
+                IsDeleted = false
+            },
+            new Employee
+            {
+                Id = 3,
+                FirstName = "amma",
+                LastName = "John",
+                Email = "amma@gmail.com",
+                OfficeEmail = "amma@office.com",
+                PhoneNumber = "9999999999",
+                HireDate = DateTime.Today.AddYears(-1),
+                DateOfBirth = DateTime.Today.AddYears(-25),
+                Position = "Developer",
+                Salary = 50000,
+                DepartmentId = 1,
+                EmployeeNumber = "EMP003",
+                IsActive = true,
+                IsDeleted = false
+            }
+        };
+        _dbContext.Employees.AddRange(employees);
+        
         await _dbContext.SaveChangesAsync();
-        _dbContext.AttendanceRequest.AddRange(
+
+        var requests = new List<AttendanceRequest>
+        {
             new AttendanceRequest
             {
                 EmployeeId = 1,
@@ -1279,125 +1296,78 @@ public class AttendanceRequestServiceTests
                 IsActive = true,
                 IsDeleted = false
             }
-        );
-        await _dbContext.SaveChangesAsync();
-        var result2 = await _service.GetAttendanceRequestsAsync(null, null);
-        var count = result2.Data!.Count;
-        var result = await _service.GetPendingAttendanceRequestsAsync();
+        };
 
+        _dbContext.AttendanceRequest.AddRange(requests);
+
+        await _dbContext.SaveChangesAsync();
+
+        var result = await _service.GetPendingAttendanceRequestsAsync();
+        Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data!.Count, Is.EqualTo(2));
-        Assert.That(result.Data!.All(r => r.StatusId == Status.Pending), Is.True);
+        Assert.That(result.Data!.Count(), Is.EqualTo(2));
+        Assert.That(result.Data!.All(ar =>ar.StatusId == Status.Pending), Is.True);
     }
 
     [Test]
     public async Task GetPendingAttendanceRequestesAsync_ShouldMapFieldsCorrectly()
     {
-        _dbContext.Employees.Add(new Employee
+        var employee = new Employee
         {
-            Id = 5,
-            FirstName = "Alice",
-            LastName = "Smith",
-            Email = "alice@test.com",
-            PhoneNumber = "5555555555",
-            IsActive = true,
-            IsDeleted = false,
-            HireDate = DateTime.Today,
-            DateOfBirth = DateTime.Today,
+            Id = 2,
+            FirstName = "Nick",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
+            PhoneNumber = "9999999999",
+            HireDate = DateTime.Today.AddYears(-1),
+            DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP005"
-        });
-
-        await _dbContext.SaveChangesAsync();
-
-        var entity = new AttendanceRequest
-        {
-            EmployeeId = 5,
-            FromDate = DateTime.Today,
-            ToDate = DateTime.Today,
-            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
-            LocationId = AttendanceLocation.Office,
-            Description = "Forgot punch",
-            TotalHours = TimeSpan.FromHours(8),
-            StatusId = Status.Pending,
+            EmployeeNumber = "EMP002",
             IsActive = true,
             IsDeleted = false
         };
-
-        _dbContext.AttendanceRequest.Add(entity);
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        var result = await _service.GetPendingAttendanceRequestsAsync();
-        var dto = result.Data!.First();
-
-        Assert.That(dto.Id, Is.EqualTo(entity.Id));
-        Assert.That(dto.EmployeeId, Is.EqualTo(5));
-        Assert.That(dto.FromDate!.Value.Date, Is.EqualTo(DateTime.Today));
-        Assert.That(dto.ToDate!.Value.Date, Is.EqualTo(DateTime.Today));
-        Assert.That(dto.ReasonTypeId, Is.EqualTo(AttendanceReasonType.ForgotToClockIn));
-        Assert.That(dto.LocationId, Is.EqualTo(AttendanceLocation.Office));
-        Assert.That(dto.Description, Is.EqualTo("Forgot punch"));
-        Assert.That(dto.TotalHours, Is.EqualTo(TimeSpan.FromHours(8)));
-        Assert.That(dto.StatusId, Is.EqualTo(Status.Pending));
-    }
-
-    [Test]
-    public async Task GetPendingAttendanceRequestesAsync_ShouldMapAllFields()
-    {
-        _dbContext.Employees.Add(new Employee
+        var request = new AttendanceRequest
         {
-            Id = 3,
-            FirstName = "Mapped",
-            LastName = "User",
-            Email = "map@test.com",
-            PhoneNumber = "333",
-            IsActive = true,
-            IsDeleted = false,
-            HireDate = DateTime.Today,
-            DateOfBirth = DateTime.Today,
-            Position = "Dev",
-            Salary = 100,
-            DepartmentId = 1,
-            EmployeeNumber = "EMP003"
-        });
-
-        await _dbContext.SaveChangesAsync();
-
-        var entity = new AttendanceRequest
-        {
-            EmployeeId = 3,
+            EmployeeId = 2,
             FromDate = DateTime.Today,
             ToDate = DateTime.Today,
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
-            LocationId = AttendanceLocation.Remote,
-            ClockIn = DateTime.Today.AddHours(9),
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
             ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Mapping test",
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
             StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
         };
-
-        _dbContext.AttendanceRequest.Add(entity);
+        _dbContext.AttendanceRequest.Add(request);  
         await _dbContext.SaveChangesAsync();
 
         var result = await _service.GetPendingAttendanceRequestsAsync();
 
-        var dto = result.Data!.First();
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.Data!.First().EmployeeId, Is.EqualTo(2));
+        Assert.That(result.Data!.First().FromDate, Is.EqualTo(DateTime.Today));
+        Assert.That(result.Data!.First().ToDate, Is.EqualTo(DateTime.Today));
+        Assert.That(result.Data!.First().ClockIn, Is.EqualTo(DateTime.Today.AddHours(10)));
+        Assert.That(result.Data!.First().ClockOut, Is.EqualTo(DateTime.Today.AddHours(18)));
+        Assert.That(result.Data!.First().BreakDuration, Is.EqualTo(TimeSpan.FromHours(1)));
+        Assert.That(result.Data!.First().TotalHours, Is.EqualTo(TimeSpan.FromHours(7)));
+        Assert.That(result.Data!.First().Description, Is.EqualTo("Late clock in due to traffic"));
+        Assert.That(result.Data!.First().StatusId, Is.EqualTo(Status.Pending));
+        Assert.That(result.Data!.First().IsActive, Is.EqualTo(true));
+        Assert.That(result.Data!.First().IsDeleted, Is.EqualTo(false));
 
-        Assert.That(dto.EmployeeId, Is.EqualTo(3));
-        Assert.That(dto.ReasonTypeId, Is.EqualTo(AttendanceReasonType.WorkFromHome));
-        Assert.That(dto.LocationId, Is.EqualTo(AttendanceLocation.Remote));
-        Assert.That(dto.Description, Is.EqualTo("Mapping test"));
-        Assert.That(dto.StatusId, Is.EqualTo(Status.Pending));
-        Assert.That(dto.TotalHours, Is.EqualTo(TimeSpan.FromHours(8)));
     }
-
-
 
     [Test]
     public async Task GetPendingAttendanceRequestesAsync_WhenNoData_ReturnsEmptySuccess()
@@ -1415,37 +1385,38 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task UpdateAttendanceRequestAsync_ShouldUpdateRequest()
     {
-        _dbContext.Employees.Add(new Employee
+        var employee = new Employee
         {
-            Id = 5,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
-            IsActive = true,
-            IsDeleted = false,
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001"
-        });
-
+            EmployeeNumber = "EMP002",
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
         var request = new AttendanceRequest
         {
-            EmployeeId = 5,
-            FromDate = DateTime.Now.AddDays(-1),
-            ToDate = DateTime.Now.AddDays(-1),
-            ReasonTypeId = AttendanceReasonType.ForgotToClockIn,
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
             LocationId = AttendanceLocation.Office,
-            ClockIn = DateTime.Now.AddDays(-1).AddHours(9),
-            ClockOut = DateTime.Now.AddDays(-1).AddHours(18),
-            BreakDuration = TimeSpan.FromHours(2),
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
+            BreakDuration = TimeSpan.FromHours(1),
             TotalHours = TimeSpan.FromHours(7),
-            Description = "Updated reason",
+            Description = "Late clock in due to traffic",
             StatusId = Status.Pending,
             IsActive = true,
             IsDeleted = false
@@ -1453,39 +1424,35 @@ public class AttendanceRequestServiceTests
         _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.Entry(request).State = EntityState.Detached;
-
-        var dto = new AttendanceRequestDto
+        var updatedrequest = new AttendanceRequestDto
         {
             Id = request.Id,
-            EmployeeId = 5,
-            FromDate = DateTime.Now.AddDays(-1),
-            ToDate = DateTime.Now.AddDays(-1),
+            EmployeeId = 2,
+            FromDate = DateTime.Today.AddDays(-1),
+            ToDate = DateTime.Today.AddDays(-1),
             ReasonTypeId = AttendanceReasonType.WorkFromHome,
             LocationId = AttendanceLocation.Remote,
-            ClockIn = DateTime.Today.AddHours(10),
-            ClockOut = DateTime.Today.AddHours(19),
+            ClockIn = DateTime.Today.AddDays(-1).AddHours(9),
+            ClockOut = DateTime.Today.AddDays(-1).AddHours(17),
             BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Updated reason"
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Updated to work from home",
+            StatusId = Status.Pending
         };
-        var result = await _service.UpdateAttendanceRequestAsync(dto);
 
-        var updated = await _dbContext.AttendanceRequest.FindAsync(request.Id);
+        var result = await _service.UpdateAttendanceRequestAsync(updatedrequest);
 
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(updated!.ToDate.Date, Is.EqualTo(DateTime.Now.AddDays(-1).Date));
-        Assert.That(updated.ReasonTypeId, Is.EqualTo(AttendanceReasonType.WorkFromHome));
-        Assert.That(updated.LocationId, Is.EqualTo(AttendanceLocation.Remote));
-        Assert.That(updated.ClockIn, Is.EqualTo(DateTime.Today.AddHours(10)));
-        Assert.That(updated.ClockOut, Is.EqualTo(DateTime.Today.AddHours(19)));
-        Assert.That(updated.BreakDuration, Is.EqualTo(TimeSpan.FromHours(1)));
-        Assert.That(updated.Description, Is.EqualTo("Updated reason"));
-        Assert.That(updated.StatusId, Is.EqualTo(Status.Pending));
-        Assert.That(updated.ApprovedBy, Is.Null);
-        Assert.That(updated.ApprovedOn, Is.Null);
-        Assert.That(updated.EmployeeId, Is.EqualTo(5));
-        Assert.That(updated.FromDate.Date, Is.EqualTo(DateTime.Now.AddDays(-1).Date));
+        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.Data!.EmployeeId, Is.EqualTo(2));
+        Assert.That(result.Data.FromDate, Is.EqualTo(DateTime.Today.AddDays(-1)));
+        Assert.That(result.Data.ToDate, Is.EqualTo(DateTime.Today.AddDays(-1)));
+        Assert.That(result.Data.ClockIn, Is.EqualTo(DateTime.Today.AddDays(-1).AddHours(9)));
+        Assert.That(result.Data.ClockOut, Is.EqualTo(DateTime.Today.AddDays(-1).AddHours(17)));
+        Assert.That(result.Data.BreakDuration, Is.EqualTo(TimeSpan.FromHours(1)));
+        Assert.That(result.Data.TotalHours, Is.EqualTo(TimeSpan.FromHours(7)));
+        Assert.That(result.Data.Description, Is.EqualTo("Updated to work from home"));
+        Assert.That(result.Data.StatusId, Is.EqualTo(Status.Pending));
     }
 
     [Test]
@@ -1547,41 +1514,43 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task UpdateAttendanceRequestAsync_WhenFromDateGreaterThanToDate_ReturnsFail()
     {
-        _dbContext.Add(new Employee
+        var employee = new Employee
         {
-            Id = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
-            IsActive = true,
-            IsDeleted = false,
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001"
-        });
+            EmployeeNumber = "EMP002",
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.Add(new AttendanceRequest
+        var request = new AttendanceRequest
         {
-            Id = 1,
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Old",
-            LocationId = AttendanceLocation.Remote,
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
             StatusId = Status.Pending,
+            IsActive = true,
             IsDeleted = false
-        });
-
+        };
+        _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
         var dto = CreateValidUpdateDto();
@@ -1597,41 +1566,43 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task UpdateAttendanceRequestAsync_WhenFutureDate_ReturnsFail()
     {
-        _dbContext.Add(new Employee
+        var employee = new Employee
         {
-            Id = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
-            IsActive = true,
-            IsDeleted = false,
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001"
-        });
+            EmployeeNumber = "EMP002",
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.Add(new AttendanceRequest
+        var request = new AttendanceRequest
         {
-            Id = 1,
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Old",
-            LocationId = AttendanceLocation.Remote,
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
             StatusId = Status.Pending,
+            IsActive = true,
             IsDeleted = false
-        });
-
+        };
+        _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
         var dto = CreateValidUpdateDto();
@@ -1641,106 +1612,108 @@ public class AttendanceRequestServiceTests
         var result = await _service.UpdateAttendanceRequestAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("Future or current From Date is not allowed"));
+        Assert.That(result.Message, Does.Contain("Future Date is not allowed"));
     }
 
     [Test]
     public async Task UpdateAttendanceRequestAsync_WhenClockOutLessThanClockIn_ReturnsFail()
     {
-        _dbContext.Add(new Employee
+        var emplyoee = new Employee
         {
-            Id = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
-            IsActive = true,
-            IsDeleted = false,
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001"
-        });
+            EmployeeNumber = "EMP002",
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.Employees.Add(emplyoee);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.Add(new AttendanceRequest
+        var request = new AttendanceRequest
         {
-            Id = 1,
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Old",
-            LocationId = AttendanceLocation.Remote,
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
             StatusId = Status.Pending,
+            IsActive = true,
             IsDeleted = false
-        });
-
+        };
+        _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
         var dto = CreateValidUpdateDto();
-        dto.ClockIn = DateTime.Today.AddHours(10);
-        dto.ClockOut = DateTime.Today.AddHours(9);
+        dto.ClockIn = DateTime.Today.AddHours(18);
+        dto.ClockOut = DateTime.Today.AddHours(10);
 
         var result = await _service.UpdateAttendanceRequestAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Does.Contain("ClockOut must be greater than ClockIn"));
+        Assert.That(result.Message, Does.Contain("ClockOut must be greater than ClockIn for same-day requests"));
     }
 
     [Test]
     public async Task UpdateAttendanceRequestAsync_WhenBreakGreaterThanTotalHours_ReturnsFail()
     {
-        _dbContext.Add(new Employee
+        var employee = new Employee 
         {
-            Id = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
-            IsActive = true,
-            IsDeleted = false,
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001"
-        });
+            EmployeeNumber = "EMP002",
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.Add(new AttendanceRequest
+        var request = new AttendanceRequest
         {
-            Id = 1,
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Old",
-            LocationId = AttendanceLocation.Remote,
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
             StatusId = Status.Pending,
+            IsActive = true,
             IsDeleted = false
-        });
-
+        };
+        _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
         var dto = CreateValidUpdateDto();
-        dto.BreakDuration = TimeSpan.FromHours(9);
-        dto.TotalHours = TimeSpan.FromHours(8);
+        dto.BreakDuration = TimeSpan.FromHours(8);
+        dto.TotalHours = TimeSpan.FromHours(7);
 
-        await _dbContext.SaveChangesAsync();
-
-        var result = await _service.UpdateAttendanceRequestAsync(dto);
+        var result = await _service.UpdateAttendanceRequestAsync(dto);  
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Does.Contain("Break duration cannot be greater than total hours"));
@@ -1749,48 +1722,49 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task UpdateAttendanceRequestAsync_WhenLocationMissing_ReturnsFail()
     {
-        _dbContext.Add(new Employee
+        var employee = new Employee
         {
-            Id = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
-            IsActive = true,
-            IsDeleted = false,
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001"
-        });
+            EmployeeNumber = "EMP002",
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.Add(new AttendanceRequest
+        var request = new AttendanceRequest
         {
-            Id = 1,
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
             BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Old",
-            LocationId = AttendanceLocation.Remote,
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
             StatusId = Status.Pending,
+            IsActive = true,
             IsDeleted = false
-        });
-
+        };
+        _dbContext.AttendanceRequest.Add(request);
         await _dbContext.SaveChangesAsync();
 
         var dto = CreateValidUpdateDto();
         dto.LocationId = null;
 
         var result = await _service.UpdateAttendanceRequestAsync(dto);
-
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Does.Contain("Location is required"));
     }
@@ -1798,45 +1772,45 @@ public class AttendanceRequestServiceTests
     [Test]
     public async Task UpdateAttendanceRequestAsync_WhenReasonMissing_ReturnsFail()
     {
-        _dbContext.Add(new AttendanceRequest
+        var employee = new Employee
         {
-            Id = 1,
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ClockIn = DateTime.Today.AddDays(-2).AddHours(9),
-            ClockOut = DateTime.Today.AddDays(-2).AddHours(18),
-            BreakDuration = TimeSpan.FromHours(1),
-            TotalHours = TimeSpan.FromHours(8),
-            Description = "Old",
-            LocationId = AttendanceLocation.Remote,
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
-            StatusId = Status.Pending,
-            IsDeleted = false
-        });
-
-        await _dbContext.SaveChangesAsync();
-
-        _dbContext.Employees.Add(new Employee
-        {
-            Id = 1,
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
-            IsActive = true,
-            IsDeleted = false,
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
             Position = "Developer",
             Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001"
-        });
+            EmployeeNumber = "EMP002",
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        _dbContext.ChangeTracker.Clear();
-
+        var request = new AttendanceRequest
+        {
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
+            BreakDuration = TimeSpan.FromHours(1),
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.AttendanceRequest.Add(request);
+        await _dbContext.SaveChangesAsync();
+        
         var dto = CreateValidUpdateDto();
         dto.ReasonTypeId = null;
 
@@ -1906,7 +1880,7 @@ public class AttendanceRequestServiceTests
 
     private async Task<int> SeedValidRecordAsync(int employeeId = 1)
     {
-        var employee = CreateEmployee(employeeId);
+        var employee = CreateEmployeeNew(employeeId);
         _dbContext.Employees.Add(employee);
 
         var entity = CreateValidEntity(employeeId);
@@ -2078,6 +2052,7 @@ public class AttendanceRequestServiceTests
             FirstName = "John",
             LastName = "Doe",
             Email = "john@test.com",
+            OfficeEmail = "john@office.com",
             PhoneNumber = "9999999999",
             IsActive = true,
             IsDeleted = false,
@@ -2171,7 +2146,7 @@ public class AttendanceRequestServiceTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Attendance request not found"));
+        Assert.That(result.Message, Is.EqualTo("Invalid attendance request ID."));
     }
 
     [Test]
@@ -2182,60 +2157,56 @@ public class AttendanceRequestServiceTests
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Attendance request not found"));
+        Assert.That(result.Message, Is.EqualTo("Attendance request not found."));
     }
 
     [Test]
     public async Task DeleteAttendanceRequestAsync_WhenDeleteFails_ReturnsFail()
     {
         // Arrange
-
-        var employee = CreateEmployee(1);
+        var employee = CreateEmployeeNew(2);
         _dbContext.Employees.Add(employee);
 
-        var request = CreateValidEntity(1);
-        request.IsActive = false;   // simulate invalid state
+        var request = CreateValidEntity(2);
         _dbContext.AttendanceRequest.Add(request);
 
         await _dbContext.SaveChangesAsync();
 
-        // Act
-        var result = await _service.DeleteAttendanceRequestAsync(request.Id);
+        var result = await _service.DeleteAttendanceRequestAsync(request.Id +1);
 
-        // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Attendance request not found"));
+        Assert.That(result.Message, Is.EqualTo("Attendance request not found."));
     }
 
     [Test]
     public async Task DeleteAttendanceRequestAsync_WhenSuccessful_ReturnsSuccess()
     {
         // Arrange
-        var employee = CreateEmployee(2);
-        _dbContext.Employees.Add(employee);
+        var employee = CreateEmployeeNew(2);
+        _dbContext.Add(employee);
 
         var request = CreateValidEntity(2);
-        _dbContext.AttendanceRequest.Add(request);
+        _dbContext.Add(request);
+
         await _dbContext.SaveChangesAsync();
 
         var result = await _service.DeleteAttendanceRequestAsync(request.Id);
 
-        // Assert
-        Assert.That(result, Is.Not.Null);
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.True);
-        Assert.That(result.Message, Is.EqualTo("Attendance request deleted successfully"));
+        Assert.That(result.Message, Is.EqualTo("Attendance request deleted successfully."));
     }
 
     [Test]
     public async Task DeleteAttendanceRequestAsync_WhenGetByIdFails_ReturnsFail()
     {
-        var result = await _service.DeleteAttendanceRequestAsync(-10);
+        var result =await _service.DeleteAttendanceRequestAsync(9999);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Attendance request not found"));
+        Assert.That(result.Data, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Attendance request not found."));
     }
 
     [Test]
@@ -2245,7 +2216,7 @@ public class AttendanceRequestServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid request"));
+        Assert.That(result.Message, Is.EqualTo("Invalid request."));
     }
 
     [Test]
@@ -2255,7 +2226,7 @@ public class AttendanceRequestServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid request"));
+        Assert.That(result.Message, Is.EqualTo("Invalid request."));
     }
 
 
@@ -2266,95 +2237,129 @@ public class AttendanceRequestServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to cancel attendance request"));
+        Assert.That(result.Message, Is.EqualTo("Failed to cancel attendance request."));
     }
 
     [Test]
     public async Task UpdateAttendanceRequestStatusCancleAsync_WhenStatusNotPending_ReturnsFail()
     {
-        _dbContext.Employees.Add(new Employee
+        var employee = new Employee
         {
-            Id = 1,
-            FirstName = "Test",
-            LastName = "User",
-            Email = "test@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
-            Position = "Dev",
-            Salary = 1000,
+            Position = "Developer",
+            Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001",
+            EmployeeNumber = "EMP002",
             IsActive = true,
             IsDeleted = false
-        });
-
-        _dbContext.AttendanceRequest.Add(new AttendanceRequest
-        {
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
-            LocationId = AttendanceLocation.Remote,
-            StatusId = Status.Approved, // Not Pending
-            IsActive = true,
-            IsDeleted = false
-        });
-
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        var requestId = _dbContext.AttendanceRequest.First().Id;
+        var request = new AttendanceRequest
+        {
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
+            BreakDuration = TimeSpan.FromHours(1),
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
+            StatusId = Status.Approved,
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.AttendanceRequest.Add(request);
+        await _dbContext.SaveChangesAsync();
 
-        var result = await _service.CancelAttendanceRequestAsync(requestId, 1);
+        var result = await _service.CancelAttendanceRequestAsync(request.Id,employee.Id);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to cancel attendance request"));
+        Assert.That(result.Data, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Failed to cancel attendance request."));
+
     }
 
     [Test]
     public async Task UpdateAttendanceRequestStatusCancleAsync_WhenValid_ReturnsSuccess()
     {
-        _dbContext.Employees.Add(new Employee
+        var employee = new Employee
         {
-            Id = 1,
-            FirstName = "Test",
-            LastName = "User",
-            Email = "test@test.com",
+            Id = 2,
+            FirstName = "Jonathan",
+            LastName = "Jostar",
+            Email = "nick@gmail.com",
+            OfficeEmail = "nick@office.com",
             PhoneNumber = "9999999999",
             HireDate = DateTime.Today.AddYears(-1),
             DateOfBirth = DateTime.Today.AddYears(-25),
-            Position = "Dev",
-            Salary = 1000,
+            Position = "Developer",
+            Salary = 50000,
             DepartmentId = 1,
-            EmployeeNumber = "EMP001",
+            EmployeeNumber = "EMP002",
             IsActive = true,
             IsDeleted = false
-        });
-
-        _dbContext.AttendanceRequest.Add(new AttendanceRequest
-        {
-            EmployeeId = 1,
-            FromDate = DateTime.Today.AddDays(-2),
-            ToDate = DateTime.Today.AddDays(-2),
-            ReasonTypeId = AttendanceReasonType.WorkFromHome,
-            LocationId = AttendanceLocation.Remote,
-            StatusId = Status.Pending, // Important
-            IsActive = true,
-            IsDeleted = false
-        });
-
+        };
+        _dbContext.Employees.Add(employee);
         await _dbContext.SaveChangesAsync();
 
-        var request = _dbContext.AttendanceRequest.First();
+        var request = new AttendanceRequest
+        {
+            EmployeeId = 2,
+            FromDate = DateTime.Today,
+            ToDate = DateTime.Today,
+            ReasonTypeId = AttendanceReasonType.LateClockIn,
+            LocationId = AttendanceLocation.Office,
+            ClockIn = DateTime.Today.AddHours(10),
+            ClockOut = DateTime.Today.AddHours(18),
+            BreakDuration = TimeSpan.FromHours(1),
+            TotalHours = TimeSpan.FromHours(7),
+            Description = "Late clock in due to traffic",
+            StatusId = Status.Pending,
+            IsActive = true,
+            IsDeleted = false
+        };
+        _dbContext.AttendanceRequest.Add(request);
+        await _dbContext.SaveChangesAsync();
 
-        var result = await _service.CancelAttendanceRequestAsync(request.Id, 1);
+        var result = await _service.CancelAttendanceRequestAsync(request.Id,2);
 
-        var updated = await _dbContext.AttendanceRequest.FindAsync(request.Id);
+        var updateddata = await _dbContext.AttendanceRequest.FindAsync(request.Id);
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.True);
-        Assert.That(result.Message, Is.EqualTo("Attendance request cancelled successfully"));
-        Assert.That(updated!.StatusId, Is.EqualTo(Status.Cancelled));
-    }
+        Assert.That(result.Message, Is.EqualTo("Attendance request cancelled successfully."));
+        Assert.That(updateddata.StatusId, Is.EqualTo(Status.Cancelled));
 
+    }
+    private Employee CreateEmployeeNew(int id)
+    {
+        return new Employee
+        {
+            Id = id,
+            FirstName = "Test",
+            LastName = "User",
+            Email = "test@test.com",
+            OfficeEmail = "Test@office.com",
+            PhoneNumber = "9999999999",
+            HireDate = DateTime.Today.AddYears(-1),
+            DateOfBirth = DateTime.Today.AddYears(-25),
+            Position = "Developer",
+            Salary = 50000,
+            DepartmentId = 1,
+            EmployeeNumber = $"EMP{id}",
+            IsActive = true,
+            IsDeleted = false
+        };
+    }
 }

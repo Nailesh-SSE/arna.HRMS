@@ -53,6 +53,9 @@ public class FestivalHolidayService : IFestivalHolidayService
 
         var data = await _repository.GetByMonthAsync(year, month);
 
+        if (!data.Any())
+            return ServiceResult<List<FestivalHolidayDto>>.Fail("No festival holidays found with the given name.");
+
         return ServiceResult<List<FestivalHolidayDto>>.Success(_mapper.Map<List<FestivalHolidayDto>>(data));
     }
 
@@ -62,6 +65,9 @@ public class FestivalHolidayService : IFestivalHolidayService
             return ServiceResult<List<FestivalHolidayDto>>.Fail("Festival name is required.");
 
         var data = await _repository.GetByNameAsync(name);
+
+        if(!data.Any())
+            return ServiceResult<List<FestivalHolidayDto>>.Fail("No festival holidays found with the given name.");
 
         return ServiceResult<List<FestivalHolidayDto>>.Success(_mapper.Map<List<FestivalHolidayDto>>(data));
     }

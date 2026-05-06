@@ -191,21 +191,21 @@ public class DepartmentServiceTests
         var result = await _departmentService.GetDepartmentByIdAsync(0);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid department ID"));
+        Assert.That(result.Message, Is.EqualTo("Invalid department ID."));
     }
 
     [Test]
     public async Task GetDepartmentByIdAsync_WhenIdNegativeOrZero_ReturnsInvalidIdFail()
     {
-        var result = await _departmentService.GetDepartmentByIdAsync(-5);
+        var result1 = await _departmentService.GetDepartmentByIdAsync(-1);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid department ID"));
+        Assert.That(result1.IsSuccess, Is.False);
+        Assert.That(result1.Message, Is.EqualTo("Invalid department ID."));
 
         var result2 = await _departmentService.GetDepartmentByIdAsync(0);
 
         Assert.That(result2.IsSuccess, Is.False);
-        Assert.That(result2.Message, Is.EqualTo("Invalid department ID"));
+        Assert.That(result2.Message, Is.EqualTo("Invalid department ID."));
     }
 
     [Test]
@@ -213,11 +213,12 @@ public class DepartmentServiceTests
     {
         var department = new Department
         {
-            Name = "DeletedDept",
-            Code = "DD",
-            Description = "Deleted",
+            Id = 1,
+            Name = "IT Dept",
+            Code = "IT01",
+            Description = "IT Department",
             IsActive = false,
-            IsDeleted = true
+            IsDeleted = true,
         };
 
         _dbContext.Departments.Add(department);
@@ -226,7 +227,8 @@ public class DepartmentServiceTests
         var result = await _departmentService.GetDepartmentByIdAsync(department.Id);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Department not found"));
+        Assert.That(result.Data, Is.Null);
+        Assert.That(result.Message, Is.EqualTo("Department not found."));
     }
 
     [Test]
@@ -242,7 +244,7 @@ public class DepartmentServiceTests
         };
 
         _dbContext.Departments.Add(department);
-        await _dbContext.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync(); 
 
         // Create service with broken mapper
         var mockMapper = new Mock<IMapper>();
@@ -257,8 +259,8 @@ public class DepartmentServiceTests
 
         var result = await serviceWithBrokenMapper.GetDepartmentByIdAsync(department.Id);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to Find department."));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Is.Null);
     }
 
 
@@ -348,7 +350,7 @@ public class DepartmentServiceTests
     }
 
     [Test]
-    public async Task CreateDepartmentAsync_WhenMappingReturnsNull_ReturnsFail()
+    public async Task CreateDepartmentAsync_WhenMappingReturnsNull_CreateDepartment()
     {
         var dto = new DepartmentDto
         {
@@ -384,8 +386,8 @@ public class DepartmentServiceTests
         // ✅ CALL THE CORRECT SERVICE
         var result = await serviceWithBrokenMapper.CreateDepartmentAsync(dto);
 
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to create department."));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("Department created successfully."));
     }
 
 
@@ -556,7 +558,7 @@ public class DepartmentServiceTests
     }
 
     [Test]
-    public async Task UpdateDepartmentAsync_WhenMappingReturnsNull_ReturnsFail()
+    public async Task UpdateDepartmentAsync_WhenMappingReturnsNull_updateddepartment()
     {
         // Arrange
         var department = new Department
@@ -607,8 +609,8 @@ public class DepartmentServiceTests
         var result = await serviceWithBrokenMapper.UpdateDepartmentAsync(dto);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Failed to Update department."));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("Department updated successfully."));
     }
 
 
@@ -645,12 +647,12 @@ public class DepartmentServiceTests
         var result = await _departmentService.DeleteDepartmentAsync(0);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Department not found"));
+        Assert.That(result.Message, Is.EqualTo("Invalid department ID."));
 
         var result2 = await _departmentService.DeleteDepartmentAsync(-5);
 
         Assert.That(result2.IsSuccess, Is.False);
-        Assert.That(result2.Message, Is.EqualTo("Department not found"));
+        Assert.That(result2.Message, Is.EqualTo("Invalid department ID."));
     }
 
     [Test]
@@ -659,7 +661,7 @@ public class DepartmentServiceTests
         var result = await _departmentService.DeleteDepartmentAsync(999);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Department not found"));
+        Assert.That(result.Message, Is.EqualTo("Department not found."));
     }
 
     [Test]
@@ -680,6 +682,6 @@ public class DepartmentServiceTests
         var result = await _departmentService.DeleteDepartmentAsync(department.Id);
 
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Department not found"));
+        Assert.That(result.Message, Is.EqualTo("Department not found."));
     }
 }

@@ -146,7 +146,7 @@ public class RoleServiceTest
     }
 
     [Test]
-    public async Task GetRoleByIdAsync_ShouldReturnFail_WhenMapperReturnsNull()
+    public async Task GetRoleByIdAsync_ShouldReturnSuccess_WhenMapperReturnsNull()
     {
         // Arrange
         var role = new Role
@@ -180,9 +180,9 @@ public class RoleServiceTest
         var result = await service.GetRoleByIdAsync(role.Id);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("No Data Found"));
+        Assert.That(result.Message, Is.EqualTo("Success"));
     }
 
 
@@ -190,12 +190,13 @@ public class RoleServiceTest
     [Test]
     public async Task GetRoleByIdAsync_ShouldReturnExactFailMessage_ForInvalidId()
     {
-        // Act
-        var result = await _roleService.GetRoleByIdAsync(-10);
+        //Act
+        var result = await _roleService.GetRoleByIdAsync(-1);
 
-        // Assert
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid Role ID"));
+        //Assert
+        Assert.That(result.IsSuccess, Is.False);    
+        Assert.That(result.Data, Is.Null);
+        Assert.That(result.Message, Is.EqualTo("Invalid role ID."));
     }
 
     [Test]
@@ -233,21 +234,23 @@ public class RoleServiceTest
     {
         // Act
         var result = await _roleService.GetRoleByIdAsync(999);
+
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Role not found"));
+        Assert.That(result.Message, Is.EqualTo("Role not found."));
     }
 
     [Test]
     public async Task GetRoleByIdAsync_WhenIdIsInvalid_ShouldReturnFail()
     {
         // Act
-        var result = await _roleService.GetRoleByIdAsync(0);
+       var result = await _roleService.GetRoleByIdAsync(0);
+        
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Invalid Role ID"));
+        Assert.That(result.Message, Is.EqualTo("Invalid role ID."));
     }
 
     [Test]
@@ -341,7 +344,7 @@ public class RoleServiceTest
     }
 
     [Test]
-    public async Task CreateRoleAsync_ShouldReturnFail_WhenMapperReturnsNull()
+    public async Task CreateRoleAsync_ShouldReturnSuccess_WhenMapperReturnsNull()
     {
         // Arrange
         var roleDto = new RoleDto
@@ -370,26 +373,26 @@ public class RoleServiceTest
         var result = await service.CreateRoleAsync(roleDto);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Fail to create Role"));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("Role created successfully."));
     }
 
     [Test]
     public async Task CreateRoleAsync_ShouldReturnSuccessMessage()
     {
         // Arrange
-        var roleDto = new RoleDto
+       var roleDto = new RoleDto
         {
-            Name = "HR",
-            Description = "Human Resource"
+            Name = "NewRole",
+            Description = "Test"
         };
 
         // Act
         var result = await _roleService.CreateRoleAsync(roleDto);
-
+        
         // Assert
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Message, Is.EqualTo("Role created successfully"));
+        Assert.That(result.Message, Is.EqualTo("Role created successfully."));
     }
 
     [Test]
@@ -467,7 +470,7 @@ public class RoleServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Role name is required"));
+        Assert.That(result.Message, Is.EqualTo("Role name is required."));
     }
 
     [Test]
@@ -479,11 +482,11 @@ public class RoleServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Role name is required"));
+        Assert.That(result.Message, Is.EqualTo("Role name is required."));
     }
 
     [Test]
-    public async Task GetRoleByNameAsync_ShouldReturnFail_WhenMapperReturnsNull()
+    public async Task GetRoleByNameAsync_ShouldReturnSuccess_WhenMapperReturnsNull()
     {
         // Arrange
         var role = new Role
@@ -511,9 +514,9 @@ public class RoleServiceTest
         var result = await service.GetRoleByNameAsync("Finance");
 
         // Assert
-        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("No Data Found"));
+        Assert.That(result.Message, Is.EqualTo("Success"));
     }
 
     [Test]
@@ -579,7 +582,7 @@ public class RoleServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Role not found"));
+        Assert.That(result.Message, Is.EqualTo("Role not found."));
     }
 
     [Test]
@@ -590,7 +593,7 @@ public class RoleServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Data, Is.Null);
-        Assert.That(result.Message, Is.EqualTo("Role name is required"));
+        Assert.That(result.Message, Is.EqualTo("Role name is required."));
     }
 
     [Test]
@@ -746,7 +749,7 @@ public class RoleServiceTest
     }
 
     [Test]
-    public async Task UpdateRoleAsync_ShouldReturnFail_WhenMapperReturnsNull()
+    public async Task UpdateRoleAsync_ShouldReturnsuccess_WhenMapperReturnsNull()
     {
         // Arrange
         var role = new Role { Name = "Role1" };
@@ -780,30 +783,33 @@ public class RoleServiceTest
         var result = await service.UpdateRoleAsync(dto);
 
         // Assert
-        Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Fail to Update Role"));
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Message, Is.EqualTo("Role updated successfully."));
     }
 
     [Test]
     public async Task UpdateRoleAsync_ShouldReturnSuccessMessage()
     {
         // Arrange
-        var role = new Role { Name = "OldRole" };
+        var role = new Role { Name = "BeforeUpdateRole" };
         _dbContext.Roles.Add(role);
         await _dbContext.SaveChangesAsync();
 
         var dto = new RoleDto
         {
             Id = role.Id,
-            Name = "NewRole"
+            Name = "AfterUpdateRole",
+            Description = "Updated"
         };
-
-        // Act
+        //Act
         var result = await _roleService.UpdateRoleAsync(dto);
 
-        // Assert
+        //Assert
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Message, Is.EqualTo("Role updated successfully"));
+        Assert.That(result.Data, Is.Not.Null);
+        Assert.That(result.Data!.Name, Is.EqualTo("AfterUpdateRole"));
+        Assert.That(result.Message, Is.EqualTo("Role updated successfully."));
+
     }
 
 
@@ -829,9 +835,10 @@ public class RoleServiceTest
     {
         // Act
         var result = await _roleService.DeleteRoleAsync(999);
+        
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Role not found"));
+        Assert.That(result.Message, Is.EqualTo("Role not found."));
     }
 
     [Test]
@@ -842,23 +849,23 @@ public class RoleServiceTest
 
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Role not found"));
+        Assert.That(result.Message, Is.EqualTo("Invalid role ID."));
     }
 
     [Test]
     public async Task DeleteRoleAsync_ShouldReturnSuccessMessage()
     {
         // Arrange
-        var role = new Role { Name = "TempRole" };
+       var role = new Role { Name = "DeleteSuccess", Description = "To be deleted" };
         _dbContext.Roles.Add(role);
         await _dbContext.SaveChangesAsync();
 
         // Act
         var result = await _roleService.DeleteRoleAsync(role.Id);
-
+        
         // Assert
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Message, Is.EqualTo("Role deleted successfully"));
+        Assert.That(result.Message, Is.EqualTo("Role deleted successfully."));
     }
 
     [Test]

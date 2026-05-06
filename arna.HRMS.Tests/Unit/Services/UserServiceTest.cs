@@ -48,24 +48,28 @@ public class UserServiceTest
     public async Task GetUserByIdAsync_InvalidId_ReturnsFailResult()
     {
         // Arrange
-        int invalidUserId = -1;
-        // Act
-        var result = await _userService.GetUserByIdAsync(invalidUserId);
+        int inwalidUserId = -69;
+
+        // act
+        var result = await _userService.GetUserByIdAsync(inwalidUserId);
+
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Invalid User ID"));
+        Assert.That(result.Message, Is.EqualTo("Invalid user ID."));
     }
 
     [Test]
     public async Task GetUserByIdAsync_NonExistentId_ReturnsFailResult()
     {
-        // Arrange
-        int nonExistentUserId = 999;
-        // Act
-        var result = await _userService.GetUserByIdAsync(nonExistentUserId);
-        // Assert
+        //arrange
+        int nonexistentuserid = 699;
+
+        //act
+        var result = await _userService.GetUserByIdAsync(nonexistentuserid);
+
+        //assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("User not found"));
+        Assert.That(result.Message, Is.EqualTo("User not found."));
     }
 
     [Test]
@@ -1035,10 +1039,11 @@ public class UserServiceTest
     public async Task DeleteUserAsync_NonExistentId_ReturnsFailResult()
     {
         // Act
-        var result = await _userService.DeleteUserAsync(999);
+        var result = await _userService.DeleteUserAsync(69);
+
         // Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Fail to Delete User"));
+        Assert.That(result.Message, Is.EqualTo("User not found."));
     }
 
     [Test]
@@ -1072,18 +1077,20 @@ public class UserServiceTest
         // Assert
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Data, Is.True);
-        Assert.That(result.Message, Is.EqualTo("User deleted successfully"));
+        Assert.That(result.Message, Is.EqualTo("User deleted successfully."));
     }
 
     [Test]
     public async Task DeleteUserAsync_AlreadyDeletedId_ReturnsFailResult()
     {
         await DeleteUserAsync_ValidId_ReturnsSuccessResult();
-        // Act
-        var result = await _userService.DeleteUserAsync(1);
-        // Assert
+
+        //Act
+         var result = await _userService.DeleteUserAsync(1);
+    
+        //Assert
         Assert.That(result.IsSuccess, Is.False);
-        Assert.That(result.Message, Is.EqualTo("Fail to Delete User"));
+        Assert.That(result.Message, Is.EqualTo("User not found."));
     }
 
     [Test]
