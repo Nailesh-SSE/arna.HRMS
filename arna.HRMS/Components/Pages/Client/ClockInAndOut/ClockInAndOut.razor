@@ -266,7 +266,7 @@
 
     private const int CooldownSec = 60;
     private const string TimeFmt = "hh:mm tt";
-    private const int RefreshIntervalSec = 5;
+    private const int RefreshIntervalSec = 60;
 
     private string ButtonClass
     {
@@ -296,17 +296,13 @@
     {
         await base.OnInitializedAsync();
         await TryLoadDataAsync();
-        StartSessionTimer();
-        StartRefreshTimer();
+        //StartSessionTimer();
+        //StartRefreshTimer();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            await TryLoadDataAsync();
-            await InvokeAsync(StateHasChanged);
-        }
+        await base.OnAfterRenderAsync(firstRender);
     }
 
     private async Task TryLoadDataAsync()
@@ -583,62 +579,62 @@
             StatusId = AttendanceStatus.Present
         };
 
-    private void StartSessionTimer()
-    {
-        _timerCts?.Cancel();
-        _timerCts = new CancellationTokenSource();
-        var token = _timerCts.Token;
+    // private void StartSessionTimer()
+    // {
+    //     _timerCts?.Cancel();
+    //     _timerCts = new CancellationTokenSource();
+    //     var token = _timerCts.Token;
 
-        _ = Task.Run(async () =>
-        {
-            using var tick = new PeriodicTimer(TimeSpan.FromSeconds(1));
+    //     _ = Task.Run(async () =>
+    //     {
+    //         using var tick = new PeriodicTimer(TimeSpan.FromSeconds(1));
 
-            try
-            {
-                while (await tick.WaitForNextTickAsync(token))
-                {
-                    if (!IsClockedIn || LastClockInDateTime is null) continue;
+    //         try
+    //         {
+    //             while (await tick.WaitForNextTickAsync(token))
+    //             {
+    //                 if (!IsClockedIn || LastClockInDateTime is null) continue;
 
-                    var elapsed = DateTime.Now - LastClockInDateTime.Value;
-                    if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
+    //                 var elapsed = DateTime.Now - LastClockInDateTime.Value;
+    //                 if (elapsed < TimeSpan.Zero) elapsed = TimeSpan.Zero;
 
-                    SessionDuration = elapsed.ToString(@"hh\:mm\:ss");
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
-            catch (OperationCanceledException) { }
-        }, token);
-    }
+    //                 SessionDuration = elapsed.ToString(@"hh\:mm\:ss");
+    //                 await InvokeAsync(StateHasChanged);
+    //             }
+    //         }
+    //         catch (OperationCanceledException) { }
+    //     }, token);
+    // }
 
-    private void StartRefreshTimer()
-    {
-        _refreshCts?.Cancel();
-        _refreshCts = new CancellationTokenSource();
-        var token = _refreshCts.Token;
+    // private void StartRefreshTimer()
+    // {
+    //     _refreshCts?.Cancel();
+    //     _refreshCts = new CancellationTokenSource();
+    //     var token = _refreshCts.Token;
 
-        _ = Task.Run(async () =>
-        {
-            using var tick = new PeriodicTimer(TimeSpan.FromSeconds(RefreshIntervalSec));
+    //     _ = Task.Run(async () =>
+    //     {
+    //         using var tick = new PeriodicTimer(TimeSpan.FromSeconds(RefreshIntervalSec));
 
-            try
-            {
-                while (await tick.WaitForNextTickAsync(token))
-                {
-                    try
-                    {
-                        var empId = GetEmployeeId();
-                        if (empId > 0)
-                            await InvokeAsync(async () => await LoadStatusAsync(empId));
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"[Clock] Refresh error: {ex.Message}");
-                    }
-                }
-            }
-            catch (OperationCanceledException) { }
-        }, token);
-    }
+    //         try
+    //         {
+    //             while (await tick.WaitForNextTickAsync(token))
+    //             {
+    //                 try
+    //                 {
+    //                     var empId = GetEmployeeId();
+    //                     if (empId > 0)
+    //                         await InvokeAsync(async () => await LoadStatusAsync(empId));
+    //                 }
+    //                 catch (Exception ex)
+    //                 {
+    //                     Console.WriteLine($"[Clock] Refresh error: {ex.Message}");
+    //                 }
+    //             }
+    //         }
+    //         catch (OperationCanceledException) { }
+    //     }, token);
+    // }
 
     private async Task CooldownAsync(int seconds)
     {

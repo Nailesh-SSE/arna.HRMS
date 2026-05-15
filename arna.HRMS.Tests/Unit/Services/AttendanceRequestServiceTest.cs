@@ -22,9 +22,7 @@ public class AttendanceRequestServiceTests
     private Mock<IAttendanceService> _attendanceServiceMock = null!;
     private IMapper _mapper = null!;
 
-    // =========================
-    // SETUP
-    // =========================
+    private Mock<ILeaveService> _leaveServiceMock = null!;
 
     [SetUp]
     public void Setup()
@@ -44,6 +42,9 @@ public class AttendanceRequestServiceTests
         // ---------- MOCK AttendanceService ----------
         _attendanceServiceMock = new Mock<IAttendanceService>();
 
+        // ---------- MOCK LeaveService ----------
+        _leaveServiceMock = new Mock<ILeaveService>();
+
         // ---------- Mapper ----------
         var mapperConfig = new MapperConfiguration(cfg =>
         {
@@ -57,10 +58,10 @@ public class AttendanceRequestServiceTests
             attendanceRequestRepository,
             _mapper,
             _attendanceServiceMock.Object,
+            _leaveServiceMock.Object, // <-- add this line
             validator
         );
     }
-
 
     // =====================================================
     // CREATE
@@ -782,10 +783,12 @@ public class AttendanceRequestServiceTests
             new BaseRepository<AttendanceRequest>(_dbContext)
         );
 
+
         var service = new AttendanceRequestService(
             repository,
             mapperMock.Object,
             _attendanceServiceMock.Object,
+            _leaveServiceMock.Object,
             new AttendanceRequestValidator(repository)
         );
 

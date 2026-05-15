@@ -23,5 +23,6 @@ public interface ILeaveService
     Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto dto);
     Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id);
     Task<ServiceResult<bool>> UpdateLeaveRequestStatusAsync(int leaveRequestId, Status status, int approvedBy);
-    Task<ServiceResult<bool>> CancelLeaveRequestAsync(int id, int employeeId); 
+    Task<ServiceResult<bool>> CancelLeaveRequestAsync(int id, int employeeId);
+    Task<ServiceResult<bool>> RevokeLeaveRequestAsync(int employeeId, DateTime fromDate, DateTime toDate);
 }

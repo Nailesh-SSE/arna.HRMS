@@ -258,6 +258,14 @@ public class LeaveService : ILeaveService
             : ServiceResult<bool>.Fail("Failed to cancel leave.");
     }
 
+    public async Task<ServiceResult<bool>>RevokeLeaveRequestAsync(int employeeId, DateTime FromDate, DateTime ToDate)
+    {
+        var revoked = await _leaveRepository.EmployeeWorkedOnDateAsync(employeeId, FromDate);
+        return revoked
+            ? ServiceResult<bool>.Success(true, "Leave revoked successfully.")
+            : ServiceResult<bool>.Fail("Failed to revoke leave. Employee may not be on leave for the specified dates.");
+    }
+
     // =========================================================
     // PRIVATE HELPERS
     // =========================================================

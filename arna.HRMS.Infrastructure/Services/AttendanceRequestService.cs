@@ -12,17 +12,20 @@ public class AttendanceRequestService : IAttendanceRequestService
     private readonly AttendanceRequestRepository _repository;
     private readonly IMapper _mapper;
     private readonly IAttendanceService _attendanceService;
+    private readonly ILeaveService _leaveService;
     private readonly AttendanceRequestValidator _validator;
 
     public AttendanceRequestService(
         AttendanceRequestRepository repository,
         IMapper mapper,
         IAttendanceService attendanceService,
+        ILeaveService leaveService,
         AttendanceRequestValidator validator)
     {
         _repository = repository;
         _mapper = mapper;
         _attendanceService = attendanceService;
+        _leaveService = leaveService;
         _validator = validator;
     }
 
@@ -134,6 +137,8 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         var clockIn = req.ClockIn!.Value.TimeOfDay;
         var clockOut = req.ClockOut!.Value.TimeOfDay;
+
+        await _leaveService.RevokeLeaveRequestAsync(req.EmployeeId, fromDate, toDate);
 
         if (fromDate == toDate)
         {

@@ -180,6 +180,15 @@
         await LoadEmployeesAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadEmployeesAsync();
+            StateHasChanged();
+        }
+    }
+
     // ═══════════ DATA ═══════════
 
     private async Task LoadEmployeesAsync()

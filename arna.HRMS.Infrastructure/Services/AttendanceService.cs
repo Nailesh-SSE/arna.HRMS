@@ -167,11 +167,21 @@ public class AttendanceService : IAttendanceService
                     ClockIn = null,
                     ClockOut = null,
                     TotalHours = TimeSpan.Zero,
-                    StatusId = AttendanceStatus.Absent,
-                    Notes = "Absent",
+                    StatusId = AttendanceStatus.Leave,
+                    Notes = "Auto Leave Marked",
                     Latitude = null,
-                    Longitude = null,
-                    CreatedOn = DateTime.UtcNow
+                    Longitude = null
+                });
+                await _leaveService.CreateLeaveRequestAsync(new LeaveRequestDto
+                {
+                    EmployeeId = employeeId,
+                    LeaveTypeId = _leaveService.GetLeaveTypesAsync().Result.Data!.First().Id,
+                    StartDate = date,
+                    EndDate = date,
+                    Reason = "Auto Leave Marked",
+                    StatusId = Status.Approved,
+                    ApprovalNotes = "Auto Approved",
+                    ApprovedDate = DateTime.Now.Date
                 });
             }
         }

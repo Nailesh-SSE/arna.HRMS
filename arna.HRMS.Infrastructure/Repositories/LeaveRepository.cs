@@ -200,4 +200,74 @@ public class LeaveRepository
         await _leaveRequestRepository.UpdateAsync(leaveRequest);
         return true;
     }
+
+    public async Task<bool> EmployeeWorkedOnDateAsync(int employeeId, DateTime date)
+    {
+        var leave = await _leaveRequestRepository.Query()
+            .FirstOrDefaultAsync(x =>
+                x.EmployeeId == employeeId &&
+                x.IsActive && !x.IsDeleted &&
+                x.StatusId == Status.Approved &&
+                x.StartDate <= date &&
+                x.EndDate >= date);
+
+        if (leave == null)
+            return true;
+
+        if (leave.StartDate.Date == leave.EndDate.Date)
+        {
+            await DeleteLeaveRequestAsync(leave.Id);
+            return true;
+        }
+
+        if (leave.StartDate.Date == date.Date)
+        {
+            leave.StartDate = date.AddDays(1);
+            RecalculateLeaveDays(leave);
+
+            await _leaveRequestRepository.UpdateAsync(leave);
+            return true;
+        }
+
+        if (leave.EndDate.Date == date.Date)
+        {
+            leave.EndDate = date.AddDays(-1);
+            RecalculateLeaveDays(leave);
+
+            await _leaveRequestRepository.UpdateAsync(leave);
+            return true;
+        }
+
+
+        var secondHalf = new LeaveRequest
+        {
+            EmployeeId = leave.EmployeeId,
+            LeaveTypeId = leave.LeaveTypeId,
+            StartDate = date.AddDays(1),
+            EndDate = leave.EndDate,
+            Reason = leave.Reason,
+            StatusId = leave.StatusId,
+            ApprovedBy = leave.ApprovedBy,
+            ApprovedDate = leave.ApprovedDate,
+            IsActive = true,
+            IsDeleted = false,
+            CreatedOn = DateTime.Now
+        };
+
+        RecalculateLeaveDays(secondHalf);
+
+        // Update first half
+        leave.EndDate = date.AddDays(-1);
+        RecalculateLeaveDays(leave);
+
+        await _leaveRequestRepository.UpdateAsync(leave);
+        await _leaveRequestRepository.AddAsync(secondHalf);
+
+        return true;
+    }
+
+    private void RecalculateLeaveDays(LeaveRequest leave)
+    {
+        leave.LeaveDays = (leave.EndDate.Date - leave.StartDate.Date).Days + 1;
+    }
 }

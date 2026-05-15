@@ -109,7 +109,6 @@
         try
         {
             var employeeId = GetEmployeeId();
-
             var typeResult = await LeaveService.GetLeaveTypesAsync();
             leaveTypes = typeResult?.IsSuccess == true && typeResult.Data != null
                 ? typeResult.Data

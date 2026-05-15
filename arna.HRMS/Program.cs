@@ -41,7 +41,7 @@ public class Program
                       ?? throw new Exception("ApiSettings:BaseUrl not configured");
 
         // Register AuthHeaderHandler
-        builder.Services.AddScoped<AuthHeaderHandler>();
+        builder.Services.AddTransient<AuthHeaderHandler>();
 
         // Authorized Client with token handler (used for all normal API calls)
         builder.Services.AddHttpClient("AuthorizedClient", client =>

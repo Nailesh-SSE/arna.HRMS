@@ -383,7 +383,7 @@
         await base.OnInitializedAsync();
         SetGreeting();
         await LoadDashboard();
-        await ProcessDashboardData();
+        // await ProcessDashboardData();
         BuildOverview();
     }
 
@@ -489,7 +489,7 @@
             await NotificationService.Success("Leave approved successfully.");
 
             await LoadDashboard();
-            ProcessDashboardData();
+            await ProcessDashboardData();
             BuildOverview();
         }
         else
@@ -517,7 +517,7 @@
             await NotificationService.Success("Leave rejected.");
 
             await LoadDashboard();
-            ProcessDashboardData();
+            await ProcessDashboardData();
             BuildOverview();
         }
         else
@@ -543,7 +543,7 @@
             await NotificationService.Success("Attendance approved successfully.");
 
             await LoadDashboard();
-            ProcessDashboardData();
+            await ProcessDashboardData();
             BuildOverview();
         }
         else
@@ -570,7 +570,7 @@
             await NotificationService.Success("Attendance rejected.");
 
             await LoadDashboard();
-            ProcessDashboardData();
+            await ProcessDashboardData();
             BuildOverview();
         }
         else

@@ -127,12 +127,10 @@ public sealed class HttpService
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
 
-        // ✅ FIX: Removed duplicate manual token injection here.
-        // AuthHeaderHandler (registered as DelegatingHandler on "AuthorizedClient") already
-        // injects the Bearer token at the pipeline level. Having both caused double-header
-        // attempts and race conditions during token refresh scenarios.
-        // The AuthHeaderHandler checks: if (request.Headers.Authorization is null) → sets it.
-        // So we just let the pipeline handle it cleanly.
+        // Ensure AuthHeaderHandler can prefer the current scoped auth provider.
+        // AuthHeaderHandler checks: request.Options.TryGetValue(new HttpRequestOptionsKey<CustomAuthStateProvider>("AuthProvider"), out var scopedProvider)
+        // We set that option here so the handler uses the correct scoped provider for this request.
+        request.Options.Set(new HttpRequestOptionsKey<CustomAuthStateProvider>("AuthProvider"), _authProvider);
 
         return await _httpClient.SendAsync(request, ct);
     }
