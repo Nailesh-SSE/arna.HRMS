@@ -7,6 +7,7 @@ using arna.HRMS.Services.Dashboard;
 using arna.HRMS.Services.Http;
 using arna.HRMS.Services.Report;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace arna.HRMS;
 
@@ -21,6 +22,17 @@ public class Program
         // ==========================
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
+
+        var dataProtectionKeysPath =
+            builder.Configuration["DataProtection:KeysPath"]
+            ?? Environment.GetEnvironmentVariable("ARNA_HRMS_KEYS_PATH")
+            ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtectionKeys");
+
+        Directory.CreateDirectory(dataProtectionKeysPath);
+
+        builder.Services.AddDataProtection()
+            .SetApplicationName("arna.HRMS")
+            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
 
         // ==========================
         // Authentication (Blazor)
@@ -40,19 +52,16 @@ public class Program
         var baseUrl = builder.Configuration["ApiSettings:BaseUrl"]
                       ?? throw new Exception("ApiSettings:BaseUrl not configured");
 
-        // Register AuthHeaderHandler
-        builder.Services.AddTransient<AuthHeaderHandler>();
-
-        // Authorized Client with token handler (used for all normal API calls)
+        // Authorized client used for all normal API calls.
+        // HttpService adds the bearer token from the current Blazor scope before sending.
         builder.Services.AddHttpClient("AuthorizedClient", client =>
         {
             client.BaseAddress = new Uri(baseUrl);
-            client.Timeout = TimeSpan.FromHours(2);
+            client.Timeout = TimeSpan.FromSeconds(30);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
             client.DefaultRequestHeaders.Add("User-Agent", "arna.HRMS/1.0"); // ← add this
         })
-        .AddHttpMessageHandler<AuthHeaderHandler>()
-        .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        .SetHandlerLifetime(TimeSpan.FromMinutes(2));
 
         // ✅ FIX: RefreshClient has NO AuthHeaderHandler attached.
         // This is the dedicated client used ONLY for token refresh calls in HttpService.
@@ -65,11 +74,6 @@ public class Program
             client.Timeout = TimeSpan.FromSeconds(30);
             client.DefaultRequestHeaders.Add("User-Agent", "arna.HRMS/1.0"); // ← add this
         });
-
-        // Default injected HttpClient = AuthorizedClient
-        builder.Services.AddScoped(sp =>
-            sp.GetRequiredService<IHttpClientFactory>()
-                .CreateClient("AuthorizedClient"));
 
         // ==========================
         // Core App Services

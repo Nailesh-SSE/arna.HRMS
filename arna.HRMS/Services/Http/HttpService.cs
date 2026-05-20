@@ -3,6 +3,7 @@ using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.ViewModels.Auth;
 using arna.HRMS.Services.Auth;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 
@@ -10,7 +11,6 @@ namespace arna.HRMS.Services.Http;
 
 public sealed class HttpService
 {
-    private readonly HttpClient _httpClient;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly CustomAuthStateProvider _authProvider;
     private readonly ILogger<HttpService> _logger;
@@ -26,12 +26,10 @@ public sealed class HttpService
         new() { PropertyNameCaseInsensitive = true };
 
     public HttpService(
-        HttpClient httpClient,
         IHttpClientFactory httpClientFactory,
         CustomAuthStateProvider authProvider,
         ILogger<HttpService> logger)
     {
-        _httpClient = httpClient;
         _httpClientFactory = httpClientFactory;
         _authProvider = authProvider;
         _logger = logger;
@@ -81,8 +79,21 @@ public sealed class HttpService
         {
             return ApiResult<T>.Fail("Request cancelled.", 499);
         }
+        catch (ObjectDisposedException ex)
+        {
+            _logger.LogWarning(ex, "HTTP request was cancelled because the Blazor circuit or HTTP pipeline was disposed");
+            return ApiResult<T>.Fail("Request cancelled because the connection was closed.", 499);
+        }
         catch (HttpRequestException ex)
         {
+            if (IsConnectionRefused(ex))
+            {
+                _logger.LogWarning(
+                    "API is unavailable. Check that arna.HRMS.API is running at the configured ApiSettings:BaseUrl. Error: {Message}",
+                    ex.Message);
+                return ApiResult<T>.Fail("API service is not running. Please start the API and try again.", 503);
+            }
+
             _logger.LogError(ex, "Network error");
             return ApiResult<T>.Fail("Network error occurred.", 503);
         }
@@ -127,12 +138,23 @@ public sealed class HttpService
             request.Content = new StringContent(json, Encoding.UTF8, "application/json");
         }
 
-        // Ensure AuthHeaderHandler can prefer the current scoped auth provider.
-        // AuthHeaderHandler checks: request.Options.TryGetValue(new HttpRequestOptionsKey<CustomAuthStateProvider>("AuthProvider"), out var scopedProvider)
-        // We set that option here so the handler uses the correct scoped provider for this request.
-        request.Options.Set(new HttpRequestOptionsKey<CustomAuthStateProvider>("AuthProvider"), _authProvider);
+        var token = await _authProvider.GetAccessTokenAsync();
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
 
-        return await _httpClient.SendAsync(request, ct);
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient("AuthorizedClient");
+            return await httpClient.SendAsync(request, ct);
+        }
+        catch
+        {
+            request.Dispose();
+            throw;
+        }
     }
 
     // =====================================================
@@ -196,6 +218,13 @@ public sealed class HttpService
 
             return true;
         }
+        catch (HttpRequestException ex) when (IsConnectionRefused(ex))
+        {
+            _logger.LogWarning(
+                "Token refresh skipped because the API is unavailable. Check ApiSettings:BaseUrl and start arna.HRMS.API. Error: {Message}",
+                ex.Message);
+            return false;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Token refresh failed");
@@ -205,6 +234,12 @@ public sealed class HttpService
         {
             _refreshLock.Release();
         }
+    }
+
+    private static bool IsConnectionRefused(HttpRequestException ex)
+    {
+        return ex.InnerException is SocketException socketException
+               && socketException.SocketErrorCode == SocketError.ConnectionRefused;
     }
 
     // =====================================================

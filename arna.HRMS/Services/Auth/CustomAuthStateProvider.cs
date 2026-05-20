@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 
 namespace arna.HRMS.Services.Auth;
 
@@ -104,6 +105,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             _isInitialized = true;
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage write cancelled during login; using in-memory auth cache");
+            _cachedAccessToken = accessToken;
+            _cachedRefreshToken = refreshToken;
+            _cachedUserId = userId;
+            if (employeeId.HasValue && employeeId.Value > 0)
+                _cachedEmployeeId = employeeId.Value;
+            _isInitialized = true;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to store authentication tokens");
@@ -134,6 +146,14 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             _cachedRefreshToken = refreshToken;
             NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage write cancelled during token update; using in-memory auth cache");
+            _cachedAccessToken = accessToken;
+            _cachedRefreshToken = refreshToken;
+            _isInitialized = true;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to update authentication tokens");
@@ -156,6 +176,11 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             {
                 // ✅ FIX: JS interop unavailable during prerendering — clear cache only
                 _logger.LogWarning(ex, "JS interop unavailable — LogoutAsync clearing cache only");
+            }
+
+            catch (OperationCanceledException ex)
+            {
+                _logger.LogDebug(ex, "Browser storage delete cancelled during logout; clearing in-memory auth cache");
             }
 
             // Always clear cache regardless of storage outcome
@@ -195,6 +220,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             // ✅ FIX: JS interop not available during prerendering — return cached or 0
             _logger.LogDebug("JS interop unavailable in GetUserIdAsync — returning cached value");
             return _cachedUserId;
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage read cancelled in GetUserIdAsync; returning cached value");
+            return _cachedUserId;
+        }
+        catch (CryptographicException ex)
+        {
+            _logger.LogWarning(ex, "Stored user ID could not be decrypted; clearing stale authentication data");
+            await ClearStoredAuthDataAsync();
+            return 0;
         }
         catch (Exception ex)
         {
@@ -241,6 +277,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             _logger.LogDebug("JS interop unavailable in GetEmployeeIdAsync — returning cached value");
             return _cachedEmployeeId;
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage read cancelled in GetEmployeeIdAsync; returning cached value");
+            return _cachedEmployeeId;
+        }
+        catch (CryptographicException ex)
+        {
+            _logger.LogWarning(ex, "Stored employee ID could not be decrypted; clearing stale authentication data");
+            await ClearStoredAuthDataAsync();
+            return 0;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to retrieve employee ID");
@@ -282,6 +329,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             _logger.LogDebug("JS interop unavailable (prerendering) — returning cached access token");
             return _cachedAccessToken; // null on first load, populated after login
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage read cancelled in GetAccessTokenAsync; returning cached access token");
+            return _cachedAccessToken;
+        }
+        catch (CryptographicException ex)
+        {
+            _logger.LogWarning(ex, "Stored access token could not be decrypted; clearing stale authentication data");
+            await ClearStoredAuthDataAsync();
+            return null;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to retrieve access token");
@@ -317,6 +375,17 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             // ✅ FIX: JS interop unavailable during prerendering — return cached value
             _logger.LogDebug("JS interop unavailable in GetRefreshTokenAsync — returning cached value");
             return _cachedRefreshToken;
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage read cancelled in GetRefreshTokenAsync; returning cached refresh token");
+            return _cachedRefreshToken;
+        }
+        catch (CryptographicException ex)
+        {
+            _logger.LogWarning(ex, "Stored refresh token could not be decrypted; clearing stale authentication data");
+            await ClearStoredAuthDataAsync();
+            return null;
         }
         catch (Exception ex)
         {
@@ -358,11 +427,53 @@ public sealed class CustomAuthStateProvider : AuthenticationStateProvider
             _logger.LogDebug("JS interop unavailable in GetRefreshDataAsync — returning cached values");
             return (_cachedUserId, _cachedRefreshToken);
         }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage read cancelled in GetRefreshDataAsync; returning cached values");
+            return (_cachedUserId, _cachedRefreshToken);
+        }
+        catch (CryptographicException ex)
+        {
+            _logger.LogWarning(ex, "Stored refresh data could not be decrypted; clearing stale authentication data");
+            await ClearStoredAuthDataAsync();
+            return (0, null);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to retrieve refresh data");
             return (0, null);
         }
+    }
+
+    private async Task ClearStoredAuthDataAsync()
+    {
+        _cachedAccessToken = null;
+        _cachedRefreshToken = null;
+        _cachedUserId = 0;
+        _cachedEmployeeId = 0;
+        _isInitialized = false;
+
+        try
+        {
+            await _protectedLocalStorage.DeleteAsync(AccessTokenKey);
+            await _protectedLocalStorage.DeleteAsync(RefreshTokenKey);
+            await _protectedLocalStorage.DeleteAsync(UserIdKey);
+            await _protectedLocalStorage.DeleteAsync(EmployeeIdKey);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogDebug(ex, "JS interop unavailable while clearing stale authentication data");
+        }
+        catch (OperationCanceledException ex)
+        {
+            _logger.LogDebug(ex, "Browser storage delete cancelled while clearing stale authentication data");
+        }
+        catch (CryptographicException ex)
+        {
+            _logger.LogDebug(ex, "Stored authentication data was already unreadable while clearing it");
+        }
+
+        NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));
     }
 
     /// <summary>
