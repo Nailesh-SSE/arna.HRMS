@@ -40,7 +40,7 @@ public class AttendanceService : IAttendanceService
     {
         var data = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(status, employeeId);
 
-        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(data));  
+        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(data));
     }
 
     public async Task<ServiceResult<AttendanceDto?>> GetAttendanceByIdAsync(int id)
@@ -153,27 +153,75 @@ public class AttendanceService : IAttendanceService
             .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
             .Select(i => effectiveStartDate.AddDays(i));
 
-        foreach (var date in missingDates)
-        {
-            bool isHoliday = IsWeekend(date) || festivalDates.Contains(date);
-            bool isLeave = leaveDates.Contains(date);
+        // Only actual absent working days
+        var absentDates = missingDates
+            .Where(date =>
+                !IsWeekend(date) &&
+                !festivalDates.Contains(date) &&
+                !leaveDates.Contains(date))
+            .ToList();
 
-            if (!isLeave && !isHoliday)
-            {
-                await _attendanceRepository.CreateAttendanceAsync(new Attendance
+        if (!absentDates.Any())
+            return;
+
+        var leaveType = await _leaveService.GetLeaveTypesAsync();
+        var employee = await _employeeService.GetEmployeeByIdAsync(employeeId);
+
+        // Create attendance records
+        foreach (var date in absentDates)
+        {
+            await _attendanceRepository
+                .CreateAttendanceAsync(new Attendance
                 {
                     EmployeeId = employeeId,
                     Date = date,
                     ClockIn = null,
                     ClockOut = null,
                     TotalHours = TimeSpan.Zero,
-                    StatusId = AttendanceStatus.Absent,
-                    Notes = "Absent",
+                    StatusId = AttendanceStatus.Leave,
+                    Notes = "Auto-generated leave",
                     Latitude = null,
                     Longitude = null,
                     CreatedOn = DateTime.UtcNow
                 });
-            }
+        }
+
+        // Group consecutive working absent dates
+        var groupedDates = absentDates
+                .Select((date, index) => new { date, index })
+                .GroupBy(x => x.date.AddDays(-x.index));
+
+        foreach (var group in groupedDates)
+        {
+            var dates = group
+                .Select(x => x.date)
+                .OrderBy(d => d)
+                .ToList();
+
+            var startDate = dates.First();
+            var endDate = dates.Last();
+
+            await _leaveService.CreateLeaveRequestAsync(
+                new LeaveRequestDto
+                {
+                    EmployeeId = employeeId,
+                    EmployeeName = employee.Data?.FullName,
+                    EmployeeNumber = employee.Data?.EmployeeNumber,
+                    LeaveTypeId = leaveType.Data?.FirstOrDefault()?.Id ?? 0,
+                    LeaveTypeName = leaveType.Data?.FirstOrDefault()?.Description,
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    LeaveDays = dates.Count,
+                    Reason = "Auto-generated leave for absent days",
+                    StatusId = Status.Approved,
+                    ApprovedBy = null,
+                    ApprovedByName = null,
+                    ApprovedDate = DateTime.UtcNow,
+                    ApprovalNotes = "Auto-approved leave for absent days",
+                    CreatedOn = DateTime.UtcNow,
+                    IsActive = true,
+                    IsDeleted = false
+                });
         }
     }
 

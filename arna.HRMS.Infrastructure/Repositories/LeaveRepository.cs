@@ -143,7 +143,7 @@ public class LeaveRepository
         var leaveRequest = await _leaveRequestRepository.Query()
             .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
 
-        if (leaveRequest == null || leaveRequest.StatusId == Status.Approved)
+        if (leaveRequest == null || (leaveRequest.StatusId == Status.Approved && leaveRequest.ApprovedBy != null))
             return false;
 
         leaveRequest.IsActive = false;

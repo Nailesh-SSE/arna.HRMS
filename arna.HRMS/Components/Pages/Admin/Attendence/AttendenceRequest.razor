@@ -195,14 +195,14 @@
                                                                     justify-content-center">
                                     <button class="action-btn @GetApproveClass(req)"
                                             title="Approve"
-                                            disabled="@_isUpdating"
+                                            disabled="@(_isUpdating || req.StatusId == Status.Approved)"
                                             @onclick="() => UpdateStatus(req, Status.Approved)">
                                         <i class="bi bi-check-lg"></i>
                                     </button>
 
                                     <button class="action-btn @GetRejectClass(req)"
                                             title="Reject"
-                                            disabled="@_isUpdating"
+                                            disabled="@(_isUpdating || req.StatusId == Status.Rejected)"
                                             @onclick="() => UpdateStatus(req, Status.Rejected)">
                                         <i class="bi bi-x-lg"></i>
                                     </button>

@@ -84,11 +84,13 @@
                         <div class="d-flex align-items-center gap-1 gap-md-2
                                                             justify-content-center">
                             <AppButton ButtonClass="@GetApproveClass(req)"
+                                       disabled="@(req.StatusId == Status.Approved)"
                                        OnClick="() => UpdateStatus(req, Status.Approved)">
                                 <i class="bi bi-check-lg"></i>
                             </AppButton>
 
                             <AppButton ButtonClass="@GetRejectClass(req)"
+                                       disabled="@(req.StatusId == Status.Rejected)"
                                        OnClick="() => UpdateStatus(req, Status.Rejected)">
                                 <i class="bi bi-x-lg"></i>
                             </AppButton>

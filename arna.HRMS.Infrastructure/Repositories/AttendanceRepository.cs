@@ -291,6 +291,19 @@ public class AttendanceRepository
         return true;
     }
 
+    public async Task<Attendance?> GetAttendanceByEmployeeAndDateAsync(
+    int employeeId,
+    DateTime date)
+    {
+        return await _baseRepository.Query()
+            .Where(a =>
+                a.IsActive &&
+                !a.IsDeleted &&
+                a.EmployeeId == employeeId &&
+                a.Date.Date == date.Date)
+            .FirstOrDefaultAsync();
+    }
+
     #region Helpers
 
     private static string CalculateStatus(
