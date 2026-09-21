@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +16,8 @@ public class FestivalHolidayRepository
     public async Task<List<FestivalHoliday>> GetFestivalHolidaysAsync()
     {
         return await _baseRepository.Query()
-            .Where(h => h.IsActive && !h.IsDeleted)
+            .AsNoTracking()
+            .Where(h => !h.IsDeleted)
             .OrderByDescending(h => h.Id)
             .ToListAsync(); 
     }
@@ -24,7 +25,8 @@ public class FestivalHolidayRepository
     public async Task<FestivalHoliday?> GetFestivalHolidayByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(h => h.Id == id && h.IsActive && !h.IsDeleted)
+            .AsNoTracking()
+            .Where(h => h.Id == id && !h.IsDeleted)
             .FirstOrDefaultAsync();
     }
 
@@ -34,6 +36,7 @@ public class FestivalHolidayRepository
         var endDate = startDate.AddMonths(1);
 
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(h =>
                 h.IsActive &&
                 !h.IsDeleted &&
@@ -57,7 +60,6 @@ public class FestivalHolidayRepository
         var festivalHoliday = await _baseRepository.Query()
             .FirstOrDefaultAsync(h =>
                 h.Id == id &&
-                h.IsActive &&
                 !h.IsDeleted);
 
         if (festivalHoliday == null)
@@ -79,8 +81,8 @@ public class FestivalHolidayRepository
         name = name.Trim().ToLower();
 
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(h =>
-                h.IsActive &&
                 !h.IsDeleted &&
                 h.FestivalName.Trim().ToLower() == name)
             .ToListAsync();
@@ -97,8 +99,8 @@ public class FestivalHolidayRepository
         var end = start.AddDays(1);
 
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(h =>
-                h.IsActive &&
                 !h.IsDeleted &&
                 h.Id != id &&
                 h.FestivalName.Trim().ToLower() == name &&

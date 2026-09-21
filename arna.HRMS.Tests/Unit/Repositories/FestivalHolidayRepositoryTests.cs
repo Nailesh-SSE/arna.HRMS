@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -39,10 +39,8 @@ public class FestivalHolidayRepositoryTests
         var result = await _festivalHolidayRepository.GetFestivalHolidaysAsync();
         // Assert
 
-        Assert.That(result.Count, Is.EqualTo(1));
-        Assert.That(result[0].FestivalName, Is.EqualTo("Holiday 1"));
-        Assert.That(result[0].IsActive, Is.True);
-        Assert.That(result[0].IsDeleted, Is.False);
+        Assert.That(result.Count, Is.EqualTo(2));
+        Assert.That(result.Any(h => h.Id == 3), Is.False);
     }
 
     [Test]

@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.Pages.Admin.LeaveManagement
 @using arna.HRMS.Models.Common.Table
@@ -213,7 +213,7 @@
             var result = await FestivalHolidayService.GetFestivalHolidayAsync();
 
             allFestivals = result?.IsSuccess == true && result.Data != null
-                ? result.Data.OrderBy(f => f.Date).ToList()
+                ? result.Data.Where(f => f.IsActive).OrderBy(f => f.Date).ToList()
                 : new();
 
             upcomingHoliday = allFestivals

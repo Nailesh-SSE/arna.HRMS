@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 using System.Text.RegularExpressions;
@@ -31,19 +31,19 @@ public class UserValidator
 
         if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid User ID");
-        var exist = _repository.GetUserByIdAsync(instance.Id);
-        if (exist.Result == null)
+        var exist = await _repository.GetUserByIdAsync(instance.Id);
+        if (exist == null)
             return ValidationResult.Fail("No Data Found");
 
         return await ValidateCommonAsync(instance);
     }
 
-    public ValidationResult ValidateChangePasswordAsync(int id, string newPassword)
+    public async Task<ValidationResult> ValidateChangePasswordAsync(int id, string newPassword)
     {
         if (id <= 0)
             return ValidationResult.Fail("Invalid User ID");
-        var exist = _repository.GetUserByIdAsync(id);
-        if (exist.Result == null)
+        var exist = await _repository.GetUserByIdAsync(id);
+        if (exist == null)
             return ValidationResult.Fail("No Data Found");
         else if (string.IsNullOrWhiteSpace(newPassword))
             return ValidationResult.Fail("Password is required");

@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 
@@ -29,8 +29,8 @@ public class DepartmentValidator
         if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid Department ID");
 
-        var exist = _repository.GetDepartmentByIdAsync(instance.Id);
-        if (exist.Result == null)
+        var exist = await _repository.GetDepartmentByIdAsync(instance.Id);
+        if (exist == null)
             return ValidationResult.Fail("Data not found");
 
         return await ValidateCommonAsync(instance);

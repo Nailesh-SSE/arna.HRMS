@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Common
@@ -70,6 +70,16 @@
                                          ValidationExpression="() => model.Description"
                                          Placeholder="Brief description of the festival..." />
                         </div>
+
+                        @if (IsEditMode)
+                        {
+                            <div class="mt-3 p-3 bg-light rounded-3 border">
+                                <AppSwitch Label="Holiday Status"
+                                           Value="@model.IsActive"
+                                           ValueChanged="v => model.IsActive = v"
+                                           HelpText="Inactive holidays will not appear on employee calendars." />
+                            </div>
+                        }
 
                     </div>
 

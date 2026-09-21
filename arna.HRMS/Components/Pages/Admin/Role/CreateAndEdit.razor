@@ -1,4 +1,4 @@
-﻿@page "/role/create"
+@page "/role/create"
 @page "/role/edit/{Id:int}"
 
 @using arna.HRMS.Components.Loader
@@ -129,9 +129,9 @@
                     <div class="card-body px-3 px-md-4 py-3">
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <AppCheckBox Label="Active"
-                                             Value="@role.IsActive"
-                                             ValueChanged="@(v => role.IsActive = v)" />
+                                <AppSwitch Value="@role.IsActive"
+                                           ValueChanged="@(v => role.IsActive = v)"
+                                           HelpText="Inactive roles cannot be assigned to users." />
                             </div>
                         </div>
                     </div>

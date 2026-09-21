@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Interfaces.Repository;
+using arna.HRMS.Core.Interfaces.Repository;
 using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Mapping;
 using arna.HRMS.Infrastructure.Repositories;
@@ -12,16 +12,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
-        // AutoMapper
+        // Issue 15 FIX: Only one AddAutoMapper call needed — scans entire assembly for all Profile classes
         services.AddAutoMapper(typeof(AttendanceProfile).Assembly);
-        services.AddAutoMapper(typeof(AttendanceRequestProfile).Assembly);
-        services.AddAutoMapper(typeof(DepartmentProfile).Assembly);
-        services.AddAutoMapper(typeof(EmployeeProfile).Assembly);
-        services.AddAutoMapper(typeof(FestivalHolidayProfile).Assembly);
-        services.AddAutoMapper(typeof(LeaveProfile).Assembly);
-        services.AddAutoMapper(typeof(UserProfile).Assembly);
-        services.AddAutoMapper(typeof(RoleProfile).Assembly);
-        services.AddAutoMapper(typeof(DashboardProfile).Assembly);
 
         // Base repository
         services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));

@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 using EmailAddressAttribute = System.ComponentModel.DataAnnotations.EmailAddressAttribute;
@@ -37,8 +37,8 @@ public class EmployeeValidator
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Employee ID");
 
-        var exist = _repository.GetEmployeeByIdAsync(dto.Id);
-        if (exist.Result == null)
+        var exist = await _repository.GetEmployeeByIdAsync(dto.Id);
+        if (exist == null)
             return ValidationResult.Fail("Employee not found");
 
         return await ValidateCommonFields(dto);

@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -106,7 +106,6 @@ public class UserRepository
         var user = await _baseRepository.Query()
             .FirstOrDefaultAsync(x =>
                 x.Id == id &&
-                x.IsActive &&
                 !x.IsDeleted);
 
         if (user == null)

@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
@@ -62,11 +62,17 @@ public class DashboardService : IDashboardService
             
         }
 
-        dashboard.Attendance = await _repository.GetTodayPresentEmployeesAsync();
+        // Perf 6 FIX: Run independent queries in parallel instead of sequentially
+        var presentTask = _repository.GetTodayPresentEmployeesAsync();
+        var leaveTask = _repository.GetTodayLeaveEmployeesAsync();
+
+        await Task.WhenAll(presentTask, leaveTask);
+
+        dashboard.Attendance = await presentTask;
         dashboard.PresentEmployee = dashboard.Attendance.Count;
         dashboard.AttendanceTotalRequests = dashboard.AttendanceRequests.Count;
         dashboard.AttendancePendingRequests = dashboard.AttendanceRequests.Count(x => x.StatusId == Status.Pending);
-        dashboard.LeaveEmployees = await _repository.GetTodayLeaveEmployeesAsync();
+        dashboard.LeaveEmployees = await leaveTask;
         dashboard.TotalEmployees = dashboard.Employees.Count;
 
         var allEmployeeRecords = new List<EmployeeDailyAttendanceDto>();

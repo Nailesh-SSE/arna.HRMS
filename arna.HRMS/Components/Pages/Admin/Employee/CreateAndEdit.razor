@@ -1,4 +1,4 @@
-﻿@page "/employee/create"
+@page "/employee/create"
 @page "/employee/edit/{Id:int}"
 
 @using arna.HRMS.Components.Loader
@@ -246,9 +246,9 @@
                     <div class="card-body px-3 px-md-4 py-3">
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <AppCheckBox Label="Active"
-                                             Value="@_employee.IsActive"
-                                             ValueChanged="@(v => _employee.IsActive = v)" />
+                                <AppSwitch Value="@_employee.IsActive"
+                                           ValueChanged="@(v => _employee.IsActive = v)"
+                                           HelpText="Inactive employees cannot log in or submit attendance/leave requests." />
                             </div>
                         </div>
                     </div>
@@ -337,6 +337,7 @@
 
         _departmentOptions = result is { IsSuccess: true, Data: not null }
             ? result.Data
+                .Where(d => d.IsActive || d.Id == _employee.DepartmentId)
                 .Select(d => new SelectOption { Value = d.Id.ToString(), Text = d.Name })
                 .ToList()
             : new();
@@ -348,6 +349,7 @@
 
         _managerOptions = result is { IsSuccess: true, Data: not null }
             ? result.Data
+                .Where(e => (!Id.HasValue || e.Id != Id.Value) && (e.IsActive || e.Id == _employee.ManagerId))
                 .Select(e => new SelectOption { Value = e.Id.ToString(), Text = e.FullName })
                 .ToList()
             : new();

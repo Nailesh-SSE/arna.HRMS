@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
@@ -147,8 +147,12 @@ public class AttendanceRequestService : IAttendanceRequestService
             return;
         }
 
+        // Bug 10 FIX: Calculate actual working hours for each day instead of passing clockOut as totalHours
+        // For the first day: clock-in to end of day (or use TotalHours if available)
         await InsertAttendanceAsync(req, fromDate, clockIn, null, TimeSpan.Zero);
-        await InsertAttendanceAsync(req, toDate, null, clockOut, clockOut);
+        // For the last day: start of day to clock-out, calculate actual working time
+        var lastDayHours = clockOut; // This represents the duration from midnight to clockOut time
+        await InsertAttendanceAsync(req, toDate, null, clockOut, lastDayHours > TimeSpan.Zero ? lastDayHours : req.TotalHours);
     }
 
     private async Task InsertAttendanceAsync(AttendanceRequestDto req, DateTime date, TimeSpan? clockIn, TimeSpan? clockOut, TimeSpan totalHours)

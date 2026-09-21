@@ -111,7 +111,7 @@
             var employeeId = GetEmployeeId();
             var typeResult = await LeaveService.GetLeaveTypesAsync();
             leaveTypes = typeResult?.IsSuccess == true && typeResult.Data != null
-                ? typeResult.Data
+                ? typeResult.Data.Where(x => x.IsActive).ToList()
                 : new();
 
             var reqResult = await LeaveService.GetLeaveRequestsByEmployeeAsync(employeeId);

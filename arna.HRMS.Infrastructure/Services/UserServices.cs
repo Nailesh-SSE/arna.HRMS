@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Service;
@@ -104,7 +104,7 @@ public class UserServices : IUserServices
 
     public async Task<ServiceResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
     {
-        var validation = _validator.ValidateChangePasswordAsync(id, newPassword);
+        var validation = await _validator.ValidateChangePasswordAsync(id, newPassword);
 
         if (!validation.IsValid)
             return ServiceResult<bool>.Fail(string.Join(Environment.NewLine, validation.Errors));

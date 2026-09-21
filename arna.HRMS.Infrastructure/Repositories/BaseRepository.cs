@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Base;
+using arna.HRMS.Core.Common.Base;
 using arna.HRMS.Core.Interfaces.Repository;
 using arna.HRMS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;

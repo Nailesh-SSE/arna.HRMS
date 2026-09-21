@@ -1,0 +1,71 @@
+<div class="form-switch-wrapper mb-2 @WrapperClass">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="form-label fw-semibold small text-secondary mb-1 d-block">
+            @Label
+        </label>
+    }
+
+    <div class="form-check form-switch d-inline-flex align-items-center gap-2 m-0 p-0 ps-5">
+        <input class="form-check-input ms-n5"
+               type="checkbox"
+               role="switch"
+               id="@Id"
+               checked="@Value"
+               @onchange="OnChange"
+               disabled="@Disabled"
+               style="cursor: pointer; width: 2.75rem; height: 1.4rem;"
+               @attributes="AdditionalAttributes" />
+
+        <label class="form-check-label user-select-none d-inline-flex align-items-center gap-1"
+               for="@Id"
+               style="cursor: pointer;">
+            @if (ShowStatusBadge)
+            {
+                <span class="badge rounded-pill px-2 py-1 small transition-all @(Value ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" : "bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25")">
+                    <i class="bi @(Value ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1"></i>
+                    @(Value ? ActiveText : InactiveText)
+                </span>
+            }
+            else
+            {
+                <span class="fw-medium @(Value ? "text-success" : "text-muted")">
+                    @(Value ? ActiveText : InactiveText)
+                </span>
+            }
+        </label>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(HelpText))
+    {
+        <div class="form-text small text-muted mt-1">@HelpText</div>
+    }
+
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? HelpText { get; set; }
+    [Parameter] public bool Value { get; set; } = true;
+    [Parameter] public EventCallback<bool> ValueChanged { get; set; }
+    [Parameter] public string ActiveText { get; set; } = "Active";
+    [Parameter] public string InactiveText { get; set; } = "Inactive";
+    [Parameter] public bool ShowStatusBadge { get; set; } = true;
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string WrapperClass { get; set; } = "";
+    [Parameter] public string Id { get; set; } = $"switch_{Guid.NewGuid():N}";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private async Task OnChange(ChangeEventArgs e)
+    {
+        if (e.Value is bool checkedValue)
+        {
+            Value = checkedValue;
+            await ValueChanged.InvokeAsync(checkedValue);
+        }
+    }
+}

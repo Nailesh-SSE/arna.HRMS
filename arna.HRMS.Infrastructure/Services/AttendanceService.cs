@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
@@ -18,7 +18,8 @@ public class AttendanceService : IAttendanceService
     private readonly ILeaveService _leaveService;
     private readonly AttendanceValidator _validator;
 
-    private static readonly DateTime SystemStartDate = DateTime.UtcNow;
+    // Bug 2 FIX: Use a fixed business start date instead of DateTime.UtcNow which changes on every restart
+    private static readonly DateTime SystemStartDate = new DateTime(2025, 1, 1);
 
     public AttendanceService(
         AttendanceRepository attendanceRepository,
@@ -133,21 +134,26 @@ public class AttendanceService : IAttendanceService
         if (effectiveStartDate >= newAttendanceDate.Date)
             return;
 
-        var festivalDates = (await _festivalHolidayService
-            .GetFestivalHolidaysAsync())
-            .Data?
+        // Perf 1 FIX: Filter holidays by the missing date range instead of loading ALL holidays
+        var festivalHolidaysResult = await _festivalHolidayService.GetFestivalHolidaysAsync();
+        var festivalDates = festivalHolidaysResult.Data?
+            .Where(f => f.Date.Date > effectiveStartDate && f.Date.Date < newAttendanceDate.Date)
             .Select(f => f.Date.Date)
             .ToHashSet() ?? new HashSet<DateTime>();
 
-        var leaveDates = (await _leaveService
-            .GetLeaveRequestsAsync())
-            .Data?
-            .Where(l => l.EmployeeId == employeeId && l.StatusId == Status.Approved)
+        // Perf 1 FIX: Filter leave requests by employee ID and date range instead of loading ALL
+        var leaveRequestsResult = await _leaveService.GetLeaveRequestsByFilterAsync(Status.Approved, employeeId);
+        var leaveDates = leaveRequestsResult.Data?
+            .Where(l => l.EndDate.Date > effectiveStartDate && l.StartDate.Date < newAttendanceDate.Date)
             .SelectMany(l => Enumerable.Range(
                 0,
                 (l.EndDate.Date - l.StartDate.Date).Days + 1)
                 .Select(offset => l.StartDate.Date.AddDays(offset)))
             .ToHashSet() ?? new HashSet<DateTime>();
+
+        // Bug 1 FIX: Pre-fetch leave type BEFORE the loop using await (was .Result causing deadlock)
+        var leaveTypesResult = await _leaveService.GetLeaveTypesAsync();
+        var defaultLeaveTypeId = leaveTypesResult.Data?.FirstOrDefault()?.Id ?? 0;
 
         var missingDates = Enumerable
             .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
@@ -158,6 +164,8 @@ public class AttendanceService : IAttendanceService
             bool isHoliday = IsWeekend(date) || festivalDates.Contains(date);
             bool isLeave = leaveDates.Contains(date);
 
+            // Bug 11 FIX: Mark as Absent instead of auto-creating Leave records
+            // Previously this auto-approved fake leave requests without employee knowledge
             if (!isLeave && !isHoliday)
             {
                 await _attendanceRepository.CreateAttendanceAsync(new Attendance
@@ -167,21 +175,10 @@ public class AttendanceService : IAttendanceService
                     ClockIn = null,
                     ClockOut = null,
                     TotalHours = TimeSpan.Zero,
-                    StatusId = AttendanceStatus.Leave,
-                    Notes = "Auto Leave Marked",
+                    StatusId = AttendanceStatus.Absent,
+                    Notes = "Auto Absent Marked",
                     Latitude = null,
                     Longitude = null
-                });
-                await _leaveService.CreateLeaveRequestAsync(new LeaveRequestDto
-                {
-                    EmployeeId = employeeId,
-                    LeaveTypeId = _leaveService.GetLeaveTypesAsync().Result.Data!.First().Id,
-                    StartDate = date,
-                    EndDate = date,
-                    Reason = "Auto Leave Marked",
-                    StatusId = Status.Approved,
-                    ApprovalNotes = "Auto Approved",
-                    ApprovedDate = DateTime.Now.Date
                 });
             }
         }

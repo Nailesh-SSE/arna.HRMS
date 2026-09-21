@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
@@ -63,10 +63,9 @@ public class LeaveService : ILeaveService
 
         dtos = dtos.Select(leave =>
         {
+            // Bug 8 FIX: Use ceiling to avoid truncating leave days (7/2 was 3, now 4)
             if (isFirstHalf)
-                leave.MaxPerYear = leave.MaxPerYear / 2;
-            else
-                leave.MaxPerYear = leave.MaxPerYear;
+                leave.MaxPerYear = (int)Math.Ceiling(leave.MaxPerYear / 2.0);
 
             return leave;
         }).ToList();
@@ -258,10 +257,19 @@ public class LeaveService : ILeaveService
             : ServiceResult<bool>.Fail("Failed to cancel leave.");
     }
 
-    public async Task<ServiceResult<bool>>RevokeLeaveRequestAsync(int employeeId, DateTime FromDate, DateTime ToDate)
+    // Bug 9 FIX: Now processes the entire date range instead of ignoring ToDate
+    public async Task<ServiceResult<bool>> RevokeLeaveRequestAsync(int employeeId, DateTime FromDate, DateTime ToDate)
     {
-        var revoked = await _leaveRepository.EmployeeWorkedOnDateAsync(employeeId, FromDate);
-        return revoked
+        bool allRevoked = true;
+
+        for (var date = FromDate.Date; date <= ToDate.Date; date = date.AddDays(1))
+        {
+            var revoked = await _leaveRepository.EmployeeWorkedOnDateAsync(employeeId, date);
+            if (!revoked)
+                allRevoked = false;
+        }
+
+        return allRevoked
             ? ServiceResult<bool>.Success(true, "Leave revoked successfully.")
             : ServiceResult<bool>.Fail("Failed to revoke leave. Employee may not be on leave for the specified dates.");
     }

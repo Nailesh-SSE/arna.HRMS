@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Repository;
@@ -26,9 +26,13 @@ public class AttendanceRepository
 
     public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId)
     {
+        // Perf 4: Default to last 6 months to avoid loading entire history
+        var sixMonthsAgo = DateTime.Today.AddMonths(-6);
+
         var query = _baseRepository.Query()
+            .AsNoTracking()
             .Include(x => x.Employee)
-            .Where(x => x.IsActive && !x.IsDeleted);
+            .Where(x => !x.IsDeleted && x.Date >= sixMonthsAgo);
 
         if (status.HasValue)
             query = query.Where(x => x.StatusId == status.Value); 
@@ -44,7 +48,8 @@ public class AttendanceRepository
     public async Task<Attendance?> GetAttendanceByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted && x.Id == id)
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.Id == id)
             .FirstOrDefaultAsync();
     }
 
@@ -72,9 +77,12 @@ public class AttendanceRepository
         var startDate = selectedDate?.Date ?? new DateTime(finalYear, finalMonth, 1);
         var endDate = selectedDate?.Date ?? startDate.AddMonths(1).AddDays(-1);
 
+        // Perf 2: Include Employee in the query to avoid separate N+1 fetch
         var baseQuery = _baseRepository.Query()
-            .Where(a => a.IsActive && !a.IsDeleted &&
-                        a.Employee.IsActive && !a.Employee.IsDeleted &&
+            .AsNoTracking()
+            .Include(a => a.Employee)
+            .Where(a => !a.IsDeleted &&
+                        !a.Employee.IsDeleted &&
                         a.Date >= startDate && a.Date <= endDate);
 
         if (empId.HasValue && empId > 0)
@@ -224,6 +232,7 @@ public class AttendanceRepository
     public async Task<DateTime?> GetLastAttendanceDateAsync(int employeeId)
     {
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(x =>
                 x.IsActive &&
                 !x.IsDeleted &&
@@ -234,13 +243,18 @@ public class AttendanceRepository
             .FirstOrDefaultAsync();
     }
 
+    // Bug 3 FIX: Added a.Date.Date == today filter — previously returned stale data from any day
     public async Task<Attendance?> GetLastAttendanceTodayAsync(int employeeId)
     {
+        var today = DateTime.Today;
+
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(a =>
                 a.IsActive &&
                 !a.IsDeleted &&
                 a.EmployeeId == employeeId &&
+                a.Date.Date == today &&
                 (
                     a.StatusId == AttendanceStatus.Present ||
                     a.StatusId == AttendanceStatus.Late ||
@@ -257,6 +271,7 @@ public class AttendanceRepository
         var today = DateTime.Today;
 
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(a =>
                 a.IsActive &&
                 !a.IsDeleted &&
@@ -277,7 +292,6 @@ public class AttendanceRepository
             .FirstOrDefaultAsync(ar =>
                 ar.Date == date &&
                 ar.EmployeeId == empId &&
-                ar.IsActive &&
                 !ar.IsDeleted);
 
         if (entity == null)
@@ -293,32 +307,41 @@ public class AttendanceRepository
 
     #region Helpers
 
+    // Bug 7 FIX: Check actual attendance records BEFORE holiday/weeklyoff status
+    // so that employees who worked on a holiday show as "Present" not "Holiday"
     private static string CalculateStatus(
         IEnumerable<AttendanceStatus> statuses,
         bool isFestivalHoliday,
         DateOnly date)
     {
-        var hasAttendance = statuses.Any();
+        // Materialize once to avoid multiple enumerations
+        var statusList = statuses as IList<AttendanceStatus> ?? statuses.ToList();
+        var hasAttendance = statusList.Count > 0;
 
-        if (isFestivalHoliday)
+        // Check for actual work records first — if they clocked in, they're present
+        if (statusList.Contains(AttendanceStatus.Present))
+            return "Present";
+
+        if (statusList.Contains(AttendanceStatus.Late))
+            return "Late";
+
+        if (statusList.Contains(AttendanceStatus.HalfDay))
+            return "HalfDay";
+
+        // Only show Holiday/WeeklyOff if no actual work was done
+        if (isFestivalHoliday && !hasAttendance)
             return "Holiday";
 
         if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday && !hasAttendance)
             return "WeeklyOff";
 
-        if (statuses.Contains(AttendanceStatus.Present))
-            return "Present";
+        if (isFestivalHoliday)
+            return "Holiday";
 
-        if (statuses.Contains(AttendanceStatus.Late))
-            return "Late";
-
-        if (statuses.Contains(AttendanceStatus.HalfDay))
-            return "HalfDay";
-
-        if (statuses.Contains(AttendanceStatus.Leave))
+        if (statusList.Contains(AttendanceStatus.Leave))
             return "Leave";
 
-        if (statuses.Contains(AttendanceStatus.Absent))
+        if (statusList.Contains(AttendanceStatus.Absent))
             return "Absent";
 
         return string.Empty;

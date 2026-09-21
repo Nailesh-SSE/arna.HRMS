@@ -29,7 +29,13 @@ public class TableSchemas
         new() { Header = "Name", Value = d => d.Name },
         new() { Header = "Code", Value = d => d.Code },
         new() { Header = "Description", Value = d => d.Description },
-        new() { Header = "Parent Department", Value = d => d.ParentDepartMentName }
+        new() { Header = "Parent Department", Value = d => d.ParentDepartMentName },
+        new()
+        {
+            Header = "STATUS",
+            Value = d => d.IsActive ? "Active" : "Inactive",
+            CssClassFunc = d => d.IsActive ? "badge bg-success" : "badge bg-danger"
+        }
     };
 
     // EMPLOYEES TABLE
@@ -54,7 +60,13 @@ public class TableSchemas
     public static List<TableColumn<RoleViewModel>> Roles = new()
     {
         new() { Header = "Name", Value = r => r.Name },
-        new() { Header = "Description", Value = r => r.Description }
+        new() { Header = "Description", Value = r => r.Description },
+        new()
+        {
+            Header = "STATUS",
+            Value = r => r.IsActive ? "Active" : "Inactive",
+            CssClassFunc = r => r.IsActive ? "badge bg-success" : "badge bg-danger"
+        }
     };
 
     // LEAVE TABLE
@@ -74,13 +86,19 @@ public class TableSchemas
         new()
         {
             Header = "Description",
-            Value = u => u.Description ?? "—"
+            Value = u => u.Description ?? "-"
         },
         new()
         {
             Header = "Is Paid",
             Value = u => u.IsPaid ? "Yes" : "No"
         },
+        new()
+        {
+            Header = "STATUS",
+            Value = u => u.IsActive ? "Active" : "Inactive",
+            CssClassFunc = u => u.IsActive ? "badge bg-success" : "badge bg-danger"
+        }
     };
 
     public static List<TableColumn<LeaveRequestViewModel>> LeaveRequest = new()
@@ -94,6 +112,12 @@ public class TableSchemas
         new() { Header = "ApprovedBy", Value = u => u.ApprovedByName },
         new() { Header = "Start Date", Value = u => u.StartDate.ToString("dd MMM yyyy") },
         new() { Header = "End Date", Value = u => u.EndDate.Date.ToString("dd MMM yyyy") },
+        new()
+        {
+            Header = "STATUS",
+            Value = u => u.IsActive ? "Active" : "Inactive",
+            CssClassFunc = u => u.IsActive ? "badge bg-success" : "badge bg-danger"
+        }
     };
 
     public static List<TableColumn<LeaveRequestViewModel>> DashboardPendingLeaves = new()
@@ -120,7 +144,7 @@ public class TableSchemas
         new()
         {
             Header = "Duration",
-            Value = u => $"{u.StartDate:MMM dd} – {u.EndDate:MMM dd}"
+            Value = u => $"{u.StartDate:MMM dd} - {u.EndDate:MMM dd}"
         },
         new()
         {
@@ -170,7 +194,13 @@ public class TableSchemas
                         ? (f.Description.Length > 40
                             ? f.Description[..40] + "..."
                             : f.Description)
-                        : "—"
+                        : "-"
+        },
+        new()
+        {
+            Header = "STATUS",
+            Value = f => f.IsActive ? "Active" : "Inactive",
+            CssClassFunc = f => f.IsActive ? "badge bg-success" : "badge bg-danger"
         }
     };
 
@@ -204,6 +234,12 @@ public class TableSchemas
         new() { Header = "Clock Out",       Value = u => u.ClockOut?.ToString(@"hh\:mm tt") ?? "-" },
         new() { Header = "Reason",          Value = u => u.ReasonTypeId },
         new() { Header = "Status",          Value = u => u.StatusId.ToString() },
+        new()
+        {
+            Header = "STATUS",
+            Value = u => u.IsActive ? "Active" : "Inactive",
+            CssClassFunc = u => u.IsActive ? "badge bg-success" : "badge bg-danger"
+        }
     };
 
     public static List<TableColumn<MonthlyAttendanceViewModel>> EmployeesAttendanceDetail => new()
@@ -211,7 +247,7 @@ public class TableSchemas
         new() { Header = "Emp#", Value = u => u.Employees.FirstOrDefault()?.EmployeeNumber},
         new() { Header = "Name", Value = u => u.Employees.FirstOrDefault()?.EmployeeName},
         new() { Header = "Date",      Value = u => u.Date.ToString("dd MMM yyyy") },
-        new() { Header = "Attendance",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
+        new() { Header = "Attendance",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "ï¿½" },
         new() { Header = "Clock In",  Value = u => FormatClockTime(u.Employees.FirstOrDefault()) },
         new() { Header = "Clock Out", Value = u => FormatClockOutTime(u.Employees.FirstOrDefault()) },
         new()
@@ -234,7 +270,7 @@ public class TableSchemas
                         $"""
                         <tr>
                             <td class="pe-4">
-                                {b.BreakStart:hh\:mm\:ss} – {b.BreakEnd:hh\:mm\:ss}
+                                {b.BreakStart:hh\:mm\:ss} ï¿½ {b.BreakEnd:hh\:mm\:ss}
                             </td>
                         
                             <td class="text-end fw-semibold">
@@ -265,7 +301,7 @@ public class TableSchemas
     public static List<TableColumn<MonthlyAttendanceViewModel>> EmployeeAttendence = new()
     {
         new() { Header = "Date",      Value = u => u.Date.ToString("dd MMM yyyy") },
-        new() { Header = "Attendance",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "—" },
+        new() { Header = "Attendance",    Value = u => u.Employees.FirstOrDefault()?.Status ?? "ï¿½" },
         new() { Header = "Clock In",  Value = u => FormatClockTime(u.Employees.FirstOrDefault()) },
         new() { Header = "Clock Out", Value = u => FormatClockOutTime(u.Employees.FirstOrDefault()) },
         new()
@@ -288,7 +324,7 @@ public class TableSchemas
                         $"""
                         <tr>
                             <td class="pe-4">
-                                {b.BreakStart:hh\:mm\:ss} – {b.BreakEnd:hh\:mm\:ss}
+                                {b.BreakStart:hh\:mm\:ss} ï¿½ {b.BreakEnd:hh\:mm\:ss}
                             </td>
                         
                             <td class="text-end fw-semibold">
@@ -369,7 +405,7 @@ public class TableSchemas
     {
         new() {Header = "Employee Name" , Value = u => u.EmployeeName},
         new() { Header = "Date", Value = u => u.AttendanceDate.ToString("dd MMM yyyy") },
-        new() { Header = "Day", Value = u => u.Day ?? "—" },
+        new() { Header = "Day", Value = u => u.Day ?? "ï¿½" },
         new() { Header = "Clock In", Value = u => u.ClockIn?.ToString(@"hh\:mm") ?? "--" },
         new() { Header = "Clock Out", Value = u => u.ClockOut?.ToString(@"hh\:mm") ?? "--" },
         new() { Header = "Break", Value = u => u.BreakDuration?.ToString(@"hh\:mm") ?? "--" },
@@ -377,10 +413,10 @@ public class TableSchemas
         new() { Header = "Total Hours", Value = u => u.TotalHours?.ToString(@"hh\:mm") ?? "--" },
         new() { Header = "Latitude", Value = u => u.Latitude?.ToString("F3")},
         new() { Header = "Longitude", Value = u => u.Longitude?.ToString("F3")},
-        new() { Header = "Status", Value = u => u.AttendanceStatus?.ToString() ?? "—"},
+        new() { Header = "Status", Value = u => u.AttendanceStatus?.ToString() ?? "ï¿½"},
         new() { Header = "Device", Value = u => u.Devices != null && u.Devices.Any()
                         ? string.Join(", ", u.Devices.Select(d => FormatDevice(d)))
-                        : "—"
+                        : "ï¿½"
                 }
     };
     private static string FormatDevice(DeviceType device) => device switch
@@ -423,7 +459,7 @@ public class TableSchemas
                     $"""
                     <tr>
                         <td class="pe-4">
-                            {b.BreakStart:hh\:mm\:ss} – {b.BreakEnd:hh\:mm\:ss}
+                            {b.BreakStart:hh\:mm\:ss} ï¿½ {b.BreakEnd:hh\:mm\:ss}
                         </td>
 
                         <td class="text-end fw-semibold">
@@ -465,7 +501,7 @@ public class TableSchemas
         new() {Header = "EmployeeNumber" , Value = u => u.EmployeeNumber},
         new() {Header = "EmployeeName" , Value = u => u.EmployeeName},
         new () {Header = "LeaveType" , Value = u => (LeaveName)u.LeaveNameId},
-        new () {Header = "Reason" , Value = u => u.Reason ?? "—"},
+        new () {Header = "Reason" , Value = u => u.Reason ?? "ï¿½"},
         new () {Header = "StartDate" , Value = u => u.StartDate.ToString("dd MMM yyyy")},
         new () {Header = "EndDate" , Value = u => u.EndDate.ToString("dd MMM yyyy")},
         new () {Header = "TotalDays" , Value = u => u.LeaveDays},
@@ -483,7 +519,7 @@ public class TableSchemas
     private static string TruncateText(string? text, int maxLength)
     {
         if (string.IsNullOrWhiteSpace(text)) return "--";
-        return text.Length <= maxLength ? text : $"{text[..maxLength]}…";
+        return text.Length <= maxLength ? text : $"{text[..maxLength]}ï¿½";
     }
 
     private static EmployeeDailyAttendanceViewModel? GetEmp(MonthlyAttendanceViewModel day, int empId)

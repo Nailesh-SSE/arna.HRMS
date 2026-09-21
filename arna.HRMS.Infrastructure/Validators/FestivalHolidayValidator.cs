@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 
@@ -28,8 +28,8 @@ public class FestivalHolidayValidator
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid FestivalHoliday ID");
 
-        var exist = _repository.GetFestivalHolidayByIdAsync(dto.Id);
-        if (exist.Result == null)
+        var exist = await _repository.GetFestivalHolidayByIdAsync(dto.Id);
+        if (exist == null)
             return ValidationResult.Fail("no such Date found");
 
         return await ValidateCommonAsync(dto);

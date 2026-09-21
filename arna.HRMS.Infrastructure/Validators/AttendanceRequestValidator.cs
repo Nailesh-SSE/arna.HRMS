@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
@@ -35,8 +35,8 @@ public class AttendanceRequestValidator
             return ValidationResult.Fail("Invalid Attendance Request ID");
         if (dto.EmployeeId > 0)
         {
-            var exits = _repository.GetAttendanceRequestByIdAsync(dto.Id);
-            if (exits.Result == null)
+            var exits = await _repository.GetAttendanceRequestByIdAsync(dto.Id);
+            if (exits == null)
                 return ValidationResult.Fail("No Data Found");
         }
 
@@ -51,8 +51,8 @@ public class AttendanceRequestValidator
         if (id <= 0)
             return ValidationResult.Fail("Invalid AttendanceRequest ID");
 
-        var exist = _repository.GetAttendanceRequestByIdAsync(id);
-        if (exist.Result == null)
+        var exist = await _repository.GetAttendanceRequestByIdAsync(id);
+        if (exist == null)
             return ValidationResult.Fail("Invalid Attendance Request ID");
 
         if (status == Status.Cancelled)

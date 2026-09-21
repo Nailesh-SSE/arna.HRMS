@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +26,7 @@ public class DepartmentRepositoryTests
     }
 
     [Test]
-    public async Task GetDepartmentAsync_ShouldReturnOnlyActiveDepartments()
+    public async Task GetDepartmentAsync_ShouldExcludeDeletedDepartments()
     {
         _dbContext.Departments.AddRange(
             new Department
@@ -59,8 +59,8 @@ public class DepartmentRepositoryTests
 
         var result = await _departmentRepository.GetDepartmentsAsync();
 
-        Assert.That(result.Count(), Is.EqualTo(1));
-        Assert.That(result.First().Name, Is.EqualTo("ActiveDept"));
+        Assert.That(result.Count(), Is.EqualTo(2));
+        Assert.That(result.Any(d => d.Name == "DeletedDept"), Is.False);
     }
 
     [Test]
@@ -137,7 +137,7 @@ public class DepartmentRepositoryTests
     }
 
     [Test]
-    public async Task GetDepartmentAsync_ShouldExcludeInactiveWithParent()
+    public async Task GetDepartmentAsync_ShouldIncludeInactiveDepartment_WhenNotDeleted()
     {
         var parent = new Department
         {
@@ -166,7 +166,7 @@ public class DepartmentRepositoryTests
 
         var result = await _departmentRepository.GetDepartmentsAsync();
 
-        Assert.That(result.Any(d => d.Name == "InactiveChild"), Is.False);
+        Assert.That(result.Any(d => d.Name == "InactiveChild" && !d.IsActive), Is.True);
     }
 
     [Test]
@@ -199,7 +199,7 @@ public class DepartmentRepositoryTests
     }
 
     [Test]
-    public async Task GetDepartmentByIdAsync_WhenInactive_ReturnsNull()
+    public async Task GetDepartmentByIdAsync_WhenInactive_ReturnsDepartment()
     {
         var department = new Department
         {
@@ -215,7 +215,8 @@ public class DepartmentRepositoryTests
 
         var result = await _departmentRepository.GetDepartmentByIdAsync(department.Id);
 
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.IsActive, Is.False);
     }
 
     [Test]

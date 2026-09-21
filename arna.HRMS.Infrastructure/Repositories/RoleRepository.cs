@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +16,8 @@ public class RoleRepository
     public async Task<List<Role>> GetRolesAsync()
     {
         return await _baseRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
@@ -24,7 +25,8 @@ public class RoleRepository
     public async Task<Role?> GetRoleByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
     }
 
     public async Task<Role?> GetRoleByNameAsync(string name)
@@ -56,7 +58,6 @@ public class RoleRepository
         var role = await _baseRepository.Query()
             .FirstOrDefaultAsync(x =>
                 x.Id == id &&
-                x.IsActive &&
                 !x.IsDeleted);
 
         if (role == null)
@@ -78,7 +79,7 @@ public class RoleRepository
         name = name.Trim().ToLower();
 
         return await _baseRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .Where(x => !x.IsDeleted)
             .AnyAsync(x =>
                 x.Id != id &&
                 x.Name.Trim().ToLower() == name);

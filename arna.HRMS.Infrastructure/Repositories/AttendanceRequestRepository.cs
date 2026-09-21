@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +17,7 @@ public class AttendanceRequestRepository
     public async Task<List<AttendanceRequest>> GetAttendanceRequests(int? employeeId, Status? status)
     {
         var query = _baseRepository.Query()
-            .Where(ar => ar.IsActive && !ar.IsDeleted);
+            .Where(ar => !ar.IsDeleted);
 
         if (employeeId.HasValue)
             query = query.Where(ar => ar.EmployeeId == employeeId.Value);
@@ -46,7 +46,7 @@ public class AttendanceRequestRepository
     public async Task<AttendanceRequest?> GetAttendanceRequestByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(ar => ar.Id == id && ar.IsActive && !ar.IsDeleted)
+            .Where(ar => ar.Id == id && !ar.IsDeleted)
             .Include(ar => ar.Employee)
             .FirstOrDefaultAsync();
     }
@@ -66,7 +66,6 @@ public class AttendanceRequestRepository
         var entity = await _baseRepository.Query()
             .FirstOrDefaultAsync(ar =>
                 ar.Id == id &&
-                ar.IsActive &&
                 !ar.IsDeleted);
 
         if (entity == null)
@@ -85,7 +84,6 @@ public class AttendanceRequestRepository
         var entity = await _baseRepository.Query()
             .FirstOrDefaultAsync(ar =>
                 ar.Id == id &&
-                ar.IsActive &&
                 !ar.IsDeleted);
 
         if (entity == null)
@@ -106,7 +104,6 @@ public class AttendanceRequestRepository
             .FirstOrDefaultAsync(ar =>
                 ar.Id == id &&
                 ar.EmployeeId == employeeId &&
-                ar.IsActive &&
                 !ar.IsDeleted);
 
         if (entity == null || entity.StatusId != Status.Pending)
