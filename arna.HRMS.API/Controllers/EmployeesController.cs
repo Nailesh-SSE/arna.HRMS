@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace arna.HRMS.API.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("api/[controller]")]
 public class EmployeesController : ControllerBase
 {
