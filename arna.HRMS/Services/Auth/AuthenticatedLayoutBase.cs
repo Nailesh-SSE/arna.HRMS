@@ -43,15 +43,37 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     {
         try
         {
-            AuthProvider.AuthenticationStateChanged += HandleAuthStateChanged;
-            await LoadUserAsync();
-            IsInitialized = true;
+            if (!IsInitialized)
+            {
+                AuthProvider.AuthenticationStateChanged += HandleAuthStateChanged;
+                await LoadUserAsync();
+                IsInitialized = true;
+            }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error during layout initialization");
         }
     }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        try
+        {
+            if (!IsInitialized)
+            {
+                AuthProvider.AuthenticationStateChanged += HandleAuthStateChanged;
+                await LoadUserAsync();
+                IsInitialized = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during OnParametersSetAsync in AuthenticatedLayoutBase");
+        }
+    }
+
 
     // MUST be async void (event handler pattern)
     private async void HandleAuthStateChanged(Task<AuthenticationState> task)
@@ -110,17 +132,36 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     {
         User = user;
 
-        int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out _userId);
         int.TryParse(
-            user.FindFirst("EmployeeId")?.Value ?? user.FindFirst("employeeId")?.Value,
+            user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? user.FindFirst("nameid")?.Value
+            ?? user.FindFirst("UserId")?.Value
+            ?? user.FindFirst("userId")?.Value
+            ?? user.FindFirst("id")?.Value,
+            out _userId);
+
+        int.TryParse(
+            user.FindFirst("EmployeeId")?.Value 
+            ?? user.FindFirst("employeeId")?.Value,
             out _employeeId);
 
-        // ✅ FIX: Moved all assignments INSIDE a clear scope — the original code had a
-        // misplaced brace that made it look like assignments were inside the if-block
-        // but they were actually always executed. Made explicit now for clarity.
-        _userName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-        _userFullName = user.FindFirst("FullName")?.Value ?? string.Empty;
-        _role = user.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
+        _userName = user.FindFirst(ClaimTypes.Name)?.Value 
+            ?? user.FindFirst("unique_name")?.Value
+            ?? user.FindFirst("name")?.Value
+            ?? user.FindFirst("Username")?.Value
+            ?? string.Empty;
+
+        _userFullName = user.FindFirst("FullName")?.Value 
+            ?? user.FindFirst("fullName")?.Value 
+            ?? user.FindFirst("name")?.Value 
+            ?? string.Empty;
+
+        _role = user.FindFirst(ClaimTypes.Role)?.Value 
+            ?? user.FindFirst("role")?.Value 
+            ?? user.FindFirst("Role")?.Value 
+            ?? user.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value 
+            ?? string.Empty;
+
         _isAuthenticated = user.Identity?.IsAuthenticated ?? false;
 
         if (!_isAuthenticated)
@@ -191,13 +232,29 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     // ==============================
 
     protected bool IsSuperAdmin()
-        => GetUserRole() == Models.Enums.UserRole.SuperAdmin.ToString();
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "Super Admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.SuperAdmin.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
 
     protected bool IsAdmin()
-        => GetUserRole() == Models.Enums.UserRole.Admin.ToString();
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "Administrator", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.Admin.ToString(), StringComparison.OrdinalIgnoreCase)
+            || IsSuperAdmin();
+    }
 
     protected bool IsEmployee()
-        => GetUserRole() == Models.Enums.UserRole.Employee.ToString();
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "Employee", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.Employee.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
 
     // ==============================
     // Dispose

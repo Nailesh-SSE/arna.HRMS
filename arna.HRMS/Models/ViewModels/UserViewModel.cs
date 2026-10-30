@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
@@ -16,10 +16,8 @@ public class UserViewModel : CommonViewModel
     [MaxLength(255)]
     public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Password is required")]
-    [MinLength(6, ErrorMessage = "Password must be at least 6 characters")]
     [MaxLength(100)]
-    public string Password { get; set; } = string.Empty;
+    public string? Password { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "First name is required")]
     [MaxLength(50)]

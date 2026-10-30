@@ -1,31 +1,13 @@
-﻿/* ── Mobile clock bar — a bit more breathing room ── */
-.header-clock-bar {
-    background: #f8f9fa;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-}
 
-@media (min-width: 576px) {
-    .header-clock-bar {
-        padding-top: 0.55rem;
-        padding-bottom: 0.55rem;
-    }
-}
-
-/* ── Desktop header row — small bump ── */
-@media (min-width: 992px) {
-    .header-row {
-        min-height: 70px;
-    }
-}
 .header-root {
     position: sticky;
     top: 0;
     z-index: 1030;
+    background-color: #ffffff;
 }
 
 .header-row {
-    min-height: 48px;
+    min-height: 52px;
 }
 
 /* Tablet (≥ 576px) */
@@ -35,9 +17,10 @@
     }
 }
 
+/* Desktop (≥ 992px) */
 @media (min-width: 992px) {
     .header-row {
-        min-height: 67.2px;
+        min-height: 58px;
     }
 }
 
@@ -124,17 +107,4 @@
     height: 24px;
 }
 
-/* Mobile */
-.header-clock-bar {
-    background: #f8f9fb;
-    padding-top: 0.35rem;
-    padding-bottom: 0.35rem;
-}
 
-/* Tablet */
-@media (min-width: 576px) {
-    .header-clock-bar {
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-    }
-}

@@ -1,174 +1,183 @@
-﻿@typeparam TItem
+@typeparam TItem
 
-<!-- ══════════ CALENDAR CARD ══════════ -->
-<div class="card border-0 shadow-sm rounded-3">
+<!-- ══════════ CALENDAR GRID & LEGEND ══════════ -->
+<div class="w-100">
 
-    <!-- Header with Nav -->
-    <div class="card-header bg-transparent border-bottom py-3">
-        <div class="d-flex align-items-center justify-content-between">
-
-            <button class="btn btn-sm btn-outline-primary rounded-circle"
-                    @onclick="PrevMonth">
-                <i class="bi bi-chevron-left"></i>
-            </button>
-
-            <h6 class="fw-bold mb-0 text-primary">
-                <i class="bi bi-calendar3 me-2"></i>
-                @(new DateTime(Year, Month, 1).ToString("MMMM yyyy"))
-            </h6>
-
-            <button class="btn btn-sm btn-outline-primary rounded-circle"
-                    @onclick="NextMonth">
-                <i class="bi bi-chevron-right"></i>
-            </button>
-
-        </div>
+    <!-- Weekday Headers -->
+    <div class="cal-grid mb-1 text-center">
+        @foreach (var (dayName, isWeekend) in weekDayHeaders)
+        {
+            <div class="fw-semibold small py-1 user-select-none @(isWeekend ? "text-danger" : "text-secondary")" style="font-size: 0.75rem;">
+                @dayName
+            </div>
+        }
     </div>
 
-    <div class="card-body p-3">
-
-        <!-- Day Headers -->
-        <div class="row g-0 mb-2">
-            @foreach (var dayName in dayNames)
-            {
-                <div class="col text-center">
-                    <small class="fw-bold text-muted text-uppercase">@dayName</small>
-                </div>
-            }
-        </div>
-
-        <!-- Calendar Grid -->
-        @foreach (var week in calendarWeeks)
+    <!-- 7-Column Days Grid -->
+    <div class="cal-grid">
+        <!-- Leading Prev-Month Days (Faded) -->
+        @foreach (var prevDay in leadingDays)
         {
-            <div class="row g-0">
-                @foreach (var day in week)
-                {
-                    var isCurrentMonth = day.Month == Month && day.Year == Year;
-                    var isToday = day.Date == DateTime.Today;
-                    var matchedItem = GetItemForDate(day);
-                    var hasItem = matchedItem != null;
-
-                    <div class="col">
-                        <div class="cal-cell @CellClass(isCurrentMonth, isToday, hasItem)"
-                             title="@(hasItem? GetTitle(matchedItem!) : "")"
-                             @onclick="() => OnDateClicked(day, matchedItem)">
-
-                            <!-- Day Number -->
-                            <span class="cal-day-num @(isToday ? "bg-primary text-white" : "")">
-                                @day.Day
-                            </span>
-
-                            <!-- Event Tag -->
-                            @if (hasItem && isCurrentMonth)
-                            {
-                                <div class="cal-event @EventClass"
-                                     title="@GetTitle(matchedItem!)">
-                                    <i class="@EventIcon me-1"></i>
-                                    <span class="cal-event-text">
-                                        @Truncate(GetTitle(matchedItem!), 12)
-                                    </span>
-                                </div>
-                            }
-
-                        </div>
-                    </div>
-                }
+            <div class="cal-cell-other-month d-flex flex-column align-items-center justify-content-start cal-cell-min p-1.5 user-select-none">
+                <span class="cal-day-num text-muted opacity-50 fw-medium">@prevDay.Day</span>
             </div>
         }
 
-        <!-- Legend -->
-        <div class="d-flex align-items-center gap-4 mt-3 pt-2 border-top">
-            <div class="d-flex align-items-center gap-1">
-                <span class="legend-dot bg-primary"></span>
-                <small class="text-muted">Today</small>
-            </div>
-            @if (!string.IsNullOrWhiteSpace(EventLegendLabel))
-            {
-                <div class="d-flex align-items-center gap-1">
-                    <span class="legend-dot @EventLegendDotClass"></span>
-                    <small class="text-muted">@EventLegendLabel</small>
-                </div>
-            }
-            <div class="ms-auto">
-                <small class="text-muted fw-medium">
-                    @currentMonthItemCount @(EventLegendLabel)(s) this month
-                </small>
-            </div>
-        </div>
+        <!-- Current Month Days -->
+        @foreach (var day in monthDays)
+        {
+            var isToday = day.Date == DateTime.Today;
+            var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+            var matchedItem = GetItemForDate(day);
+            var hasItem = matchedItem != null;
 
+            var cellBgClass = isToday 
+                ? "cal-today-cell" 
+                : hasItem 
+                    ? "cal-holiday-cell" 
+                    : isWeekend 
+                        ? "cal-weekend-cell" 
+                        : "bg-white";
+
+            <div class="card border rounded-2 p-1.5 d-flex flex-column align-items-center justify-content-between user-select-none cal-cell-min cal-day-item @cellBgClass"
+                 title="@(hasItem ? GetTitle(matchedItem!) : "")"
+                 @onclick="() => OnDateClicked(day, matchedItem)">
+
+                <!-- Day Number Header -->
+                <div class="w-100 text-center d-flex align-items-center justify-content-center" style="min-height: 20px;">
+                    @if (isToday)
+                    {
+                        <span class="cal-today-badge">@day.Day</span>
+                    }
+                    else
+                    {
+                        <span class="cal-day-num fw-semibold @(hasItem ? "text-danger fw-bold" : isWeekend ? "text-danger-emphasis opacity-75" : "text-dark")">
+                            @day.Day
+                        </span>
+                    }
+                </div>
+
+                <!-- Event / Holiday Tag -->
+                <div class="w-100 mt-1 d-flex flex-column align-items-center justify-content-center" style="min-height: 22px;">
+                    @if (hasItem)
+                    {
+                        <div class="cal-event-pill @EventClass w-100 text-truncate text-center"
+                             title="@GetTitle(matchedItem!)">
+                            <i class="@EventIcon me-1"></i>
+                            <span class="cal-event-text">
+                                @Truncate(GetTitle(matchedItem!), 14)
+                            </span>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        }
+
+        <!-- Trailing Next-Month Days (Faded) -->
+        @foreach (var nextDay in trailingDays)
+        {
+            <div class="cal-cell-other-month d-flex flex-column align-items-center justify-content-start cal-cell-min p-1.5 user-select-none">
+                <span class="cal-day-num text-muted opacity-50 fw-medium">@nextDay.Day</span>
+            </div>
+        }
     </div>
+
+    <!-- Legend -->
+    <div class="d-flex align-items-center flex-wrap gap-3 mt-3 pt-2 border-top small text-muted">
+        <div class="d-flex align-items-center gap-1.5">
+            <span class="cal-legend-dot bg-primary"></span>
+            <span style="font-size: 0.75rem;">Today</span>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(EventLegendLabel))
+        {
+            <div class="d-flex align-items-center gap-1.5">
+                <span class="cal-legend-dot @EventLegendDotClass"></span>
+                <span style="font-size: 0.75rem;">@EventLegendLabel</span>
+            </div>
+        }
+        <div class="d-flex align-items-center gap-1.5">
+            <span class="cal-legend-dot bg-secondary bg-opacity-25"></span>
+            <span style="font-size: 0.75rem;">Weekend</span>
+        </div>
+        <div class="ms-auto fw-medium text-dark" style="font-size: 0.75rem;">
+            @currentMonthItemCount @(EventLegendLabel)(s) this month
+        </div>
+    </div>
+
 </div>
 
 @code {
 
     [Parameter] public int Year { get; set; } = DateTime.Now.Year;
-
     [Parameter] public int Month { get; set; } = DateTime.Now.Month;
-
     [Parameter] public List<TItem> Items { get; set; } = new();
-
     [Parameter] public Func<TItem, DateTime> DateSelector { get; set; } = default!;
-
     [Parameter] public Func<TItem, string> TitleSelector { get; set; } = default!;
-
     [Parameter] public EventCallback<(int Year, int Month)> OnMonthChanged { get; set; }
-
     [Parameter] public EventCallback<DateTime> OnDateClick { get; set; }
 
     [Parameter] public string EventClass { get; set; } = "cal-event-danger";
-
     [Parameter] public string EventIcon { get; set; } = "bi bi-star-fill";
-
     [Parameter] public string EventLegendLabel { get; set; } = "Holiday";
-
     [Parameter] public string EventLegendDotClass { get; set; } = "bg-danger";
 
-    // ═══════════ STATE ═══════════
+    private readonly (string Name, bool IsWeekend)[] weekDayHeaders = new[]
+    {
+        ("Sun", true),
+        ("Mon", false),
+        ("Tue", false),
+        ("Wed", false),
+        ("Thu", false),
+        ("Fri", false),
+        ("Sat", true)
+    };
 
-    private readonly string[] dayNames = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-    private List<List<DateTime>> calendarWeeks = new();
+    private List<DateTime> leadingDays = new();
+    private List<DateTime> monthDays = new();
+    private List<DateTime> trailingDays = new();
     private Dictionary<DateTime, TItem> itemLookup = new();
     private int currentMonthItemCount;
 
-    // ═══════════ LIFECYCLE ═══════════
-
     protected override void OnParametersSet()
     {
-        BuildCalendar();
+        BuildCalendarGrid();
         BuildLookup();
     }
 
-    // ═══════════ BUILD ═══════════
-
-    private void BuildCalendar()
+    private void BuildCalendarGrid()
     {
-        calendarWeeks = new();
+        leadingDays.Clear();
+        monthDays.Clear();
+        trailingDays.Clear();
 
         var firstDay = new DateTime(Year, Month, 1);
-        var startDate = firstDay.AddDays(-(int)firstDay.DayOfWeek);
-        var lastDay = firstDay.AddMonths(1).AddDays(-1);
+        var daysInMonth = DateTime.DaysInMonth(Year, Month);
+        var lastDay = new DateTime(Year, Month, daysInMonth);
 
-        var current = startDate;
-
-        while (true)
+        // Leading days from previous month
+        var prevMonthOffset = (int)firstDay.DayOfWeek;
+        for (int i = prevMonthOffset; i > 0; i--)
         {
-            var week = new List<DateTime>();
+            leadingDays.Add(firstDay.AddDays(-i));
+        }
 
-            for (int i = 0; i < 7; i++)
+        // Current month days
+        for (int d = 1; d <= daysInMonth; d++)
+        {
+            monthDays.Add(new DateTime(Year, Month, d));
+        }
+
+        // Trailing days to complete multiple of 7
+        var totalCells = leadingDays.Count + monthDays.Count;
+        var remainder = totalCells % 7;
+        if (remainder > 0)
+        {
+            var trailingCount = 7 - remainder;
+            for (int i = 1; i <= trailingCount; i++)
             {
-                week.Add(current);
-                current = current.AddDays(1);
+                trailingDays.Add(lastDay.AddDays(i));
             }
-
-            calendarWeeks.Add(week);
-
-            // Stop after covering the last day of the month
-            if (current > lastDay && current.DayOfWeek == DayOfWeek.Sunday)
-                break;
-
-            // Safety: max 6 weeks
-            if (calendarWeeks.Count >= 6)
-                break;
         }
     }
 
@@ -193,8 +202,6 @@
             });
     }
 
-    // ═══════════ NAVIGATION ═══════════
-
     private async Task PrevMonth()
     {
         if (Month == 1)
@@ -207,7 +214,7 @@
             Month--;
         }
 
-        BuildCalendar();
+        BuildCalendarGrid();
         BuildLookup();
 
         await OnMonthChanged.InvokeAsync((Year, Month));
@@ -225,13 +232,11 @@
             Month++;
         }
 
-        BuildCalendar();
+        BuildCalendarGrid();
         BuildLookup();
 
         await OnMonthChanged.InvokeAsync((Year, Month));
     }
-
-    // ═══════════ HELPERS ═══════════
 
     private TItem? GetItemForDate(DateTime date)
     {
@@ -248,15 +253,6 @@
     {
         if (OnDateClick.HasDelegate)
             await OnDateClick.InvokeAsync(date);
-    }
-
-    private static string CellClass(bool isCurrentMonth, bool isToday, bool hasItem)
-    {
-        var css = "";
-        if (!isCurrentMonth) css += " cal-outside";
-        if (isToday) css += " cal-today";
-        if (hasItem && isCurrentMonth) css += " cal-holiday";
-        return css;
     }
 
     private static string Truncate(string text, int max) =>

@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.Enums
 @using arna.HRMS.Services.Auth
 @using arna.HRMS.Helper.Navigation
 @using System.Collections.Generic
@@ -33,14 +33,56 @@
 
                 @foreach (var item in menuSection.Value)
                 {
-                    var route = NavigationHelper.GetRouteForRole(item, _userRole);
-                    var isActive = IsActive(route, item.ExactMatch);
+                    @if (item.Children != null && item.Children.Count > 0)
+                    {
+                        var isExpanded = _expandedMenus.Contains(item.Id);
+                        var hasActiveChild = item.Children.Any(c => IsChildActive(c));
 
-                    <button class="navmenu-item @isActive" @onclick='() => GoTo(route)' title="@item.Label">
-                        <span class="navmenu-icon"><i class="@item.Icon"></i></span>
-                        <span class="navmenu-text">@item.Label</span>
-                        <span class="navmenu-indicator"></span>
-                    </button>
+                        <div class="navmenu-group mb-1">
+                            <button type="button" 
+                                    class="navmenu-item navmenu-parent-item @(hasActiveChild ? "active-parent" : "") @(isExpanded ? "expanded" : "")" 
+                                    @onclick="() => HandleParentClick(item)" 
+                                    title="@item.Label"
+                                    aria-expanded="@isExpanded">
+                                <span class="navmenu-icon"><i class="@item.Icon"></i></span>
+                                <span class="navmenu-text">@item.Label</span>
+                                <span class="navmenu-chevron" @onclick:stopPropagation="true" @onclick="() => ToggleMenu(item.Id)">
+                                    <i class="bi @(isExpanded ? "bi-chevron-down" : "bi-chevron-right")"></i>
+                                </span>
+                            </button>
+
+                            @if (isExpanded)
+                            {
+                                <div class="navmenu-submenu">
+                                    @foreach (var child in item.Children)
+                                    {
+                                        var childRoute = NavigationHelper.GetRouteForRole(child, _userRole);
+                                        var isChildActive = IsChildActive(child);
+
+                                        <button type="button"
+                                                class="navmenu-subitem @(isChildActive ? "active" : "")" 
+                                                @onclick="() => GoTo(childRoute)" 
+                                                title="@child.Label">
+                                            <span class="navmenu-subicon"><i class="@child.Icon"></i></span>
+                                            <span class="navmenu-subtext">@child.Label</span>
+                                            <span class="navmenu-subindicator"></span>
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        var route = NavigationHelper.GetRouteForRole(item, _userRole);
+                        var isActive = IsActive(route, item.ExactMatch);
+
+                        <button type="button" class="navmenu-item @isActive" @onclick='() => GoTo(route)' title="@item.Label">
+                            <span class="navmenu-icon"><i class="@item.Icon"></i></span>
+                            <span class="navmenu-text">@item.Label</span>
+                            <span class="navmenu-indicator"></span>
+                        </button>
+                    }
                 }
             }
         }
@@ -59,7 +101,7 @@
     private string _currentPath = "";
     private UserRole _userRole = UserRole.Employee;
     private IReadOnlyDictionary<string, List<NavMenuItem>> _menuItemsBySection = new Dictionary<string, List<NavMenuItem>>();
-
+    private HashSet<string> _expandedMenus = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,6 +114,7 @@
             _userRole = parsedRole;
         }
         InitializeMenuItems();
+        AutoExpandActiveMenus();
     }
 
     private void InitializeMenuItems()
@@ -82,7 +125,65 @@
     private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         _currentPath = GetRelativePath();
+        AutoExpandActiveMenus();
         InvokeAsync(StateHasChanged);
+    }
+
+    private void AutoExpandActiveMenus()
+    {
+        if (_menuItemsBySection == null) return;
+
+        foreach (var section in _menuItemsBySection.Values)
+        {
+            foreach (var item in section)
+            {
+                if (item.Children != null && item.Children.Count > 0)
+                {
+                    if (item.Children.Any(c => IsChildActive(c)))
+                    {
+                        _expandedMenus.Add(item.Id);
+                    }
+                }
+            }
+        }
+    }
+
+    private void HandleParentClick(NavMenuItem item)
+    {
+        _expandedMenus.Add(item.Id);
+
+        var route = "";
+        if (!string.IsNullOrEmpty(item.Route))
+        {
+            route = NavigationHelper.GetRouteForRole(item, _userRole);
+        }
+        else if (item.Children != null && item.Children.Count > 0)
+        {
+            route = NavigationHelper.GetRouteForRole(item.Children[0], _userRole);
+        }
+
+        if (!string.IsNullOrEmpty(route))
+        {
+            GoTo(route);
+        }
+    }
+
+    private void ToggleMenu(string menuId)
+    {
+        if (_expandedMenus.Contains(menuId))
+        {
+            _expandedMenus.Remove(menuId);
+        }
+        else
+        {
+            _expandedMenus.Add(menuId);
+        }
+    }
+
+    private bool IsChildActive(NavMenuItem child)
+    {
+        var childRoute = NavigationHelper.GetRouteForRole(child, _userRole);
+        return IsActive(childRoute, child.ExactMatch) == "active";
     }
 
     private string GetRelativePath()

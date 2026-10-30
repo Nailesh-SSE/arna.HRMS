@@ -1,0 +1,8 @@
+<div class="erp-form-layout-wrapper @CssClass">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

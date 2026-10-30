@@ -1,28 +1,36 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
-@using arna.HRMS.Components.Pages.Admin.LeaveManagement
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Common
 
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
+@inherits AuthenticatedLayoutBase
 
 <!-- TOOLBAR -->
-<div class="d-flex align-items-center justify-content-between mb-3">
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-        <h5 class="fw-semibold mb-0">
-            <i class="bi bi-bookmark-check text-primary me-1"></i>
+        <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
+            <span class="p-2 rounded-2 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                <i class="bi bi-bookmark-check-fill"></i>
+            </span>
             Leave Types
         </h5>
-        <small class="text-muted">Configure leave policies and entitlements</small>
+        <small class="text-muted">Configure corporate leave policies, annual allowances, and entitlements</small>
     </div>
-    <button class="btn btn-primary rounded-3"
-            @onclick="OpenCreateModal">
-        <i class="bi bi-plus-circle me-1"></i> Add Leave Type
-    </button>
+    @if (IsAdmin() || IsSuperAdmin())
+    {
+        <button class="btn btn-primary rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-2"
+                @onclick="CreateLeaveType">
+            <i class="bi bi-plus-lg"></i>
+            <span>Add Leave Type</span>
+        </button>
+    }
 </div>
 
 <!-- LEAVE TYPE CARDS -->
@@ -34,43 +42,38 @@
             var color = GetColor(idx);
 
             <div class="col-sm-6 col-lg-4 col-xl-3">
-                <div class="card border-0 shadow-sm rounded-3 h-100
-                            leave-type-card-hover">
-                    <div class="card-body">
+                <div class="card border-0 shadow-sm rounded-3 h-100 leave-type-card-hover" style="border: 1px solid #f1f5f9 !important;">
+                    <div class="card-body d-flex flex-column p-3">
 
                         <!-- Header -->
                         <div class="d-flex align-items-start justify-content-between mb-3">
-                            <div class="leave-type-icon bg-@color bg-opacity-10">
+                            <div class="leave-type-icon bg-@color bg-opacity-10 rounded-2 p-2 d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                 <i class="bi bi-calendar-check text-@color fs-5"></i>
                             </div>
-                            <div class="dropdown">
-                                <button class="btn btn-sm btn-light rounded-circle"
-                                        data-bs-toggle="dropdown">
-                                    <i class="bi bi-three-dots-vertical"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                    <li>
-                                        <button class="dropdown-item"
-                                                @onclick="() => EditLeaveType(lt)">
-                                            <i class="bi bi-pencil me-2"></i> Edit
-                                        </button>
-                                    </li>
-                                    <li><hr class="dropdown-divider" /></li>
-                                    <li>
-                                        <button class="dropdown-item text-danger"
-                                                @onclick="() => DeleteLeaveType(lt)">
-                                            <i class="bi bi-trash me-2"></i> Delete
-                                        </button>
-                                    </li>
-                                </ul>
-                            </div>
+                            @if (IsAdmin() || IsSuperAdmin())
+                            {
+                                <div class="d-flex align-items-center gap-1">
+                                    <button class="btn btn-sm btn-light rounded-circle text-primary"
+                                            title="Edit"
+                                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"
+                                            @onclick="() => EditLeaveType(lt.Id)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-light rounded-circle text-danger"
+                                            title="Delete"
+                                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"
+                                            @onclick="() => DeleteLeaveType(lt)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
                         </div>
 
                         <!-- Name -->
-                        <h6 class="fw-bold mb-1">@FormatName(lt.LeaveNameId.ToString())</h6>
+                        <h6 class="fw-bold mb-2 text-dark">@FormatName(lt.LeaveNameId.ToString())</h6>
 
-                        <!-- Info -->
-                        <div class="d-flex align-items-center gap-2 mb-2">
+                        <!-- Info Badges -->
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                             <span class="badge bg-@color bg-opacity-10 text-@color fw-semibold">
                                 @lt.MaxPerYear days/year
                             </span>
@@ -91,13 +94,18 @@
                         <!-- Description -->
                         @if (!string.IsNullOrWhiteSpace(lt.Description))
                         {
-                            <p class="text-muted small mb-2 leave-desc">
+                            <p class="text-muted small mb-3 leave-desc flex-grow-1" style="font-size: 0.8rem; line-height: 1.4;">
                                 @lt.Description
                             </p>
                         }
+                        else
+                        {
+                            <div class="flex-grow-1"></div>
+                        }
 
                         <!-- Status -->
-                        <div class="mt-auto">
+                        <div class="mt-auto pt-2 border-top d-flex align-items-center justify-content-between">
+                            <span class="text-muted" style="font-size: 0.75rem;">Status</span>
                             @if (lt.IsActive)
                             {
                                 <span class="badge bg-success bg-opacity-10 text-success">
@@ -124,33 +132,29 @@ else
         <div class="card-body text-center py-5">
             <i class="bi bi-bookmark-x fs-1 text-muted opacity-50 d-block mb-2"></i>
             <p class="text-muted mb-0">No leave types configured yet</p>
-            <button class="btn btn-outline-primary mt-3 rounded-pill"
-                    @onclick="OpenCreateModal">
-                <i class="bi bi-plus me-1"></i> Create First Leave Type
-            </button>
+            @if (IsAdmin() || IsSuperAdmin())
+            {
+                <button class="btn btn-primary mt-3 rounded-pill px-4"
+                        @onclick="CreateLeaveType">
+                    <i class="bi bi-plus me-1"></i> Create First Leave Type
+                </button>
+            }
         </div>
     </div>
 }
-
-
-<!-- MODAL -->
-<LeaveTypeModal ShowModal="showModal"
-                EditId="editId"
-                OnClose="CloseModal"
-                OnSaved="OnLeaveTypeSaved" />
 
 @code {
 
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
 
     private List<LeaveTypeViewModel> leaveTypes = new();
-    private bool showModal;
-    private int? editId;
 
     protected override async Task OnInitializedAsync()
     {
+        await base.OnInitializedAsync();
         await LoadLeaveTypes();
     }
+
 
     private async Task LoadLeaveTypes()
     {
@@ -168,39 +172,26 @@ else
         }
     }
 
-    private void OpenCreateModal()
-    {
-        editId = null;
-        showModal = true;
-    }
+    private void CreateLeaveType() => NavigationManager.NavigateTo("/leave-type/create");
 
-    private void EditLeaveType(LeaveTypeViewModel model)
-    {
-        editId = model.Id;
-        showModal = true;
-    }
-
-    private void CloseModal()
-    {
-        showModal = false;
-        editId = null;
-    }
-
-    private async Task OnLeaveTypeSaved()
-    {
-        CloseModal();
-        await LoadLeaveTypes();
-    }
+    private void EditLeaveType(int id) => NavigationManager.NavigateTo($"/leave-type/edit/{id}");
 
     private async Task DeleteLeaveType(LeaveTypeViewModel model)
     {
         bool ok = await JsRuntime.InvokeAsync<bool>(
-            "confirm", $"Delete '{FormatName(model.LeaveNameId.ToString())}'?");
+            "confirm", $"Are you sure you want to delete '{FormatName(model.LeaveNameId.ToString())}'?");
         if (!ok) return;
 
-        await LeaveService.DeleteLeaveTypeAsync(model.Id);
-        await NotificationService.Success("Leave type deleted.");
-        await LoadLeaveTypes();
+        var res = await LeaveService.DeleteLeaveTypeAsync(model.Id);
+        if (res?.IsSuccess == true)
+        {
+            await NotificationService.Success("Leave type deleted successfully.");
+            await LoadLeaveTypes();
+        }
+        else
+        {
+            await NotificationService.Error(res?.Message ?? "Unable to delete leave type.");
+        }
     }
 
     private static string FormatName(string name) =>

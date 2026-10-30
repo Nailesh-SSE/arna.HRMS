@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Forms
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels.Leave
@@ -49,27 +49,15 @@
                                     <AppDatePicker Label="Start Date *"
                                                    Value="@model.StartDate.Date"
                                                    ValueChanged="OnStartChanged"
-                                                   ValidationExpression="() => model.StartDate"
-                                                   IsDateDisabled="IsDateDisabled" />
+                                                   ValidationExpression="() => model.StartDate" />
                                 </div>
                                 <div class="col-md-6">
                                     <AppDatePicker Label="End Date *"
                                                    Value="@model.EndDate.Date"
                                                    ValueChanged="OnEndChanged"
-                                                   ValidationExpression="() => model.EndDate"
-                                                   IsDateDisabled="IsDateDisabled" />
-                                    </div>
+                                                   ValidationExpression="() => model.EndDate" />
                                 </div>
-
-                            <!-- Total Days Info -->
-                            @* @if (model.StartDate != default && model.EndDate != default)
-                            {
-                                <div class="alert alert-info bg-info bg-opacity-10 border-0
-                                                    rounded-3 py-2 mb-3">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    Total Days: <strong>@model.LeaveDays</strong>
-                                </div>
-                            } *@
+                            </div>
 
                             <!-- Reason -->
                             <div class="mb-1">
@@ -118,7 +106,6 @@
 
     [Parameter] public LeaveRequestViewModel? SelectedRequest { get; set; }
     [Parameter] public List<SelectOption> LeaveOptions { get; set; } = new();
-    [Parameter] public Func<DateTime, bool>? IsDateDisabled { get; set; }
 
     [Parameter] public EventCallback OnSaved { get; set; }
 
@@ -153,33 +140,52 @@
 
     private async Task Save()
     {
+        if (isSubmitting) return;
         isSubmitting = true;
 
-        if (IsEditMode)
+        try
         {
-            var result = await LeaveService.UpdateLeaveRequestAsync(model.Id, model);
-            if (result?.IsSuccess == true)
-                await NotificationService.Success("Leave updated successfully.");
-        }
-        else
-        {
-            var result = await LeaveService.CreateLeaveRequestAsync(model);
-
-            if (result?.IsSuccess == true)
+            if (IsEditMode)
             {
-                await NotificationService.Success("Leave submitted successfully.");
-                await Close();
-                await OnSaved.InvokeAsync();
+                var result = await LeaveService.UpdateLeaveRequestAsync(model.Id, model);
+                if (result?.IsSuccess == true)
+                {
+                    await NotificationService.Success("Leave updated successfully.");
+                    await Close();
+                    await OnSaved.InvokeAsync();
+                }
+                else
+                {
+                    await NotificationService.Error(result?.Message ?? "Failed to update leave.");
+                }
             }
             else
             {
-                await NotificationService.Error(result?.Message ?? "Failed to submit leave.");
+                if (model.EmployeeId <= 0)
+                    model.EmployeeId = GetEmployeeId();
+
+                var result = await LeaveService.CreateLeaveRequestAsync(model);
+
+                if (result?.IsSuccess == true)
+                {
+                    await NotificationService.Success("Leave submitted successfully.");
+                    await Close();
+                    await OnSaved.InvokeAsync();
+                }
+                else
+                {
+                    await NotificationService.Error(result?.Message ?? "Failed to submit leave.");
+                }
             }
         }
-
-        isSubmitting = false;
-        await Close();
-        await OnSaved.InvokeAsync();
+        catch (Exception ex)
+        {
+            await NotificationService.Error($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
     private async Task Close()

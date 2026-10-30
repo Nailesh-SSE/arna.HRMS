@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Enums;
+using arna.HRMS.Models.Enums;
 
 namespace arna.HRMS.Helper.Navigation;
 
@@ -28,32 +28,65 @@ public class NavigationHelper
         },
         new()
         {
-            Id = "attendance",
+            Id = "attendance-group",
             Label = "Attendance",
             Icon = "bi bi-calendar2-check-fill",
             Section = "Main",
-            Route = "/attendance",
-            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
+            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee },
+            Children = new()
+            {
+                new()
+                {
+                    Id = "attendance",
+                    Label = "Attendance",
+                    Icon = "bi bi-calendar-week",
+                    Route = "/attendance",
+                    AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
+                },
+                new()
+                {
+                    Id = "attendanceRequest",
+                    Label = "Attendance Requests",
+                    Icon = "bi bi-inbox-fill",
+                    Route = "/attendance-requests",
+                    AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
+                }
+            }
         },
-
         new()
         {
-            Id = "attendanceRequest",
-            Label = "Attendance Request",
-            Icon = "bi bi-calendar-check",
-            Section = "Main",
-            Route = "/admin-attendance-requests",
-            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager}
-        },
-
-        new()
-        {
-            Id = "leave-management",
-            Label = "Leave Management",
+            Id = "leave-group",
+            Label = "Leave",
             Icon = "bi bi-calendar-x-fill",
-            Section = "Leave",
-            Route = "/leave-management",
-            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Employee }
+            Section = "Main",
+            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee },
+            Children = new()
+            {
+                new()
+                {
+                    Id = "leaveTypes",
+                    Label = "Leave Types",
+                    Icon = "bi bi-bookmark-check",
+                    Route = "/leave-types",
+                    AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR }
+                },
+                new()
+                {
+                    Id = "leaveRequest",
+                    Label = "Leave Requests",
+                    Icon = "bi bi-inbox-fill",
+                    Route = "/leave-requests",
+                    AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
+                },
+                new()
+                {
+                    Id = "festivalHoliday",
+                    Label = "Festival Holidays",
+                    Icon = "bi bi-calendar-heart",
+                    Route = "/festival-holidays",
+                    AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
+                }
+            }
         },
         new()
         {
@@ -88,7 +121,7 @@ public class NavigationHelper
             Label = "Attendance Report",
             Icon = "bi bi-clipboard-data me-2",
             Section = "Report",
-            Route = "/report-management",
+            Route = "/admin-report-management",
             AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
         },
          new()
@@ -127,6 +160,30 @@ public class NavigationHelper
     {
         return _menuItems
             .Where(item => IsAccessible(item, role))
+            .Select(item =>
+            {
+                if (item.Children == null || item.Children.Count == 0)
+                    return item;
+
+                var filteredChildren = item.Children
+                    .Where(c => IsAccessible(c, role))
+                    .ToList();
+
+                return new NavMenuItem
+                {
+                    Id = item.Id,
+                    Label = item.Label,
+                    Icon = item.Icon,
+                    Section = item.Section,
+                    Route = item.Route,
+                    AllowedRoles = item.AllowedRoles,
+                    ExcludedRoles = item.ExcludedRoles,
+                    ExactMatch = item.ExactMatch,
+                    VisibilityCondition = item.VisibilityCondition,
+                    Children = filteredChildren
+                };
+            })
+            .Where(item => item.Children == null || item.Children.Count > 0 || !string.IsNullOrEmpty(item.Route))
             .ToList();
     }
 
@@ -148,22 +205,40 @@ public class NavigationHelper
     {
         return item.Id switch
         {
-            "leave-management" =>
+            "leave-group" or "leave-management" =>
                 role == UserRole.Employee
                     ? "/emp-leave-management"
                     : "/admin-leave-management",
 
-            "attendance" =>
+            "leaveTypes" =>
+                role == UserRole.Employee
+                    ? "/emp-leave-management"
+                    : "/admin-leave-types",
+
+            "leaveRequest" =>
+                role == UserRole.Employee
+                    ? "/emp-leave-management"
+                    : "/admin-leave-requests",
+
+            "festivalHoliday" =>
+                role == UserRole.Employee
+                    ? "/emp-festival-holidays"
+                    : "/admin-festival-holidays",
+
+            "attendance" or "attendance-group" =>
                 role == UserRole.Employee
                     ? "/emp-attendance-management"
                     : "/admin-attendance-management",
 
+            "attendanceRequest" =>
+                role == UserRole.Employee
+                    ? "/emp-attendance-requests"
+                    : "/admin-attendance-requests",
+
             "attendanceSummaryReport" => 
                 role == UserRole.Employee 
                     ? "/employee-report"
-                    : role == UserRole.SuperAdmin || role == UserRole.Admin
-                        ? "/admin-report-management"
-                        : "/report-management",
+                    : "/admin-report-management",
             
             _ => item.Route
         };
@@ -203,4 +278,5 @@ public class NavMenuItem
     public List<UserRole> ExcludedRoles { get; set; } = new();
     public bool ExactMatch { get; set; } = false;
     public Func<UserRole, bool>? VisibilityCondition { get; set; }
+    public List<NavMenuItem> Children { get; set; } = new();
 }

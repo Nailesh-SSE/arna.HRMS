@@ -1,0 +1,191 @@
+@page "/festival-holiday/create"
+@page "/festival-holiday/edit/{Id:int}"
+
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
+
+@inject IFestivalHolidayService FestivalHolidayService
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+
+<AppFormLayout>
+    <!-- ═══════════ 1. HEADER CARD ═══════════ -->
+    <AppFormHeader Title="@(IsEditMode ? "Edit Festival Holiday" : "Add New Festival Holiday")"
+                   Subtitle="@(IsEditMode ? $"Update holiday schedule and details for {model.FestivalName}." : "Register public, regional, or company-wide festival holidays.")"
+                   Icon="@(IsEditMode ? "bi-pencil-square" : "bi-calendar-plus")"
+                   BackText="Back to Leave Management"
+                   OnBack="GoBack" />
+
+    @if (_isLoading)
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-muted mb-0 small">Loading holiday data…</p>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="model" OnValidSubmit="HandleValidSubmit" class="erp-form-flex-container">
+            <DataAnnotationsValidator />
+
+            <!-- ═══════════ 2. FORM BODY ═══════════ -->
+            <div class="erp-form-scrollable-body">
+
+                <!-- 1. Holiday Information Section -->
+                <AppFormSection Title="Holiday Details"
+                                Subtitle="Festival identification, observance date, and description"
+                                Icon="bi-calendar-heart">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Festival / Holiday Name"
+                                      Icon="bi-balloon-heart"
+                                      IsRequired="true"
+                                      Placeholder="e.g. Diwali, Christmas, New Year..."
+                                      @bind-Value="model.FestivalName"
+                                      ValidationExpression="() => model.FestivalName" />
+                        </div>
+
+                        <div class="col-12 col-md-4">
+                            <AppDatePicker Label="Observance Date"
+                                           Icon="bi-calendar-event"
+                                           IsRequired="true"
+                                           Value="model.Date"
+                                           ValueChanged="d => model.Date = d ?? default"
+                                           ValidationExpression="() => model.Date" />
+                        </div>
+
+                        <div class="col-12 col-md-2">
+                            <label class="form-label fw-semibold text-dark" style="font-size: 0.8125rem;">Day of Week</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border" style="border-radius: 8px 0 0 8px;">
+                                    <i class="bi bi-calendar-day text-muted"></i>
+                                </span>
+                                <input type="text"
+                                       class="form-control bg-light border"
+                                       style="height: 38px; font-size: 0.825rem; font-weight: 600; color: #0f172a; border-radius: 0 8px 8px 0;"
+                                       value="@(model.Date != default ? model.Date.DayOfWeek.ToString() : "-")"
+                                       readonly />
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <AppTextArea Label="Description / Celebration Notes"
+                                         Icon="bi-card-text"
+                                         Rows="3"
+                                         Placeholder="Provide optional details about this festival, traditions, or office closure notice..."
+                                         @bind-Value="model.Description"
+                                         ValidationExpression="() => model.Description" />
+                        </div>
+                    </div>
+                </AppFormSection>
+
+                <!-- 2. Status Settings Section -->
+                <AppFormSection Title="Status Settings" Icon="bi-toggle-on">
+                    <AppSwitch @bind-Value="model.IsActive"
+                               Label="Active Holiday"
+                               HelpText="Active holidays will appear on corporate holiday calendars and employee dashboards." />
+                </AppFormSection>
+
+            </div>
+
+            <!-- ═══════════ 3. FIXED FOOTER ACTIONS ═══════════ -->
+            <AppFormFooter IsSubmitting="_isSubmitting"
+                           SubmitText="@(IsEditMode ? "Save Changes" : "Save Holiday")"
+                           OnCancel="GoBack" />
+        </EditForm>
+    }
+</AppFormLayout>
+
+@code {
+
+    // ═══════════ PARAMETERS ═══════════
+
+    [Parameter] public int? Id { get; set; }
+
+    // ═══════════ STATE ═══════════
+
+    private FestivalHolidayViewModel model = new();
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+    private bool IsEditMode => Id.HasValue;
+
+    // ═══════════ LIFECYCLE ═══════════
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+
+        if (IsEditMode)
+        {
+            var result = await FestivalHolidayService.GetFestivalHolidayByIdAsync(Id!.Value);
+            if (result?.IsSuccess == true && result.Data != null)
+            {
+                model = result.Data;
+            }
+            else
+            {
+                await NotificationService.Error(result?.Message ?? "Holiday not found.");
+                NavigationManager.NavigateTo("/admin-leave-management?tab=festivals");
+                return;
+            }
+        }
+        else
+        {
+            model = new FestivalHolidayViewModel
+            {
+                IsActive = true,
+                Date = DateTime.Today
+            };
+        }
+
+        _isLoading = false;
+    }
+
+    // ═══════════ FORM SUBMIT ═══════════
+
+    private async Task HandleValidSubmit()
+    {
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            bool isSuccess;
+            string? errorMessage;
+
+            if (IsEditMode)
+            {
+                var result = await FestivalHolidayService.UpdateFestivalHolidayAsync(Id!.Value, model);
+                isSuccess = result?.IsSuccess == true;
+                errorMessage = result?.Message;
+            }
+            else
+            {
+                var result = await FestivalHolidayService.CreateFestivalHolidayAsync(model);
+                isSuccess = result?.IsSuccess == true;
+                errorMessage = result?.Message;
+            }
+
+            if (!isSuccess)
+            {
+                await NotificationService.Error(errorMessage ?? (IsEditMode ? "Unable to update holiday." : "Unable to create holiday."));
+                return;
+            }
+
+            await NotificationService.Success(IsEditMode ? "Holiday updated successfully." : "Holiday created successfully.");
+            NavigationManager.NavigateTo("/admin-leave-management?tab=festivals");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    // ═══════════ NAVIGATION ═══════════
+
+    private void GoBack() => NavigationManager.NavigateTo("/admin-leave-management?tab=festivals");
+}

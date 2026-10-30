@@ -1,0 +1,33 @@
+<div class="erp-form-header-card @CssClass">
+    <div class="d-flex align-items-center gap-3">
+        @if (!string.IsNullOrWhiteSpace(Icon))
+        {
+            <div class="erp-header-icon-badge">
+                <i class="bi @Icon"></i>
+            </div>
+        }
+        <div>
+            <h3 class="erp-header-title">@Title</h3>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <p class="erp-header-subtitle">@Subtitle</p>
+            }
+        </div>
+    </div>
+    @if (ShowBackButton)
+    {
+        <button type="button" class="btn-erp-back" @onclick="OnBack">
+            <i class="bi bi-arrow-left"></i> @BackText
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public bool ShowBackButton { get; set; } = true;
+    [Parameter] public string BackText { get; set; } = "Back to List";
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnBack { get; set; }
+}

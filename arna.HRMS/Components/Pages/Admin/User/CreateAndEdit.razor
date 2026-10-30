@@ -15,259 +15,135 @@
 @inject NotificationService NotificationService
 @inject IRoleService RoleService
 
-<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
-
-    <!-- ═══════════ BACK + BREADCRUMB ═══════════ -->
-    <div class="d-flex align-items-center gap-2 mb-3 mb-md-4 flex-wrap">
-        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 user-form-back-btn"
-                @onclick="GoBack">
-            <i class="bi bi-arrow-left me-1"></i>
-            <span class="d-none d-sm-inline">Back</span>
-        </button>
-        <nav>
-            <ol class="breadcrumb mb-0 small">
-                <li class="breadcrumb-item">
-                    <a href="/user" class="text-decoration-none text-primary">Users</a>
-                </li>
-                <li class="breadcrumb-item active text-muted">
-                    @(IsEditMode ? "Edit" : "Create")
-                </li>
-            </ol>
-        </nav>
-    </div>
-
-    <!-- ═══════════ HEADER CARD ═══════════ -->
-    <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4 user-form-header">
-        <div class="card-body py-3 px-3 px-md-4">
-            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
-
-                <span class="user-form-header-icon rounded-2 p-2 d-inline-flex
-                             align-items-center justify-content-center flex-shrink-0
-                             @(IsEditMode ? "bg-warning bg-opacity-10 text-warning" : "bg-success bg-opacity-10 text-success")">
-                    <i class="bi @(IsEditMode ? "bi-pencil-square" : "bi-person-plus-fill") fs-5"></i>
-                </span>
-
-                <div>
-                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">
-                        @(IsEditMode ? "Edit User" : "Add New User")
-                    </h5>
-                    <p class="text-muted mb-0 small d-none d-sm-block">
-                        @(IsEditMode
-                                                ? $"Update details for {user.Username}"
-                                                : "Fill in the details below to add a new user")
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+<AppFormLayout>
+    <!-- ═══════════ 1. HEADER CARD ═══════════ -->
+    <AppFormHeader Title="@(IsEditMode ? "Edit User" : "Add New User")"
+                   Subtitle="@(IsEditMode ? $"Update credentials and role permissions for {user.Username}." : "Create a new user account, assign roles, and configure system permissions.")"
+                   Icon="@(IsEditMode ? "bi-pencil-square" : "bi-person-badge")"
+                   OnBack="GoBack" />
 
     @if (_isLoading)
     {
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body text-center py-4 py-md-5">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="text-muted mt-2 mb-0 small">Loading user data…</p>
-            </div>
+        <div class="card border-0 shadow-sm rounded-3 text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-muted mb-0 small">Loading user data…</p>
         </div>
     }
     else
     {
-        <EditForm Model="user" OnValidSubmit="HandleValidSubmit">
+        <EditForm Model="user" OnValidSubmit="HandleValidSubmit" class="erp-form-flex-container">
             <DataAnnotationsValidator />
 
-            <!-- ═══════════ ACCOUNT INFORMATION ═══════════ -->
-            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
-                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="user-form-section-icon bg-primary bg-opacity-10 text-primary
-                                         rounded-2 d-inline-flex align-items-center justify-content-center">
-                            <i class="bi bi-person-badge-fill"></i>
-                        </span>
-                        <div>
-                            <h6 class="fw-semibold mb-0 small">Account Information</h6>
-                            <small class="text-muted d-none d-md-block">
-                                User login and identification details
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body px-3 px-md-4 py-3">
+            <!-- ═══════════ 2. FORM BODY ═══════════ -->
+            <div class="erp-form-scrollable-body">
+
+                <!-- 1. Personal Details Section -->
+                <AppFormSection Title="Personal Details"
+                                Subtitle="Basic user identification and contact information"
+                                Icon="bi-person">
                     <div class="row g-3">
-
-                        <div class="col-12 col-md-6">
-                            <AppInput Label="Username"
-                                      Value="@user.Username"
-                                      ValueChanged="v => user.Username = v"
-                                      ValidationExpression="@(() => user.Username)" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <AppInput Label="Email"
-                                      Type="email"
-                                      Value="@user.Email"
-                                      ValueChanged="@(v => user.Email = v)"
-                                      ValidationExpression="@(() => user.Email)" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <AppSelect Label="Employee"
-                                       Options="@_employeeOption"
-                                       Value="@user.EmployeeId?.ToString()"
-                                       ValueChanged="v => user.EmployeeId = int.Parse(v!)"
-                                       ValidationExpression="@(() => user.EmployeeId)" />
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══════════ PERSONAL DETAILS ═══════════ -->
-            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
-                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="user-form-section-icon bg-info bg-opacity-10 text-info
-                                         rounded-2 d-inline-flex align-items-center justify-content-center">
-                            <i class="bi bi-person-lines-fill"></i>
-                        </span>
-                        <div>
-                            <h6 class="fw-semibold mb-0 small">Personal Details</h6>
-                            <small class="text-muted d-none d-md-block">
-                                Name and contact information
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body px-3 px-md-4 py-3">
-                    <div class="row g-3">
-
                         <div class="col-12 col-md-6">
                             <AppInput Label="First Name"
-                                      Value="@user.FirstName"
-                                      ValueChanged="@(v => user.FirstName = v)"
-                                      ValidationExpression="@(() => user.FirstName)" />
+                                      Icon="bi-person"
+                                      IsRequired="true"
+                                      Placeholder="Enter first name"
+                                      @bind-Value="user.FirstName"
+                                      ValidationExpression="() => user.FirstName" />
                         </div>
 
                         <div class="col-12 col-md-6">
                             <AppInput Label="Last Name"
-                                      Value="@user.LastName"
-                                      ValueChanged="v => user.LastName = v"
-                                      ValidationExpression="@(() => user.LastName)" />
+                                      Icon="bi-person"
+                                      IsRequired="true"
+                                      Placeholder="Enter last name"
+                                      @bind-Value="user.LastName"
+                                      ValidationExpression="() => user.LastName" />
                         </div>
 
                         <div class="col-12 col-md-6">
                             <AppInput Label="Phone Number"
-                                      Value="@user.PhoneNumber"
-                                      ValueChanged="v => user.PhoneNumber = v"
-                                      ValidationExpression="@(() => user.PhoneNumber)" />
+                                      Icon="bi-telephone"
+                                      IsRequired="true"
+                                      Placeholder="e.g. 9876543210"
+                                      @bind-Value="user.PhoneNumber"
+                                      ValidationExpression="() => user.PhoneNumber" />
+                        </div>
+                    </div>
+                </AppFormSection>
+
+                <!-- 2. Account & Credentials Section -->
+                <AppFormSection Title="Account & Credentials"
+                                Subtitle="System login credentials, role assignment, and employee linkage"
+                                Icon="bi-shield-lock">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Username"
+                                      Icon="bi-person-badge"
+                                      IsRequired="true"
+                                      Placeholder="e.g. john.doe"
+                                      @bind-Value="user.Username"
+                                      ValidationExpression="() => user.Username" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <AppInput Label="Email Address"
+                                      Icon="bi-envelope"
+                                      Type="email"
+                                      IsRequired="true"
+                                      Placeholder="admin@company.com"
+                                      @bind-Value="user.Email"
+                                      ValidationExpression="() => user.Email" />
                         </div>
 
                         <div class="col-12 col-md-6">
                             <AppSelect Label="Role"
+                                       Icon="bi-shield-check"
+                                       IsRequired="true"
+                                       Placeholder="Select Role"
                                        Options="roles"
-                                       Value="@user.RoleId.ToString()"
-                                       ValueChanged="v => user.RoleId = int.Parse(v!)"
-                                       ValidationExpression="@(() => user.RoleId)" />
+                                       Value="@(user.RoleId?.ToString() ?? "")"
+                                       ValueChanged="v => user.RoleId = int.TryParse(v, out var r) ? r : null"
+                                       ValidationExpression="() => user.RoleId" />
                         </div>
 
-                    </div>
-                </div>
-            </div>
-
-            <!-- ═══════════ SECURITY ═══════════ -->
-            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
-                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="user-form-section-icon bg-warning bg-opacity-10 text-warning
-                                         rounded-2 d-inline-flex align-items-center justify-content-center">
-                            <i class="bi bi-lock-fill"></i>
-                        </span>
-                        <div>
-                            <h6 class="fw-semibold mb-0 small">Security</h6>
-                            <small class="text-muted d-none d-md-block">
-                                Password and authentication settings
-                            </small>
+                        <div class="col-12 col-md-6">
+                            <AppSelect Label="Linked Employee"
+                                       Icon="bi-person-vcard"
+                                       Placeholder="No Employee Linked"
+                                       Options="_employeeOption"
+                                       Value="@(user.EmployeeId?.ToString() ?? "")"
+                                       ValueChanged="v => user.EmployeeId = int.TryParse(v, out var emp) ? emp : null"
+                                       ValidationExpression="() => user.EmployeeId" />
                         </div>
-                    </div>
-                </div>
-                <div class="card-body px-3 px-md-4 py-3">
-                    <div class="row g-3">
 
                         <div class="col-12 col-md-6">
                             <AppPasswordInput Label="Password"
-                                              IsRequired="true"
-                                              Value="@user.Password"
-                                              ValueChanged="v => user.Password = v"
-                                              ValidationExpression="@(() => user.Password)" />
+                                              Icon="bi-lock"
+                                              IsRequired="@(!IsEditMode)"
+                                              Placeholder="@(IsEditMode ? "Leave blank to keep existing password" : "Enter password")"
+                                              @bind-Value="user.Password"
+                                              ValidationExpression="() => user.Password" />
                         </div>
-
                     </div>
-                </div>
+                </AppFormSection>
+
+                <!-- 3. Status Settings Section -->
+                <AppFormSection Title="Status Settings" Icon="bi-toggle-on">
+                    <AppSwitch @bind-Value="user.IsActive"
+                               Label="Active Account"
+                               HelpText="Enable this account to allow system login." />
+                </AppFormSection>
+
+
             </div>
 
-            <!-- ═══════════ STATUS (EDIT ONLY) ═══════════ -->
-            @if (IsEditMode)
-            {
-                <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
-                    <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="user-form-section-icon bg-success bg-opacity-10 text-success
-                                                 rounded-2 d-inline-flex align-items-center justify-content-center">
-                                <i class="bi bi-toggle-on"></i>
-                            </span>
-                            <div>
-                                <h6 class="fw-semibold mb-0 small">Status</h6>
-                                <small class="text-muted d-none d-md-block">
-                                    User account activation status
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-body px-3 px-md-4 py-3">
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
-                                <AppSwitch Value="@user.IsActive"
-                                           ValueChanged="@(v => user.IsActive = v)"
-                                           HelpText="Inactive users cannot authenticate or access the system." />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-
-            <!-- ═══════════ ACTION BUTTONS ═══════════ -->
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-body px-3 px-md-4 py-3">
-                    <div class="d-flex flex-column-reverse flex-sm-row
-                                    justify-content-end gap-2 gap-sm-3">
-
-                        <button type="button"
-                                class="btn btn-outline-dark rounded-pill px-4 user-form-action-btn"
-                                @onclick="GoBack">
-                            <i class="bi bi-arrow-left me-1 d-none d-sm-inline"></i>
-                            Back
-                        </button>
-
-                        <button type="submit"
-                                class="btn btn-primary rounded-pill px-4 user-form-action-btn"
-                                disabled="@_isSubmitting">
-                            @if (_isSubmitting)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            }
-                            else
-                            {
-                                <i class="bi @(IsEditMode ? "bi-check-lg" : "bi-plus-lg") me-1"></i>
-                            }
-                            @(IsEditMode ? "Update User" : "Create User")
-                        </button>
-
-                    </div>
-                </div>
-            </div>
-
+            <!-- ═══════════ 3. FIXED FOOTER ACTIONS ═══════════ -->
+            <AppFormFooter IsSubmitting="_isSubmitting"
+                           SubmitText="@(IsEditMode ? "Save Changes" : "Save User")"
+                           OnCancel="GoBack" />
         </EditForm>
     }
-</div>
+</AppFormLayout>
 
 @code {
 
@@ -359,6 +235,18 @@
 
         try
         {
+            if (!IsEditMode && string.IsNullOrWhiteSpace(user.Password))
+            {
+                await NotificationService.Error("Password is required for new user accounts.");
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(user.Password) && user.Password.Length < 6)
+            {
+                await NotificationService.Error("Password must be at least 6 characters.");
+                return;
+            }
+
             bool isSuccess;
             string? errorMessage;
 

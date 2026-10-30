@@ -6,89 +6,114 @@
 @inject ILeaveService LeaveService
 @inherits AuthenticatedLayoutBase
 
-<div class="mb-2">
-    <div>
+<div class="mb-3">
+    @if (isLoading)
+    {
+        <div class="row g-2 @GetRowColsClass()">
+            @for (int i = 0; i < 2; i++)
+            {
+                <div class="col">
+                    <div class="card border rounded-3 bg-white p-3 shadow-sm placeholder-glow" style="min-height: 70px;">
+                        <div class="placeholder col-6 mb-1"></div>
+                        <div class="placeholder col-12"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (summaries.Count == 0)
+    {
+        <div class="card border rounded-3 bg-white p-3 text-center text-muted shadow-sm">
+            <i class="bi bi-info-circle fs-4 d-block mb-1 text-primary opacity-75"></i>
+            <span class="small fw-medium">No leave entitlement records configured.</span>
+        </div>
+    }
+    else
+    {
+        <div class="row g-2 @GetRowColsClass()">
+            @foreach (var (s, idx) in summaries.Select((item, i) => (item, i)))
+            {
+                var isExceeded = s.IsExceeded;
+                var color = isExceeded ? "danger" : GetColor(idx);
+                var isSelected = SelectedLeaveTypeId == s.LeaveTypeId;
 
-        @if (summaries.Count == 0)
-        {
-            <div class="text-center text-muted py-3">
-                <i class="bi bi-info-circle fs-4 d-block mb-2 opacity-50"></i>
-                No leave configuration found.
-            </div>
-        }
-        else
-        {
-            <div class="row g-3 ">
-                @foreach (var (s, idx) in summaries.Select((item, i) => (item, i)))
-                {
-                    var color = GetColor(idx);
-
-                    <div class="col-sm-6 col-lg-4 col-xl-3">
-                        <div class="card border-0 rounded-3 h-100
-                                            @(s.RemainingDays == 0 ? "bg-light" : "")
-                                            leave-balance-card">
-                            <div class="card-body">
-
-                                <div class="d-flex justify-content-between
-                                                    align-items-start mb-2">
-                                    <div>
-                                        <div class="leave-type-icon bg-@color
-                                                            bg-opacity-10 mb-2">
-                                            <i class="bi bi-calendar-check
-                                                              text-@color fs-5"></i>
-                                        </div>
-                                        <h6 class="fw-bold mb-1">@s.LeaveTypeName</h6>
-                                        <div class="text-muted small">
-                                            @s.UsedDays used &bull;
-                                            @s.RemainingDays remaining
-                                        </div>
+                <div class="col">
+                    <div class="card border rounded-3 bg-white shadow-sm leave-balance-card p-2.5 p-sm-3 @(isSelected ? "border-primary shadow" : isExceeded ? "border-danger border-opacity-25" : "")"
+                         style="cursor: pointer;"
+                         @onclick="() => ToggleSelectLeaveType(s.LeaveTypeId)">
+                        
+                        <!-- Top Line: Icon + Title on Left | Value + Badge on Right -->
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-2.5 text-truncate me-2">
+                                <span class="rounded-2 bg-@color bg-opacity-10 text-@color d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                    <i class="bi @GetIcon(s.LeaveTypeName)" style="font-size: 0.95rem;"></i>
+                                </span>
+                                <div class="text-truncate">
+                                    <div class="fw-semibold text-dark text-truncate lh-sm" style="font-size: 0.85rem;" title="@s.LeaveTypeName">
+                                        @s.LeaveTypeName
                                     </div>
-                                    <div class="text-end">
-                                        <div class="fs-3 fw-bold text-@color">
-                                            @s.RemainingDays
-                                        </div>
-                                        <div class="small text-muted">
-                                            of @s.TotalDays days
-                                        </div>
-                                    </div>
+                                    <span class="text-muted" style="font-size: 0.72rem;">
+                                        @s.UsedDays used of @s.TotalDays d
+                                    </span>
                                 </div>
+                            </div>
 
-                                <div class="mt-3">
-                                    <div class="progress"
-                                         style="height:8px; border-radius:8px;
-                                                        background:#eef2ff;">
-                                        <div class="progress-bar @GetProgressClass(s)"
-                                             role="progressbar"
-                                             style="width:@GetPercent(s)%;
-                                                            border-radius:8px;">
-                                        </div>
-                                    </div>
-                                    <div class="d-flex justify-content-between mt-1">
-                                        <small class="text-muted">
-                                            Used: @s.UsedDays
-                                        </small>
-                                        <small class="text-muted">
-                                            @GetPercent(s)%
-                                        </small>
-                                    </div>
+                            <div class="text-end flex-shrink-0">
+                                <div class="d-flex align-items-baseline justify-content-end gap-1">
+                                    <span class="fw-bold @(isExceeded ? "text-danger" : $"text-{color}")" style="font-size: 1.18rem; line-height: 1;">
+                                        @s.RemainingDays
+                                    </span>
+                                    <span class="@(isExceeded ? "text-danger fw-semibold" : "text-muted")" style="font-size: 0.7rem;">
+                                        @(isExceeded ? "over" : "left")
+                                    </span>
                                 </div>
-
+                                @if (isExceeded)
+                                {
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-1.5 py-0" style="font-size: 0.62rem; font-weight: 600;">
+                                        Quota Exceeded
+                                    </span>
+                                }
                             </div>
                         </div>
-                    </div>
-                }
-            </div>
-        }
 
-    </div>
+                        <!-- Progress Bar -->
+                        <div class="progress leave-balance-progress" style="height: 5px; border-radius: 6px; background-color: #f1f5f9;">
+                            <div class="progress-bar @GetProgressClass(s, color)"
+                                 role="progressbar"
+                                 style="width: @GetClampedPercent(s)%; border-radius: 6px;">
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
 
 @code {
+
+    [Parameter] public int? SelectedLeaveTypeId { get; set; }
+    [Parameter] public EventCallback<int?> OnLeaveTypeSelected { get; set; }
 
     private List<LeaveBalanceViewModel> summaries = new();
     private List<LeaveTypeViewModel> leaveTypes = new();
     private List<LeaveRequestViewModel> employeeRequests = new();
     private bool isLoading = true;
+
+    private async Task ToggleSelectLeaveType(int leaveTypeId)
+    {
+        if (SelectedLeaveTypeId == leaveTypeId)
+        {
+            SelectedLeaveTypeId = null;
+        }
+        else
+        {
+            SelectedLeaveTypeId = leaveTypeId;
+        }
+
+        await OnLeaveTypeSelected.InvokeAsync(SelectedLeaveTypeId);
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,6 +125,17 @@
     {
         await LoadDataAsync();
         StateHasChanged();
+    }
+
+    private string GetRowColsClass()
+    {
+        return summaries.Count switch
+        {
+            1 => "row-cols-1",
+            2 => "row-cols-1 row-cols-sm-2",
+            3 => "row-cols-1 row-cols-sm-2 row-cols-md-3",
+            _ => "row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4"
+        };
     }
 
     private async Task LoadDataAsync()
@@ -158,8 +194,7 @@
                     LeaveTypeId = lt.Id,
                     LeaveTypeName = FormatEnum(lt.LeaveNameId.ToString()),
                     TotalDays = lt.MaxPerYear,
-                    UsedDays = usedDays,
-                    // RemainingDays = RemainingDays
+                    UsedDays = usedDays
                 };
             })
             .ToList();
@@ -168,22 +203,37 @@
     private int GetPercent(LeaveBalanceViewModel s) =>
         s.TotalDays == 0 ? 0 : (int)((s.UsedDays * 100.0) / s.TotalDays);
 
+    private int GetClampedPercent(LeaveBalanceViewModel s) =>
+        Math.Min(100, Math.Max(0, GetPercent(s)));
+
     private static string GetColor(int idx) => (idx % 5) switch
     {
         0 => "primary",
         1 => "success",
         2 => "info",
         3 => "warning",
-        4 => "danger",
+        4 => "purple",
         _ => "secondary"
     };
 
-    private string GetProgressClass(LeaveBalanceViewModel s) =>
+    private static string GetIcon(string name)
+    {
+        var n = (name ?? "").ToLowerInvariant();
+        if (n.Contains("sick") || n.Contains("medical")) return "bi-heart-pulse-fill";
+        if (n.Contains("maternity") || n.Contains("paternity")) return "bi-person-heart";
+        if (n.Contains("casual")) return "bi-cup-hot-fill";
+        if (n.Contains("unpaid")) return "bi-clock-history";
+        if (n.Contains("earned") || n.Contains("annual")) return "bi-award-fill";
+        return "bi-calendar2-check-fill";
+    }
+
+    private string GetProgressClass(LeaveBalanceViewModel s, string color) =>
+        s.IsExceeded ? "bg-danger" :
         GetPercent(s) switch
         {
-            >= 80 => "bg-danger",
-            >= 60 => "bg-warning",
-            _ => "bg-success"
+            >= 100 => "bg-danger",
+            >= 80 => "bg-warning",
+            _ => $"bg-{color}"
         };
 
     private static string FormatEnum(string name) =>
@@ -193,12 +243,9 @@
     private (DateTime start, DateTime end) GetFinancialYear()
     {
         var today = DateTime.Today;
-
         int year = today.Month >= 4 ? today.Year : today.Year - 1;
-
         var start = new DateTime(year, 4, 1);
         var end = new DateTime(year + 1, 3, 31);
-
         return (start, end);
     }
 }

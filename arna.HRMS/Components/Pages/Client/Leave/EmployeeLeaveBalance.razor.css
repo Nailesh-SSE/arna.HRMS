@@ -1,44 +1,31 @@
-﻿/* ══════════ BALANCE CARD ══════════ */
+/* ══════════ BALANCE CARD ══════════ */
 .leave-balance-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #ffffff;
+    border-radius: 10px !important;
 }
 
-    .leave-balance-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
-    }
+.leave-balance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06) !important;
+    border-color: #cbd5e1 !important;
+}
 
-/* ══════════ ICON BADGE ══════════ */
-.leave-type-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+.leave-balance-card.border-primary {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2), 0 4px 12px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* ══════════ PROGRESS BAR ══════════ */
-.progress {
-    background: #eef2ff;
+.leave-balance-progress {
+    background: #f1f5f9;
 }
 
-/* ══════════ EXHAUSTED STATE ══════════ */
-.balance-exhausted {
-    opacity: 0.6;
-    position: relative;
+.bg-purple {
+    background-color: #8b5cf6 !important;
 }
 
-    .balance-exhausted::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: repeating-linear-gradient( 45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 20px );
-        border-radius: inherit;
-        pointer-events: none;
-    }
+.text-purple {
+    color: #8b5cf6 !important;
+}

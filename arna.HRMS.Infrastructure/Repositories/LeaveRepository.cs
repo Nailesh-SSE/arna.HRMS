@@ -208,78 +208,103 @@ public class LeaveRepository
         return true;
     }
 
-    // Bug 5 FIX: Directly cancel the leave instead of calling DeleteLeaveRequestAsync
-    // which refuses to delete approved leave (returns false), causing silent failures
-    public async Task<bool> EmployeeWorkedOnDateAsync(int employeeId, DateTime date)
+    public async Task<List<LeaveRequest>> GetApprovedLeavesCoveringDateAsync(int employeeId, DateTime date)
     {
-        var leave = await _leaveRequestRepository.Query()
-            .FirstOrDefaultAsync(x =>
+        var targetDate = date.Date;
+        return await _leaveRequestRepository.Query()
+            .Where(x =>
                 x.EmployeeId == employeeId &&
                 x.IsActive && !x.IsDeleted &&
                 x.StatusId == Status.Approved &&
-                x.StartDate <= date &&
-                x.EndDate >= date);
+                x.StartDate.Date <= targetDate &&
+                x.EndDate.Date >= targetDate)
+            .ToListAsync();
+    }
 
-        if (leave == null)
-            return true;
-
-        if (leave.StartDate.Date == leave.EndDate.Date)
-        {
-            // Single-day leave: cancel it directly (not via DeleteLeaveRequestAsync which blocks approved)
-            leave.StatusId = Status.Cancelled;
-            leave.UpdatedOn = DateTime.Now;
-            await _leaveRequestRepository.UpdateAsync(leave);
-            return true;
-        }
-
-        if (leave.StartDate.Date == date.Date)
-        {
-            leave.StartDate = date.AddDays(1);
-            RecalculateLeaveDays(leave);
-
-            await _leaveRequestRepository.UpdateAsync(leave);
-            return true;
-        }
-
-        if (leave.EndDate.Date == date.Date)
-        {
-            leave.EndDate = date.AddDays(-1);
-            RecalculateLeaveDays(leave);
-
-            await _leaveRequestRepository.UpdateAsync(leave);
-            return true;
-        }
-
-
-        var secondHalf = new LeaveRequest
-        {
-            EmployeeId = leave.EmployeeId,
-            LeaveTypeId = leave.LeaveTypeId,
-            StartDate = date.AddDays(1),
-            EndDate = leave.EndDate,
-            Reason = leave.Reason,
-            StatusId = leave.StatusId,
-            ApprovedBy = leave.ApprovedBy,
-            ApprovedDate = leave.ApprovedDate,
-            IsActive = true,
-            IsDeleted = false,
-            CreatedOn = DateTime.Now
-        };
-
-        RecalculateLeaveDays(secondHalf);
-
-        // Update first half
-        leave.EndDate = date.AddDays(-1);
-        RecalculateLeaveDays(leave);
+    public async Task<bool> SoftDeleteLeaveRequestAsync(LeaveRequest leave)
+    {
+        leave.IsActive = false;
+        leave.IsDeleted = true;
+        leave.StatusId = Status.Cancelled;
+        leave.UpdatedOn = DateTime.Now;
 
         await _leaveRequestRepository.UpdateAsync(leave);
-        await _leaveRequestRepository.AddAsync(secondHalf);
-
         return true;
     }
 
-    private void RecalculateLeaveDays(LeaveRequest leave)
+    // Bug 5 & Multi-case FIX: Soft-delete the previous leave and create new auto-approved segment(s)
+    public async Task<bool> EmployeeWorkedOnDateAsync(int employeeId, DateTime date)
     {
-        leave.LeaveDays = (leave.EndDate.Date - leave.StartDate.Date).Days + 1;
+        var targetDate = date.Date;
+        var leaves = await GetApprovedLeavesCoveringDateAsync(employeeId, targetDate);
+
+        if (!leaves.Any())
+            return true;
+
+        foreach (var leave in leaves)
+        {
+            // 1. Soft-delete the original leave request
+            await SoftDeleteLeaveRequestAsync(leave);
+
+            // 2. If there are dates before targetDate, create the left segment
+            if (targetDate > leave.StartDate.Date)
+            {
+                var leftStart = leave.StartDate.Date;
+                var leftEnd = targetDate.AddDays(-1);
+                var leftDays = (leftEnd - leftStart).Days + 1;
+
+                if (leftDays > 0)
+                {
+                    var leftLeave = new LeaveRequest
+                    {
+                        EmployeeId = leave.EmployeeId,
+                        LeaveTypeId = leave.LeaveTypeId,
+                        StartDate = leftStart,
+                        EndDate = leftEnd,
+                        LeaveDays = leftDays,
+                        Reason = leave.Reason,
+                        StatusId = Status.Approved,
+                        ApprovalNotes = "Auto Adjusted",
+                        ApprovedBy = leave.ApprovedBy,
+                        ApprovedDate = leave.ApprovedDate ?? DateTime.Now,
+                        IsActive = true,
+                        IsDeleted = false,
+                        CreatedOn = DateTime.Now
+                    };
+                    await _leaveRequestRepository.AddAsync(leftLeave);
+                }
+            }
+
+            // 3. If there are dates after targetDate, create the right segment
+            if (targetDate < leave.EndDate.Date)
+            {
+                var rightStart = targetDate.AddDays(1);
+                var rightEnd = leave.EndDate.Date;
+                var rightDays = (rightEnd - rightStart).Days + 1;
+
+                if (rightDays > 0)
+                {
+                    var rightLeave = new LeaveRequest
+                    {
+                        EmployeeId = leave.EmployeeId,
+                        LeaveTypeId = leave.LeaveTypeId,
+                        StartDate = rightStart,
+                        EndDate = rightEnd,
+                        LeaveDays = rightDays,
+                        Reason = leave.Reason,
+                        StatusId = Status.Approved,
+                        ApprovalNotes = "Auto Adjusted",
+                        ApprovedBy = leave.ApprovedBy,
+                        ApprovedDate = leave.ApprovedDate ?? DateTime.Now,
+                        IsActive = true,
+                        IsDeleted = false,
+                        CreatedOn = DateTime.Now
+                    };
+                    await _leaveRequestRepository.AddAsync(rightLeave);
+                }
+            }
+        }
+
+        return true;
     }
 }

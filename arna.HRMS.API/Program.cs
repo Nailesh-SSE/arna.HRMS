@@ -27,6 +27,8 @@ namespace arna.HRMS.API
                           "http://hrms-api.arnatechnosoft.com",
                           "https://localhost:7240",
                           "https://localhost:7241",
+                          "https://localhost:7226",
+                          "http://localhost:5030",
                           "http://localhost:5000",
                           "http://localhost:5001",
                           "http://localhost:3000",

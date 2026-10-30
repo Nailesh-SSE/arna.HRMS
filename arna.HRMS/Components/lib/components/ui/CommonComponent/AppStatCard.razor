@@ -1,19 +1,48 @@
-﻿<div class="col-6 col-md-3">
-    <div class="card border-0 shadow-sm rounded-3 stat-card h-100 @CardClass"
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager Nav
+
+<div class="@ColumnClass">
+    <div class="card border-0 shadow-sm stat-card h-100 @CardClass @(OnClick.HasDelegate || HasDefaultAction ? "is-clickable" : "")"
          @onclick="HandleClick">
 
-        <div class="card-body d-flex align-items-center gap-3">
+        <div class="card-body stat-card-body d-flex align-items-center justify-content-between">
 
-            <div class="stat-icon @BgClass @TextClass">
-                <i class="bi @Icon fs-4"></i>
+            <div class="d-flex align-items-center gap-3">
+                <div class="stat-icon @BgClass @TextClass">
+                    <i class="bi @Icon"></i>
+                </div>
+
+                <div class="d-flex flex-column justify-content-center">
+                    <span class="stat-label">@Label</span>
+                    <span class="stat-value">
+                        @Count
+                    </span>
+                    <div class="stat-trend d-flex align-items-center gap-1">
+                        @if (!string.IsNullOrEmpty(TrendText) || !string.IsNullOrEmpty(Subtext))
+                        {
+                            @if (!string.IsNullOrEmpty(TrendText))
+                            {
+                                <span class="@(string.IsNullOrEmpty(TrendClass) ? "trend-green" : TrendClass)">
+                                    @TrendText
+                                </span>
+                            }
+                            @if (!string.IsNullOrEmpty(Subtext))
+                            {
+                                <span class="trend-muted">@Subtext</span>
+                            }
+                        }
+                        else if (!string.IsNullOrEmpty(DefaultTrend))
+                        {
+                            @((MarkupString)DefaultTrend)
+                        }
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <small class="text-muted d-block">@Label</small>
-                <span class="fs-3 fw-bold lh-1 @TextClass">
-                    @Count
-                </span>
-            </div>
+            @if (ShowChevron)
+            {
+                <i class="bi bi-chevron-right stat-chevron"></i>
+            }
 
         </div>
     </div>
@@ -25,13 +54,64 @@
     [Parameter] public string TextClass { get; set; } = "";
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public int Count { get; set; }
-
     [Parameter] public string CardClass { get; set; } = "";
     [Parameter] public EventCallback OnClick { get; set; }
+
+    [Parameter] public string ColumnClass { get; set; } = "col-12 col-sm-6 col-xl-3";
+    [Parameter] public string? TrendText { get; set; }
+    [Parameter] public string? TrendClass { get; set; }
+    [Parameter] public string? Subtext { get; set; }
+    [Parameter] public bool ShowChevron { get; set; } = true;
+
+    private bool HasDefaultAction =>
+        Label?.Trim().Equals("Leave Pending Requests", StringComparison.OrdinalIgnoreCase) == true ||
+        Label?.Trim().Equals("Attendance Pending Requests", StringComparison.OrdinalIgnoreCase) == true;
+
+    private string? DefaultTrend
+    {
+        get
+        {
+            if (Label?.Trim().Equals("Present Today", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return Count > 0 
+                    ? $"<span class=\"trend-green\"><i class=\"bi bi-arrow-up-right me-0.5\"></i>{Count} active</span> <span class=\"trend-muted\">today</span>"
+                    : "<span class=\"trend-muted\">No clock-ins yet</span>";
+            }
+            if (Label?.Trim().Equals("On Leave Today", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return Count > 0
+                    ? $"<span class=\"trend-muted\">{Count} scheduled off / absent</span>"
+                    : "<span class=\"trend-muted\">&mdash; all staff clocked in</span>";
+            }
+            if (Label?.Trim().Equals("Leave Pending Requests", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return Count > 0
+                    ? $"<span class=\"trend-green\"><i class=\"bi bi-arrow-up-right me-0.5\"></i>+{Count}</span> <span class=\"trend-muted\">pending approval</span>"
+                    : "<span class=\"trend-muted\">No pending requests</span>";
+            }
+            if (Label?.Trim().Equals("Attendance Pending Requests", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return Count > 0
+                    ? $"<span class=\"trend-red\"><i class=\"bi bi-arrow-down-right me-0.5\"></i>+{Count}</span> <span class=\"trend-muted\">pending review</span>"
+                    : "<span class=\"trend-muted\">No pending requests</span>";
+            }
+            return null;
+        }
+    }
 
     private async Task HandleClick()
     {
         if (OnClick.HasDelegate)
+        {
             await OnClick.InvokeAsync();
+        }
+        else if (Label?.Trim().Equals("Leave Pending Requests", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            Nav.NavigateTo("/admin-leave-requests");
+        }
+        else if (Label?.Trim().Equals("Attendance Pending Requests", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            Nav.NavigateTo("/admin-attendance-requests");
+        }
     }
 }

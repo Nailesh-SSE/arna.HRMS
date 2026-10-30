@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Enums;
+using arna.HRMS.Models.Enums;
 
 namespace arna.HRMS.Helper.Navigation;
 
@@ -16,6 +16,26 @@ public sealed class SmartRouter : ISmartRouter
             ["leave-management"] = new Dictionary<UserRole, string>
             {
                 [UserRole.Employee] = "/emp-leave-management",
+                [UserRole.Manager] = "/admin-leave-management",
+                [UserRole.HR] = "/admin-leave-management",
+                [UserRole.Admin] = "/admin-leave-management",
+                [UserRole.SuperAdmin] = "/admin-leave-management"
+            },
+
+            ["leave"] = new Dictionary<UserRole, string>
+            {
+                [UserRole.Employee] = "/emp-leave-management",
+                [UserRole.Manager] = "/admin-leave-management",
+                [UserRole.HR] = "/admin-leave-management",
+                [UserRole.Admin] = "/admin-leave-management",
+                [UserRole.SuperAdmin] = "/admin-leave-management"
+            },
+
+            ["leave-group"] = new Dictionary<UserRole, string>
+            {
+                [UserRole.Employee] = "/emp-leave-management",
+                [UserRole.Manager] = "/admin-leave-management",
+                [UserRole.HR] = "/admin-leave-management",
                 [UserRole.Admin] = "/admin-leave-management",
                 [UserRole.SuperAdmin] = "/admin-leave-management"
             },
@@ -23,13 +43,26 @@ public sealed class SmartRouter : ISmartRouter
             ["attendance"] = new Dictionary<UserRole, string>
             {
                 [UserRole.Employee] = "/emp-attendance-management",
+                [UserRole.Manager] = "/admin-attendance-management",
+                [UserRole.HR] = "/admin-attendance-management",
+                [UserRole.Admin] = "/admin-attendance-management",
+                [UserRole.SuperAdmin] = "/admin-attendance-management"
+            },
+
+            ["attendance-group"] = new Dictionary<UserRole, string>
+            {
+                [UserRole.Employee] = "/emp-attendance-management",
+                [UserRole.Manager] = "/admin-attendance-management",
+                [UserRole.HR] = "/admin-attendance-management",
                 [UserRole.Admin] = "/admin-attendance-management",
                 [UserRole.SuperAdmin] = "/admin-attendance-management"
             },
 
             ["report"] = new Dictionary<UserRole, string>
             {
-                [UserRole.Employee] = "/emp-report-management",
+                [UserRole.Employee] = "/employee-report",
+                [UserRole.Manager] = "/admin-report-management",
+                [UserRole.HR] = "/admin-report-management",
                 [UserRole.Admin] = "/admin-report-management",
                 [UserRole.SuperAdmin] = "/admin-report-management"
             },
@@ -37,6 +70,8 @@ public sealed class SmartRouter : ISmartRouter
             ["dashboard"] = new Dictionary<UserRole, string>
             {
                 [UserRole.Employee] = "/",
+                [UserRole.Manager] = "/",
+                [UserRole.HR] = "/",
                 [UserRole.Admin] = "/",
                 [UserRole.SuperAdmin] = "/"
             }

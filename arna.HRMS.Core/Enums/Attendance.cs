@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Core.Enums;
+namespace arna.HRMS.Core.Enums;
 
 public enum AttendanceLocation
 {
@@ -26,6 +26,7 @@ public enum AttendanceStatus
     Late = 3,
     HalfDay = 4,
     Leave = 5,
+    OnLeave = 5,
     Holiday = 6,
     WeeklyOff = 7,
 }

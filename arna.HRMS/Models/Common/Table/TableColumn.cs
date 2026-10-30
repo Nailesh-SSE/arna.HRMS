@@ -1,4 +1,6 @@
-﻿namespace arna.HRMS.Models.Common.Table;
+using Microsoft.AspNetCore.Components;
+
+namespace arna.HRMS.Models.Common.Table;
 
 public class TableColumn<T>
 {
@@ -7,4 +9,5 @@ public class TableColumn<T>
     public Func<T, string>? CssClassFunc { get; set; }
     public string? CssClass { get; set; }
     public Func<T, string?>? TooltipHtml { get; set; }
+    public RenderFragment<T>? Template { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Common.Table
@@ -76,7 +76,10 @@
         <div class="request-scroll-area">
             <AppTable TItem="LeaveRequestViewModel"
                       Items="FilteredRequests"
-                      Columns="TableSchemas.LeaveRequest">
+                      Columns="TableSchemas.LeaveRequest"
+                      EnablePagination="true"
+                      PageSize="10"
+                      ShowActions="@(IsAdmin() || IsSuperAdmin())">
 
                 <ActionTemplate Context="req">
                     @if (req.StatusId != Status.Cancelled)

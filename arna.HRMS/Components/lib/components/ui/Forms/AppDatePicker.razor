@@ -1,31 +1,44 @@
-﻿@using System.Linq.Expressions
+@using System.Linq.Expressions
 @using Microsoft.AspNetCore.Components.Forms
 
-<div class="mb-3">
+<div class="app-datepicker-wrapper @WrapperClass">
     @if (!string.IsNullOrWhiteSpace(Label))
     {
-        <label class="form-label">@Label</label>
+        <label class="form-label">
+            @Label
+            @if (IsRequired)
+            {
+                <span class="text-danger">*</span>
+            }
+        </label>
     }
 
-    <div class="position-relative">
-        <input type="date"
-               class="form-control"
-               value="@FormattedValue"
-               min="2000-01-01"
-               max="2100-12-31"
-               @onchange="OnChange" />
-
-        @if (!Value.HasValue)
+    <div class="input-group">
+        @if (!string.IsNullOrWhiteSpace(Icon))
         {
-            <span class="date-placeholder">
-                @PlaceholderText
+            <span class="input-group-text">
+                <i class="bi @Icon"></i>
             </span>
         }
+        <input type="date"
+               class="form-control @(IsInvalid ? "is-invalid" : "")"
+               value="@FormattedValue"
+               disabled="@Disabled"
+               min="@Min"
+               max="@Max"
+               @onchange="OnChange" />
     </div>
+
+    @if (!string.IsNullOrWhiteSpace(HelpText))
+    {
+        <small class="text-muted d-block mt-1">@HelpText</small>
+    }
 
     @if (ValidationExpression != null)
     {
-        <ValidationMessage For="ValidationExpression" />
+        <div class="text-danger small mt-1">
+            <ValidationMessage For="ValidationExpression" />
+        </div>
     }
 </div>
 
@@ -33,27 +46,30 @@
     [CascadingParameter] private EditContext? EditContext { get; set; }
 
     [Parameter] public string? Label { get; set; }
+    [Parameter] public string Icon { get; set; } = "bi-calendar-event";
+    [Parameter] public bool IsRequired { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string Min { get; set; } = "1900-01-01";
+    [Parameter] public string Max { get; set; } = "2100-12-31";
+    [Parameter] public string WrapperClass { get; set; } = string.Empty;
+    [Parameter] public string? HelpText { get; set; }
 
     [Parameter] public DateTime? Value { get; set; }
     [Parameter] public EventCallback<DateTime?> ValueChanged { get; set; }
-
-    // ⭐ Date disable rule
-    [Parameter] public Func<DateTime, bool>? IsDateDisabled { get; set; }
-
-    [Parameter] public string DefaultPlaceholder { get; set; } = "";
-    [Parameter] public string? Placeholder { get; set; }
-
     [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
 
     private FieldIdentifier _fieldIdentifier;
-
-    private string PlaceholderText =>
-        string.IsNullOrWhiteSpace(Placeholder) ? DefaultPlaceholder : Placeholder;
 
     private string? FormattedValue =>
         Value.HasValue && Value.Value.Year > 1900
             ? Value.Value.ToString("yyyy-MM-dd")
             : null;
+
+    private bool IsInvalid =>
+        EditContext != null &&
+        ValidationExpression != null &&
+        EditContext.IsModified(_fieldIdentifier) &&
+        EditContext.GetValidationMessages(_fieldIdentifier).Any();
 
     protected override void OnParametersSet()
     {
@@ -63,18 +79,14 @@
 
     private async Task OnChange(ChangeEventArgs e)
     {
+        if (Disabled) return;
+
         if (!DateTime.TryParse(e.Value?.ToString(), out var selectedDate))
         {
             await ValueChanged.InvokeAsync(null);
             return;
         }
 
-        if (IsDateDisabled?.Invoke(selectedDate.Date) == true)
-        {
-            return;
-        }
-
-        // ✅ THIS WAS MISSING — invoke the parent callback with the selected date
         await ValueChanged.InvokeAsync(selectedDate.Date);
 
         if (ValidationExpression != null)

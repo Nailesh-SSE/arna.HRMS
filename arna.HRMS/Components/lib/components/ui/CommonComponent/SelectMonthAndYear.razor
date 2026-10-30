@@ -1,6 +1,9 @@
-﻿<div class="myp-wrapper">
+<div class="myp-wrapper">
     <div class="myp-display" @onclick="Toggle">
-        <span class="myp-text">@DisplayText</span>
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-event text-primary opacity-75" style="font-size: 13px;"></i>
+            <span class="myp-text">@DisplayText</span>
+        </div>
         <span class="myp-arrow @(IsOpen ? "open" : "")"></span>
     </div>
 

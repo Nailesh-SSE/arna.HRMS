@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
@@ -7,6 +7,7 @@ namespace arna.HRMS.Models.ViewModels.Attendance;
 public class AttendanceRequestViewModel : CommonViewModel
 {
     public int EmployeeId { get; set; }
+    public string? EmployeeNumber { get; set; }
     public string? EmployeeName { get; set; }
 
     [Required(ErrorMessage = "FromDate is required.")]

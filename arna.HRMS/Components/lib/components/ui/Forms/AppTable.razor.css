@@ -1,31 +1,56 @@
-﻿/* ── Wrapper ── */
+/* ── Wrapper ── */
 .app-table-wrapper {
-    white-space: nowrap;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02);
     overflow-x: auto;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
-    scrollbar-color: #dee2e6 transparent;
+    scrollbar-color: #cbd5e1 #f8fafc;
 }
 
 .app-table-wrapper::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
 }
 
 .app-table-wrapper::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.app-table-wrapper::-webkit-scrollbar-thumb {
-    background-color: #dee2e6;
+    background: #f8fafc;
     border-radius: 10px;
 }
 
+.app-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+
+.app-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+}
+
 /* ── Table layout ── */
-.custom-table {
-    table-layout: auto; 
-    width: max-content; 
-    min-width: 100%; 
+.emp-modern-table, .custom-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+}
+
+/* ── Table Header (TH) ── */
+.emp-modern-table thead th,
+.custom-table thead th {
+    background-color: #fafbfc;
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+    vertical-align: middle;
+    line-height: 1.2;
 }
 
 /* ── Sticky header ── */
@@ -33,32 +58,212 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background-color: var(--bs-light, #f8f9fa) !important;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+    background-color: #fafbfc !important;
+    box-shadow: 0 1px 0 #e2e8f0;
 }
 
-/* ── TD font ── */
+/* ── Table Body (TD) ── */
+.emp-modern-table tbody td,
+.custom-table tbody td,
 .custom-td {
-    font-size: 15px;
+    padding: 7px 14px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 0.83rem;
+    line-height: 1.3;
+}
+
+/* ── Row Hover & Transition ── */
+.emp-modern-table tbody tr,
+.custom-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.emp-modern-table tbody tr:hover,
+.custom-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* ── Clickable Row ── */
+.att-row-clickable {
+    cursor: pointer;
+}
+
+.att-row-clickable:hover td {
+    background-color: #f1f5f9;
+}
+
+/* ── Avatars ── */
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 0.72rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    letter-spacing: -0.01em;
+}
+
+.avatar-sm {
+    width: 22px;
+    height: 22px;
+    font-size: 0.62rem;
+    font-weight: 600;
+}
+
+.avatar-cyan { background-color: #e0f2fe; color: #0284c7; }
+.avatar-amber { background-color: #fef3c7; color: #d97706; }
+.avatar-purple { background-color: #f3e8ff; color: #9333ea; }
+.avatar-emerald { background-color: #d1fae5; color: #059669; }
+.avatar-blue { background-color: #dbeafe; color: #2563eb; }
+.avatar-rose { background-color: #ffe4e6; color: #e11d48; }
+.avatar-indigo { background-color: #e0e7ff; color: #4f46e5; }
+.avatar-teal { background-color: #ccfbf1; color: #0d9488; }
+
+/* ── Status Badges / Pills ── */
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.status-pill-active {
+    background-color: #ecfdf5;
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.status-pill-active .status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: #10b981;
+}
+
+.status-pill-inactive {
+    background-color: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.status-pill-inactive .status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: #94a3b8;
+}
+
+/* ── Circular Action Buttons ── */
+.req-action-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    font-size: 0.78rem;
+    transition: all 0.2s ease;
+}
+
+.req-action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+}
+
+.req-action-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 /* ── Pagination ── */
-::deep .pagination .page-link {
-    border: none;
-    color: #6c757d;
-    padding: 4px 10px;
-    font-size: .85rem;
+.emp-pagination-bar {
+    background: #ffffff;
+    border-top: 1px solid #f1f5f9;
+    padding: 7px 14px;
 }
 
+.page-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #475569;
+    font-size: 0.78rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.page-btn:hover:not(:disabled):not(.active) {
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+.page-btn.active,
 ::deep .pagination .page-item.active .page-link {
-    background: #4e73df;
-    color: #fff;
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+    font-weight: 600;
     border-radius: 6px;
 }
 
-::deep .pagination .page-link:hover {
-    background: #e9ecef;
-    border-radius: 6px;
+.page-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* ══════════ RESPONSIVE ══════════ */
+@media (max-width: 575.98px) {
+    .emp-modern-table thead th,
+    .custom-table thead th {
+        padding: 6px 10px;
+        font-size: 0.68rem;
+    }
+
+    .emp-modern-table tbody td,
+    .custom-table tbody td,
+    .custom-td {
+        padding: 6px 10px;
+        font-size: 0.78rem;
+    }
+
+    .avatar-circle {
+        width: 24px;
+        height: 24px;
+        font-size: 0.64rem;
+    }
+
+    .avatar-sm {
+        width: 18px;
+        height: 18px;
+        font-size: 0.55rem;
+    }
+
+    .status-pill {
+        padding: 1.5px 6px;
+        font-size: 0.68rem;
+    }
+
+    .req-action-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 0.72rem;
+    }
+
+    .emp-pagination-bar {
+        padding: 6px 10px;
+    }
 }
 
 /* ══════════════════════════════════════

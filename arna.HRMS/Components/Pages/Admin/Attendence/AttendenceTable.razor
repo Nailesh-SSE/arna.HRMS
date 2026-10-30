@@ -1,4 +1,4 @@
-﻿@page "/admin-attendance-management"
+@page "/admin-attendance-management"
 
 
 @using arna.HRMS.Components.Loader
@@ -24,9 +24,7 @@
 
 @if (!isLoading) 
 {
-    @if (!showDetail)
-    {
-        <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-4">
             <div>
                 <h3 class="fw-bold mb-1 d-flex align-items-center">
                     <i class="bi bi-clock-history text-primary me-2"></i>
@@ -95,6 +93,8 @@
                                   Columns="TableSchemas.EmployeesAttendanceDetail"
                                   ShowActions="false"
                                   WrapperClass="att-list-table"
+                                  MaxHeight="540px"
+                                  EnablePagination="false"
                                   RowClassFunc="GetRowClass"
                                   OnRowClick="HandleRowClick"
                                   RowClickable="true">
@@ -105,7 +105,6 @@
             </div>
         </div>
     }
-}
 
 @code {
 
@@ -114,7 +113,6 @@
     private bool isLoading = true;
     private string loadingMessage = "Loading attendance management...";
 
-    private bool showDetail;
     private List<MonthlyAttendanceViewModel> _allAttendance = new();
     private CancellationTokenSource _cts = new();
     private bool _isDisposed;

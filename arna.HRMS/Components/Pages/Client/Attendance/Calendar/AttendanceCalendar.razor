@@ -1,103 +1,422 @@
-﻿@using arna.HRMS.Components.Pages.Client.Attendance.Icon
+@using arna.HRMS.Components.Pages.Client.Attendance.Icon
 @using arna.HRMS.Models.ViewModels.Attendance
+@using System.Globalization
 
-<div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+<div class="w-100">
+    <div class="row g-3 align-items-stretch">
 
-    <!-- ══════════ MONTH HEADER ══════════ -->
-    <div class="card-header border-0 cal-month-header">
-        <div class="d-flex align-items-center justify-content-center py-1">
-            <i class="bi bi-calendar2-week text-primary me-2 fs-6"></i>
-            <h6 class="fw-bold mb-0 text-primary">@GetMonthName(Month) @Year</h6>
-        </div>
-    </div>
-
-    <div class="card-body p-2 p-sm-3 p-lg-4">
-
-        <!-- ══════════ WEEKDAY HEADERS ══════════ -->
-        <div class="cal-grid mb-2">
-            @foreach (var d in WeekDays)
-            {
-                var isWeekendDay = d is "Sun" or "Sat";
-
-                <div class="cal-weekday-cell text-center rounded-2 py-2
-                                @(isWeekendDay ? "cal-weekday-weekend" : "cal-weekday-default")">
-                    <span class="fw-semibold d-none d-sm-inline">@d</span>
-                    <span class="fw-semibold d-sm-none">@d[0]</span>
-                </div>
-            }
-        </div>
-
-        <!-- ══════════ DAYS GRID ══════════ -->
-        <div class="cal-grid">
-            @foreach (var day in CalendarDays)
-            {
-                @if (day is null)
-                {
-                    <div class="cal-day-cell cal-day-empty rounded-2"></div>
-                }
-                else
-                {
-                    AttendanceLookup.TryGetValue(
-                    DateOnly.FromDateTime(day.Value),
-                    out var attendance);
-
-                    var emp = attendance?.Employees?.FirstOrDefault();
-                    var isToday = day.Value.Date == DateTime.Today;
-                    var isWeekend = day.Value.DayOfWeek is DayOfWeek.Saturday
-                    or DayOfWeek.Sunday;
-                    var isFuture = day.Value.Date > DateTime.Today;
-
-                    <div class="cal-day-cell rounded-2
-                                        @(isToday ? "cal-day-today" : "")
-                                        @(isWeekend && !isToday ? "cal-day-weekend" : "")
-                                        @(isFuture ? "cal-day-future" : "")">
-
-                        <div class="d-flex flex-column align-items-center h-100
-                                            py-1 py-md-2">
-
-                            <!-- Date Number -->
-                            <span class="cal-date-num
-                                                 @(isToday ? "bg-primary text-white shadow-sm" : "")">
-                                @day.Value.Day
-                            </span>
-
-                            <!-- Status Icon -->
-                            @if (emp != null)
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- 1. LEFT COLUMN: 7-COLUMN CALENDAR GRID & LEGEND -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <div class="@(isDetailsOpen ? "col-12 col-xl-8 col-lg-7" : "col-12")">
+            <div class="d-flex flex-column justify-content-between h-100">
+                    
+                    <div>
+                        <!-- Weekday Headers (Sun, Mon, Tue, Wed, Thu, Fri, Sat) -->
+                        <div class="cal-grid mb-1 text-center">
+                            @foreach (var (dayName, isWeekend) in WeekDayHeaders)
                             {
-                                <div class="mt-1 mt-md-2">
-                                    <AttendanceIcon Status="@(emp.Status ?? "")" />
+                                <div class="fw-semibold small py-1 user-select-none @(isWeekend ? "text-danger" : "text-secondary")" style="font-size: 0.75rem;">
+                                    @dayName
                                 </div>
+                            }
+                        </div>
 
-                                <!-- Hours (visible on lg+) -->
-                                <small class="cal-hours d-none d-lg-block mt-1">
-                                    @if (emp.ClockIn.HasValue && emp.ClockOut.HasValue)
+                        <!-- 7-Column Days Grid -->
+                        <div class="cal-grid">
+                            
+                            <!-- Leading Prev-Month Days (Faded) -->
+                            @foreach (var prevDay in LeadingDays)
+                            {
+                                <div class="cal-cell-other-month d-flex flex-column align-items-center justify-content-start cal-cell-min p-1.5 user-select-none">
+                                    <span class="cal-day-num text-muted opacity-75 fw-medium">@prevDay.Day</span>
+                                </div>
+                            }
+
+                            <!-- Current Month Days -->
+                            @foreach (var day in MonthDays)
+                            {
+                                var dateOnly = DateOnly.FromDateTime(day);
+                                AttendanceLookup.TryGetValue(dateOnly, out var monthlyAtt);
+                                var emp = monthlyAtt?.Employees?.FirstOrDefault();
+                                
+                                var isSelected = selectedDate.Date == day.Date && isDetailsOpen;
+                                var isToday = day.Date == DateTime.Today;
+                                var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                                var isFuture = day.Date > DateTime.Today;
+                                var isPast = day.Date < DateTime.Today;
+                                var hasData = emp != null && (emp.ClockIn.HasValue || (!string.IsNullOrWhiteSpace(emp.Status) && emp.Status != "WeeklyOff" && emp.Status != "Off"));
+                                var status = GetStatus(day, emp);
+
+                                var cellBgClass = isSelected 
+                                    ? "cal-selected shadow-sm" 
+                                    : isWeekend 
+                                        ? (hasData ? "cal-weekend-active" : "cal-weekend-frozen") 
+                                        : isToday 
+                                            ? "cal-today-cell" 
+                                            : "bg-white";
+
+                                var dayNumClass = isSelected && !isToday 
+                                    ? "text-primary" 
+                                    : isWeekend 
+                                        ? (hasData ? "text-danger-emphasis" : "text-muted opacity-75") 
+                                        : isFuture 
+                                            ? "text-secondary opacity-75" 
+                                            : "text-dark";
+
+                                <div class="card border rounded-2 p-1.5 d-flex flex-column align-items-center justify-content-start user-select-none cal-cell-min cal-day-item @cellBgClass"
+                                     @onclick="() => SelectDate(day)">
+                                    
+                                    <!-- Day Number Header -->
+                                    <div class="w-100 text-center mb-0.5 d-flex align-items-center justify-content-center" style="min-height: 22px;">
+                                        @if (isToday)
+                                        {
+                                            <span class="cal-today-badge">@day.Day</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="cal-day-num fw-bold @dayNumClass">
+                                                @day.Day
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <!-- Status / Duty Content -->
+                                    <div class="d-flex flex-column align-items-center justify-content-center w-100" style="min-height: 28px;">
+                                        @if (hasData)
+                                        {
+                                            @if (status == "Present")
+                                            {
+                                                <div class="d-flex align-items-center gap-1 cal-status-txt text-success fw-semibold">
+                                                    <span class="rounded-circle bg-success d-inline-block cal-dot"></span>
+                                                    <span>Present</span>
+                                                </div>
+                                                @if (emp?.ClockIn.HasValue == true)
+                                                {
+                                                    <span class="text-muted cal-time-txt">@FormatTime(emp.ClockIn)</span>
+                                                }
+                                            }
+                                            else if (status == "Late")
+                                            {
+                                                <div class="d-flex align-items-center gap-1 cal-status-txt text-warning-emphasis fw-semibold">
+                                                    <span class="rounded-circle bg-warning d-inline-block cal-dot"></span>
+                                                    <span>Late</span>
+                                                </div>
+                                                @if (emp?.ClockIn.HasValue == true)
+                                                {
+                                                    <span class="text-muted cal-time-txt">@FormatTime(emp.ClockIn)</span>
+                                                }
+                                            }
+                                            else if (status == "HalfDay")
+                                            {
+                                                <div class="d-flex align-items-center gap-1 cal-status-txt text-info fw-semibold">
+                                                    <span class="rounded-circle bg-info d-inline-block cal-dot"></span>
+                                                    <span>Half Day</span>
+                                                </div>
+                                                @if (emp?.ClockIn.HasValue == true)
+                                                {
+                                                    <span class="text-muted cal-time-txt">@FormatTime(emp.ClockIn)</span>
+                                                }
+                                            }
+                                            else if (status == "Leave")
+                                            {
+                                                <div class="d-flex align-items-center gap-1 cal-status-txt text-primary fw-semibold">
+                                                    <span class="rounded-circle bg-primary d-inline-block cal-dot"></span>
+                                                    <span>Leave</span>
+                                                </div>
+                                            }
+                                            else if (status == "Absent")
+                                            {
+                                                <div class="d-flex align-items-center gap-1 cal-status-txt text-danger fw-semibold">
+                                                    <span class="rounded-circle bg-danger d-inline-block cal-dot"></span>
+                                                    <span>Absent</span>
+                                                </div>
+                                            }
+                                            else if (status == "Holiday")
+                                            {
+                                                <div class="d-flex align-items-center gap-1 cal-status-txt text-info fw-semibold">
+                                                    <span class="rounded-circle bg-info d-inline-block cal-dot"></span>
+                                                    <span>Holiday</span>
+                                                </div>
+                                            }
+                                        }
+                                        else if (isWeekend)
+                                        {
+                                            <span class="cal-status-txt cal-off-txt">Weekly Off</span>
+                                        }
+                                        else if (status == "Leave")
+                                        {
+                                            <div class="d-flex align-items-center gap-1 cal-status-txt text-primary fw-semibold">
+                                                <span class="rounded-circle bg-primary d-inline-block cal-dot"></span>
+                                                <span>Leave</span>
+                                            </div>
+                                        }
+                                        else if (status == "Absent")
+                                        {
+                                            <div class="d-flex align-items-center gap-1 cal-status-txt text-danger fw-semibold">
+                                                <span class="rounded-circle bg-danger d-inline-block cal-dot"></span>
+                                                <span>Absent</span>
+                                            </div>
+                                        }
+                                        else if (status == "Holiday")
+                                        {
+                                            <div class="d-flex align-items-center gap-1 cal-status-txt text-info fw-semibold">
+                                                <span class="rounded-circle bg-info d-inline-block cal-dot"></span>
+                                                <span>Holiday</span>
+                                            </div>
+                                        }
+                                        else if (isPast)
+                                        {
+                                            <span class="text-muted opacity-40 cal-status-txt">—</span>
+                                        }
+                                    </div>
+
+                                </div>
+                            }
+
+                            <!-- Trailing Next-Month Days (Faded) -->
+                            @foreach (var nextDay in TrailingDays)
+                            {
+                                <div class="cal-cell-other-month d-flex flex-column align-items-center justify-content-start cal-cell-min p-1.5 user-select-none">
+                                    <span class="cal-day-num text-muted opacity-75 fw-medium">@nextDay.Day</span>
+                                </div>
+                            }
+
+                        </div>
+                    </div>
+
+                    <!-- Bottom Color Legend -->
+                    <div class="d-flex flex-wrap align-items-center justify-content-center gap-3 pt-2 mt-3 border-top">
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-success d-inline-block cal-dot"></span>
+                            <span class="small text-secondary fw-medium" style="font-size: 0.72rem;">Present</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-danger d-inline-block cal-dot"></span>
+                            <span class="small text-secondary fw-medium" style="font-size: 0.72rem;">Absent</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-warning d-inline-block cal-dot"></span>
+                            <span class="small text-secondary fw-medium" style="font-size: 0.72rem;">Late</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-primary d-inline-block cal-dot"></span>
+                            <span class="small text-secondary fw-medium" style="font-size: 0.72rem;">Leave</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-info d-inline-block cal-dot"></span>
+                            <span class="small text-secondary fw-medium" style="font-size: 0.72rem;">Holiday</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-secondary d-inline-block cal-dot"></span>
+                            <span class="small text-secondary fw-medium" style="font-size: 0.72rem;">Weekly Off</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        <!-- 2. RIGHT COLUMN: ATTENDANCE DETAILS SIDE PANEL -->
+        <!-- ═════════════════════════════════════════════════════════════════════ -->
+        @if (isDetailsOpen)
+        {
+            var selDateOnly = DateOnly.FromDateTime(selectedDate);
+            AttendanceLookup.TryGetValue(selDateOnly, out var selMonthlyAtt);
+            var selectedEmp = selMonthlyAtt?.Employees?.FirstOrDefault();
+            var selStatus = GetStatus(selectedDate, selectedEmp);
+            var isSelWeekend = selectedDate.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+            var hasSelData = selectedEmp != null && (selectedEmp.ClockIn.HasValue || (!string.IsNullOrWhiteSpace(selectedEmp.Status) && selectedEmp.Status != "WeeklyOff" && selectedEmp.Status != "Off"));
+
+            <div class="col-12 col-xl-4 col-lg-5">
+                <div class="card border rounded-3 h-100 bg-white shadow-none overflow-hidden">
+                    <div class="card-body p-3 d-flex flex-column justify-content-between">
+                        
+                        <div>
+                            <!-- Header with Close Button -->
+                            <div class="d-flex align-items-center justify-content-between pb-2 border-bottom">
+                                <h6 class="fw-bold mb-0 text-dark">Attendance Details</h6>
+                                <button type="button" class="btn btn-sm btn-light border-0 rounded-circle p-1.5 text-muted"
+                                        @onclick="CloseDetails"
+                                        title="Close Details">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+
+                            <!-- Selected Date Title -->
+                            <div class="mt-2 mb-2">
+                                <h5 class="fw-bold text-dark mb-1">
+                                    @selectedDate.ToString("dd MMMM yyyy")
+                                </h5>
+
+                                <!-- Status Badge Pill using Bootstrap 5 classes -->
+                                <div>
+                                    @if (hasSelData)
                                     {
-                                        @(emp.TotalHours.ToString(@"hh\:mm"))
-                                        <span class="d-none d-xl-inline"> hrs</span>
+                                        @if (selStatus == "Present")
+                                        {
+                                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                                <span class="rounded-circle bg-success d-inline-block cal-dot"></span> Present
+                                            </span>
+                                        }
+                                        else if (selStatus == "Late")
+                                        {
+                                            <span class="badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                                <span class="rounded-circle bg-warning d-inline-block cal-dot"></span> Late
+                                            </span>
+                                        }
+                                        else if (selStatus == "HalfDay")
+                                        {
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                                <span class="rounded-circle bg-info d-inline-block cal-dot"></span> Half Day
+                                            </span>
+                                        }
+                                        else if (selStatus == "Leave")
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                                <span class="rounded-circle bg-primary d-inline-block cal-dot"></span> Leave
+                                            </span>
+                                        }
+                                        else if (selStatus == "Absent")
+                                        {
+                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                                <span class="rounded-circle bg-danger d-inline-block cal-dot"></span> Absent
+                                            </span>
+                                        }
+                                        else if (selStatus == "Holiday")
+                                        {
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                                <span class="rounded-circle bg-info d-inline-block cal-dot"></span> Holiday
+                                            </span>
+                                        }
+                                    }
+                                    else if (isSelWeekend)
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="rounded-circle bg-secondary d-inline-block cal-dot"></span> Weekly Off
+                                        </span>
+                                    }
+                                    else if (selStatus == "Leave")
+                                    {
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="rounded-circle bg-primary d-inline-block cal-dot"></span> Leave
+                                        </span>
+                                    }
+                                    else if (selStatus == "Absent")
+                                    {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="rounded-circle bg-danger d-inline-block cal-dot"></span> Absent
+                                        </span>
                                     }
                                     else
                                     {
-                                        <text>—</text>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold d-inline-flex align-items-center gap-1">
+                                            <span class="rounded-circle bg-secondary d-inline-block cal-dot"></span> Weekly Off
+                                        </span>
                                     }
-                                </small>
-                            }
-                        </div>
-                    </div>
-                }
-            }
-        </div>
+                                </div>
+                            </div>
 
-        <!-- ══════════ LEGEND ══════════ -->
-        <div class="d-flex flex-wrap gap-2 gap-md-3 justify-content-center
-                    mt-3 pt-3 border-top">
-            @foreach (var (label, colorClass) in LegendItems)
-            {
-                <div class="d-flex align-items-center gap-1">
-                    <span class="cal-legend-dot rounded-circle @colorClass"></span>
-                    <small class="text-muted">@label</small>
+                            <!-- Details Key-Value List using Bootstrap Flexbox -->
+                            <div class="d-flex flex-column gap-2 mt-3 pt-1">
+                                
+                                <!-- 1. Clock In -->
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="rounded-2 bg-light border p-1.5 text-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-clock" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted fw-medium" style="font-size: 0.72rem;">Clock In</div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                            @(selectedEmp?.ClockIn.HasValue == true ? FormatTime(selectedEmp.ClockIn) : "—")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 2. Clock Out -->
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="rounded-2 bg-light border p-1.5 text-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-clock-history" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted fw-medium" style="font-size: 0.72rem;">Clock Out</div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                            @(selectedEmp?.ClockOut.HasValue == true ? FormatTime(selectedEmp.ClockOut) : "—")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 3. Break -->
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="rounded-2 bg-light border p-1.5 text-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-pause-circle" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted fw-medium" style="font-size: 0.72rem;">Break</div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                            @(selectedEmp != null && selectedEmp.BreakDuration > TimeSpan.Zero ? FormatDuration(selectedEmp.BreakDuration) : "00h 00m")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 4. Work Hours -->
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="rounded-2 bg-light border p-1.5 text-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-stopwatch" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted fw-medium" style="font-size: 0.72rem;">Work Hours</div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                            @(selectedEmp != null && selectedEmp.WorkingHours > TimeSpan.Zero ? FormatDuration(selectedEmp.WorkingHours) : "00h 00m")
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 5. Location -->
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <div class="rounded-2 bg-light border p-1.5 text-secondary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-geo-alt" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted fw-medium" style="font-size: 0.72rem;">Location</div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                            Office
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 6. Note -->
+                                <div class="d-flex align-items-start gap-2.5">
+                                    <div class="rounded-2 bg-light border p-1.5 text-secondary d-flex align-items-center justify-content-center flex-shrink-0 mt-0.5" style="width: 32px; height: 32px;">
+                                        <i class="bi bi-journal-text" style="font-size: 0.85rem;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="text-muted fw-medium" style="font-size: 0.72rem;">Note</div>
+                                        <div class="fw-medium text-secondary small text-break" style="font-size: 0.78rem;">
+                                            @(string.IsNullOrWhiteSpace(selectedEmp?.Note) ? (isSelWeekend && !hasSelData ? "Regular Weekly Off" : "—") : selectedEmp.Note)
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <!-- Bottom Action Button -->
+                        <div class="mt-3 pt-1">
+                            <button type="button" 
+                                    class="btn btn-primary bg-opacity-10 text-primary border border-primary border-opacity-25 w-100 py-2 rounded-2 d-flex align-items-center justify-content-center gap-2 fw-semibold shadow-sm"
+                                    style="font-size: 0.82rem;"
+                                    @onclick="HandleActionClick">
+                                <i class="bi bi-box-arrow-up-right"></i>
+                                View Full Report
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
-            }
-        </div>
+            </div>
+        }
+
     </div>
 </div>
 
@@ -108,37 +427,120 @@
     [Parameter, EditorRequired]
     public Dictionary<DateOnly, MonthlyAttendanceViewModel> AttendanceLookup { get; set; } = new();
 
-    private List<DateTime?> CalendarDays = new();
+    [Parameter]
+    public EventCallback<DateTime> OnDateSelected { get; set; }
 
-    private static readonly string[] WeekDays =
-        { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+    [Parameter]
+    public EventCallback<DateTime> OnRequestAttendance { get; set; }
 
-    private static readonly (string Label, string ColorClass)[] LegendItems =
+    private DateTime selectedDate;
+    private bool isDetailsOpen = true;
+
+    private List<DateTime> LeadingDays = new();
+    private List<DateTime> MonthDays = new();
+    private List<DateTime> TrailingDays = new();
+
+    private static readonly (string Name, bool IsWeekend)[] WeekDayHeaders =
     {
-        ("Present", "bg-success"),
-        ("Absent",  "bg-danger"),
-        ("Late",    "bg-warning"),
-        ("Leave",   "bg-info"),
-        ("Today",   "bg-primary")
+        ("Sun", true),
+        ("Mon", false),
+        ("Tue", false),
+        ("Wed", false),
+        ("Thu", false),
+        ("Fri", false),
+        ("Sat", true)
     };
 
-    protected override void OnParametersSet() => BuildCalendar();
-
-    private void BuildCalendar()
+    protected override void OnParametersSet()
     {
-        CalendarDays.Clear();
+        BuildCalendarGrid();
+        
+        // If selectedDate is not within the current month/year, default to today or 1st of month
+        if (selectedDate.Year != Year || selectedDate.Month != Month)
+        {
+            if (DateTime.Today.Year == Year && DateTime.Today.Month == Month)
+                selectedDate = DateTime.Today;
+            else
+                selectedDate = new DateTime(Year, Month, 1);
+        }
+    }
+
+    private void BuildCalendarGrid()
+    {
+        LeadingDays.Clear();
+        MonthDays.Clear();
+        TrailingDays.Clear();
 
         var firstDay = new DateTime(Year, Month, 1);
         var daysInMonth = DateTime.DaysInMonth(Year, Month);
+        var lastDay = new DateTime(Year, Month, daysInMonth);
 
-        for (int i = 0; i < (int)firstDay.DayOfWeek; i++)
-            CalendarDays.Add(null);
+        // Leading days from previous month
+        var prevMonthOffset = (int)firstDay.DayOfWeek;
+        for (int i = prevMonthOffset; i > 0; i--)
+        {
+            LeadingDays.Add(firstDay.AddDays(-i));
+        }
 
+        // Current month days
         for (int d = 1; d <= daysInMonth; d++)
-            CalendarDays.Add(new DateTime(Year, Month, d));
+        {
+            MonthDays.Add(new DateTime(Year, Month, d));
+        }
+
+        // Trailing days to fill the complete grid (multiple of 7)
+        var totalCells = LeadingDays.Count + MonthDays.Count;
+        var remainder = totalCells % 7;
+        if (remainder > 0)
+        {
+            var trailingCount = 7 - remainder;
+            for (int i = 1; i <= trailingCount; i++)
+            {
+                TrailingDays.Add(lastDay.AddDays(i));
+            }
+        }
     }
 
-    private static string GetMonthName(int m)
-        => System.Globalization.CultureInfo.CurrentCulture
-            .DateTimeFormat.GetMonthName(m);
+    private async Task SelectDate(DateTime date)
+    {
+        selectedDate = date;
+        isDetailsOpen = true;
+        if (OnDateSelected.HasDelegate)
+            await OnDateSelected.InvokeAsync(date);
+    }
+
+    private void CloseDetails()
+    {
+        isDetailsOpen = false;
+    }
+
+    private async Task HandleActionClick()
+    {
+        if (OnRequestAttendance.HasDelegate)
+            await OnRequestAttendance.InvokeAsync(selectedDate);
+    }
+
+    private static string GetStatus(DateTime date, EmployeeDailyAttendanceViewModel? emp)
+    {
+        if (emp != null && !string.IsNullOrWhiteSpace(emp.Status))
+        {
+            return emp.Status;
+        }
+
+        if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "WeeklyOff";
+
+        return string.Empty;
+    }
+
+    private static string FormatTime(TimeSpan? ts)
+    {
+        if (ts == null) return "—";
+        return TimeOnly.FromTimeSpan(ts.Value).ToString("hh:mm tt");
+    }
+
+    private static string FormatDuration(TimeSpan ts)
+    {
+        return $"{(int)ts.TotalHours:D2}h {ts.Minutes:D2}m";
+    }
 }

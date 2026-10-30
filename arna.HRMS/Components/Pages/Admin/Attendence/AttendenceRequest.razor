@@ -1,4 +1,4 @@
-﻿@page "/admin-attendance-requests"
+@page "/admin-attendance-requests"
 
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
@@ -184,6 +184,7 @@
                     <AppTable TItem="AttendanceRequestViewModel"
                               Items="FilteredRequests"
                               Columns="TableSchemas.AttendanceRequest"
+                              ShowActions="@(IsAdmin() || IsSuperAdmin())"
                               EnablePagination="true"
                               PageSize="10"
                               WrapperClass="att-list-table">

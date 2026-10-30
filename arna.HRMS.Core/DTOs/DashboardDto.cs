@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Core.DTOs;
+namespace arna.HRMS.Core.DTOs;
 
 public class DashboardDto
 {
@@ -21,4 +21,8 @@ public class DashboardDto
     public int TotalEmployees { get; set; }
     public int AvgWorkingHours { get; set; }
     public int AvgBreakHours { get; set; }
+    public int MonthPresentEmployee { get; set; }
+    public int MonthLeaveEmployee { get; set; }
+    public int MonthAbsentEmployee { get; set; }
+    public int MonthHalfDayEmployee { get; set; }
 }

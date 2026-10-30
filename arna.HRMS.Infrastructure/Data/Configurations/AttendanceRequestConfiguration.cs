@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -48,5 +48,9 @@ public class AttendanceRequestConfiguration : IEntityTypeConfiguration<Attendanc
             .WithMany(e => e.AttendanceRequest)
             .HasForeignKey(a => a.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Performance Indexes
+        builder.HasIndex(ae => new { ae.EmployeeId, ae.StatusId });
+        builder.HasIndex(ae => ae.FromDate);
     }
 }

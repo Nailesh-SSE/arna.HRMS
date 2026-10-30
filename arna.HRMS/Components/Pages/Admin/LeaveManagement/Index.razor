@@ -1,95 +1,52 @@
-﻿@page "/admin-leave-management"
+@page "/admin-leave-management"
+@page "/admin-leave-types"
+@page "/admin-leave-requests"
+@page "/admin-festival-holidays"
 
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Admin.LeaveManagement
 @using arna.HRMS.Core.Entities
 @using arna.HRMS.Services.Auth
 
+@inject NavigationManager NavigationManager
 @inherits AuthenticatedLayoutBase
+@implements IDisposable
 
 <Loader Visible="isLoading" Message="@loadingMessage" />
 
 @if (!isLoading)
 {
-    <div class="container-fluid px-3 px-md-4 py-3 leave-fade-in">
+    <div class="container-fluid p-0 leave-fade-in">
 
         <!-- ══════════ HEADER ══════════ -->
         <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <h3 class="fw-bold mb-1">
-                    <i class="bi bi-briefcase-fill text-primary me-2"></i>
-                    Leave Management
-                </h3>
+            <div class="d-flex align-items-center gap-2">
+                <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
+                             p-2 d-inline-flex align-items-center justify-content-center">
+                    <i class="bi @GetHeaderIcon() fs-5"></i>
+                </span>
+                <div>
+                    <h5 class="fw-bold mb-0">@GetHeaderTitle()</h5>
+                    <p class="text-muted mb-0 small d-none d-sm-block">
+                        @GetHeaderSubtitle()
+                    </p>
+                </div>
             </div>
         </div>
 
-        <!-- ══════════ TAB NAVIGATION ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-body p-0">
-                <ul class="nav nav-tabs leave-tabs px-3 pt-3" role="tablist">
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link @(activeTab == Tab.LeaveTypes ? "active" : "")"
-                                @onclick="() => SetTab(Tab.LeaveTypes)">
-                            <i class="bi bi-bookmark-check me-2"></i>
-                            Leave Types
-                            @if (leaveTypeCount > 0)
-                            {
-                                <span class="badge bg-primary bg-opacity-10 text-primary
-                                             rounded-pill ms-2">
-                                    @leaveTypeCount
-                                </span>
-                            }
-                        </button>
-                    </li>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link @(activeTab == Tab.Requests ? "active" : "")"
-                                @onclick="() => SetTab(Tab.Requests)">
-                            <i class="bi bi-inbox me-2"></i>
-                            Leave Requests
-                            @if (pendingRequestCount > 0)
-                            {
-                                <span class="badge bg-warning text-dark
-                                             rounded-pill ms-2">
-                                    @pendingRequestCount
-                                </span>
-                            }
-                        </button>
-                    </li>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link @(activeTab == Tab.Festivals ? "active" : "")"
-                                @onclick="() => SetTab(Tab.Festivals)">
-                            <i class="bi bi-calendar-heart me-2"></i>
-                            Festival Holidays
-                            @if (festivalCount > 0)
-                            {
-                                <span class="badge bg-success bg-opacity-10 text-success
-                                             rounded-pill ms-2">
-                                    @festivalCount
-                                </span>
-                            }
-                        </button>
-                    </li>
-
-                </ul>
-            </div>
-        </div>
-
-        <!-- ══════════ TAB CONTENT ══════════ -->
+        <!-- ══════════ CONTENT ══════════ -->
         <div class="tab-content">
 
             @if (activeTab == Tab.LeaveTypes)
             {
                 <LeaveTypes @ref="leaveType"
-                              OnCountChanged="c => { leaveTypeCount = c; StateHasChanged(); }" />
+                            OnCountChanged="c => { leaveTypeCount = c; StateHasChanged(); }" />
             }
 
             @if (activeTab == Tab.Requests)
             {
                 <LeaveRequest @ref="leaveRequest"
-                                 OnPendingCountChanged="c => { pendingRequestCount = c; StateHasChanged(); }" />
+                              OnPendingCountChanged="c => { pendingRequestCount = c; StateHasChanged(); }" />
             }
 
             @if (activeTab == Tab.Festivals)
@@ -105,8 +62,11 @@
 
 @code {
 
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
+
     private bool isLoading = true;
-    private string loadingMessage = "Loading leavemanagement...";
+    private string loadingMessage = "Loading leave management...";
     private enum Tab { LeaveTypes, Requests, Festivals }
     private Tab activeTab = Tab.LeaveTypes;
 
@@ -123,11 +83,63 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        SyncTabFromUri(NavigationManager.Uri);
         isLoading = false;
     }
 
-    private void SetTab(Tab tab)
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        activeTab = tab;
+        SyncTabFromUri(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncTabFromUri(string uri)
+    {
+        if (uri.Contains("/admin-festival-holidays", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TabQuery, "festivals", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TabQuery, "festival", StringComparison.OrdinalIgnoreCase))
+        {
+            activeTab = Tab.Festivals;
+        }
+        else if (uri.Contains("/admin-leave-requests", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(TabQuery, "requests", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(TabQuery, "request", StringComparison.OrdinalIgnoreCase))
+        {
+            activeTab = Tab.Requests;
+        }
+        else
+        {
+            activeTab = Tab.LeaveTypes;
+        }
+    }
+
+    private string GetHeaderTitle() => activeTab switch
+    {
+        Tab.LeaveTypes => "Leave Types",
+        Tab.Requests => "Leave Requests",
+        Tab.Festivals => "Festival Holidays",
+        _ => "Leave Management"
+    };
+
+    private string GetHeaderSubtitle() => activeTab switch
+    {
+        Tab.LeaveTypes => "Configure employee leave categories, quotas, and policies",
+        Tab.Requests => "Review, approve, or reject employee leave applications",
+        Tab.Festivals => "Manage company holidays and festival calendar",
+        _ => "Manage organizational leave policies and employee requests"
+    };
+
+    private string GetHeaderIcon() => activeTab switch
+    {
+        Tab.LeaveTypes => "bi-tags-fill",
+        Tab.Requests => "bi-inbox-fill",
+        Tab.Festivals => "bi-calendar-heart-fill",
+        _ => "bi-briefcase-fill"
+    };
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
     }
 }

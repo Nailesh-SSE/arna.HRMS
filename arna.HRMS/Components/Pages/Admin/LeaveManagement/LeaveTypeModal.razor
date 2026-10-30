@@ -39,9 +39,9 @@
 
                         <div class="row g-3 align-items-end">
                             <div class="col-md-6">
-                                <AppNumberInput Label="Max Days *"
-                                                Value="@leaveType.MaxPerYear"
-                                                ValueChanged="v => leaveType.MaxPerYear = v"
+                                <AppNumberInput TValue="int"
+                                                Label="Max Days *"
+                                                @bind-Value="leaveType.MaxPerYear"
                                                 ValidationExpression="() => leaveType.MaxPerYear" />
                             </div>
                             <div class="col-md-6 d-flex align-items-center pt-4">

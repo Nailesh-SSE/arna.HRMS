@@ -1,8 +1,8 @@
-﻿@typeparam TItem
+@typeparam TItem
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 
-<div class="app-table-wrapper @WrapperClass">
+<div class="app-table-wrapper @WrapperClass" style="@(!string.IsNullOrWhiteSpace(MaxHeight) ? $"max-height: {MaxHeight}; overflow-y: auto;" : "")" @attributes="AdditionalAttributes">
     <table class="table table-hover align-middle mb-0 @TableClass custom-table">
         <thead>
             <tr>
@@ -46,17 +46,39 @@
                                     var cssClass = col.CssClassFunc?.Invoke(item) ?? col.CssClass;
                                     var cellVal = col.Value(item);
                                 }
-                                @if (!string.IsNullOrWhiteSpace(tipHtml))
+                                @if (col.Template != null)
+                                {
+                                    @col.Template(item)
+                                }
+                                else if (!string.IsNullOrWhiteSpace(tipHtml))
                                 {
                                     <div class="att-tip-host">
                                         <span class="att-tip-trigger @cssClass">
-                                            @cellVal
+                                            @if (cellVal is MarkupString tipMs)
+                                            {
+                                                @tipMs
+                                            }
+                                            else
+                                            {
+                                                @cellVal
+                                            }
                                             <i class="bi bi-info-circle att-tip-icon"></i>
                                         </span>
                                         <div class="att-tip-box">
                                             @((MarkupString)tipHtml)
                                         </div>
                                     </div>
+                                }
+                                else if (cellVal is MarkupString ms)
+                                {
+                                    @if (!string.IsNullOrWhiteSpace(cssClass))
+                                    {
+                                        <span class="@cssClass">@ms</span>
+                                    }
+                                    else
+                                    {
+                                        @ms
+                                    }
                                 }
                                 else if (!string.IsNullOrWhiteSpace(cssClass))
                                 {
@@ -192,6 +214,8 @@
 
     [Parameter] public string WrapperClass { get; set; } = "";
     [Parameter] public string TableClass { get; set; } = "";
+    [Parameter] public string? MaxHeight { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
     [Parameter] public Func<TItem, string>? RowClassFunc { get; set; }
 
     private int currentPage = 1;

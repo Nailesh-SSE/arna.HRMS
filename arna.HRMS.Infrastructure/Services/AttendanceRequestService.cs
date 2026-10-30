@@ -147,11 +147,21 @@ public class AttendanceRequestService : IAttendanceRequestService
             return;
         }
 
-        // Bug 10 FIX: Calculate actual working hours for each day instead of passing clockOut as totalHours
-        // For the first day: clock-in to end of day (or use TotalHours if available)
+        // For the first day: clock-in record
         await InsertAttendanceAsync(req, fromDate, clockIn, null, TimeSpan.Zero);
-        // For the last day: start of day to clock-out, calculate actual working time
-        var lastDayHours = clockOut; // This represents the duration from midnight to clockOut time
+
+        // For intermediate days (between fromDate and toDate):
+        for (var d = fromDate.AddDays(1); d < toDate; d = d.AddDays(1))
+        {
+            if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+            {
+                await InsertAttendanceAsync(req, d, clockIn, null, TimeSpan.Zero);
+                await InsertAttendanceAsync(req, d, null, clockOut, req.TotalHours);
+            }
+        }
+
+        // For the last day: clock-out record
+        var lastDayHours = clockOut;
         await InsertAttendanceAsync(req, toDate, null, clockOut, lastDayHours > TimeSpan.Zero ? lastDayHours : req.TotalHours);
     }
 
@@ -165,7 +175,8 @@ public class AttendanceRequestService : IAttendanceRequestService
             ClockOutTime = clockOut,
             WorkingHours = totalHours,
             StatusId = AttendanceStatus.Present,
-            Notes = req.Description ?? string.Empty
+            Notes = req.Description ?? string.Empty,
+            DeviceId = DeviceType.LaptopDesktop
         });
     }
 }

@@ -1,4 +1,6 @@
-﻿@page "/emp-leave-management"
+@page "/emp-leave-management"
+@page "/emp-leave-requests"
+@page "/emp-festival-holidays"
 
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Admin.LeaveManagement
@@ -13,64 +15,42 @@
 @inject ILeaveService LeaveService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
 @inherits AuthenticatedLayoutBase
+@implements IDisposable
 
 <Loader Visible="isLoading" Message="@loadingMessage" />
 
 @if (!isLoading)
 {
-    <div class="container-fluid px-3 px-md-4 py-3 leave-fade-in">
+    <div class="container-fluid p-0 leave-fade-in">
 
         <!-- ══════════ HEADER ══════════ -->
         <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <h3 class="fw-bold mb-1">
-                    <i class="bi bi-calendar2-check-fill text-primary me-2"></i>
-                    Leave Management 
-                </h3>
+            <div class="d-flex align-items-center gap-2">
+                <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
+                             p-2 d-inline-flex align-items-center justify-content-center">
+                    <i class="bi @(activeTab == Tab.Leaves ? "bi-bookmark-check-fill" : "bi-calendar-heart-fill") fs-5"></i>
+                </span>
+                <div>
+                    <h5 class="fw-bold mb-0">@(activeTab == Tab.Leaves ? "Leave Requests" : "Festival Holidays")</h5>
+                    <p class="text-muted mb-0 small d-none d-sm-block">
+                        @(activeTab == Tab.Leaves ? "View and manage your leave requests and balances" : "View organizational holidays and upcoming festival calendar")
+                    </p>
+                </div>
             </div>
+
+            @if (activeTab == Tab.Leaves)
+            {
+                <button class="btn btn-primary btn-sm rounded-pill px-3 py-1.5 shadow-sm d-inline-flex align-items-center gap-1.5 fw-medium"
+                        @onclick="() => leaveTab?.OpenApplyModal()">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Apply Leave</span>
+                </button>
+            }
         </div>
 
-        <!-- ══════════ TAB NAVIGATION ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 mb-4">
-            <div class="card-body p-0">
-                <ul class="nav nav-tabs leave-tabs px-3 pt-3" role="tablist">
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link @(activeTab == Tab.Leaves ? "active" : "")"
-                                @onclick="() => SetTab(Tab.Leaves)">
-                            <i class="bi bi-bookmark-check me-2"></i>
-                            Leaves Request
-                            @if (leaveRequestCount > 0)
-                            {
-                                <span class="badge bg-primary bg-opacity-10 text-primary
-                                             rounded-pill ms-2">
-                                    @leaveRequestCount
-                                </span>
-                            }
-                        </button>
-                    </li>
-
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link @(activeTab == Tab.FestivalsHoliday ? "active" : "")"
-                                @onclick="() => SetTab(Tab.FestivalsHoliday)">
-                            <i class="bi bi-calendar-heart me-2"></i>
-                            Festival Holidays
-                            @if (festivalCount > 0)
-                            {
-                                <span class="badge bg-success bg-opacity-10 text-success
-                                             rounded-pill ms-2">
-                                    @festivalCount
-                                </span>
-                            }
-                        </button>
-                    </li>
-
-                </ul>
-            </div>
-        </div>
-
-        <!-- ══════════ TAB CONTENT ══════════ -->
+        <!-- ══════════ CONTENT ══════════ -->
         <div class="tab-content">
 
             @if (activeTab == Tab.Leaves)
@@ -87,27 +67,47 @@
         </div>
     </div>
 }
+
 @code {
 
     private bool isLoading = true;
-    private bool showModal;
     private enum Tab { Leaves, FestivalsHoliday }
     private Tab activeTab = Tab.Leaves;
     private int leaveRequestCount;
     private int festivalCount;
 
-    private string loadingMessage = "Loading leavemanagement... ";
+    private string loadingMessage = "Loading leave management... ";
     private EmployeeLeaveTypes? leaveTab;
     private EmployeeFestivalHolidayTab? festivalHoliday;
     
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        SyncTabFromUri(NavigationManager.Uri);
         isLoading = false;
     }
 
-    private void SetTab(Tab tab)
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        activeTab = tab;
+        SyncTabFromUri(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncTabFromUri(string uri)
+    {
+        if (uri.Contains("/emp-festival-holidays", StringComparison.OrdinalIgnoreCase))
+        {
+            activeTab = Tab.FestivalsHoliday;
+        }
+        else
+        {
+            activeTab = Tab.Leaves;
+        }
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
     }
 }

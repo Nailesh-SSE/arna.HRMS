@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Models.ViewModels.Attendance;
 using arna.HRMS.Models.ViewModels.Leave;
 
@@ -25,4 +25,8 @@ public class DashboardViewModel
     public int TotalEmployees { get; set; }
     public int AvgWorkingHours { get; set; }
     public int AvgBreakHours { get; set; }
+    public int MonthPresentEmployee { get; set; }
+    public int MonthLeaveEmployee { get; set; }
+    public int MonthAbsentEmployee { get; set; }
+    public int MonthHalfDayEmployee { get; set; }
 }

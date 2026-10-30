@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using AutoMapper;
 
@@ -13,6 +13,11 @@ public class AttendanceRequestProfile : Profile
                 opt => opt.MapFrom(src =>
                     src.Employee != null
                         ? $"{src.Employee.FirstName} {src.Employee.LastName}"
+                        : string.Empty))
+            .ForMember(dest => dest.EmployeeNumber,
+                opt => opt.MapFrom(src =>
+                    src.Employee != null
+                        ? src.Employee.EmployeeNumber
                         : string.Empty))
             .ForMember(dest => dest.ApprovedByName,
                 opt => opt.MapFrom(src =>

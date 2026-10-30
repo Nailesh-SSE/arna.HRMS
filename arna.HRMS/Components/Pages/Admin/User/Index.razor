@@ -1,205 +1,263 @@
-﻿@page "/user"
+@page "/user"
 
 @using arna.HRMS.Components.Loader
-@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
+@using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Common
 
 @inject IUserService UsersService
+@inject IRoleService RoleService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
+@inherits AuthenticatedLayoutBase
 
 <Loader Visible="_isLoading" Message="@_loadingMessage" />
 
-<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
+<div class="user-page-container">
 
-    <!-- ═══════════ HEADER ═══════════ -->
-    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
-                justify-content-between gap-3 gap-sm-4 mb-4 mb-md-5">
-        <div class="d-flex align-items-start gap-3">
-            <div class="user-header-icon bg-primary bg-opacity-10 text-primary rounded-2
-                        d-inline-flex align-items-center justify-content-center flex-shrink-0">
-                <i class="bi bi-person-fill-gear"></i>
-            </div>
-            <div>
-                <h4 class="fw-bold mb-2 fs-5 fs-md-4">Users</h4>
-                <p class="text-muted mb-0 small d-none d-sm-block">
-                    Manage system users and their access
-                </p>
-            </div>
+    <!-- ═══════════ 1. PAGE HEADER ═══════════ -->
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-4">
+        <div>
+            <h3 class="user-title mb-1">Users</h3>
+            <p class="user-subtitle mb-0">Manage system users, access credentials, and assigned roles.</p>
         </div>
 
-        <button class="btn btn-primary btn-sm rounded-pill px-3 ms-sm-auto"
-                @onclick="@(() => NavigateTo("/user/create"))">
-            <i class="bi bi-plus-lg me-1"></i>
-            <span class="d-none d-sm-inline">Add User</span>
-            <span class="d-sm-none">Add</span>
-        </button>
+        @if (IsAdmin() || IsSuperAdmin())
+        {
+            <button class="btn btn-add-primary"
+                    @onclick="@(() => NavigateTo("/user/create"))">
+                <i class="bi bi-plus-lg"></i>
+                <span>Add User</span>
+            </button>
+        }
     </div>
 
-    <!-- ═══════════ TABLE ═══════════ -->
-    <div class="card border-0 shadow-sm rounded-3">
-        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-search text-primary"></i>
-                        <span class="fw-medium text-muted small">Filter</span>
-                    </div>
-
-                    <div style="width: 400px;">
-                        <div style="width: 400px;">
-                            <input type="text"
-                                   class="form-control form-control-sm rounded-pill px-3 py-2"
-                                   style="border:2px solid #e5e7eb; background:#f8fafc;"
-                                   onfocus="this.style.borderColor='#2563eb'"
-                                   onblur="this.style.borderColor='#e5e7eb'"
-                                   placeholder="Search by username, email, or name..."
-                                   @bind="_searchTerm"
-                                   @bind:event="oninput" />
-                        </div>
-                    </div>
-
-                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
-                    {
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                @onclick="ClearSearch">
-                            <i class="bi bi-x-lg me-1"></i>
-                            <span class="d-none d-sm-inline">Clear</span>
-                        </button>
-                    }
-                </div>
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
-                    @FilteredUsers.Count
-                    <span class="d-none d-sm-inline ms-1">users</span>
-                </span>
+    <!-- ═══════════ 2. FILTER & SEARCH BAR ═══════════ -->
+    <div class="user-filter-card mb-4">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            
+            <!-- Search Box -->
+            <div class="filter-search-box">
+                <i class="bi bi-search filter-search-icon"></i>
+                <input type="text"
+                       class="filter-search-input"
+                       placeholder="Search by name, email, or username..."
+                       @bind="_searchTerm"
+                       @bind:event="oninput" />
             </div>
-        </div>
 
-        <div class="card-body p-0">
+            <!-- Role Filter -->
+            <div>
+                <select class="filter-dropdown-select" @bind="_selectedRole">
+                    <option value="">All Roles</option>
+                    @foreach (var role in _roles)
+                    {
+                        <option value="@role.Name">@role.Name</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+                <select class="filter-dropdown-select" @bind="_selectedStatus">
+                    <option value="All">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                </select>
+            </div>
+
+            <!-- Reset / Clear Filters -->
+            @if (HasActiveFilters)
+            {
+                <div>
+                    <button class="btn-filter-trigger active-filter" @onclick="ClearAllFilters" title="Reset all filters">
+                        <i class="bi bi-x-circle"></i>
+                        <span>Reset</span>
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <button class="btn-filter-trigger" @onclick="() => {}">
+                        <i class="bi bi-funnel"></i>
+                        <span>Filters</span>
+                    </button>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- ═══════════ 3. USERS GRID CARD ═══════════ -->
+    <div class="user-grid-card">
+        <div class="user-table-wrapper">
             @if (_isLoading)
             {
-                <div class="text-center py-5 py-md-6">
+                <div class="text-center py-5">
                     <div class="spinner-border text-primary mb-3" role="status"></div>
-                    <p class="text-muted mb-0 small">Loading users…</p>
+                    <p class="text-muted mb-0 small">Loading users...</p>
                 </div>
             }
             else if (!FilteredUsers.Any())
             {
-                <div class="text-center py-5 py-md-6 px-3">
-                    <div class="user-empty-icon bg-light rounded-3 d-inline-flex
-                                    align-items-center justify-content-center mx-auto mb-3">
-                        <i class="bi bi-inbox fs-1 text-muted opacity-50"></i>
+                <div class="text-center py-5 px-3">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-3 text-secondary opacity-75" style="width:64px; height:64px;">
+                        <i class="bi bi-person-gear fs-2"></i>
                     </div>
-                    <h6 class="fw-semibold text-muted mb-2">No Users Found</h6>
-                    <p class="text-muted small mb-4 user-empty-text mx-auto">
-                        @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                    <h6 class="fw-bold text-dark mb-1">No Users Found</h6>
+                    <p class="text-muted small mb-3">
+                        @if (HasActiveFilters)
                         {
-                            <span>No users match "<strong>@_searchTerm</strong>"</span>
+                            <span>No user records match the selected filters.</span>
                         }
                         else
                         {
-                            <span>No users have been added yet.</span>
+                            <span>No system user accounts have been added yet.</span>
                         }
                     </p>
-                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                    @if (HasActiveFilters)
                     {
-                        <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
-                                @onclick="ClearSearch">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Search
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" @onclick="ClearAllFilters">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Clear Filters
                         </button>
                     }
-                    else
+                    else if (IsAdmin() || IsSuperAdmin())
                     {
-                        <button class="btn btn-sm btn-primary rounded-pill px-4"
-                                @onclick="@(() => NavigateTo("/user/create"))">
-                            <i class="bi bi-plus-lg me-1"></i>Add First User
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" @onclick="@(() => NavigateTo("/user/create"))">
+                            <i class="bi bi-plus-lg me-1"></i> Add First User
                         </button>
                     }
                 </div>
             }
             else
             {
-                <div class="user-table-scroll">
-                    <AppTable TItem="UserViewModel"
-                              Items="FilteredUsers"
-                              Columns="TableSchemas.Users"
-                              OnEdit="EditUser"
-                              OnDelete="DeleteUser" />
-                </div>
+                <AppTable TItem="UserViewModel"
+                          Items="FilteredUsers"
+                          Columns="TableSchemas.Users"
+                          EnablePagination="true"
+                          PageSize="_pageSize"
+                          ShowActions="@(IsAdmin() || IsSuperAdmin())"
+                          OnEdit="EditUser"
+                          OnDelete="DeleteUser" />
             }
         </div>
     </div>
+
 </div>
 
 @code {
-
     // ═══════════ STATE ═══════════
-
     private List<UserViewModel> _users = new();
+    private List<RoleViewModel> _roles = new();
+
     private bool _isLoading = true;
     private string _loadingMessage = "Loading users...";
+
+    // Filters
     private string? _searchTerm;
+    private string _selectedRole = "";
+    private string _selectedStatus = "All";
+
+    // Pagination
+    private int _pageSize = 10;
 
     // ═══════════ COMPUTED ═══════════
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(_searchTerm) ||
+        !string.IsNullOrWhiteSpace(_selectedRole) ||
+        _selectedStatus != "All";
 
     private List<UserViewModel> FilteredUsers
-        => string.IsNullOrWhiteSpace(_searchTerm)
-            ? _users
-            : _users
-                .Where(u =>
+    {
+        get
+        {
+            var query = _users.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                query = query.Where(u =>
                     MatchesSearch(u.Username) ||
                     MatchesSearch(u.Email) ||
                     MatchesSearch(u.FirstName) ||
-                    MatchesSearch(u.LastName))
-                .ToList();
+                    MatchesSearch(u.LastName) ||
+                    MatchesSearch(u.FullName) ||
+                    MatchesSearch(u.EmployeeName));
+            }
 
-    private IEnumerable<StatCardModel> StatCards => new[]
-    {
-        new StatCardModel("bi-people-fill",       "bg-primary bg-opacity-10", "text-primary", _users.Count,                   "Total"),
-        new StatCardModel("bi-person-check-fill", "bg-success bg-opacity-10", "text-success", _users.Count(u => u.IsActive),  "Active"),
-    };
+            if (!string.IsNullOrWhiteSpace(_selectedRole))
+            {
+                query = query.Where(u => string.Equals(u.Role, _selectedRole, StringComparison.OrdinalIgnoreCase));
+            }
 
-    // ═══════════ LIFECYCLE ═══════════
+            if (_selectedStatus == "Active")
+            {
+                query = query.Where(u => u.IsActive);
+            }
+            else if (_selectedStatus == "Inactive")
+            {
+                query = query.Where(u => !u.IsActive);
+            }
 
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadUsersAsync();
+            return query.ToList();
+        }
     }
 
-    // ═══════════ DATA ═══════════
+    // ═══════════ LIFECYCLE ═══════════
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await LoadDataAsync();
+    }
 
-    private async Task LoadUsersAsync()
+    // ═══════════ DATA LOADING ═══════════
+    private async Task LoadDataAsync()
     {
         _isLoading = true;
 
-        var result = await UsersService.GetUsersAsync();
+        try
+        {
+            var userTask = UsersService.GetUsersAsync();
+            var roleTask = RoleService.GetRolesAsync();
 
-        if (result.IsSuccess && result.Data != null)
-        {
-            _users = result.Data;
-        }
-        else if (!result.IsSuccess)
-        {
-            await NotificationService.Error($"Failed to load users ({result.StatusCode}): {result.Message}");
-            _users = new List<UserViewModel>();
-        }
-        else
-        {
-            _users = new List<UserViewModel>();
-        }
+            await Task.WhenAll(userTask, roleTask);
 
-        _isLoading = false;
+            var userResult = await userTask;
+            var roleResult = await roleTask;
+
+            if (userResult.IsSuccess && userResult.Data != null)
+            {
+                _users = userResult.Data;
+            }
+            else
+            {
+                _users = new();
+                await NotificationService.Error(userResult.Message ?? "Failed to load users");
+            }
+
+            if (roleResult.IsSuccess && roleResult.Data != null)
+            {
+                _roles = roleResult.Data.Where(r => r.IsActive).OrderBy(r => r.Name).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UserGrid] Error loading: {ex.Message}");
+            await NotificationService.Error("An error occurred while loading users.");
+            _users = new();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
-    // ═══════════ EVENTS ═══════════
-
-    private void NavigateTo(string route)
-        => NavigationManager.NavigateTo(route);
+    // ═══════════ EVENTS & HELPERS ═══════════
+    private void NavigateTo(string route) => NavigationManager.NavigateTo(route);
 
     private void EditUser(UserViewModel model)
         => NavigationManager.NavigateTo($"/user/edit/{model.Id}");
@@ -207,7 +265,7 @@
     private async Task DeleteUser(UserViewModel model)
     {
         var confirmed = await JsRuntime.InvokeAsync<bool>(
-            "confirm", "Are you sure you want to delete this user?");
+            "confirm", $"Are you sure you want to delete user {model.Username}?");
 
         if (!confirmed) return;
 
@@ -215,24 +273,22 @@
 
         if (!result.IsSuccess)
         {
-            await NotificationService.Error($"Delete failed ({result.StatusCode}): {result.Message ?? "Unable to delete user."}");
+            await NotificationService.Error(result.Message ?? "Unable to delete user.");
             return;
         }
 
         await NotificationService.Success("User deleted successfully.");
-        await LoadUsersAsync();
+        await LoadDataAsync();
     }
 
-    private void ClearSearch() => _searchTerm = null;
-
-    // ═══════════ HELPERS ═══════════
+    private void ClearAllFilters()
+    {
+        _searchTerm = null;
+        _selectedRole = "";
+        _selectedStatus = "All";
+    }
 
     private bool MatchesSearch(string? value)
         => !string.IsNullOrWhiteSpace(value) &&
            value.Contains(_searchTerm!, StringComparison.OrdinalIgnoreCase);
-
-    // ═══════════ INNER TYPES ═══════════
-
-    private record StatCardModel(
-        string Icon, string BgClass, string TextClass, int Count, string Label);
 }

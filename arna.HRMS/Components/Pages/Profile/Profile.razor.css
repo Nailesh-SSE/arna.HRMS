@@ -1,100 +1,192 @@
-﻿/* ══════════ FADE IN ══════════ */
+/* ═══════════════════════════════════════════════════════════════ */
+/* ENTERPRISE 2-COLUMN PROFILE DESIGN SYSTEM                       */
+/* ═══════════════════════════════════════════════════════════════ */
+
 .profile-fade-in {
-    animation: profileFade 0.35s ease-out;
+    animation: profileFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes profileFade {
+@keyframes profileFadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(2px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-/* ══════════ TABS ══════════ */
-::deep .profile-tabs {
-    border-bottom: 2px solid #e9ecef;
-    gap: 4px;
+.profile-page-container {
+    width: 100%;
 }
 
-    ::deep .profile-tabs .nav-link {
-        border: none;
-        border-bottom: 3px solid transparent;
-        border-radius: 0;
-        color: #6c757d;
-        font-weight: 500;
-        padding: 0.75rem 1.25rem;
-        transition: all 0.2s ease;
-    }
-
-        ::deep .profile-tabs .nav-link:hover {
-            color: #0d6efd;
-            background: #f8f9fa;
-            border-bottom-color: #dee2e6;
-        }
-
-        ::deep .profile-tabs .nav-link.active {
-            color: #0d6efd;
-            background: transparent;
-            border-bottom-color: #0d6efd;
-            font-weight: 600;
-        }
-
-.profile-banner {
-    height: 120px;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed, #a855f7);
+/* ═══════════════════════════════════════════════════════════════ */
+/* 1. LEFT COLUMN: PROFILE IDENTITY CARD                           */
+/* ═══════════════════════════════════════════════════════════════ */
+.profile-side-card {
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff;
 }
 
-/* Avatar circle */
-.avatar-circle {
-    width: 100px;
-    height: 100px;
+.profile-avatar-circle {
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
-    color: #fff;
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: 2px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 4px solid #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    user-select: none;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
 }
 
-/* Contact icon square */
-.contact-icon {
-    width: 38px;
-    height: 38px;
-    min-width: 38px;
-    font-size: 0.85rem;
+.profile-quick-list .quick-item {
+    font-size: 0.86rem;
+    border-color: #f1f5f9 !important;
 }
 
-/* Tab active color override */
-::deep .nav-tabs .nav-link.active {
-    color: #4f46e5;
-    border-bottom-color: #4f46e5;
+/* ═══════════════════════════════════════════════════════════════ */
+/* 2. RIGHT COLUMN: MAIN TABS & DETAILS CARD                       */
+/* ═══════════════════════════════════════════════════════════════ */
+.profile-main-card {
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff;
+    min-height: 460px;
 }
 
-::deep .nav-tabs .nav-link:hover:not(.disabled):not(.active) {
-    border-bottom-color: rgba(79, 70, 229, 0.3);
-    color: #4f46e5;
+.profile-nav-tabs .nav-link {
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: #64748b;
+    font-size: 0.88rem;
+    font-weight: 500;
+    padding: 0.75rem 0.5rem;
+    transition: all 0.15s ease;
+    background: transparent;
+    border-radius: 0;
+    margin-bottom: -1px;
 }
 
-/* Responsive avatar */
-@media (max-width: 576px) {
-    .avatar-circle {
-        width: 80px;
-        height: 80px;
-        font-size: 1.5rem;
-        border-width: 3px;
+.profile-nav-tabs .nav-link:hover:not(.disabled):not(.active) {
+    color: #0f172a;
+    border-bottom-color: #cbd5e1;
+}
+
+.profile-nav-tabs .nav-link.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 600;
+    background: transparent;
+}
+
+.profile-nav-tabs .nav-link.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 3. CLEAN FIELD TILES                                            */
+/* ═══════════════════════════════════════════════════════════════ */
+.clean-field-tile {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    height: 100%;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.clean-field-tile:hover {
+    border-color: #e2e8f0;
+    background: #f1f5f9;
+}
+
+.field-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 3px;
+}
+
+.field-value {
+    font-size: 0.90rem;
+    font-weight: 500;
+    color: #0f172a;
+    line-height: 1.35;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 4. FORM INPUTS & VALIDATION                                     */
+/* ═══════════════════════════════════════════════════════════════ */
+.form-lbl {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 4px;
+}
+
+.form-control {
+    font-size: 0.86rem;
+    padding: 0.44rem 0.75rem;
+    border-color: #cbd5e1;
+    border-radius: 6px;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-control.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.err-msg {
+    font-size: 0.72rem;
+    color: #ef4444;
+    font-weight: 500;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════ */
+/* 5. RESPONSIVE DESIGN                                            */
+/* ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 575.98px) {
+    .profile-avatar-circle {
+        width: 56px;
+        height: 56px;
+        font-size: 1.35rem;
     }
-
-    .profile-banner {
-        height: 90px;
+    .profile-nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .profile-nav-tabs .nav-link {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.80rem;
+        white-space: nowrap;
+    }
+    .clean-field-tile {
+        padding: 0.65rem 0.85rem;
+    }
+    .field-label {
+        font-size: 0.68rem;
+    }
+    .field-value {
+        font-size: 0.85rem;
     }
 }

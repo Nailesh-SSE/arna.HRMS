@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -39,5 +39,10 @@ public class AttendanceConfiguration : IEntityTypeConfiguration<Attendance>
             .WithMany(e => e.Attendances)
             .HasForeignKey(a => a.EmployeeId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Performance Indexes
+        builder.HasIndex(a => new { a.EmployeeId, a.Date });
+        builder.HasIndex(a => a.Date);
+        builder.HasIndex(a => new { a.Date, a.IsDeleted });
     }
 }

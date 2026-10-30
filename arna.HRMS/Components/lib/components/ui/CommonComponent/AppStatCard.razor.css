@@ -1,29 +1,120 @@
-﻿/* ═════════ COMMON STAT CARD ═════════ */
+/* ═════════ MODERN APP STAT CARD (MATCHING REFERENCE IMAGE) ═════════ */
 
 .stat-card {
-    border-radius: 16px !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #ffffff;
+    border: 1px solid #f1f5f9 !important;
+    border-radius: 14px !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 98px;
 }
 
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-    }
+.stat-card-body {
+    padding: 1rem 1.25rem !important;
+}
 
-/* same icon used everywhere */
+.stat-card.cursor-pointer,
+.stat-card.is-clickable {
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07) !important;
+    border-color: #e2e8f0 !important;
+}
+
+.stat-card.cursor-pointer:hover .stat-chevron,
+.stat-card.is-clickable:hover .stat-chevron {
+    transform: translateX(2px);
+    color: #64748b !important;
+}
+
+/* Icon Squircle */
 .stat-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    font-size: 1.25rem;
+    transition: transform 0.2s ease;
 }
 
-/* desktop height */
-@media (min-width: 992px) {
-    .stat-card {
-        min-height: 110px;
-    }
+.stat-card:hover .stat-icon {
+    transform: scale(1.04);
 }
+
+/* Specific icon background & color matching reference */
+.stat-icon[class*="bg-primary"],
+.stat-icon.bg-primary {
+    background-color: #eff6ff !important;
+    color: #2563eb !important;
+}
+
+.stat-icon[class*="bg-success"],
+.stat-icon.bg-success {
+    background-color: #f0fdf4 !important;
+    color: #16a34a !important;
+}
+
+.stat-icon[class*="bg-warning"],
+.stat-icon.bg-warning {
+    background-color: #fef3c7 !important;
+    color: #f59e0b !important;
+}
+
+/* Label */
+.stat-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 2px;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+/* Value */
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin-bottom: 3px;
+}
+
+/* Trend Row */
+.stat-trend {
+    font-size: 0.72rem;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.trend-green {
+    color: #10b981 !important;
+    font-weight: 600;
+}
+
+.trend-red {
+    color: #ef4444 !important;
+    font-weight: 600;
+}
+
+.trend-muted {
+    color: #94a3b8 !important;
+    font-weight: 400;
+}
+
+/* Chevron */
+.stat-chevron {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    transition: transform 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+}
+
+

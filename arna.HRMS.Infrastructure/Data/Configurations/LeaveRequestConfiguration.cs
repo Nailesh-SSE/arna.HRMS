@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -40,5 +40,9 @@ public class LeaveRequestConfiguration : IEntityTypeConfiguration<LeaveRequest>
             .WithMany()
             .HasForeignKey(lr => lr.LeaveTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Performance Indexes
+        builder.HasIndex(lr => new { lr.EmployeeId, lr.StatusId });
+        builder.HasIndex(lr => lr.StartDate);
     }
 }

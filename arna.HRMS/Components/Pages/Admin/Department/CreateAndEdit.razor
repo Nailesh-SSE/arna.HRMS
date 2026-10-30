@@ -12,186 +12,87 @@
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 
-<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
-
-    <!-- ═══════════ BACK + BREADCRUMB ═══════════ -->
-    <div class="d-flex align-items-center gap-2 mb-3 mb-md-4 flex-wrap">
-        <button class="btn btn-sm btn-outline-primary rounded-pill px-3 dept-form-back-btn"
-                @onclick="GoBack">
-            <i class="bi bi-arrow-left me-1"></i>
-            <span class="d-none d-sm-inline">Back</span>
-        </button>
-        <nav>
-            <ol class="breadcrumb mb-0 small">
-                <li class="breadcrumb-item">
-                    <a href="/department" class="text-decoration-none text-primary">Departments</a>
-                </li>
-                <li class="breadcrumb-item active text-muted">
-                    @(IsEditMode ? "Edit" : "Create")
-                </li>
-            </ol>
-        </nav>
-    </div>
-
-    <!-- ═══════════ HEADER CARD ═══════════ -->
-    <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4 dept-form-header">
-        <div class="card-body py-3 px-3 px-md-4">
-            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3">
-
-                <span class="dept-form-header-icon rounded-2 p-2 d-inline-flex
-                             align-items-center justify-content-center flex-shrink-0
-                             @(IsEditMode ? "bg-warning bg-opacity-10 text-warning" : "bg-success bg-opacity-10 text-success")">
-                    <i class="bi @(IsEditMode ? "bi-pencil-square" : "bi-diagram-3-fill") fs-5"></i>
-                </span>
-
-                <div>
-                    <h5 class="fw-bold mb-0 fs-6 fs-md-5">
-                        @(IsEditMode ? "Edit Department" : "Add New Department")
-                    </h5>
-                    <p class="text-muted mb-0 small d-none d-sm-block">
-                        @(IsEditMode
-                                                ? $"Update details for {department.Name}"
-                                                : "Fill in the details below to add a new department")
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
+<AppFormLayout>
+    <!-- ═══════════ 1. HEADER CARD ═══════════ -->
+    <AppFormHeader Title="@(IsEditMode ? "Edit Department" : "Add New Department")"
+                   Subtitle="@(IsEditMode ? $"Modify organizational structure details for {department.Name}." : "Create a new department unit, define hierarchy, and assign codes.")"
+                   Icon="@(IsEditMode ? "bi-pencil-square" : "bi-diagram-3-fill")"
+                   OnBack="GoBack" />
 
     @if (_isLoading)
     {
-        <div class="card border-0 shadow-sm rounded-3">
-            <div class="card-body text-center py-4 py-md-5">
-                <div class="spinner-border text-primary" role="status"></div>
-                <p class="text-muted mt-2 mb-0 small">Loading department data…</p>
-            </div>
+        <div class="card border-0 shadow-sm rounded-3 text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-muted mb-0 small">Loading department data…</p>
         </div>
     }
     else
     {
-        <EditForm Model="department" OnValidSubmit="HandleValidSubmit">
+        <EditForm Model="department" OnValidSubmit="HandleValidSubmit" class="erp-form-flex-container">
             <DataAnnotationsValidator />
 
-            <!-- ═══════════ DEPARTMENT INFORMATION ═══════════ -->
-            <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
-                <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="dept-form-section-icon bg-primary bg-opacity-10 text-primary
-                                         rounded-2 d-inline-flex align-items-center justify-content-center">
-                            <i class="bi bi-building-fill"></i>
-                        </span>
-                        <div>
-                            <h6 class="fw-semibold mb-0 small">Department Information</h6>
-                            <small class="text-muted d-none d-md-block">
-                                Basic department identification details
-                            </small>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body px-3 px-md-4 py-3">
+            <!-- ═══════════ 2. FORM BODY ═══════════ -->
+            <div class="erp-form-scrollable-body">
+                
+                <!-- 1. Department Information Section -->
+                <AppFormSection Title="Department Information"
+                                Subtitle="Basic department identification and hierarchy details"
+                                Icon="bi-building">
                     <div class="row g-3">
-
                         <div class="col-12 col-md-6">
                             <AppInput Label="Department Name"
-                                      Value="@department.Name"
-                                      ValueChanged="v => department.Name = v"
+                                      Icon="bi-building"
+                                      IsRequired="true"
+                                      Placeholder="e.g. Information Technology"
+                                      @bind-Value="department.Name"
                                       ValidationExpression="() => department.Name" />
                         </div>
 
                         <div class="col-12 col-md-6">
-                            <AppInput Label="Code"
-                                      Value="@department.Code"
-                                      ValueChanged="v => department.Code = v"
+                            <AppInput Label="Department Code"
+                                      Icon="bi-hash"
+                                      IsRequired="true"
+                                      Placeholder="e.g. IT-01"
+                                      @bind-Value="department.Code"
                                       ValidationExpression="() => department.Code" />
                         </div>
 
                         <div class="col-12 col-md-6">
-                            <AppInput Label="Description"
-                                      Value="@department.Description"
-                                      ValueChanged="v => department.Description = v"
-                                      ValidationExpression="() => department.Description" />
+                            <AppSelect Label="Parent Department"
+                                       Icon="bi-diagram-2"
+                                       Placeholder="No Parent (Top Level)"
+                                       Options="_departmentOptions"
+                                       Value="@(department.ParentDepartmentId?.ToString() ?? "")"
+                                       ValueChanged="v => department.ParentDepartmentId = int.TryParse(v, out var d) ? d : null"
+                                       ValidationExpression="() => department.ParentDepartmentId" />
                         </div>
 
                         <div class="col-12 col-md-6">
-                            <AppSelect Label="Parent Department"
-                                       Options="@_departmentOptions"
-                                       Value="@department.ParentDepartmentId?.ToString()"
-                                       ValueChanged="v =>
-                                                                              {
-                                                                                  department.ParentDepartmentId =
-                                                                                      int.TryParse(v, out var d) ? d : null;
-                                                                              }"
-                                   ValidationExpression="() => department.ParentDepartmentId" />
-                    </div>
-
-                                                           </div>
-                                                       </div>
-                                                   </div>
-
-                                                   <!-- ═══════════ STATUS (EDIT ONLY) ═══════════ -->
-        @if (IsEditMode)
-            {
-                <div class="card border-0 shadow-sm rounded-3 mb-3 mb-md-4">
-                    <div class="card-header bg-white border-bottom py-2 py-md-3 px-3 px-md-4">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="dept-form-section-icon bg-warning bg-opacity-10 text-warning
-                                                 rounded-2 d-inline-flex align-items-center justify-content-center">
-                                <i class="bi bi-toggle-on"></i>
-                            </span>
-                            <div>
-                                <h6 class="fw-semibold mb-0 small">Status</h6>
-                                <small class="text-muted d-none d-md-block">
-                                    Department activation status
-                                </small>
-                            </div>
+                            <AppInput Label="Description"
+                                      Icon="bi-card-text"
+                                      Placeholder="Optional department description or purpose..."
+                                      @bind-Value="department.Description"
+                                      ValidationExpression="() => department.Description" />
                         </div>
                     </div>
-                    <div class="card-body px-3 px-md-4 py-3">
-                        <div class="row g-3">
-                            <div class="col-12 col-md-6">
-                                <AppSwitch Value="@department.IsActive"
-                                           ValueChanged="@(v => department.IsActive = v)"
-                                           HelpText="Inactive departments cannot be assigned to new employees." />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
+                </AppFormSection>
 
-            <!-- ═══════════ ACTION BUTTONS ═══════════ -->
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-body px-3 px-md-4 py-3">
-                    <div class="d-flex flex-column-reverse flex-sm-row
-                                    justify-content-end gap-2 gap-sm-3">
+                <!-- 2. Status Settings Section -->
+                <AppFormSection Title="Status Settings" Icon="bi-toggle-on">
+                    <AppSwitch @bind-Value="department.IsActive"
+                               Label="Active Department"
+                               HelpText="Enable this department for employee assignment and organizational hierarchy." />
+                </AppFormSection>
 
-                        <button type="button"
-                                class="btn btn-outline-dark rounded-pill px-4 dept-form-action-btn"
-                                @onclick="GoBack">
-                            <i class="bi bi-arrow-left me-1 d-none d-sm-inline"></i>
-                            Back
-                        </button>
-
-                        <button type="submit"
-                                class="btn btn-primary rounded-pill px-4 dept-form-action-btn"
-                                disabled="@_isSubmitting">
-                            @if (_isSubmitting)
-                            {
-                                <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                            }
-                            else
-                            {
-                                <i class="bi @(IsEditMode ? "bi-check-lg" : "bi-plus-lg") me-1"></i>
-                            }
-                            @(IsEditMode ? "Update Department" : "Create Department")
-                        </button>
-
-                    </div>
-                </div>
             </div>
 
+            <!-- ═══════════ 3. FIXED FOOTER ACTIONS ═══════════ -->
+            <AppFormFooter IsSubmitting="_isSubmitting"
+                           SubmitText="@(IsEditMode ? "Save Changes" : "Save Department")"
+                           OnCancel="GoBack" />
         </EditForm>
     }
-</div>
+</AppFormLayout>
 
 @code {
 

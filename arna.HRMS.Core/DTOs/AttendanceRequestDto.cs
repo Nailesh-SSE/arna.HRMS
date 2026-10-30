@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Base;
+using arna.HRMS.Core.Common.Base;
 using arna.HRMS.Core.Enums;
 
 namespace arna.HRMS.Core.DTOs;
@@ -6,6 +6,7 @@ namespace arna.HRMS.Core.DTOs;
 public class AttendanceRequestDto : BaseEntity
 {
     public int EmployeeId { get; set; }
+    public string? EmployeeNumber { get; set; }
     public string? EmployeeName { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }

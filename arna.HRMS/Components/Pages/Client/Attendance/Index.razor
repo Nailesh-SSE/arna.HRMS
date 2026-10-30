@@ -1,4 +1,5 @@
-﻿@page "/emp-attendance-management"
+@page "/emp-attendance-management"
+@page "/emp-attendance-requests"
 
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Client.Attendance.EmployeeAttendanceRequest
@@ -18,18 +19,20 @@
 @using arna.HRMS.Services.Common
 
 @inherits AuthenticatedLayoutBase
+@implements IDisposable
 
 @inject AttendanceState State
 @inject NotificationService NotificationService
 @inject IAttendanceService AttendanceService
 @inject IAttendanceRequestService AttendanceRequestService
 @inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
 
 <Loader Visible="@_isLoading" Message="@_loaderMessage" />
 
 @if (!_isLoading)
 {
-    <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
+    <div class="container-fluid p-0">
 
         <!-- ================= HEADER ================= -->
         <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
@@ -38,13 +41,13 @@
             <div class="d-flex align-items-start gap-2">
                 <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
                                          p-2 d-inline-flex align-items-center justify-content-center">
-                    <i class="bi bi-calendar-check-fill fs-5"></i>
+                    <i class="bi @(_activeTab == Tab.Attendance ? "bi-calendar-check-fill" : "bi-inbox-fill") fs-5"></i>
                 </span>
 
                 <div>
-                    <h5 class="fw-bold mb-0">Attendance</h5>
+                    <h5 class="fw-bold mb-0">@(_activeTab == Tab.Attendance ? "Attendance" : "Attendance Requests")</h5>
                     <p class="text-muted mb-0 small d-none d-sm-block">
-                        View and track your daily attendance records
+                        @(_activeTab == Tab.Attendance ? "View and track your daily attendance records" : "Track and manage your attendance regularization requests")
                     </p>
                 </div>
             </div>
@@ -56,57 +59,17 @@
             </button>
         </div>
 
-        <!-- ================= TAB NAVIGATION ================= -->
-        <div class="py-3 attendence-fade-in">
-            <div class="card border-0 shadow-sm rounded-3 mb-4 ">
-                <div class="card-body p-0">
-                    <ul class="nav nav-tabs attendence-tabs px-3 pt-3">
-
-                        <li class="nav-item">
-                            <button class="nav-link @(_activeTab == Tab.Attendance ? "active" : "")"
-                                    @onclick="() => SetTab(Tab.Attendance)">
-                                <i class="bi bi-calendar-check me-2"></i>
-                                Attendance
-
-                                @if (_attendanceCount > 0)
-                                {
-                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-2">
-                                        @_attendanceCount
-                                    </span>
-                                }
-                            </button>
-                        </li>
-
-                        <li class="nav-item">
-                            <button class="nav-link @(_activeTab == Tab.Requests ? "active" : "")"
-                                    @onclick="() => SetTab(Tab.Requests)">
-                                <i class="bi bi-inbox me-2"></i>
-                                Attendance Requests
-
-                                @if (_pendingRequestCount > 0)
-                                {
-                                    <span class="badge bg-warning text-dark rounded-pill ms-2">
-                                        @_pendingRequestCount
-                                    </span>
-                                }
-                            </button>
-                        </li>
-
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <!-- ================= TAB CONTENT ================= -->
-        <div class="tab-content">
+        <!-- ================= CONTENT ================= -->
+        <div class="attendence-fade-in">
 
             @if (_activeTab == Tab.Attendance)
             {
                 <!-- Month + Toggle -->
-                <div class="card border-0 shadow-sm rounded-3 mb-4">
-                    <div class="card-body">
+                <div class="card border shadow-sm rounded-3 mb-4 bg-white">
+                    <div class="card-body p-2 p-md-3">
 
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2 mb-2 border-bottom">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
                                 <SelectMonthAndYear Year="@State.Year"
                                                     Month="@State.Month"
                                                     OnChange="OnMonthSelected" />
@@ -115,11 +78,12 @@
                                     System Triggered Leave (@_leaveCount)
                                 </span>
                             </div>
+
                             <AttendanceViewToggle ActiveView="@_attendanceViewMode"
-                                                  OnChange="SetAttendanceView" />
+                                                   OnChange="SetAttendanceView" />
                         </div>
 
-                        <div class="mt-3">
+                        <div>
                             @switch (_attendanceViewMode)
                             {
                                 case AttendanceState.TABLE:
@@ -129,7 +93,8 @@
                                 case AttendanceState.CALENDAR:
                                     <AttendanceCalendar Year="@State.Year"
                                                         Month="@State.Month"
-                                                        AttendanceLookup="State.AttendanceLookup" />
+                                                        AttendanceLookup="State.AttendanceLookup"
+                                                        OnRequestAttendance="HandleRequestForDate" />
                                     break;
                             }
                         </div>
@@ -171,10 +136,13 @@
     private string _loaderMessage = "Loading attendance information...";
 
     private AttendanceRequestViewModel? _editModel;
-    private string _attendanceViewMode = AttendanceState.TABLE;
+    private string _attendanceViewMode = AttendanceState.CALENDAR;
 
     private enum Tab { Attendance, Requests }
     private Tab _activeTab = Tab.Attendance;
+
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
 
     // ── Badge counts ──
     private int _attendanceCount;
@@ -188,10 +156,32 @@
 
         if (!IsAuthenticated()) return;
 
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        SyncTabFromUri(NavigationManager.Uri);
+
         EnsureSelectedMonth();
         await LoadData();
 
         _isLoading = false;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SyncTabFromUri(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncTabFromUri(string uri)
+    {
+        if (uri.Contains("/emp-attendance-requests", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TabQuery, "requests", StringComparison.OrdinalIgnoreCase))
+        {
+            _activeTab = Tab.Requests;
+        }
+        else
+        {
+            _activeTab = Tab.Attendance;
+        }
     }
 
     // ═══════════ DATA LOADING ═══════════
@@ -273,6 +263,14 @@
     {
         if (_activeTab == tab) return;
         _activeTab = tab;
+        if (tab == Tab.Requests)
+        {
+            NavigationManager.NavigateTo("/emp-attendance-requests", false);
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/emp-attendance-management", false);
+        }
     }
 
     private async Task SetAttendanceView(string mode)
@@ -294,6 +292,22 @@
         State.Month = value.month;
         State.SelectedMonth = $"{value.year}-{value.month:D2}";
         await LoadData();
+    }
+
+    private async Task NavigateMonth(int delta)
+    {
+        var d = new DateTime(State.Year, State.Month, 1).AddMonths(delta);
+        await OnMonthSelected((d.Year, d.Month));
+    }
+
+    private void HandleRequestForDate(DateTime date)
+    {
+        _editModel = new AttendanceRequestViewModel
+        {
+            FromDate = date,
+            ToDate = date
+        };
+        _isDrawerOpen = true;
     }
 
     private void OpenNewRequest()
@@ -413,5 +427,10 @@
         int minutes = ts.Minutes;
         int seconds = ts.Seconds;
         return $"{totalHours}:{minutes:D2}:{seconds:D2}";
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
     }
 }

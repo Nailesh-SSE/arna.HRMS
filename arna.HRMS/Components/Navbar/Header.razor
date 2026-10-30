@@ -1,5 +1,4 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
-@using arna.HRMS.Components.Pages.Client.ClockInAndOut
+@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.Services.Auth
 
 @implements IDisposable
@@ -18,56 +17,19 @@
                        flex-shrink-0"
                 @onclick="OnToggleSidebar"
                 aria-label="Toggle Sidebar">
-            <i class="bi d-lg-none
-                      @(SidebarActive ? "bi-x-lg" : "bi-list")
-                      header-toggle-icon"></i>
-            <i class="bi d-none d-lg-inline
-                      @(SidebarActive
-                                         ? "bi-list"
-                                         : "bi-layout-sidebar-inset")
-                      header-toggle-icon"></i>
+            <i class="bi bi-list fs-5 header-toggle-icon"></i>
         </button>
 
-        <!-- Time & Greeting -->
-        <div class="d-flex flex-column lh-sm me-auto overflow-hidden">
-
-            <!-- Time + Day -->
-            <div class="d-flex align-items-baseline gap-1 gap-sm-2
-                        flex-wrap">
-
-                <!-- Time — always visible -->
-                <span class="fw-semibold header-time-text">
-                    @CurrentTime
-                </span>
-
-                <!-- Day — hidden on very small, shown sm+ -->
-                <span class="text-muted d-none d-sm-inline header-day-text">
-                    @GetDayLabel()
-                </span>
-            </div>
-
-            <!-- Greeting — hidden on mobile, shown md+ -->
-            <span class="text-muted d-none d-md-inline fw-medium
-                         text-truncate header-hello-text">
-                @Greeting@(!string.IsNullOrEmpty(GetUserFullName())
-                                ? $", {GetUserFullName()}"
-                                : "")
-            </span>
+        <!-- Date & Time Display -->
+        <div class="d-flex align-items-center gap-2 small ms-2 ms-sm-3 me-auto header-datetime">
+            <i class="bi bi-calendar3 text-muted"></i>
+            <span class="fw-medium text-secondary">@GetFullDateLabel()</span>
+            <span class="text-muted opacity-50 mx-1">|</span>
+            <span class="fw-medium text-secondary">@CurrentTime</span>
         </div>
 
         <!-- Right actions -->
-        <div class="d-flex align-items-center gap-1 gap-sm-2
-                    flex-shrink-0">
-
-            <!-- Clock — desktop only -->
-            <AuthorizeView Roles="Employee">
-                <Authorized>
-                    <div class="d-none d-lg-flex align-items-center gap-2">
-                        <ClockInAndOut />
-                    </div>
-                </Authorized>
-            </AuthorizeView>
-
+        <div class="d-flex align-items-center gap-2 gap-sm-3 flex-shrink-0">
             <!-- Notifications -->
             <NotificationDrawer />
 
@@ -75,17 +37,6 @@
             <UserMenu />
         </div>
     </div>
-
-    <!-- Row 2 — clock bar, mobile & tablet only -->
-    <AuthorizeView Roles="Employee">
-        <Authorized>
-            <div class="header-clock-bar d-flex d-lg-none
-                        align-items-center justify-content-center
-                        gap-2 px-2 px-sm-3 border-top">
-                <ClockInAndOut />
-            </div>
-        </Authorized>
-    </AuthorizeView>
 </div>
 
 @code {
@@ -146,6 +97,9 @@
 
     private string GetDayLabel() =>
         DateTime.Now.ToString("ddd, dd MMM yyyy");
+
+    private string GetFullDateLabel() =>
+        DateTime.Now.ToString("dddd, dd MMM yyyy");
 
     public void Dispose()
     {

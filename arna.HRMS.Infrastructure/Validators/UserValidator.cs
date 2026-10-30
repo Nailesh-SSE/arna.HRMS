@@ -21,7 +21,17 @@ public class UserValidator
         if (instance == null)
             return ValidationResult.Fail("Invalid request");
 
-        return await ValidateCommonAsync(instance);
+        var errors = new List<string>();
+        if (string.IsNullOrWhiteSpace(instance.Password))
+            errors.Add("Password is required");
+        else if (instance.Password.Length < 6 || instance.Password.Length > 100)
+            errors.Add("Password must be between 6 and 100 characters");
+
+        var common = await ValidateCommonAsync(instance);
+        if (!common.IsValid)
+            errors.AddRange(common.Errors);
+
+        return errors.Any() ? ValidationResult.Fail(errors.ToArray()) : ValidationResult.Success();
     }
 
     public async Task<ValidationResult> ValidateUpdateAsync(UserDto instance)
@@ -35,7 +45,18 @@ public class UserValidator
         if (exist == null)
             return ValidationResult.Fail("No Data Found");
 
-        return await ValidateCommonAsync(instance);
+        var errors = new List<string>();
+        if (!string.IsNullOrWhiteSpace(instance.Password))
+        {
+            if (instance.Password.Length < 6 || instance.Password.Length > 100)
+                errors.Add("Password must be between 6 and 100 characters");
+        }
+
+        var common = await ValidateCommonAsync(instance);
+        if (!common.IsValid)
+            errors.AddRange(common.Errors);
+
+        return errors.Any() ? ValidationResult.Fail(errors.ToArray()) : ValidationResult.Success();
     }
 
     public async Task<ValidationResult> ValidateChangePasswordAsync(int id, string newPassword)
@@ -71,12 +92,6 @@ public class UserValidator
             errors.Add("Email must be at most 100 characters");
         else if (!new EmailAddressAttribute().IsValid(instance.Email))
             errors.Add("Invalid email format");
-
-        // Password (create OR when provided)
-        if (string.IsNullOrWhiteSpace(instance.Password))
-            errors.Add("Password is required");
-        else if (instance.Password.Length < 6 || instance.Password.Length > 100)
-            errors.Add("Password must be between 6 and 100 characters");
 
         // First Name
         if (string.IsNullOrWhiteSpace(instance.FirstName))

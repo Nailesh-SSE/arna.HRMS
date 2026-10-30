@@ -196,6 +196,8 @@ public class AttendanceRepository
 
                         var statuses = records.Select(x => x.StatusId).Distinct();
 
+                        var note = records.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.Notes))?.Notes;
+
                         return new EmployeeDailyAttendanceDto
                         {
                             Date = date,
@@ -207,6 +209,7 @@ public class AttendanceRepository
                             WorkingHours = TimeSpan.FromSeconds(workingSeconds),
                             TotalHours = TimeSpan.FromSeconds(totalSeconds),
                             Breaks = breaks,   // ← THIS is what was missing
+                            Note = note,
                             Status = CalculateStatus(
                                                  statuses,
                                                  isFestivalHoliday,
@@ -286,23 +289,59 @@ public class AttendanceRepository
             .ToListAsync();
     }
 
-    public async Task<bool> DeleteAttendanceAsync(DateTime date, int empId)
+    public async Task<bool> DeleteAttendanceAsync(DateTime date, int empId, AttendanceStatus? statusId = null)
     {
-        var entity = await _baseRepository.Query()
-            .FirstOrDefaultAsync(ar =>
-                ar.Date == date &&
+        var targetDate = date.Date;
+        var query = _baseRepository.Query()
+            .Where(ar =>
+                ar.Date.Date == targetDate &&
                 ar.EmployeeId == empId &&
                 !ar.IsDeleted);
 
-        if (entity == null)
+        if (statusId.HasValue)
+        {
+            query = query.Where(ar => ar.StatusId == statusId.Value);
+        }
+
+        var entities = await query.ToListAsync();
+
+        if (!entities.Any())
             return false;
 
-        entity.IsActive = false;
-        entity.IsDeleted = true;
-        entity.UpdatedOn = DateTime.Now;
+        foreach (var entity in entities)
+        {
+            entity.IsActive = false;
+            entity.IsDeleted = true;
+            entity.UpdatedOn = DateTime.Now;
+            await _baseRepository.UpdateAsync(entity);
+        }
 
-        await _baseRepository.UpdateAsync(entity);
         return true;
+    }
+
+    public async Task EnsureLeaveAttendanceAsync(int employeeId, DateTime date, string reason)
+    {
+        var targetDate = date.Date;
+        var existing = await _baseRepository.Query()
+            .FirstOrDefaultAsync(a =>
+                a.EmployeeId == employeeId &&
+                a.Date.Date == targetDate &&
+                !a.IsDeleted);
+
+        if (existing == null)
+        {
+            await _baseRepository.AddAsync(new Attendance
+            {
+                EmployeeId = employeeId,
+                Date = targetDate,
+                StatusId = AttendanceStatus.Leave,
+                TotalHours = TimeSpan.Zero,
+                Notes = string.IsNullOrWhiteSpace(reason) ? "Approved Leave" : reason,
+                IsActive = true,
+                IsDeleted = false,
+                DeviceId = DeviceType.LaptopDesktop
+            });
+        }
     }
 
     #region Helpers

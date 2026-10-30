@@ -1,80 +1,188 @@
-﻿/* ═══════════════ ANIMATION ═══════════════ */
-.att-detail-animate {
-    animation: fadeSlideUp 0.4s ease both;
+/* ═══════════════ ANIMATION ═══════════════ */
+.att-animate {
+    animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fadeSlideUp {
     from {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translateY(12px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-/* ═══════════════ AVATAR ═══════════════ */
-.att-detail-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
+/* ═══════════════ AVATAR & HERO ═══════════════ */
+.employee-hero-card {
+    background: #ffffff;
+    border: 1px solid #edf2f7 !important;
+}
+
+.att-hero-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #fff;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* ═══════════════ STAT CARDS ═══════════════ */
-.att-detail-stat {
-    height: 100%;
-    min-height: 140px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-    .att-detail-stat:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
-    }
-
-.att-detail-stat-icon {
+.att-detail-avatar {
     width: 48px;
     height: 48px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 12px;
-    font-size: 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-/* ═══════════════ PROGRESS BAR ═══════════════ */
-.att-detail-progress {
-    height: 8px;
+.att-detail-avatar-sm {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-    .att-detail-progress .progress-bar {
-        transition: width 0.6s ease;
-    }
-
-/* ═══════════════ TABLE STYLING ═══════════════ */
-.att-detail-table tbody tr.table-danger {
-    background-color: rgba(220, 53, 69, 0.08) !important;
+/* ═══════════════ KPI STAT CHIPS & PERIOD ═══════════════ */
+.att-stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.55rem;
+    border-radius: 9999px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 0.76rem;
+    line-height: 1.2;
+    transition: all 0.15s ease;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
-.att-detail-table tbody tr.table-warning {
-    background-color: rgba(255, 193, 7, 0.08) !important;
+.att-stat-chip:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.att-stat-chip.active {
+    background-color: #eff6ff !important;
+    border-color: #3b82f6 !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2) !important;
+}
+
+.att-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.att-chip-label {
+    font-weight: 500;
+}
+
+.att-chip-value {
+    font-weight: 700;
+    font-size: 0.78rem;
+}
+
+.att-period-chip {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* ═══════════════ EXPORT BUTTON ═══════════════ */
+.btn-excel {
+    background-color: #107c41;
+    color: #ffffff;
+    border: 1px solid #0e6b37;
+    transition: all 0.2s ease;
+}
+
+.btn-excel:hover:not(:disabled) {
+    background-color: #0e6b37;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(16, 124, 65, 0.25);
+    transform: translateY(-1px);
+}
+
+.btn-excel:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+/* ═══════════════ TABLE WRAPPER & ROWS ═══════════════ */
+.att-detail-table {
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.att-detail-table table {
+    margin-bottom: 0;
+}
+
+/* Neutral, crisp white rows with subtle hover */
+.att-detail-table tbody tr.att-row-clean {
+    background-color: #ffffff !important;
+    transition: background-color 0.15s ease;
+}
+
+.att-detail-table tbody tr.att-row-clean:hover {
+    background-color: #f8fafc !important;
+}
+
+/* Subtle differentiation for weekend rows */
+.att-detail-table tbody tr.att-row-weekend {
+    background-color: #fbfcfe !important;
+    color: #64748b;
+}
+
+.att-detail-table tbody tr.att-row-weekend:hover {
+    background-color: #f1f5f9 !important;
+}
+
+/* Clean cell padding and typography */
+.att-detail-table thead th {
+    font-size: 0.72rem !important;
+    letter-spacing: 0.6px;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    background-color: #f8fafc !important;
+}
+
+.att-detail-table tbody td {
+    vertical-align: middle;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
 }
 
 /* ═══════════════ RESPONSIVE ═══════════════ */
 @media (max-width: 576px) {
     .att-detail-avatar {
-        width: 52px;
-        height: 52px;
+        width: 50px;
+        height: 50px;
         font-size: 1.1rem;
     }
 }

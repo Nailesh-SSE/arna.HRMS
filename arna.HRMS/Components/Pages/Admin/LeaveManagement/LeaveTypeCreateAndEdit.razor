@@ -1,0 +1,215 @@
+@page "/leave-type/create"
+@page "/leave-type/edit/{Id:int}"
+
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Common
+
+@inject ILeaveService LeaveService
+@inject NavigationManager NavigationManager
+@inject NotificationService NotificationService
+
+<AppFormLayout>
+    <!-- ═══════════ 1. HEADER CARD ═══════════ -->
+    <AppFormHeader Title="@(IsEditMode ? "Edit Leave Type" : "Add New Leave Type")"
+                   Subtitle="@(IsEditMode ? $"Update policy terms and quota limits for {FormatEnum(leaveType.LeaveNameId.ToString())}." : "Configure annual quotas, compensation terms, and policy details.")"
+                   Icon="@(IsEditMode ? "bi-pencil-square" : "bi-bookmark-plus")"
+                   BackText="Back to Leave Management"
+                   OnBack="GoBack" />
+
+    @if (_isLoading)
+    {
+        <div class="card border-0 shadow-sm rounded-3 text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <p class="text-muted mb-0 small">Loading leave type data…</p>
+        </div>
+    }
+    else
+    {
+        <EditForm Model="leaveType" OnValidSubmit="HandleValidSubmit" class="erp-form-flex-container">
+            <DataAnnotationsValidator />
+
+            <!-- ═══════════ 2. FORM BODY ═══════════ -->
+            <div class="erp-form-scrollable-body">
+
+                <!-- 1. Leave Policy Information Section -->
+                <AppFormSection Title="Leave Policy Information"
+                                Subtitle="Category classification, entitlement limits, and compensation type"
+                                Icon="bi-bookmark-check">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <AppSelect Label="Leave Category / Name"
+                                       Icon="bi-tag"
+                                       IsRequired="true"
+                                       Placeholder="Select Leave Type"
+                                       Options="_leaveNameOptions"
+                                       Value="@((int)leaveType.LeaveNameId == 0 ? "" : ((int)leaveType.LeaveNameId).ToString())"
+                                       ValueChanged="OnLeaveNameChanged"
+                                       ValidationExpression="() => leaveType.LeaveNameId" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <AppNumberInput TValue="int"
+                                            Label="Max Allowed (Days per Year)"
+                                            Icon="bi-calendar3"
+                                            IsRequired="true"
+                                            Placeholder="e.g. 15"
+                                            @bind-Value="leaveType.MaxPerYear"
+                                            ValidationExpression="() => leaveType.MaxPerYear" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-semibold text-dark" style="font-size: 0.8125rem;">Compensation Policy</label>
+                            <div class="p-3 bg-light rounded-3 border">
+                                <AppSwitch @bind-Value="leaveType.IsPaid"
+                                           Label="@(leaveType.IsPaid ? "Paid Leave" : "Unpaid Leave")"
+                                           HelpText="@(leaveType.IsPaid ? "Employees receive standard salary while on this leave." : "Salary deduction applies for this leave category.")" />
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <AppTextArea Label="Description / Policy Notes"
+                                         Icon="bi-card-text"
+                                         Rows="3"
+                                         Placeholder="Provide details about criteria, rollover rules, or documentation requirements..."
+                                         @bind-Value="leaveType.Description"
+                                         ValidationExpression="() => leaveType.Description" />
+                        </div>
+                    </div>
+                </AppFormSection>
+
+                <!-- 2. Status Settings Section -->
+                <AppFormSection Title="Status Settings" Icon="bi-toggle-on">
+                    <AppSwitch @bind-Value="leaveType.IsActive"
+                               Label="Active Leave Type"
+                               HelpText="Active leave types are visible and eligible for employee leave applications." />
+                </AppFormSection>
+
+            </div>
+
+            <!-- ═══════════ 3. FIXED FOOTER ACTIONS ═══════════ -->
+            <AppFormFooter IsSubmitting="_isSubmitting"
+                           SubmitText="@(IsEditMode ? "Save Changes" : "Save Leave Type")"
+                           OnCancel="GoBack" />
+        </EditForm>
+    }
+</AppFormLayout>
+
+@code {
+
+    // ═══════════ PARAMETERS ═══════════
+
+    [Parameter] public int? Id { get; set; }
+
+    // ═══════════ STATE ═══════════
+
+    private LeaveTypeViewModel leaveType = new();
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+    private bool IsEditMode => Id.HasValue;
+    private List<SelectOption> _leaveNameOptions = new();
+
+    // ═══════════ LIFECYCLE ═══════════
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+
+        LoadLeaveNameOptions();
+
+        if (IsEditMode)
+        {
+            var result = await LeaveService.GetLeaveTypeByIdAsync(Id!.Value);
+            if (result?.IsSuccess == true && result.Data != null)
+            {
+                leaveType = result.Data;
+            }
+            else
+            {
+                await NotificationService.Error(result?.Message ?? "Leave type not found.");
+                NavigationManager.NavigateTo("/admin-leave-management?tab=leavetypes");
+                return;
+            }
+        }
+        else
+        {
+            leaveType = new LeaveTypeViewModel
+            {
+                IsActive = true,
+                IsPaid = true,
+                MaxPerYear = 10
+            };
+        }
+
+        _isLoading = false;
+    }
+
+    private void LoadLeaveNameOptions()
+    {
+        _leaveNameOptions = Enum.GetValues<LeaveName>()
+            .Select(e => new SelectOption
+            {
+                Value = ((int)e).ToString(),
+                Text = FormatEnum(e.ToString())
+            }).ToList();
+    }
+
+    private void OnLeaveNameChanged(string? value)
+    {
+        if (int.TryParse(value, out var val))
+        {
+            leaveType.LeaveNameId = (LeaveName)val;
+        }
+    }
+
+    // ═══════════ FORM SUBMIT ═══════════
+
+    private async Task HandleValidSubmit()
+    {
+        _isSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            bool isSuccess;
+            string? errorMessage;
+
+            if (IsEditMode)
+            {
+                var result = await LeaveService.UpdateLeaveTypeAsync(Id!.Value, leaveType);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+            else
+            {
+                var result = await LeaveService.CreateLeaveTypeAsync(leaveType);
+                isSuccess = result.IsSuccess;
+                errorMessage = result.Message;
+            }
+
+            if (!isSuccess)
+            {
+                await NotificationService.Error(errorMessage ?? (IsEditMode ? "Unable to update leave type." : "Unable to create leave type."));
+                return;
+            }
+
+            await NotificationService.Success(IsEditMode ? "Leave type updated successfully." : "Leave type created successfully.");
+            NavigationManager.NavigateTo("/admin-leave-management?tab=leavetypes");
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    // ═══════════ NAVIGATION ═══════════
+
+    private void GoBack() => NavigationManager.NavigateTo("/admin-leave-management?tab=leavetypes");
+
+    private static string FormatEnum(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(name ?? "", "([a-z])([A-Z])", "$1 $2");
+}

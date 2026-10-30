@@ -83,9 +83,30 @@ public class UserServices : IUserServices
             return ServiceResult<UserDto>.Fail(
                 string.Join(Environment.NewLine, validation.Errors));
 
-        var entity = _mapper.Map<User>(dto);
+        var existing = await _repository.GetUserByIdAsync(dto.Id);
+        if (existing == null)
+            return ServiceResult<UserDto>.Fail("User not found.");
 
-        var updated = await _repository.UpdateUserAsync(entity);
+        existing.FirstName = dto.FirstName;
+        existing.LastName = dto.LastName;
+        existing.Email = dto.Email;
+        existing.PhoneNumber = dto.PhoneNumber;
+        existing.Username = dto.Username;
+        existing.RoleId = dto.RoleId;
+        existing.EmployeeId = dto.EmployeeId;
+        existing.IsActive = dto.IsActive;
+        existing.UpdatedOn = DateTime.Now;
+
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+        {
+            existing.Password = dto.Password;
+            using var sha = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(dto.Password);
+            var hash = sha.ComputeHash(bytes);
+            existing.PasswordHash = Convert.ToBase64String(hash);
+        }
+
+        var updated = await _repository.UpdateUserAsync(existing);
 
         return ServiceResult<UserDto>.Success(_mapper.Map<UserDto>(updated), "User updated successfully.");
     }

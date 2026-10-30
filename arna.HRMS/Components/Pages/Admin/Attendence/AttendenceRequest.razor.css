@@ -1,4 +1,4 @@
-﻿.stat-card {
+.stat-card {
     transition: all 0.2s ease;
     border: 2px solid transparent !important;
     cursor: pointer;
@@ -40,20 +40,20 @@
 }
 
 .action-btn {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50% !important;
     transition: all 0.2s ease;
-    font-size: 1rem;
+    font-size: 0.82rem;
 }
 
     .action-btn:hover {
-        transform: scale(1.15);
-        box-shadow: 0 4px 12px rgba(0,0,0,.15);
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
     }
 
 .chip-close {

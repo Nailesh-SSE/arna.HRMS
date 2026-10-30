@@ -1,0 +1,26 @@
+<div class="erp-form-footer @CssClass">
+    <button type="button" class="btn-erp-clear" @onclick="OnCancel" disabled="@IsSubmitting">
+        <i class="bi bi-x-lg"></i> @CancelText
+    </button>
+    <button type="submit" class="btn-erp-save" disabled="@IsSubmitting">
+        @if (IsSubmitting)
+        {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            <span>@SubmittingText</span>
+        }
+        else
+        {
+            <i class="bi bi-floppy"></i>
+            <span>@SubmitText</span>
+        }
+    </button>
+</div>
+
+@code {
+    [Parameter] public bool IsSubmitting { get; set; }
+    [Parameter] public string SubmitText { get; set; } = "Save Record";
+    [Parameter] public string SubmittingText { get; set; } = "Saving...";
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public EventCallback OnCancel { get; set; }
+}

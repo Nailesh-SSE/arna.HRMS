@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using arna.HRMS.Services.Auth
 
 @inject IAuthService AuthService
@@ -9,129 +9,112 @@
         <div class="dropdown">
 
             <!-- ══════════ TRIGGER BUTTON ══════════ -->
-            <button class="btn btn-light border rounded-pill
-                           d-flex align-items-center gap-2 px-2 py-1
-                           position-relative"
+            <button class="btn usermenu-btn rounded-pill d-flex align-items-center gap-2"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                     aria-label="User menu">
 
-                <!-- Avatar -->
-                <span class="usermenu-avatar rounded-circle text-white
-                             fw-bold d-flex align-items-center
-                             justify-content-center flex-shrink-0">
-                    @GetInitials()
-                </span>
+                <!-- Avatar + Online Indicator -->
+                <div class="position-relative d-inline-flex flex-shrink-0">
+                    <span class="usermenu-avatar rounded-circle text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0">
+                        @GetInitials()
+                    </span>
+                    <span class="position-absolute usermenu-online-dot bg-success rounded-circle border border-2 border-white"></span>
+                </div>
 
                 <!-- Name + Role (md+) -->
-                <div class="d-none d-md-flex flex-column lh-1
-                            text-start me-1">
-                    <span class="fw-semibold small text-truncate
-                                 usermenu-name-width">
-                        @GetUserName()
+                <div class="d-none d-md-flex flex-column lh-1 text-start me-1">
+                    <span class="fw-semibold small text-truncate usermenu-name-width">
+                        @GetDisplayName()
                     </span>
                     <span class="text-muted usermenu-role-text">
                         @GetRoleName()
                     </span>
                 </div>
 
-                <i class="bi bi-chevron-down d-none d-md-inline
-                          text-muted usermenu-chevron-size"></i>
-
-                <!-- Online dot -->
-                <span class="position-absolute usermenu-online-dot
-                             bg-success rounded-circle border
-                             border-2 border-white">
-                </span>
+                <i class="bi bi-chevron-down d-none d-md-inline usermenu-chevron"></i>
             </button>
 
             <!-- ══════════ DROPDOWN MENU ══════════ -->
-            <ul class="dropdown-menu dropdown-menu-end shadow-lg
-                       border-0 rounded-3 mt-2 py-0 overflow-hidden
-                       usermenu-dropdown-width">
+            <div class="dropdown-menu dropdown-menu-end usermenu-dropdown shadow-lg border-0 p-0 overflow-hidden">
 
                 <!-- Profile Header -->
-                <li>
-                    <div class="usermenu-profile-bg px-3 pt-3 pb-3">
-                        <div class="d-flex align-items-center gap-3">
+                <div class="usermenu-profile-header p-3">
+                    <div class="d-flex align-items-center gap-3">
 
-                            <!-- Large Avatar -->
-                            <span class="usermenu-avatar-lg rounded-circle
-                                         text-white fw-bold d-flex
-                                         align-items-center
-                                         justify-content-center
-                                         flex-shrink-0 shadow-sm">
+                        <!-- Large Avatar -->
+                        <div class="position-relative flex-shrink-0">
+                            <span class="usermenu-avatar-lg rounded-circle text-white fw-bold d-flex align-items-center justify-content-center shadow-sm">
                                 @GetInitials()
                             </span>
+                            <span class="position-absolute usermenu-online-dot-lg bg-success rounded-circle border border-2 border-white"></span>
+                        </div>
 
-                            <div class="overflow-hidden">
-                                <h6 class="fw-bold mb-0 text-truncate">
-                                    @GetUserFullName()
-                                </h6>
+                        <div class="overflow-hidden flex-grow-1">
+                            <h6 class="fw-bold mb-0 text-truncate usermenu-fullname text-dark">
+                                @GetDisplayName()
+                            </h6>
+                            @if (!string.IsNullOrWhiteSpace(GetUserName()) && !string.Equals(GetUserName(), GetDisplayName(), StringComparison.OrdinalIgnoreCase))
+                            {
+                                <div class="text-muted small text-truncate usermenu-email" title="@GetUserName()">
+                                    @GetUserName()
+                                </div>
+                            }
+                            <div class="mt-1 d-flex align-items-center gap-1 flex-wrap">
+                                <span class="badge usermenu-role-badge">
+                                    <i class="bi bi-shield-check me-1"></i>@GetRoleName()
+                                </span>
+                                @if (GetEmployeeId() > 0)
+                                {
+                                    <span class="badge usermenu-empid-badge">
+                                        EMP-@GetEmployeeId()
+                                    </span>
+                                }
                             </div>
                         </div>
                     </div>
-                </li>
-
-                <li><hr class="dropdown-divider m-0" /></li>
+                </div>
 
                 <!-- Menu Items -->
-                <li>
-                    <button class="dropdown-item d-flex align-items-center
-                                   gap-2 py-2 px-3"
+                <div class="p-2">
+                    <button class="dropdown-item usermenu-item d-flex align-items-center gap-3 py-2 px-3 rounded-3"
                             @onclick="@(() => Navigation.NavigateTo("/change-password"))">
-                        <span class="usermenu-icon-circle bg-warning
-                                     bg-opacity-10 rounded-circle
-                                     d-flex align-items-center
-                                     justify-content-center flex-shrink-0">
-                            <i class="bi bi-lock text-warning"></i>
-                        </span>
-                        <div class="lh-sm">
-                            <span class="fw-medium small">
-                                Change Password
-                            </span>
-                            <br />
-                            <span class="text-muted usermenu-sub-text">
-                                Update your credentials
-                            </span>
+                        <div class="usermenu-icon-box bg-warning-subtle text-warning d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">
+                            <i class="bi bi-shield-lock-fill"></i>
                         </div>
+                        <div class="flex-grow-1 lh-sm">
+                            <div class="fw-semibold usermenu-item-title text-dark">Change Password</div>
+                            <div class="text-muted usermenu-item-sub">Update security credentials</div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted opacity-50 usermenu-arrow"></i>
                     </button>
-                </li>
 
-                <li><hr class="dropdown-divider mx-3 my-1" /></li>
+                    <div class="my-1 border-top border-light-subtle"></div>
 
-                <!-- Logout -->
-                <li>
-                    <button class="dropdown-item d-flex align-items-center
-                                   gap-2 py-2 px-3 mb-1"
+                    <!-- Logout -->
+                    <button class="dropdown-item usermenu-item usermenu-item-danger d-flex align-items-center gap-3 py-2 px-3 rounded-3"
                             @onclick="HandleLogout"
                             disabled="@isLoggingOut">
-                        <span class="usermenu-icon-circle bg-danger
-                                     bg-opacity-10 rounded-circle
-                                     d-flex align-items-center
-                                     justify-content-center flex-shrink-0">
-                            <i class="bi @(isLoggingOut ? "bi-hourglass-split" : "bi-box-arrow-right") text-danger"></i>
-                        </span>
-                        <div class="lh-sm">
-                            <span class="fw-medium small text-danger">
-                                @(isLoggingOut ? "Signing out..." : "Sign Out")
-                            </span>
-                            <br />
-                            <span class="text-muted usermenu-sub-text">
-                                End your session
-                            </span>
+                        <div class="usermenu-icon-box bg-danger-subtle text-danger d-flex align-items-center justify-content-center flex-shrink-0 rounded-3">
+                            <i class="bi @(isLoggingOut ? "bi-hourglass-split" : "bi-box-arrow-right")"></i>
                         </div>
+                        <div class="flex-grow-1 lh-sm">
+                            <div class="fw-semibold usermenu-item-title text-danger">
+                                @(isLoggingOut ? "Signing out..." : "Sign Out")
+                            </div>
+                            <div class="text-muted usermenu-item-sub">End your active session</div>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted opacity-50 usermenu-arrow"></i>
                     </button>
-                </li>
-            </ul>
+                </div>
+            </div>
         </div>
     </Authorized>
 
     <NotAuthorized>
-        <button class="btn btn-primary btn-sm rounded-pill px-3
-                       d-flex align-items-center gap-1"
+        <button class="btn btn-primary btn-sm rounded-pill px-3 d-flex align-items-center gap-2 shadow-sm"
                 @onclick="@(() => Navigation.NavigateTo("/login"))">
-            <i class="bi bi-box-arrow-in-right"></i>
+            <i class="bi bi-box-arrow-in-right me-1"></i>
             <span class="d-none d-sm-inline">Sign In</span>
         </button>
     </NotAuthorized>
@@ -147,7 +130,7 @@
             isLoggingOut = true;
             Logger.LogInformation("User initiated logout");
             
-            // ✅ Call AuthService which gets userId internally
+            // Call AuthService which gets userId internally
             int userId = GetUserId();
             await AuthService.LogoutAsync(userId);
             
@@ -165,9 +148,15 @@
         }
     }
 
+    private string GetDisplayName()
+    {
+        var fullName = GetUserFullName();
+        return !string.IsNullOrWhiteSpace(fullName) ? fullName : GetUserName();
+    }
+
     private string GetInitials()
     {
-        var name = GetUserFullName();
+        var name = GetDisplayName();
         if (string.IsNullOrWhiteSpace(name)) return "U";
         var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return parts.Length >= 2

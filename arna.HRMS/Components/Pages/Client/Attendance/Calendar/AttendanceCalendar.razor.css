@@ -1,183 +1,118 @@
-﻿/* ═══════════════════════════════════════════
-   7-Column Grid (the one thing Bootstrap can't do)
-   ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   7-COLUMN CSS GRID (Complementing Bootstrap's 12-column grid)
+   ═══════════════════════════════════════════════════════════════════ */
 .cal-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 3px;
+    gap: 6px;
 }
 
-/* ═══════════════════════════════════════════
-   Month Header
-   ═══════════════════════════════════════════ */
-.cal-month-header {
-    background: linear-gradient( 135deg, rgba(var(--bs-primary-rgb), 0.08), rgba(var(--bs-primary-rgb), 0.03) );
+.cal-cell-min {
+    min-height: 58px;
 }
 
-/* ═══════════════════════════════════════════
-   Weekday Header Cells
-   ═══════════════════════════════════════════ */
-.cal-weekday-cell {
-    font-size: 0.78rem;
-    letter-spacing: 0.03em;
-    user-select: none;
+.cal-day-item {
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
-.cal-weekday-default {
-    background-color: var(--bs-light);
-    color: var(--bs-secondary);
+.cal-day-item:hover {
+    border-color: #93c5fd !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.08) !important;
 }
 
-.cal-weekday-weekend {
-    background-color: rgba(var(--bs-danger-rgb), 0.08);
-    color: var(--bs-danger);
+.cal-selected {
+    border: 2px solid #3b82f6 !important;
+    background-color: #f0f7ff !important;
 }
 
-/* ═══════════════════════════════════════════
-   Day Cells
-   ═══════════════════════════════════════════ */
-.cal-day-cell {
-    min-height: 52px;
-    border: 1px solid rgba(0, 0, 0, 0.04);
-    transition: all 0.2s ease;
-    cursor: default;
+/* ── Today Highlight ── */
+.cal-today-cell {
+    background-color: #ffffff !important;
+    border-color: #93c5fd !important;
+    box-shadow: 0 0 0 1px #bfdbfe !important;
 }
 
-    .cal-day-cell:not(.cal-day-empty):hover {
-        background-color: rgba(var(--bs-primary-rgb), 0.06);
-        border-color: rgba(var(--bs-primary-rgb), 0.2);
-        transform: translateY(-1px);
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
-    }
-
-.cal-day-empty {
-    border-color: transparent;
-    min-height: 0;
-}
-
-.cal-day-today {
-    background-color: rgba(var(--bs-primary-rgb), 0.07) !important;
-    border-color: rgba(var(--bs-primary-rgb), 0.3) !important;
-    box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb), 0.1);
-}
-
-.cal-day-weekend {
-    background-color: rgba(var(--bs-danger-rgb), 0.025);
-}
-
-.cal-day-future {
-    opacity: 0.55;
-}
-
-/* ═══════════════════════════════════════════
-   Date Number Badge
-   ═══════════════════════════════════════════ */
-.cal-date-num {
-    width: 26px;
-    height: 26px;
+.cal-today-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 21px;
+    height: 21px;
+    background-color: #2563eb;
+    color: #ffffff !important;
     border-radius: 50%;
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 700;
     line-height: 1;
-    flex-shrink: 0;
 }
 
-/* ═══════════════════════════════════════════
-   Hours Label
-   ═══════════════════════════════════════════ */
-.cal-hours {
+/* ── Other Month Leading / Trailing Days ── */
+.cal-cell-other-month {
+    border: 1px dashed #e2e8f0;
+    background-color: #fafafa;
+    opacity: 0.35;
+    border-radius: 0.375rem;
+}
+
+/* ── Weekend Frozen Shade & Active Weekend ── */
+.cal-weekend-frozen {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+.cal-weekend-active {
+    background-color: #fffaf0 !important;
+    border-color: #fed7aa !important;
+}
+
+.cal-off-txt {
+    color: #94a3b8;
     font-size: 0.65rem;
-    color: var(--bs-secondary-color, #6c757d);
     font-weight: 500;
-    letter-spacing: 0.02em;
 }
 
-/* ═══════════════════════════════════════════
-   Legend Dots
-   ═══════════════════════════════════════════ */
-.cal-legend-dot {
-    width: 10px;
-    height: 10px;
-    display: inline-block;
+.cal-dot {
+    width: 5px;
+    height: 5px;
     flex-shrink: 0;
 }
 
-/* ═══════════════════════════════════════════
-   Responsive — Small phones (≤ 375px)
-   ═══════════════════════════════════════════ */
-@media (max-width: 375px) {
-    .cal-day-cell {
-        min-height: 42px;
-    }
-
-    .cal-date-num {
-        width: 22px;
-        height: 22px;
-        font-size: 0.7rem;
-    }
-
-    .cal-weekday-cell {
-        font-size: 0.7rem;
-        padding-top: 0.25rem !important;
-        padding-bottom: 0.25rem !important;
-    }
-
-    .cal-legend-dot {
-        width: 8px;
-        height: 8px;
-    }
+.cal-day-num {
+    font-size: 0.8rem;
+    line-height: 1;
 }
 
-/* ═══════════════════════════════════════════
-   Responsive — Tablets (≥ 576px)
-   ═══════════════════════════════════════════ */
-@media (min-width: 576px) {
-    .cal-day-cell {
-        min-height: 68px;
-    }
+.cal-status-txt {
+    font-size: 0.68rem;
+    line-height: 1.15;
+}
 
+.cal-time-txt {
+    font-size: 0.62rem;
+    line-height: 1;
+}
+
+@media (max-width: 576px) {
     .cal-grid {
-        gap: 4px;
+        gap: 3px;
     }
 
-    .cal-weekday-cell {
-        font-size: 0.82rem;
-    }
-}
-
-/* ═══════════════════════════════════════════
-   Responsive — Medium screens (≥ 768px)
-   ═══════════════════════════════════════════ */
-@media (min-width: 768px) {
-    .cal-day-cell {
-        min-height: 84px;
+    .cal-cell-min {
+        min-height: 48px;
+        padding: 3px 2px !important;
     }
 
-    .cal-date-num {
-        width: 30px;
-        height: 30px;
-        font-size: 0.85rem;
-    }
-}
-
-/* ═══════════════════════════════════════════
-   Responsive — Desktops (≥ 992px)
-   ═══════════════════════════════════════════ */
-@media (min-width: 992px) {
-    .cal-day-cell {
-        min-height: 100px;
+    .cal-status-txt span:nth-child(2) {
+        display: none;
     }
 
-    .cal-grid {
-        gap: 5px;
+    .cal-off-txt {
+        font-size: 0.55rem;
     }
 
-    .cal-date-num {
-        width: 32px;
-        height: 32px;
-        font-size: 0.9rem;
+    .cal-time-txt {
+        font-size: 0.55rem;
     }
 }

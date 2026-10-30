@@ -1,0 +1,33 @@
+.erp-form-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 96px);
+    max-height: calc(100vh - 96px);
+    min-height: 0;
+    overflow: hidden;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .erp-form-layout-wrapper {
+        height: calc(100vh - 106px);
+        max-height: calc(100vh - 106px);
+    }
+}
+
+::deep .erp-form-flex-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+::deep .erp-form-scrollable-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+    padding-bottom: 4px;
+}
+
