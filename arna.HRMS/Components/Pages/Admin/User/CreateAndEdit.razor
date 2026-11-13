@@ -109,7 +109,7 @@
                         <div class="col-12 col-md-6">
                             <AppSelect Label="Linked Employee"
                                        Icon="bi-person-vcard"
-                                       Placeholder="No Employee Linked"
+                                       Placeholder="No Employee Linked (Self Profile)"
                                        Options="_employeeOption"
                                        Value="@(user.EmployeeId?.ToString() ?? "")"
                                        ValueChanged="v => user.EmployeeId = int.TryParse(v, out var emp) ? emp : null"
@@ -167,10 +167,18 @@
     {
         _isLoading = true;
 
+        if (IsEditMode)
+        {
+            await LoadUserIfEditing();
+        }
+        else
+        {
+            user = new UserViewModel { IsActive = true };
+        }
+
         await Task.WhenAll(
             LoadEmployees(),
-            LoadRoles(),
-            LoadUserIfEditing()
+            LoadRoles()
         );
 
         _isLoading = false;
@@ -180,7 +188,20 @@
 
     private async Task LoadEmployees()
     {
-        var result = await EmployeeService.GetEmployeesAsync();
+        var empTask = EmployeeService.GetEmployeesAsync();
+        var usersTask = UsersService.GetUsersAsync();
+
+        await Task.WhenAll(empTask, usersTask);
+
+        var result = empTask.Result;
+        var usersResult = usersTask.Result;
+
+        var alreadyLinkedEmpIds = usersResult is { IsSuccess: true, Data: not null }
+            ? usersResult.Data
+                .Where(u => u.Id != (Id ?? 0) && u.EmployeeId.HasValue && u.EmployeeId.Value > 0)
+                .Select(u => u.EmployeeId!.Value)
+                .ToHashSet()
+            : new HashSet<int>();
 
         employees = result is { IsSuccess: true, Data: not null }
             ? result.Data
@@ -188,7 +209,7 @@
 
         _employeeOption = result is { IsSuccess: true, Data: not null }
             ? result.Data
-                .Where(e => e.IsActive || e.Id == user.EmployeeId)
+                .Where(e => (e.IsActive || e.Id == user.EmployeeId) && !alreadyLinkedEmpIds.Contains(e.Id))
                 .Select(e => new SelectOption { Value = e.Id.ToString(), Text = e.FullName })
                 .ToList()
             : new();

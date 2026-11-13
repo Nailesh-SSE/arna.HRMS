@@ -8,7 +8,7 @@
 }
 
 .cal-cell-min {
-    min-height: 52px;
+    min-height: 72px;
 }
 
 .cal-day-item {
@@ -27,32 +27,40 @@
 .cal-today-cell {
     background-color: #ffffff !important;
     border-color: #93c5fd !important;
-    box-shadow: 0 0 0 1px #bfdbfe !important;
+    box-shadow: 0 0 0 1.5px #3b82f6 !important;
 }
 
 .cal-today-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 21px;
-    height: 21px;
+    width: 22px;
+    height: 22px;
     background-color: #2563eb;
     color: #ffffff !important;
     border-radius: 50%;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     line-height: 1;
 }
 
 /* ── Holiday Cell Highlight ── */
 .cal-holiday-cell {
-    background-color: #fef2f2 !important;
-    border-color: #fca5a5 !important;
+    background: linear-gradient(180deg, #fff5f5 0%, #fee2e2 100%) !important;
+    border-color: #fecdd3 !important;
+    border-left: 3px solid #e11d48 !important;
 }
 
 .cal-holiday-cell:hover {
-    border-color: #ef4444 !important;
-    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.12) !important;
+    border-color: #f43f5e !important;
+    border-left: 3px solid #be123c !important;
+    box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15) !important;
+}
+
+/* ── Selected Cell Highlight ── */
+.cal-selected-cell {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px #2563eb !important;
 }
 
 /* ── Weekend Highlight ── */
@@ -87,9 +95,10 @@
 }
 
 .cal-event-danger {
-    background-color: #fee2e2;
-    color: #dc2626;
-    border: 1px solid rgba(220, 38, 38, 0.2);
+    background-color: #ffffff;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+    box-shadow: 0 1px 3px rgba(190, 18, 60, 0.08);
 }
 
 .cal-event-primary {

@@ -1,3 +1,4 @@
+using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Dependency;
 using arna.HRMS.Infrastructure.Dependency.Identity;
 using arna.HRMS.Infrastructure.Middleware;
@@ -61,6 +62,7 @@ namespace arna.HRMS.API
             app.UseCors("AllowBlazorApp");
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
 
             // ✅ FIX #2: TestAuthHeaderMiddleware REMOVED from production
             // The static TestTokenStore.Token is shared across ALL users on the server
@@ -74,6 +76,20 @@ namespace arna.HRMS.API
             app.UseAuthorization();
 
             app.MapControllers();
+
+            // 🚀 Warm up EF Core model & SQL connection pool in background on startup
+            // Eliminates the 2-4 second cold-start lag when the user first hits reports
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    using var scope = app.Services.CreateScope();
+                    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    await context.Database.CanConnectAsync();
+                }
+                catch { /* Ignore background warmup error */ }
+            });
+
             app.Run();
         }
     }

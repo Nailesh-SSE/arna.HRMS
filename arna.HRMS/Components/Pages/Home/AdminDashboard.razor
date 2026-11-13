@@ -45,31 +45,35 @@
         </div>
     </div>
 
-    <!-- ══════════ 2. TOP 4 KPI METRIC CARDS (TODAY'S WORKFORCE PULSE) ══════════ -->
+    <!-- ══════════ 2. TOP 4 KPI METRIC CARDS (ORGANIZATION PULSE & ACTION QUEUES) ══════════ -->
     <div class="row g-3 g-xl-4 mb-4">
 
+        <!-- Card 1: Total Workforce Headcount -->
         <AppStatCard Icon="bi-people-fill"
                      BgClass="bg-primary bg-opacity-10"
                      TextClass="text-primary"
-                     Label="Present Today"
-                     Count="@PresentEmployees"
-                     Subtext="@($"out of {TotalEmployees} total staff")"
-                     TrendText="@(TotalEmployees > 0 && PresentEmployees > 0 ? $"{Math.Round((double)PresentEmployees / TotalEmployees * 100)}% active" : (TotalEmployees > 0 ? "0% active" : ""))"
+                     Label="Total Workforce"
+                     Count="@TodayTotalStaff"
+                     Subtext="@(departmentSummaries.Count > 0 ? $"across {departmentSummaries.Count} departments" : "Total active staff")"
+                     TrendText="Active Directory"
                      TrendClass="trend-green"
-                     OnClick="() => showPresentModal = true"
+                     OnClick='() => Nav.NavigateTo("/employee")'
                      CardClass="cursor-pointer" />
 
-        <AppStatCard Icon="bi-calendar-check-fill"
+        <!-- Card 2: Period / Monthly Attendance Average -->
+        <AppStatCard Icon="bi-graph-up-arrow"
                      BgClass="bg-success bg-opacity-10"
                      TextClass="text-success"
-                     Label="On Leave Today"
-                     Count="@onLeaveToday" 
-                     Subtext="Approved or scheduled leaves"
-                     TrendText="@(onLeaveToday > 0 ? $"{onLeaveToday} absent" : "No leaves")"
-                     TrendClass="@(onLeaveToday > 0 ? "trend-amber" : "trend-green")"
-                     OnClick="() => showLeaveModal = true"
+                     Label="Monthly Attendance Rate"
+                     Count="@((int)Math.Round(TrajectoryAvgAttendanceRate))"
+                     CustomValue="@($"{TrajectoryAvgAttendanceRate}%")"
+                     Subtext="Period average stability"
+                     TrendText="@(TrajectoryAvgAttendanceRate >= 90 ? "Optimal stability" : "Moderate stability")"
+                     TrendClass="@(TrajectoryAvgAttendanceRate >= 90 ? "trend-green" : "trend-amber")"
+                     OnClick='() => Nav.NavigateTo("/admin-report-management")'
                      CardClass="cursor-pointer" />
 
+        <!-- Card 3: Pending Leave Requests -->
         <AppStatCard Icon="bi-hourglass-split"
                      BgClass="bg-warning bg-opacity-25"
                      TextClass="text-warning"
@@ -79,6 +83,7 @@
                      TrendText="@(pendingCount > 0 ? $"{pendingCount} awaiting" : "All clear")"
                      TrendClass="@(pendingCount > 0 ? "trend-amber" : "trend-green")" />
 
+        <!-- Card 4: Attendance Pending Requests -->
         <AppStatCard Icon="bi-clock-history"
                      BgClass="bg-info bg-opacity-25"
                      TextClass="text-info"
@@ -173,17 +178,6 @@
                                 <div class="text-end">
                                     <span class="fw-bold text-warning small">@onLeaveToday</span>
                                     <span class="text-muted small ms-1" style="font-size: 0.72rem;">(@TodayLeaveRate%)</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light border">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="d-inline-block rounded-circle" style="width: 10px; height: 10px; background-color: #ef4444;"></span>
-                                    <span class="small fw-semibold text-dark">Not Clocked In</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold text-danger small">@TodayAbsentEmployees</span>
-                                    <span class="text-muted small ms-1" style="font-size: 0.72rem;">(@TodayAbsentRate%)</span>
                                 </div>
                             </div>
                         </div>
@@ -418,7 +412,21 @@
                                     {
                                         <tr>
                                             <td class="font-monospace text-secondary small">@(string.IsNullOrWhiteSpace(req.EmployeeNumber) ? $"EMP{req.EmployeeId:D3}" : req.EmployeeNumber)</td>
-                                            <td class="fw-medium text-dark">@(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Employee" : req.EmployeeName)</td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    @if (!string.IsNullOrWhiteSpace(req.ProfileImage))
+                                                    {
+                                                        <img src="@req.ProfileImage" alt="@req.EmployeeName" class="avatar-circle avatar-sm avatar-img" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="avatar-circle avatar-sm">
+                                                            @GetInitials(req.EmployeeName)
+                                                        </div>
+                                                    }
+                                                    <span class="fw-medium text-dark text-truncate">@(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Employee" : req.EmployeeName)</span>
+                                                </div>
+                                            </td>
                                             <td>
                                                 <span class="@GetLeaveTypeBadgeClass(req.LeaveTypeName)">
                                                     @(string.IsNullOrWhiteSpace(req.LeaveTypeName) ? "Leave" : FormatLeaveName(req.LeaveTypeName))
@@ -513,7 +521,21 @@
                                     {
                                         <tr>
                                             <td class="font-monospace text-secondary small">@GetAttendanceEmpId(req)</td>
-                                            <td class="fw-medium text-dark">@(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Employee" : req.EmployeeName)</td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    @if (!string.IsNullOrWhiteSpace(req.ProfileImage))
+                                                    {
+                                                        <img src="@req.ProfileImage" alt="@req.EmployeeName" class="avatar-circle avatar-sm avatar-img" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="avatar-circle avatar-sm">
+                                                            @GetInitials(req.EmployeeName)
+                                                        </div>
+                                                    }
+                                                    <span class="fw-medium text-dark text-truncate">@(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Employee" : req.EmployeeName)</span>
+                                                </div>
+                                            </td>
                                             <td class="text-secondary small">@(req.FromDate?.ToString("MMM dd, yyyy") ?? "-")</td>
                                             <td>
                                                 <span class="dash-badge-req-type">
@@ -1332,11 +1354,8 @@
 
     private static string GetInitials(string? name)
     {
-        if (string.IsNullOrWhiteSpace(name)) return "EMP";
-        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length >= 2
-            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
-            : parts[0][0].ToString().ToUpper();
+        if (string.IsNullOrWhiteSpace(name)) return "EM";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(name);
     }
 
     // ── Displayed Requests (Real DB data: All Pending Requests Only) ──
@@ -1538,41 +1557,28 @@
             allAttendanceRequest = _dashboard.AttendanceRequests ?? new();
         }
 
-        // 1. Fetch fresh leave requests from LeaveService to get all pending requests
+        // Fetch supplemental data in parallel to eliminate waterfall delay over WAN
+        var leaveTask = LeaveService.GetLeaveRequestsAsync();
+        var attTask = AttendanceRequestService.GetAllAsync();
+        var attAllTask = AttendanceService.GetAttendanceByEmployeeOrStatusAsync(null, null);
+
         try
         {
-            var leaveRes = await LeaveService.GetLeaveRequestsAsync();
+            await Task.WhenAll(leaveTask, attTask, attAllTask);
+
+            var leaveRes = await leaveTask;
             if (leaveRes?.IsSuccess == true && leaveRes.Data != null && leaveRes.Data.Any())
             {
                 allLeaveRequests = leaveRes.Data;
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[AdminDashboard] Leave requests error: {ex.Message}");
-        }
 
-        // 2. Fetch fresh attendance requests from AttendanceRequestService to get all pending requests
-        try
-        {
-            var attRes = await AttendanceRequestService.GetAllAsync();
+            var attRes = await attTask;
             if (attRes?.IsSuccess == true && attRes.Data != null && attRes.Data.Any())
             {
                 allAttendanceRequest = attRes.Data;
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[AdminDashboard] Attendance requests error: {ex.Message}");
-        }
 
-        pendingCount = DisplayLeaveRequests.Count;
-        AttendancePendingCount = DisplayAttendanceRequests.Count;
-
-        // 3. Fetch all raw attendances from AttendanceService for flexible date range filtering
-        try
-        {
-            var attAllRes = await AttendanceService.GetAttendanceByEmployeeOrStatusAsync(null, null);
+            var attAllRes = await attAllTask;
             if (attAllRes?.IsSuccess == true && attAllRes.Data != null && attAllRes.Data.Any())
             {
                 allAttendances = attAllRes.Data;
@@ -1580,8 +1586,17 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AdminDashboard] All attendance load error: {ex.Message}");
+            Console.WriteLine($"[AdminDashboard] Supplemental data parallel load error: {ex.Message}");
+            if (leaveTask.IsCompletedSuccessfully && leaveTask.Result?.Data != null)
+                allLeaveRequests = leaveTask.Result.Data;
+            if (attTask.IsCompletedSuccessfully && attTask.Result?.Data != null)
+                allAttendanceRequest = attTask.Result.Data;
+            if (attAllTask.IsCompletedSuccessfully && attAllTask.Result?.Data != null)
+                allAttendances = attAllTask.Result.Data;
         }
+
+        pendingCount = DisplayLeaveRequests.Count;
+        AttendancePendingCount = DisplayAttendanceRequests.Count;
 
         // Ensure Top 4 cards strictly reflect today's real attendance and leaves
         var today = DateTime.Today;
@@ -1607,6 +1622,7 @@
                         EmployeeId = p.EmployeeId,
                         EmployeeNumber = emp?.EmployeeNumber ?? $"EMP{p.EmployeeId:D3}",
                         EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : $"Employee {p.EmployeeId}",
+                        ProfileImage = emp?.ProfileImage,
                         Date = p.Date,
                         ClockIn = p.ClockInTime,
                         ClockOut = p.ClockOutTime,
@@ -1642,6 +1658,7 @@
                         EmployeeId = l.EmployeeId,
                         EmployeeNumber = emp?.EmployeeNumber ?? $"EMP{l.EmployeeId:D3}",
                         EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : $"Employee {l.EmployeeId}",
+                        ProfileImage = emp?.ProfileImage,
                         Date = l.Date,
                         ClockIn = null,
                         ClockOut = null,
@@ -1667,6 +1684,7 @@
                         EmployeeId = emp.Id,
                         EmployeeNumber = !string.IsNullOrWhiteSpace(emp.EmployeeNumber) ? emp.EmployeeNumber : $"EMP{emp.Id:D3}",
                         EmployeeName = $"{emp.FirstName} {emp.LastName}".Trim(),
+                        ProfileImage = emp.ProfileImage,
                         Date = today,
                         ClockIn = null,
                         ClockOut = null,

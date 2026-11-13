@@ -27,7 +27,7 @@ public class AttendanceRepository
     public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId)
     {
         // Perf 4: Default to last 6 months to avoid loading entire history
-        var sixMonthsAgo = DateTime.Today.AddMonths(-6);
+        var sixMonthsAgo = DateTime.Today.AddDays(-30);
 
         var query = _baseRepository.Query()
             .AsNoTracking()
@@ -110,7 +110,7 @@ public class AttendanceRepository
 
         var employeeLookup = employees.ToDictionary(
             e => e.Id,
-            e => new { e.FullName, e.EmployeeNumber });
+            e => new { e.FullName, e.EmployeeNumber, e.ProfileImage });
 
         var festivalDates = (await _festivalHolidayRepository
                 .GetByMonthAsync(finalYear, finalMonth))
@@ -149,6 +149,7 @@ public class AttendanceRepository
                                 EmployeeId = employeeId,
                                 EmployeeName = emp.FullName ?? "Unknown",
                                 EmployeeNumber = emp.EmployeeNumber ?? string.Empty,
+                                ProfileImage = emp.ProfileImage,
                                 ClockIn = null,
                                 ClockOut = null,
                                 WorkingHours = TimeSpan.Zero,
@@ -204,6 +205,7 @@ public class AttendanceRepository
                             EmployeeId = employeeId,
                             EmployeeName = emp.FullName ?? "Unknown",
                             EmployeeNumber = emp.EmployeeNumber ?? string.Empty,
+                            ProfileImage = emp.ProfileImage,
                             ClockIn = firstClockIn,
                             ClockOut = lastClockOut,
                             WorkingHours = TimeSpan.FromSeconds(workingSeconds),
@@ -239,11 +241,18 @@ public class AttendanceRepository
             .Where(x =>
                 x.IsActive &&
                 !x.IsDeleted &&
-                x.EmployeeId == employeeId &&
-                x.StatusId == AttendanceStatus.Present)
+                x.EmployeeId == employeeId)
             .OrderByDescending(x => x.Date)
             .Select(x => (DateTime?)x.Date)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> HasAttendanceOnDateAsync(int employeeId, DateTime date)
+    {
+        var targetDate = date.Date;
+        return await _baseRepository.Query()
+            .AsNoTracking()
+            .AnyAsync(x => x.EmployeeId == employeeId && !x.IsDeleted && x.Date.Date == targetDate);
     }
 
     // Bug 3 FIX: Added a.Date.Date == today filter — previously returned stale data from any day

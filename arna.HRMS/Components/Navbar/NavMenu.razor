@@ -212,8 +212,8 @@
         _ = OnClose.InvokeAsync();
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
-        NavigationManager.LocationChanged -= HandleLocationChanged;
+        NavigationManager.LocationChanged -= HandleLocationChanged; base.Dispose();
     }
 }

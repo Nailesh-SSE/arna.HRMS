@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 
 namespace arna.HRMS.Core.Interfaces.Service;
@@ -10,4 +10,6 @@ public interface IEmployeeService
     Task<ServiceResult<EmployeeDto>> CreateEmployeeAsync(EmployeeDto dto);
     Task<ServiceResult<EmployeeDto>> UpdateEmployeeAsync(EmployeeDto dto);
     Task<ServiceResult<bool>> DeleteEmployeeAsync(int id);
+    Task<ServiceResult<string>> UploadProfileImageAsync(int employeeId, Stream fileStream, string fileName);
+    Task<ServiceResult<bool>> DeleteProfileImageAsync(int employeeId);
 }

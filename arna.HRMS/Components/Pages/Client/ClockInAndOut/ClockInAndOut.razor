@@ -334,21 +334,30 @@
                 var historyResult = await ClockService.GetAttendanceByEmployeeOrStatusAsync(null, empId);
                 if (historyResult?.Data != null)
                 {
-                    var lastPast = historyResult.Data
+                    var pastGroup = historyResult.Data
                         .Where(x => x.Date.Date < DateTime.Today &&
-                                    x.StatusId != AttendanceStatus.Leave &&
-                                    x.ClockInTime != null)
-                        .OrderByDescending(x => x.Date)
-                        .ThenByDescending(x => x.ClockInTime ?? TimeSpan.Zero)
+                                    x.StatusId != AttendanceStatus.Leave)
+                        .GroupBy(x => x.Date.Date)
+                        .OrderByDescending(g => g.Key)
                         .FirstOrDefault();
 
-                    if (lastPast != null &&
-                        lastPast.ClockInTime != null &&
-                        (lastPast.ClockOutTime == null || lastPast.ClockOutTime == TimeSpan.Zero))
+                    if (pastGroup != null)
                     {
-                        MissedClockOutYesterday = true;
-                        MissedClockOutDateStr = lastPast.Date.ToString("dd MMM yyyy");
-                        ShowMissedClockOutModal = true;
+                        bool hasClockIn = pastGroup.Any(x => x.ClockInTime != null);
+                        bool hasClockOut = pastGroup.Any(x => x.ClockOutTime != null && x.ClockOutTime != TimeSpan.Zero);
+
+                        if (hasClockIn && !hasClockOut)
+                        {
+                            MissedClockOutYesterday = true;
+                            MissedClockOutDateStr = pastGroup.Key.ToString("dd MMM yyyy");
+                            ShowMissedClockOutModal = true;
+                        }
+                        else
+                        {
+                            MissedClockOutYesterday = false;
+                            MissedClockOutDateStr = "";
+                            ShowMissedClockOutModal = false;
+                        }
                     }
                     else
                     {
@@ -389,12 +398,36 @@
             .ToList();
 
         var totalWork = TimeSpan.Zero;
-        foreach (var entry in validCompleted)
+        if (validCompleted.Any())
         {
-            if (entry.WorkingHours != null && entry.WorkingHours.Value > TimeSpan.Zero)
-                totalWork += entry.WorkingHours.Value;
-            else if (entry.ClockInTime != null && entry.ClockOutTime != null)
-                totalWork += (entry.ClockOutTime.Value - entry.ClockInTime.Value);
+            foreach (var entry in validCompleted)
+            {
+                if (entry.WorkingHours != null && entry.WorkingHours.Value > TimeSpan.Zero)
+                    totalWork += entry.WorkingHours.Value;
+                else if (entry.ClockInTime != null && entry.ClockOutTime != null)
+                    totalWork += (entry.ClockOutTime.Value - entry.ClockInTime.Value);
+            }
+        }
+        else
+        {
+            var hoursRecords = todayRecords
+                .Where(x => x.WorkingHours != null && x.WorkingHours.Value > TimeSpan.Zero)
+                .ToList();
+
+            if (hoursRecords.Any())
+            {
+                foreach (var h in hoursRecords)
+                    totalWork += h.WorkingHours!.Value;
+            }
+            else
+            {
+                var firstIn = todayRecords.Where(x => x.ClockInTime != null).OrderBy(x => x.ClockInTime).FirstOrDefault()?.ClockInTime;
+                var lastOut = todayRecords.Where(x => x.ClockOutTime != null).OrderByDescending(x => x.ClockOutTime).FirstOrDefault()?.ClockOutTime;
+                if (firstIn != null && lastOut != null && lastOut.Value > firstIn.Value)
+                {
+                    totalWork = lastOut.Value - firstIn.Value;
+                }
+            }
         }
 
         BaseTodayWorkDuration = totalWork;
@@ -687,11 +720,11 @@
         return "punch-btn-in";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         _liveTimerCts?.Cancel();
         _liveTimerCts?.Dispose();
         _cooldownCts?.Cancel();
-        _cooldownCts?.Dispose();
+        _cooldownCts?.Dispose(); base.Dispose();
     }
 }

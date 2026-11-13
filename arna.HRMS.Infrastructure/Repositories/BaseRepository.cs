@@ -41,11 +41,20 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class, IBaseEntity
 
         if (trackedEntity != null)
         {
-            trackedEntity.State = EntityState.Detached;
+            if (!ReferenceEquals(trackedEntity.Entity, entity))
+            {
+                _context.Entry(trackedEntity.Entity).CurrentValues.SetValues(entity);
+            }
+            else
+            {
+                trackedEntity.State = EntityState.Modified;
+            }
         }
-
-        _dbSet.Attach(entity);
-        _context.Entry(entity).State = EntityState.Modified;
+        else
+        {
+            _dbSet.Attach(entity);
+            _context.Entry(entity).State = EntityState.Modified;
+        }
 
         await _context.SaveChangesAsync();
         return entity;

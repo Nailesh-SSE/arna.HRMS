@@ -3,129 +3,501 @@
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.Enums
-@using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Common
 
-@inject AttendanceState State
 @inject ILeaveService LeaveService
 @inject IEmployeeService EmployeeService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
 @inherits AuthenticatedLayoutBase
 
+<div class="leave-requests-container">
 
-<!-- TOOLBAR -->
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
-    <div>
-        <h5 class="fw-semibold mb-0">
-            <i class="bi bi-inbox text-warning me-1"></i>
-            Leave Requests
-        </h5>
-        <small class="text-muted">Review and manage employee leave requests</small>
-    </div>
-</div>
+    <!-- ═══════════ UNIFIED COMPACT FILTER BAR ═══════════ -->
+    <div class="card border-0 shadow-xs rounded-3 mb-2 bg-white">
+        <div class="card-body p-2 px-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
 
+                <!-- Left: Search & Employee Select -->
+                <div class="d-flex align-items-center flex-wrap gap-2 flex-grow-1">
+                    <div class="position-relative" style="min-width: 170px; max-width: 250px;">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-muted small"></i>
+                        <input type="text" class="form-control form-control-sm ps-4 rounded-3"
+                               placeholder="Search requests..."
+                               @bind="_searchQuery" @bind:event="oninput" />
+                    </div>
 
-<!-- FILTER BAR -->
-<div class="card border-0 shadow-sm rounded-3 mb-3">
-    <div class="card-body py-2">
-        <div class="d-flex align-items-center flex-wrap gap-3">
+                    <div style="min-width: 170px; max-width: 220px;">
+                        <SearchEmployee Employees="_employeeOptions"
+                                        SelectedValue="@(_selectedEmployeeId?.ToString() ?? "0")"
+                                        OnChanged="OnEmployeeChanged"
+                                        OnNameChanged="OnEmployeeNameChanged" />
+                    </div>
 
-            <!-- Filter Label -->
-            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill
-                                     px-2 px-md-3 py-2">
-                <i class="bi bi-funnel-fill me-0 me-md-1"></i>
-                <span class="d-none d-md-inline">Filters</span>
-            </span>
+                    <!-- Status Filter Pills -->
+                    <div class="d-flex align-items-center flex-wrap gap-1">
+                        <button type="button" class="btn btn-sm @(_statusFilter == null ? "btn-primary shadow-xs fw-semibold" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
+                                @onclick="() => FilterByStatus(null)">
+                            All (@_allRequests.Count)
+                        </button>
+                        <button type="button" class="btn btn-sm @(_statusFilter == Status.Pending ? "btn-warning text-dark shadow-xs fw-semibold" : "btn-light text-warning-emphasis") rounded-pill px-2.5 py-1"
+                                @onclick="() => FilterByStatus(Status.Pending)">
+                            Pending (@_pendingCount)
+                        </button>
+                        <button type="button" class="btn btn-sm @(_statusFilter == Status.Approved ? "btn-success shadow-xs fw-semibold" : "btn-light text-success") rounded-pill px-2.5 py-1"
+                                @onclick="() => FilterByStatus(Status.Approved)">
+                            Approved (@_approvedCount)
+                        </button>
+                        <button type="button" class="btn btn-sm @(_statusFilter == Status.Rejected ? "btn-danger shadow-xs fw-semibold" : "btn-light text-danger") rounded-pill px-2.5 py-1"
+                                @onclick="() => FilterByStatus(Status.Rejected)">
+                            Rejected (@_rejectedCount)
+                        </button>
+                        <button type="button" class="btn btn-sm @(_statusFilter == Status.Cancelled ? "btn-secondary shadow-xs fw-semibold" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
+                                @onclick="() => FilterByStatus(Status.Cancelled)">
+                            Cancelled (@_cancelledCount)
+                        </button>
+                    </div>
+                </div>
 
-            <!-- Employee -->
-            <div style="min-width:200px;">
-                <SearchEmployee Employees="Employees"
-                                SelectedValue="@GetEmployeeValue()"
-                                OnChanged="OnEmployeeChanged"
-                                OnNameChanged="OnEmployeeNameChanged" />
+                <!-- Right Controls -->
+                <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+                    @if (IsAdmin() || IsSuperAdmin())
+                    {
+                        <AppButton Class="@(_selectedRequestIds.Count > 0 ? "btn btn-sm btn-success d-inline-flex align-items-center gap-1.5 px-3 py-1 rounded-3 shadow-xs fw-medium text-white" : "btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1 rounded-3 shadow-xs fw-medium")"
+                                   OnClick="PromptApproveSelected"
+                                   Disabled="@(_isUpdating || _selectedRequestIds.Count == 0)"
+                                   Text="@($"Approve Selected {(_selectedRequestIds.Count > 0 ? $"({_selectedRequestIds.Count})" : "")}".Trim())">
+                            <i class="bi bi-check2-all"></i>
+                        </AppButton>
+                    }
+                    @if (HasActiveFilters)
+                    {
+                        <AppButton Class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1"
+                                   OnClick="ClearFilters" Text="Clear">
+                            <i class="bi bi-x-lg me-1"></i>
+                        </AppButton>
+                    }
+                    <AppButton Class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1 bg-white"
+                               OnClick="LoadRequests"
+                               Disabled="@_isLoading"
+                               Title="Refresh leave requests">
+                        <i class="bi bi-arrow-clockwise @(_isLoading ? "spin-animation" : "")"></i>
+                    </AppButton>
+                </div>
+
             </div>
-
-            <!-- Status Dropdown -->
-            <div style="min-width:200px;">
-                <SearchStatus SelectedValue="statusFilter"
-                              OnChanged="OnStatusChanged" />
-            </div>
-
-            <!-- Spacer pushes button to right -->
-            <div class="flex-grow-1"></div>
-
-            <!-- Clear Button -->
-            @if (statusFilter != null || State.SelectedEmployeeId != null)
-            {
-                <button class="btn btn-sm btn-outline-secondary rounded-pill" @onclick="ClearFilters">
-                    <i class="bi bi-x-lg me-1"></i> Clear Filters
-                </button>
-            }
-
         </div>
     </div>
-</div>
 
-<!-- TABLE -->
-<div class="card border-0 shadow-sm rounded-3">
-    <div class="card-body p-0">
-        <div class="request-scroll-area">
-            <AppTable TItem="LeaveRequestViewModel"
-                      Items="FilteredRequests"
-                      Columns="TableSchemas.LeaveRequest"
-                      EnablePagination="true"
-                      PageSize="10"
-                      ShowActions="@(IsAdmin() || IsSuperAdmin())">
+    <!-- ═══════════ APPROVE SELECTED CONFIRMATION MODAL ═══════════ -->
+    @if (_showApproveModal)
+    {
+        <div class="modal d-block" style="background-color: rgba(0, 0, 0, 0.5); z-index: 1050;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 rounded-3 shadow-lg">
+                    <div class="modal-header border-0 bg-light rounded-top-3">
+                        <h5 class="modal-title fw-semibold">
+                            <i class="bi bi-check2-circle text-success me-2"></i>
+                            Approve Selected Leave Requests?
+                        </h5>
+                        <button type="button" class="btn-close" @onclick="() => _showApproveModal = false"></button>
+                    </div>
+                    <div class="modal-body py-3 py-md-4">
+                        <p class="mb-2">
+                            You are about to approve <strong>@_selectedRequestIds.Count</strong> selected pending leave request(s).
+                        </p>
+                        <small class="text-muted">This action will immediately update the status of these leave requests to Approved.</small>
+                    </div>
+                    <div class="modal-footer border-0 bg-light rounded-bottom-3 gap-2">
+                        <AppButton Class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                                   OnClick="() => _showApproveModal = false"
+                                   Disabled="@_isUpdating"
+                                   Text="Cancel">
+                            <i class="bi bi-x-lg me-1"></i>
+                        </AppButton>
+                        <AppButton Class="btn btn-sm btn-success rounded-pill px-3 text-white"
+                                   OnClick="ApproveSelectedAsync"
+                                   Disabled="@_isUpdating"
+                                   Text="@(_isUpdating ? "Approving..." : $"Approve ({_selectedRequestIds.Count})")">
+                            @if (_isUpdating)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-circle me-1"></i>
+                            }
+                        </AppButton>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
-                <ActionTemplate Context="req">
-                    @if (req.StatusId != Status.Cancelled)
+    <!-- ═══════════ LEAVE REQUESTS TABLE ═══════════ -->
+    <div class="card border-0 shadow-xs rounded-3 overflow-hidden bg-white flex-grow-1 min-h-0 d-flex flex-column">
+        <div class="table-responsive request-scroll-area flex-grow-1 min-h-0" style="max-height: calc(100vh - 245px); min-height: 180px; overflow-y: auto;">
+            <table class="table table-hover align-middle mb-0 custom-table">
+                <thead class="bg-light sticky-top" style="z-index: 5;">
+                    <tr>
+                        @if (IsAdmin() || IsSuperAdmin())
+                        {
+                            <th class="py-1.5 px-3 border-bottom text-center" style="width: 44px;">
+                                <AppCheckBox Value="@IsAllSelected"
+                                             ValueChanged="OnToggleSelectAll"
+                                             Disabled="@(!HasAnyPendingInCurrentPage)"
+                                             ContainerClass="form-check m-0 d-inline-flex justify-content-center align-items-center"
+                                             title="Select All Pending" />
+                            </th>
+                        }
+                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; width: 85px;">EMP#</th>
+                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; min-width: 170px;">Employee</th>
+                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem;">Leave Type</th>
+                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem;">Dates</th>
+                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem;">Days</th>
+                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; min-width: 150px;">Reason</th>
+                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem;">Status</th>
+                        @if (IsAdmin() || IsSuperAdmin())
+                        {
+                            <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem; width: 100px;">Action</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!PagedRequests.Any())
                     {
-                        <div class="d-flex align-items-center gap-1 gap-md-2
-                                                            justify-content-center">
-                            <AppButton ButtonClass="@GetApproveClass(req)"
-                                       OnClick="() => UpdateStatus(req, Status.Approved)">
-                                <i class="bi bi-check-lg"></i>
-                            </AppButton>
-
-                            <AppButton ButtonClass="@GetRejectClass(req)"
-                                       OnClick="() => UpdateStatus(req, Status.Rejected)">
-                                <i class="bi bi-x-lg"></i>
-                            </AppButton>
-                        </div>
+                        <tr>
+                            <td colspan="@(IsAdmin() || IsSuperAdmin() ? 9 : 7)" class="text-center py-5">
+                                <div class="d-flex flex-column align-items-center justify-content-center">
+                                    <i class="bi bi-inbox fs-1 mb-2 text-muted opacity-50"></i>
+                                    <span class="text-muted">No leave requests found matching your filters.</span>
+                                </div>
+                            </td>
+                        </tr>
                     }
                     else
                     {
-                        <span class="badge bg-secondary bg-opacity-10 text-secondary
-                                                                 rounded-pill px-2 px-md-3 small">
-                            <i class="bi bi-slash-circle me-1 d-none d-sm-inline"></i>
-                            Cancelled
-                        </span>
-                    }
-                </ActionTemplate>
+                        @foreach (var req in PagedRequests)
+                        {
+                            <tr class="leave-request-row @(IsSelected(req.Id) ? "leave-row-selected" : "")">
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <td class="px-3 py-1.5 text-center" style="width: 44px;">
+                                        @if (req.StatusId == Status.Pending)
+                                        {
+                                            <AppCheckBox Value="@IsSelected(req.Id)"
+                                                         ValueChanged="@(selected => OnToggleSelect(req.Id, selected))"
+                                                         Disabled="@_isUpdating"
+                                                         ContainerClass="form-check m-0 d-inline-flex justify-content-center align-items-center"
+                                                         title="Select leave request" />
+                                        }
+                                    </td>
+                                }
+                                <!-- EMP# -->
+                                <td class="px-3 py-1.5">
+                                    <span class="text-secondary small font-monospace">
+                                        @(string.IsNullOrWhiteSpace(req.EmployeeNumber) ? $"EMP{req.EmployeeId:D3}" : req.EmployeeNumber)
+                                    </span>
+                                </td>
 
-            </AppTable>
+                                <!-- Employee (Avatar + Name on 1 clean line, unbolded 500) -->
+                                <td class="px-3 py-1.5">
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrWhiteSpace(req.ProfileImage))
+                                        {
+                                            <img src="@req.ProfileImage" alt="@req.EmployeeName" class="avatar-circle avatar-img" />
+                                        }
+                                        else
+                                        {
+                                            <div class="avatar-circle">
+                                                @GetInitials(req.EmployeeName)
+                                            </div>
+                                        }
+                                        <span class="emp-name text-truncate">
+                                            @FormatName(req.EmployeeName)
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- Leave Type -->
+                                <td class="px-3 py-1.5">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary fw-medium px-2 py-0.5" style="font-size: 0.72rem;">
+                                        @(string.IsNullOrWhiteSpace(req.LeaveTypeName) ? "General Leave" : FormatName(req.LeaveTypeName))
+                                    </span>
+                                </td>
+
+                                <!-- Dates -->
+                                <td class="px-3 py-1.5">
+                                    <div class="small text-dark fw-medium" style="font-size: 0.8rem;">
+                                        @req.StartDate.ToString("dd MMM yyyy")
+                                        @if (req.EndDate.Date != req.StartDate.Date)
+                                        {
+                                            <span class="text-muted"> – @req.EndDate.ToString("dd MMM yyyy")</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <!-- Total Days -->
+                                <td class="px-3 py-1.5 text-center">
+                                    <span class="badge bg-light text-dark border px-2 py-0.5" style="font-size: 0.72rem;">
+                                        @(req.LeaveDays > 0 ? $"{req.LeaveDays}d" : "1d")
+                                    </span>
+                                </td>
+
+                                <!-- Reason -->
+                                <td class="px-3 py-1.5 small text-muted text-truncate" style="max-width: 220px; font-size: 0.8rem;" title="@req.Reason">
+                                    @(string.IsNullOrWhiteSpace(req.Reason) ? "—" : req.Reason)
+                                </td>
+
+                                <!-- Status Badge -->
+                                <td class="px-3 py-1.5 text-center">
+                                    @switch (req.StatusId)
+                                    {
+                                        case Status.Pending:
+                                            <span class="leave-status-pill leave-status-pending">
+                                                <span class="status-dot"></span>
+                                                <span>Pending</span>
+                                            </span>
+                                            break;
+                                        case Status.Approved:
+                                            <span class="leave-status-pill leave-status-approved"
+                                                  title="@(string.IsNullOrWhiteSpace(req.ApprovedByName) ? "Approved" : $"Approved by {req.ApprovedByName}")">
+                                                <span class="status-dot"></span>
+                                                <span>Approved</span>
+                                            </span>
+                                            break;
+                                        case Status.Rejected:
+                                            <span class="leave-status-pill leave-status-rejected">
+                                                <span class="status-dot"></span>
+                                                <span>Rejected</span>
+                                            </span>
+                                            break;
+                                        case Status.Cancelled:
+                                            <span class="leave-status-pill leave-status-cancelled">
+                                                <span class="status-dot"></span>
+                                                <span>Cancelled</span>
+                                            </span>
+                                            break;
+                                        default:
+                                            <span class="leave-status-pill leave-status-default">
+                                                <span class="status-dot"></span>
+                                                <span>@req.StatusId</span>
+                                            </span>
+                                            break;
+                                    }
+                                </td>
+
+                                <!-- Actions: Standardized Image 1 Buttons -->
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <td class="px-3 py-1.5 text-center">
+                                        @if (req.StatusId == Status.Pending)
+                                        {
+                                            <div class="d-inline-flex align-items-center gap-1.5">
+                                                <!-- Point 1: Solid green rounded-rect with white check -->
+                                                <button type="button" class="btn-action-approve-solid"
+                                                        title="Approve leave request"
+                                                        disabled="@_isUpdating"
+                                                        @onclick="() => UpdateStatus(req, Status.Approved)">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+
+                                                <!-- Point 1: Crisp red outline rounded-rect with red cross -->
+                                                <button type="button" class="btn-action-reject-outline"
+                                                        title="Reject leave request"
+                                                        disabled="@_isUpdating"
+                                                        @onclick="() => UpdateStatus(req, Status.Rejected)">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                        else if (req.StatusId == Status.Approved)
+                                        {
+                                            <span class="text-success small fw-medium text-nowrap" title="@(string.IsNullOrWhiteSpace(req.ApprovedByName) ? "Approved" : $"Approved by {req.ApprovedByName}")">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Approved
+                                            </span>
+                                        }
+                                        else if (req.StatusId == Status.Rejected)
+                                        {
+                                            <span class="text-danger small fw-medium text-nowrap">
+                                                <i class="bi bi-x-circle-fill me-1"></i>Rejected
+                                            </span>
+                                        }
+                                        else if (req.StatusId == Status.Cancelled)
+                                        {
+                                            <span class="text-muted small fw-medium text-nowrap">
+                                                <i class="bi bi-dash-circle me-1"></i>Cancelled
+                                            </span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
         </div>
+
+        <!-- ═══════════ 4. PAGINATION FOOTER ═══════════ -->
+        @if (FilteredRequests.Any())
+        {
+            <div class="d-flex align-items-center justify-content-between p-2 px-3 border-top flex-wrap gap-2 bg-light bg-opacity-50 flex-shrink-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">Rows per page:</span>
+                    <select class="form-select form-select-sm w-auto rounded-2"
+                            value="@_pageSize" @onchange="OnPageSizeChanged">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">
+                        @((_currentPage - 1) * _pageSize + 1) – @Math.Min(_currentPage * _pageSize, FilteredRequests.Count) of @FilteredRequests.Count
+                    </span>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-outline-secondary bg-white"
+                                disabled="@(_currentPage <= 1)"
+                                @onclick="@(() => SetPage(_currentPage - 1))">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary bg-white"
+                                disabled="@(_currentPage >= TotalPages)"
+                                @onclick="@(() => SetPage(_currentPage + 1))">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
+
 </div>
 
 @code {
 
     [Parameter] public EventCallback<int> OnPendingCountChanged { get; set; }
 
-    private List<LeaveRequestViewModel> allRequests = new();
-    private List<SelectOption> Employees = new();
+    private List<LeaveRequestViewModel> _allRequests = new();
+    private List<SelectOption> _employeeOptions = new();
 
-    private Status? statusFilter;
-    private string? selectedEmployeeName;
-    private string? selectedEmployeeNumber;
+    private Status? _statusFilter;
+    private int? _selectedEmployeeId;
+    private string? _selectedEmployeeName;
+    private string _searchQuery = string.Empty;
 
-    private int pendingCount;
-    private int approvedCount;
-    private int rejectedCount;
+    private int _pendingCount;
+    private int _approvedCount;
+    private int _rejectedCount;
+    private int _cancelledCount;
+
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private bool _isLoading = false;
+    private bool _isUpdating = false;
+
+    private HashSet<int> _selectedRequestIds = new();
+    private bool _showApproveModal;
+
+    private bool HasAnyPendingInCurrentPage =>
+        PagedRequests.Any(r => r.StatusId == Status.Pending);
+
+    private bool IsAllSelected =>
+        HasAnyPendingInCurrentPage &&
+        PagedRequests.Where(r => r.StatusId == Status.Pending).All(r => _selectedRequestIds.Contains(r.Id));
+
+    private bool IsSelected(int id) => _selectedRequestIds.Contains(id);
+
+    private void OnToggleSelect(int id, bool selected)
+    {
+        if (selected)
+            _selectedRequestIds.Add(id);
+        else
+            _selectedRequestIds.Remove(id);
+    }
+
+    private void OnToggleSelectAll(bool selectAll)
+    {
+        if (selectAll)
+        {
+            PagedRequests.Where(r => r.StatusId == Status.Pending)
+                .Select(r => r.Id)
+                .ToList()
+                .ForEach(id => _selectedRequestIds.Add(id));
+        }
+        else
+        {
+            PagedRequests.Select(r => r.Id)
+                .ToList()
+                .ForEach(id => _selectedRequestIds.Remove(id));
+        }
+    }
+
+    private void PromptApproveSelected()
+    {
+        if (_selectedRequestIds.Count == 0)
+        {
+            _ = NotificationService.Warning("Please select at least one pending request to approve.");
+            return;
+        }
+
+        _showApproveModal = true;
+    }
+
+    private async Task ApproveSelectedAsync()
+    {
+        if (_selectedRequestIds.Count == 0)
+        {
+            _showApproveModal = false;
+            return;
+        }
+
+        _isUpdating = true;
+        StateHasChanged();
+
+        try
+        {
+            var approverEmployeeId = GetEmployeeId();
+            if (approverEmployeeId <= 0)
+                approverEmployeeId = _allRequests?.FirstOrDefault(r => r.ApprovedBy > 0)?.ApprovedBy ?? 1;
+
+            var idsToApprove = _selectedRequestIds.ToList();
+            var result = await LeaveService.BulkApproveAsync(idsToApprove, approverEmployeeId);
+
+            _selectedRequestIds.Clear();
+            _showApproveModal = false;
+            await LoadRequests();
+
+            if (result?.IsSuccess == true)
+            {
+                await NotificationService.Success(result.Message ?? $"Successfully approved {result.Data} leave request(s).");
+            }
+            else
+            {
+                await NotificationService.Error(result?.Message ?? "Failed to approve selected leave requests.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.Error($"Error approving requests: {ex.Message}");
+        }
+        finally
+        {
+            _isUpdating = false;
+            StateHasChanged();
+        }
+    }
+
+    private void SetPage(int page)
+    {
+        _currentPage = Math.Clamp(page, 1, TotalPages);
+        _selectedRequestIds.Clear();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -134,18 +506,12 @@
         await LoadRequests();
     }
 
-    private Task OnStatusChanged(Status? status)
-    {
-        statusFilter = status;
-        return Task.CompletedTask;
-    }
-
     private async Task LoadEmployees()
     {
         try
         {
             var result = await EmployeeService.GetEmployeesAsync();
-            Employees = result?.IsSuccess == true && result.Data != null
+            _employeeOptions = result?.IsSuccess == true && result.Data != null
                 ? result.Data.Select(e => new SelectOption
                 {
                     Value = e.Id.ToString(),
@@ -153,130 +519,171 @@
                 }).ToList()
                 : new();
         }
-        catch { Employees = new(); }
+        catch
+        {
+            _employeeOptions = new();
+        }
     }
 
     private async Task LoadRequests()
     {
+        _isLoading = true;
         try
         {
             var result = await LeaveService.GetLeaveRequestsAsync();
-            allRequests = result?.IsSuccess == true && result.Data != null
+            _allRequests = result?.IsSuccess == true && result.Data != null
                 ? result.Data : new();
 
-            pendingCount = allRequests.Count(r => r.StatusId == Status.Pending);
-            approvedCount = allRequests.Count(r => r.StatusId == Status.Approved);
-            rejectedCount = allRequests.Count(r => r.StatusId == Status.Rejected);
-
-            await OnPendingCountChanged.InvokeAsync(pendingCount);
+            RecalculateCounts();
+            await OnPendingCountChanged.InvokeAsync(_pendingCount);
         }
-        catch { allRequests = new(); }
+        catch
+        {
+            _allRequests = new();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
+    private void RecalculateCounts()
+    {
+        _pendingCount = _allRequests.Count(r => r.StatusId == Status.Pending);
+        _approvedCount = _allRequests.Count(r => r.StatusId == Status.Approved);
+        _rejectedCount = _allRequests.Count(r => r.StatusId == Status.Rejected);
+        _cancelledCount = _allRequests.Count(r => r.StatusId == Status.Cancelled);
+    }
+
+    private bool HasActiveFilters =>
+        _statusFilter.HasValue ||
+        _selectedEmployeeId.HasValue ||
+        !string.IsNullOrWhiteSpace(_selectedEmployeeName) ||
+        !string.IsNullOrWhiteSpace(_searchQuery);
+
     private List<LeaveRequestViewModel> FilteredRequests =>
-        allRequests.Where(r =>
-            (statusFilter == null || r.StatusId == statusFilter)
+        _allRequests.Where(r =>
+            (!_statusFilter.HasValue || r.StatusId == _statusFilter.Value)
             &&
-            (State.SelectedEmployeeId == null || r.EmployeeId == State.SelectedEmployeeId)
+            (!_selectedEmployeeId.HasValue || _selectedEmployeeId.Value == 0 || r.EmployeeId == _selectedEmployeeId.Value)
             &&
-            (string.IsNullOrWhiteSpace(selectedEmployeeName)
-                || r.EmployeeName.Contains(selectedEmployeeName, StringComparison.OrdinalIgnoreCase))
+            (string.IsNullOrWhiteSpace(_selectedEmployeeName)
+                || (r.EmployeeName?.Contains(_selectedEmployeeName, StringComparison.OrdinalIgnoreCase) ?? false))
             &&
-            (string.IsNullOrWhiteSpace(selectedEmployeeNumber)
-                || r.EmployeeNumber.Contains(selectedEmployeeNumber, StringComparison.OrdinalIgnoreCase))
+            (string.IsNullOrWhiteSpace(_searchQuery)
+                || (r.EmployeeName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (r.EmployeeNumber?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (r.LeaveTypeName?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (r.Reason?.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ?? false))
         ).ToList();
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)FilteredRequests.Count / _pageSize));
+
+    private IEnumerable<LeaveRequestViewModel> PagedRequests =>
+        FilteredRequests.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
 
     private void FilterByStatus(Status? status)
     {
-        statusFilter = status;
+        _statusFilter = status;
+        _currentPage = 1;
+        _selectedRequestIds.Clear();
     }
 
     private void ClearFilters()
     {
-        statusFilter = null;
-        State.SelectedEmployeeId = null;
-        selectedEmployeeName = null;
-        selectedEmployeeNumber = null;
+        _statusFilter = null;
+        _selectedEmployeeId = null;
+        _selectedEmployeeName = null;
+        _searchQuery = string.Empty;
+        _currentPage = 1;
+        _selectedRequestIds.Clear();
     }
 
     private Task OnEmployeeChanged(string? empId)
     {
-        State.SelectedEmployeeId = !string.IsNullOrWhiteSpace(empId) && empId != "0"
-            ? int.Parse(empId) : null;
+        if (int.TryParse(empId, out var id) && id > 0)
+        {
+            _selectedEmployeeId = id;
+        }
+        else
+        {
+            _selectedEmployeeId = null;
+        }
+        _currentPage = 1;
+        _selectedRequestIds.Clear();
         return Task.CompletedTask;
     }
 
     private Task OnEmployeeNameChanged(string? text)
     {
-        selectedEmployeeName = null;
-        selectedEmployeeNumber = null;
-
+        _selectedEmployeeName = null;
         if (!string.IsNullOrWhiteSpace(text))
         {
-            var match = System.Text.RegularExpressions.Regex.Match(
-                text, @"^(.*?)(?:\s*\((.*?)\))?$");
+            var match = System.Text.RegularExpressions.Regex.Match(text, @"^(.*?)(?:\s*\((.*?)\))?$");
             if (match.Success)
             {
-                selectedEmployeeName = match.Groups[1].Value.Trim();
-                selectedEmployeeNumber = match.Groups[2].Value.Trim();
+                _selectedEmployeeName = match.Groups[1].Value.Trim();
             }
         }
+        _currentPage = 1;
+        _selectedRequestIds.Clear();
         return Task.CompletedTask;
+    }
+
+    private void OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size) && size > 0)
+        {
+            _pageSize = size;
+            _currentPage = 1;
+            _selectedRequestIds.Clear();
+        }
     }
 
     private async Task UpdateStatus(LeaveRequestViewModel req, Status newStatus)
     {
-        // Ensure component is fully initialized before proceeding
-        if (!IsInitialized)
-        {
-            await NotificationService.Error("Component is not fully initialized. Please refresh and try again.");
-            return;
-        }
+        var action = newStatus == Status.Approved ? "approve" : "reject";
 
         bool confirmed = await JsRuntime.InvokeAsync<bool>(
-            "confirm", $"Are you sure you want to {newStatus} this leave request?");
+            "confirm", $"Are you sure you want to {action} this leave request for {req.EmployeeName}?");
         if (!confirmed) return;
 
-        var approverEmployeeId = GetEmployeeId();
-        if (approverEmployeeId <= 0)
+        _isUpdating = true;
+        try
         {
-            await NotificationService.Error("Unable to retrieve your employee ID. Please log in again.");
-            return;
-        }
+            var approverEmployeeId = GetEmployeeId();
+            if (approverEmployeeId <= 0)
+            {
+                // Fallback for SuperAdmin / Admin
+                approverEmployeeId = _allRequests?.FirstOrDefault(r => r.ApprovedBy > 0)?.ApprovedBy ?? 1;
+            }
 
-        var result = await LeaveService.UpdateLeaveStatusAsync(req.Id, newStatus, approverEmployeeId);
-        if (result?.IsSuccess == true)
-        {
-            req.StatusId = newStatus;
-            req.ApprovedDate = DateTime.Now;
-            await NotificationService.Success($"Leave {newStatus.ToString().ToLower()} successfully.");
-            await LoadRequests();
+            var result = await LeaveService.UpdateLeaveStatusAsync(req.Id, newStatus, approverEmployeeId);
+            if (result?.IsSuccess == true)
+            {
+                req.StatusId = newStatus;
+                req.ApprovedDate = DateTime.Now;
+                req.ApprovedByName = GetUserFullName();
+                await NotificationService.Success($"Leave request {action}d successfully.");
+                await LoadRequests();
+            }
+            else
+            {
+                await NotificationService.Error(result?.Message ?? $"Failed to {action} leave request.");
+            }
         }
-        else
+        finally
         {
-            await NotificationService.Error(result?.Message ?? "Operation failed.");
+            _isUpdating = false;
         }
     }
 
-    private string GetApproveClass(LeaveRequestViewModel r) =>
-        r.StatusId == Status.Approved
-            ? "action-btn btn btn-success shadow-sm"
-            : "action-btn btn btn-outline-success";
+    private static string FormatName(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "—" : System.Text.RegularExpressions.Regex.Replace(name, "([A-Z])", " $1").Trim();
 
-    private string GetRejectClass(LeaveRequestViewModel r) =>
-        r.StatusId == Status.Rejected
-            ? "action-btn btn btn-danger shadow-sm"
-            : "action-btn btn btn-outline-danger";
-
-    private string GetEmployeeValue() =>
-        State.SelectedEmployeeId?.ToString() ?? "0";
-
-    private record StatCardModel(
-    Status? Status,
-    string Icon,
-    string BgClass,
-    string TextClass,
-    string ActiveClass,
-    int Count,
-    string Label);
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "--";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(name);
+    }
 }

@@ -101,9 +101,9 @@
     private string GetFullDateLabel() =>
         DateTime.Now.ToString("dddd, dd MMM yyyy");
 
-    public void Dispose()
+    public override void Dispose()
     {
         _cts?.Cancel();
-        _cts?.Dispose();
+        _cts?.Dispose(); base.Dispose();
     }
 }

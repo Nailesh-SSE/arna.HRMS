@@ -1,335 +1,516 @@
 @page "/leave-report"
 
-@using arna.HRMS.Components.Pages.Report.Admin
-@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.Loader
+@using arna.HRMS.Core.Enums
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services.Report
-@using arna.HRMS.Components.Loader
-@using arna.HRMS.Models.Common.Table
-@using arna.HRMS.Models.ViewModels.Attendance
-@using arna.HRMS.Services
 @using arna.HRMS.Services.Common
 
 @inject IReportService ReportService
+@inject NotificationService NotificationService
 
 @if (isLoading && !showDetail)
 {
-    <Loader Visible="isLoading" Message="Loading employee reports…" />
+    <Loader Visible="isLoading" Message="Loading leave reports…" />
 }
 else if (!showDetail)
 {
     <div class="emp-report-fade-in">
 
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                     style="width:48px; height:48px;">
-                    <i class="bi bi-clipboard-data-fill text-primary fs-4"></i>
+        <!-- ═══════════ 1. PAGE HEADER & ACTIONS ═══════════ -->
+        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h3 class="report-title mb-0">Employees Leave Report</h3>
+                    @if (!isLoading)
+                    {
+                        <span class="header-count-pill">
+                            @UniqueEmployeesCount @(UniqueEmployeesCount == 1 ? "Employee" : "Employees") Total
+                        </span>
+                    }
                 </div>
-                <div>
-                    <h4 class="fw-bold mb-0">Employees Leave Report</h4>
-                    <p class="text-muted mb-0 small">
-                        Monitor Leave data across your team. Click
-                        <strong class="text-primary">View</strong> for detailed insights.
-                    </p>
-                </div>
+                <p class="report-subtitle mb-0">Monitor leave quotas, approved usage, and remaining leave balances across your team.</p>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-3 shadow-xs fw-medium bg-white"
+                        @onclick="() => LoadReport()" disabled="@isLoading" title="Refresh leave data">
+                    <i class="bi bi-arrow-clockwise @(isLoading ? "spin-animation" : "")"></i>
+                    <span>Refresh</span>
+                </button>
             </div>
         </div>
 
+        <!-- ═══════════ 2. FILTER & SEARCH CONTROLS BAR ═══════════ -->
+        <div class="report-filter-card mb-3">
+            <div class="d-flex flex-wrap align-items-center gap-3">
 
-
-        <!-- ══════════ TABLE CARD ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-            <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
-
-                <!-- ═════ TOP ROW ═════ -->
-                <div class="d-flex align-items-center">
-
-                    <!-- LEFT SIDE (Title + Count) -->
-                    @if (!showFilters)
+                <!-- Search Box -->
+                <div class="filter-search-box flex-grow-1">
+                    <i class="bi bi-search filter-search-icon"></i>
+                    <input type="text"
+                           class="filter-search-input"
+                           placeholder="Search by employee name or #..."
+                           value="@_searchText"
+                           @oninput="OnSearchInput" />
+                    @if (!string.IsNullOrWhiteSpace(_searchText))
                     {
-
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <h6 class="fw-semibold mb-0">
-                                <i class="bi bi-table text-primary me-2"></i>Leave Summary
-                            </h6>
-                            <span class="badge bg-light text-dark rounded-pill px-3 py-1 border">
-                                <i class="bi bi-list-ul me-1"></i>@FilteredEmployees.Count employees
-                            </span>
-                        </div>
-                    }
-
-                    <div class="ms-auto">
-                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                                @onclick="ToggleFilters">
-                            @if (!showFilters)
-                            {
-                                <span><i class="bi bi-sliders me-1"></i>More</span>
-                            }
-                            else
-                            {
-                                <span><i class="bi bi-x-lg me-1"></i>Close</span>
-                            }
+                        <button type="button" class="filter-clear-btn" @onclick="ClearSearch" title="Clear search">
+                            <i class="bi bi-x-circle-fill"></i>
                         </button>
-                    </div>
+                    }
                 </div>
-                <!-- ═════ FILTER ROW (Toggle) ═════ -->
-                @if (showFilters)
-                {
-                    <div class="d-flex align-items-end flex-wrap gap-3 mt-3">
 
-                        <!-- From Date -->
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">
-                                <i class="bi bi-calendar-event me-1"></i>From Date
-                            </label>
-
-                            <input type="date"
-                                   class="form-control form-control-sm"
-                                   value="@fromDate?.ToString("yyyy-MM-dd")"
-                                   @onchange="OnFromDateInputChanged" />
-                        </div>
-
-                        <!-- To Date -->
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">
-                                <i class="bi bi-calendar-event me-1"></i>To Date
-                            </label>
-
-                            <input type="date"
-                                   class="form-control form-control-sm"
-                                   value="@toDate?.ToString("yyyy-MM-dd")"
-                                   @onchange="OnToDateInputChanged" />
-                        </div>
-
-                        <!-- Reset -->
-                        <div class="col-auto">
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                    @onclick="ResetDates">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-                            </button>
-                        </div>
-
-                        <!-- 🔍 Search (NEW) -->
-                        <div class="col-12 col-md-auto ms-md-auto">
-                            <div class="position-relative">
-                                <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted"
-                                   style="left:12px;"></i>
-                                <input type="text"
-                                       class="form-control form-control-sm rounded-pill ps-5"
-                                       placeholder="Search by name or number…"
-                                       style="min-width:240px;"
-                                       @bind="_searchText"
-                                       @bind:event="oninput" />
-
-                                @if (!string.IsNullOrWhiteSpace(_searchText))
-                                {
-                                    <button class="btn btn-link btn-sm position-absolute top-50 translate-middle-y border-0 p-0"
-                                            style="right:10px;"
-                                            @onclick="ClearSearch">
-                                        <i class="bi bi-x-lg text-muted"></i>
-                                    </button>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-            <div class="card-body p-0">
-                @if (!FilteredEmployees.Any())
-                {
-                    <div class="text-center py-5 px-3">
-                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width:72px; height:72px;">
-                            <i class="bi bi-person-slash fs-2 text-muted opacity-50"></i>
-                        </div>
-                        <h6 class="fw-semibold text-muted mb-1">No Employees Found</h6>
-                        <p class="text-muted small mb-3 mx-auto" style="max-width:360px;">
-                            @if (!string.IsNullOrWhiteSpace(_searchText))
-                            {
-                                <span>No employees match "<strong>@_searchText</strong>"</span>
-                            }
-                            else
-                            {
-                                <span>
-                                    No leave records found from
-                                    <strong>@FormatDate(fromDate)</strong> to
-                                    <strong>@FormatDate(toDate)</strong>.
-                                </span>
-                            }
-                        </p>
-                        @if (!string.IsNullOrWhiteSpace(_searchText))
+                <!-- Leave Type Filter -->
+                <div class="filter-select-wrap" style="min-width: 175px;">
+                    <select class="filter-dropdown-select" value="@_selectedLeaveTypeFilter" @onchange="OnLeaveTypeFilterChanged" title="Filter by leave type">
+                        <option value="combined">All Leaves (Summary)</option>
+                        <option value="itemized">All Leaves (Itemized)</option>
+                        @foreach (var lt in AvailableLeaveTypes)
                         {
-                            <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
-                                    @onclick="ClearSearch">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Search
-                            </button>
+                            <option value="@lt.Key">@lt.Value</option>
                         }
-                        else
-                        {
-                            <button class="btn btn-sm btn-primary rounded-pill px-4 shadow-sm"
-                                    @onclick="ResetDates">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Current Month
-                            </button>
-                        }
+                    </select>
+                </div>
+
+                <!-- Filter Mode (Yearly / Custom Range) -->
+                <div class="filter-select-wrap" style="min-width: 130px;">
+                    <select class="filter-dropdown-select" value="@_filterMode" @onchange="OnFilterModeChanged">
+                        <option value="year">Yearly (@year)</option>
+                        <option value="custom">Date Range</option>
+                    </select>
+                </div>
+
+                @if (_filterMode == "year")
+                {
+                    <!-- Year Selector -->
+                    <div class="filter-select-wrap" style="min-width: 95px;">
+                        <select class="filter-dropdown-select" value="@year" @onchange="OnYearChanged">
+                            @for (int y = DateTime.Today.Year - 3; y <= DateTime.Today.Year + 1; y++)
+                            {
+                                var yNum = y;
+                                <option value="@yNum">@yNum</option>
+                            }
+                        </select>
                     </div>
                 }
                 else
                 {
-                    <AppTable TItem="LeaveSummaryReportViewModel"
-                              Items="FilteredEmployees"
-                              Columns="TableSchemas.LeaveSummaryReport"
-                              EnablePagination="true"
-                              PageSize="10"
-                              WrapperClass="emp-report-table">
-                        <ActionTemplate Context="emp">
-                            <AppButton ButtonClass="btn btn-sm btn-outline-primary rounded-pill px-3"
-                                       OnClick="() => OpenDetail(emp)">
-                                <i class="bi bi-eye me-1"></i>
-                                <span class="d-none d-sm-inline">View</span>
-                            </AppButton>
-                        </ActionTemplate>
-                    </AppTable>
+                    <!-- From Date -->
+                    <div class="filter-date-wrap">
+                        <span class="filter-date-label">From:</span>
+                        <input type="date"
+                               class="filter-date-input"
+                               value="@fromDate?.ToString("yyyy-MM-dd")"
+                               @onchange="OnFromDateInputChanged" />
+                    </div>
+
+                    <!-- To Date -->
+                    <div class="filter-date-wrap">
+                        <span class="filter-date-label">To:</span>
+                        <input type="date"
+                               class="filter-date-input"
+                               value="@toDate?.ToString("yyyy-MM-dd")"
+                               @onchange="OnToDateInputChanged" />
+                    </div>
                 }
+
+                @if (HasActiveFilters)
+                {
+                    <button type="button" class="filter-reset-btn" @onclick="ResetFilters" title="Reset all filters">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                        <span>Reset</span>
+                    </button>
+                }
+
             </div>
         </div>
+
+        <!-- ═══════════ 3. DATA TABLE CARD ═══════════ -->
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-header bg-white border-bottom py-3 px-3 px-md-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <h6 class="fw-semibold mb-0 text-dark d-flex align-items-center gap-2">
+                        <i class="bi bi-clipboard2-data text-primary"></i>
+                        <span>Leave Summary</span>
+                    </h6>
+                    <span class="badge bg-light text-muted border rounded-pill px-2.5 py-1 small fw-normal">
+                        @DisplayedRows.Count @(DisplayedRows.Count == 1 ? "record" : "records")
+                    </span>
+                    @if (_selectedLeaveTypeFilter != "combined" && _selectedLeaveTypeFilter != "itemized" && int.TryParse(_selectedLeaveTypeFilter, out var curLtId))
+                    {
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 small fw-normal">
+                            Filtered: @FormatLeaveName(curLtId)
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                @if (!DisplayedRows.Any())
+                {
+                    <div class="text-center py-5 px-3">
+                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                             style="width:64px; height:64px;">
+                            <i class="bi bi-person-slash fs-2 text-muted opacity-50"></i>
+                        </div>
+                        <h6 class="fw-semibold text-dark mb-1">No Leave Records Found</h6>
+                        <p class="text-muted small mb-3 mx-auto" style="max-width:380px;">
+                            @if (!string.IsNullOrWhiteSpace(_searchText))
+                            {
+                                <span>No employees match "<strong>@_searchText</strong>". Try adjusting your search.</span>
+                            }
+                            else
+                            {
+                                <span>No leave summary data found for the selected period.</span>
+                            }
+                        </p>
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-4" @onclick="ResetFilters">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Filters
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table report-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th style="width: 105px;">EMP #</th>
+                                    <th style="min-width: 220px;">EMPLOYEE</th>
+                                    <th style="min-width: 140px;">DEPARTMENT</th>
+                                    @if (_selectedLeaveTypeFilter != "combined")
+                                    {
+                                        <th style="min-width: 140px;">LEAVE TYPE</th>
+                                    }
+                                    <th class="text-center" style="width: 130px;">ANNUAL QUOTA</th>
+                                    <th class="text-center" style="width: 130px;">USED LEAVE</th>
+                                    <th class="text-center" style="width: 130px;">BALANCE</th>
+                                    <th class="text-center" style="width: 100px;">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in PagedRows)
+                                {
+                                    <tr>
+                                        <!-- EMP # -->
+                                        <td>
+                                            <span class="report-emp-id">@row.EmployeeNumber</span>
+                                        </td>
+
+                                        <!-- EMPLOYEE -->
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2.5">
+                                                @if (!string.IsNullOrWhiteSpace(row.ProfileImage))
+                                                {
+                                                    <img src="@row.ProfileImage" alt="@row.EmployeeName" class="avatar-circle avatar-img" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="avatar-circle">
+                                                        @GetInitials(row.EmployeeName)
+                                                    </div>
+                                                }
+                                                <span class="emp-name-text">@row.EmployeeName</span>
+                                            </div>
+                                        </td>
+
+                                        <!-- DEPARTMENT -->
+                                        <td>
+                                            <span class="text-muted small">
+                                                @(string.IsNullOrWhiteSpace(row.DepartmentName) ? "—" : row.DepartmentName)
+                                            </span>
+                                        </td>
+
+                                        <!-- LEAVE TYPE (only shown when filtered or itemized) -->
+                                        @if (_selectedLeaveTypeFilter != "combined")
+                                        {
+                                            <td>
+                                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 fw-normal small">
+                                                    @row.LeaveType
+                                                </span>
+                                            </td>
+                                        }
+
+                                        <!-- ANNUAL QUOTA -->
+                                        <td class="text-center">
+                                            <span class="leave-quota-badge">
+                                                @row.Quota days
+                                            </span>
+                                        </td>
+
+                                        <!-- USED LEAVE -->
+                                        <td class="text-center">
+                                            @if (row.Used > 0)
+                                            {
+                                                <span class="leave-used-active">
+                                                    @row.Used days
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="leave-used-zero">
+                                                    0 days
+                                                </span>
+                                            }
+                                        </td>
+
+                                        <!-- BALANCE -->
+                                        <td class="text-center">
+                                            <span class="leave-balance-badge">
+                                                @row.Balance days
+                                            </span>
+                                        </td>
+
+                                        <!-- ACTION -->
+                                        <td class="text-center">
+                                            <button type="button"
+                                                    class="btn-action-icon-view"
+                                                    @onclick="() => OpenDetail(row.EmployeeId, row.EmployeeNumber, row.EmployeeName, row.DepartmentName, row.ProfileImage)"
+                                                    title="View detailed leave history for @row.EmployeeName">
+                                                <i class="bi bi-eye"></i>
+                                                <span>View</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+
+            <!-- ═══════════ 4. PAGINATION FOOTER ═══════════ -->
+            @if (!isLoading && DisplayedRows.Any())
+            {
+                <div class="report-pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2 text-muted small flex-wrap">
+                        <span>Showing <strong>@StartIndex</strong> to <strong>@EndIndex</strong> of <strong>@TotalRows</strong> records</span>
+                        <span class="text-black-50">•</span>
+                        <div class="d-flex align-items-center gap-1.5">
+                            <span>Show</span>
+                            <select class="page-size-select" value="@_pageSize" @onchange="OnPageSizeChange">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                            <span>per page</span>
+                        </div>
+                    </div>
+
+                    @if (TotalPages > 1)
+                    {
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button" class="page-btn" disabled="@(_currentPage <= 1)" @onclick="() => GoToPage(_currentPage - 1)" title="Previous page">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+
+                            @for (int p = 1; p <= TotalPages; p++)
+                            {
+                                var pageNum = p;
+                                <button type="button" class="page-btn @(pageNum == _currentPage ? "active" : "")" @onclick="() => GoToPage(pageNum)">
+                                    @pageNum
+                                </button>
+                            }
+
+                            <button type="button" class="page-btn" disabled="@(_currentPage >= TotalPages)" @onclick="() => GoToPage(_currentPage + 1)" title="Next page">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+        </div>
+
     </div>
 }
 else
 {
-    <!-- ═══════════════════════════════════════════
-         FIX: Only pass dates when user manually
-         changed them. Otherwise pass null so
-         detail page defaults to month mode.
-         ═══════════════════════════════════════════ -->
     <LeaveDetailsReportPage Employee="selectedEmployee!"
                             Year="@(year ?? DateTime.Today.Year)"
-                            Month="@(month ?? DateTime.Today.Month)"
+                            Month="@month"
                             InitialFromDate="@(isCustomDateRange ? (DateTime?)fromDate : null)"
                             InitialToDate="@(isCustomDateRange ? (DateTime?)toDate : null)"
                             OnBackClicked="BackToList" />
 }
+
 @code {
 
-    [Parameter] public EventCallback<int> OnPendingCountChanged { get; set; }
+    /* ───── State ───── */
+    private bool showDetail;
+    private bool isLoading = true;
+    private string _searchText = "";
+    private EmployeeViewModel? selectedEmployee;
 
-    private List<LeaveSummaryReportViewModel> reportData = new();
-    private List<EmployeeLeaveDetailsReportViewModel> detailsData = new();
+    // Filters
+    private string _selectedLeaveTypeFilter = "combined"; // "combined", "itemized", or LeaveNameId string
+    private string _filterMode = "year"; // "year" or "custom"
     private int? year;
     private int? month;
     private int? departmentId;
     private DateTime? fromDate;
     private DateTime? toDate;
     private bool isCustomDateRange;
-    private string _searchText = "";
-    private bool showDetail;
-    private bool isLoading;
-    private bool showFilters = false;
 
-    private EmployeeViewModel? selectedEmployee;
+    // Raw Data
+    private List<LeaveSummaryReportViewModel> reportData = new();
 
-    protected override async Task OnInitializedAsync()
+    // Pagination
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+
+    /* ───── Row Display Model ───── */
+    public class LeaveRowDisplay
     {
-        SetDefaultDates();
-        await LoadReport(new ReportFilter
-        {
-            FromDate = fromDate,
-            ToDate = toDate,
-            Year = year
-        });
+        public int EmployeeId { get; set; }
+        public string EmployeeNumber { get; set; } = "";
+        public string EmployeeName { get; set; } = "";
+        public string DepartmentName { get; set; } = "";
+        public string LeaveType { get; set; } = "";
+        public int Quota { get; set; }
+        public int Used { get; set; }
+        public int Balance { get; set; }
+        public bool IsSummary { get; set; }
+        public string? ProfileImage { get; set; }
     }
 
-    async Task ApplyFilter()
+    /* ───── Computed ───── */
+    private int UniqueEmployeesCount =>
+        reportData.Select(r => r.EmployeeId).Distinct().Count();
+
+    private Dictionary<int, string> AvailableLeaveTypes =>
+        reportData
+            .Select(r => r.LeaveNameId)
+            .Distinct()
+            .ToDictionary(id => id, id => FormatLeaveName(id));
+
+    private List<LeaveRowDisplay> DisplayedRows
     {
-        await LoadReport(new ReportFilter
+        get
         {
-            Year = year,
-            Month = month,
-            DepartmentId = departmentId,
-            FromDate = fromDate,
-            ToDate = toDate
-        });
+            var filtered = string.IsNullOrWhiteSpace(_searchText)
+                ? reportData
+                : reportData.Where(e =>
+                    MatchesSearch(e.EmployeeName) ||
+                    MatchesSearch(e.EmployeeNumber)
+                ).ToList();
+
+            if (_selectedLeaveTypeFilter == "combined")
+            {
+                // Group by employee so each employee appears exactly once
+                return filtered
+                    .GroupBy(e => new { e.EmployeeId, e.EmployeeNumber, e.EmployeeName, e.DepartmentName, e.ProfileImage })
+                    .Select(g => new LeaveRowDisplay
+                    {
+                        EmployeeId = g.Key.EmployeeId,
+                        EmployeeNumber = g.Key.EmployeeNumber ?? "",
+                        EmployeeName = g.Key.EmployeeName ?? "",
+                        DepartmentName = g.Key.DepartmentName ?? "",
+                        ProfileImage = g.Key.ProfileImage,
+                        LeaveType = "All Types",
+                        Quota = g.Sum(x => x.MaxPerYear),
+                        Used = g.Sum(x => x.UsedLeave),
+                        Balance = Math.Max(0, g.Sum(x => x.MaxPerYear) - g.Sum(x => x.UsedLeave)),
+                        IsSummary = true
+                    })
+                    .OrderBy(e => e.EmployeeNumber)
+                    .ToList();
+            }
+            else if (int.TryParse(_selectedLeaveTypeFilter, out var selectedId))
+            {
+                // Single leave type selected
+                return filtered
+                    .Where(r => r.LeaveNameId == selectedId)
+                    .Select(r => new LeaveRowDisplay
+                    {
+                        EmployeeId = r.EmployeeId,
+                        EmployeeNumber = r.EmployeeNumber ?? "",
+                        EmployeeName = r.EmployeeName ?? "",
+                        DepartmentName = r.DepartmentName ?? "",
+                        ProfileImage = r.ProfileImage,
+                        LeaveType = FormatLeaveName(r.LeaveNameId),
+                        Quota = r.MaxPerYear,
+                        Used = r.UsedLeave,
+                        Balance = Math.Max(0, r.MaxPerYear - r.UsedLeave),
+                        IsSummary = false
+                    })
+                    .OrderBy(e => e.EmployeeNumber)
+                    .ToList();
+            }
+            else
+            {
+                // Itemized: Show all individual rows
+                return filtered
+                    .Select(r => new LeaveRowDisplay
+                    {
+                        EmployeeId = r.EmployeeId,
+                        EmployeeNumber = r.EmployeeNumber ?? "",
+                        EmployeeName = r.EmployeeName ?? "",
+                        DepartmentName = r.DepartmentName ?? "",
+                        ProfileImage = r.ProfileImage,
+                        LeaveType = FormatLeaveName(r.LeaveNameId),
+                        Quota = r.MaxPerYear,
+                        Used = r.UsedLeave,
+                        Balance = Math.Max(0, r.MaxPerYear - r.UsedLeave),
+                        IsSummary = false
+                    })
+                    .OrderBy(e => e.EmployeeNumber)
+                    .ThenBy(e => e.LeaveType)
+                    .ToList();
+            }
+        }
+    }
+
+    private int TotalRows => DisplayedRows.Count;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalRows / _pageSize));
+    private int StartIndex => TotalRows == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+    private int EndIndex => Math.Min(_currentPage * _pageSize, TotalRows);
+
+    private IEnumerable<LeaveRowDisplay> PagedRows =>
+        DisplayedRows.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(_searchText) ||
+        _selectedLeaveTypeFilter != "combined" ||
+        _filterMode != "year" ||
+        year != DateTime.Today.Year;
+
+    /* ───── Lifecycle ───── */
+    protected override async Task OnInitializedAsync()
+    {
+        year = DateTime.Today.Year;
+        SetDefaultDates();
+        await LoadReport();
     }
 
     private void SetDefaultDates()
     {
         var today = DateTime.Today;
-        fromDate = new DateTime(today.Year, today.Month, 1);
-        toDate = new DateTime(today.Year, today.Month,
-        DateTime.DaysInMonth(today.Year, today.Month));
+        fromDate = new DateTime(today.Year, 1, 1);
+        toDate = new DateTime(today.Year, 12, 31);
         isCustomDateRange = false;
     }
 
-    private static string FormatDate(DateTime? date)
-    => date?.ToString("dd/MM/yy") ?? "";
-
-    /* ───── Search ───── */
-    private void ClearSearch() => _searchText = "";
-
-    private bool MatchesSearch(string? value) =>
-    !string.IsNullOrWhiteSpace(value) &&
-    value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
-
-    private List<LeaveSummaryReportViewModel> FilteredEmployees =>
-    string.IsNullOrWhiteSpace(_searchText)
-    ? reportData
-    : reportData.Where(e =>
-    MatchesSearch(e.EmployeeName) ||
-    MatchesSearch(e.EmployeeNumber)
-    ).ToList();
-
-
-    /* ───── Navigation ───── */
-    private void OpenDetail(LeaveSummaryReportViewModel emp)
-    {
-        // Split EmployeeName into FirstName and LastName
-        var nameParts = (emp.EmployeeName ?? "").Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-
-        selectedEmployee = new EmployeeViewModel
-        {
-            Id = emp.EmployeeId,
-            EmployeeNumber = emp.EmployeeNumber,
-            FirstName = nameParts.Length > 0 ? nameParts[0] : "",
-            LastName = nameParts.Length > 1 ? nameParts[1] : "",
-        };
-        showDetail = true;
-    }
-
-    private async Task ResetDates()
-    {
-        SetDefaultDates();
-        _searchText = "";
-        await ApplyFilter();
-    }
-    async Task LoadReport(ReportFilter filter)
+    /* ───── Data Loading ───── */
+    private async Task LoadReport()
     {
         try
         {
-
             isLoading = true;
             StateHasChanged();
 
-            year = filter.Year ?? DateTime.Now.Year;
-            month = filter.Month;
-            departmentId = filter.DepartmentId;
-            fromDate = filter.FromDate.HasValue
-            ? filter.FromDate.Value.Date
-            : fromDate;
-
-            toDate = filter.ToDate.HasValue
-            ? filter.ToDate.Value.Date
-            : toDate;
-
-            reportData = new List<LeaveSummaryReportViewModel>();
-            await InvokeAsync(StateHasChanged);
+            DateTime? fParam = _filterMode == "custom" ? fromDate : null;
+            DateTime? tParam = _filterMode == "custom" ? toDate : null;
+            int? yParam = _filterMode == "year" ? year : null;
 
             var result = await ReportService.GetEmployeeLeaveSummaryReportAsync(
-            year,
-            month,
-            departmentId,
-            fromDate,
-            toDate
+                yParam,
+                month,
+                departmentId,
+                fParam,
+                tParam
             );
 
             if (result.IsSuccess && result.Data != null)
@@ -338,15 +519,13 @@ else
             }
             else
             {
-                reportData = new List<LeaveSummaryReportViewModel>();
+                reportData = new();
             }
-
-            await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)
         {
             reportData = new();
-            // await NotificationService.Error($"Error: {ex.Message}");
+            await NotificationService.Error($"Error loading leave report: {ex.Message}");
         }
         finally
         {
@@ -355,29 +534,45 @@ else
         }
     }
 
-    async Task ViewDetails(int employeeId, string employeeNumber)
+    /* ───── Event Handlers ───── */
+    private void OnSearchInput(ChangeEventArgs e)
     {
-        detailsData = new List<EmployeeLeaveDetailsReportViewModel>();
-        await InvokeAsync(StateHasChanged);
+        _searchText = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+    }
 
-        var result = await ReportService.GetEmployeeLeaveDetailsReportAsync(
-        year,
-        month,
-        fromDate,
-        toDate,
-        employeeId,
-        employeeNumber
-        );
-        if (result.IsSuccess && result.Data != null)
-        {
-            detailsData = result.Data.ToList();
-        }
-        else
-        {
-            detailsData = new List<EmployeeLeaveDetailsReportViewModel>();
-        }
+    private void ClearSearch()
+    {
+        _searchText = "";
+        _currentPage = 1;
+    }
 
-        await InvokeAsync(StateHasChanged);
+    private void OnLeaveTypeFilterChanged(ChangeEventArgs e)
+    {
+        _selectedLeaveTypeFilter = e.Value?.ToString() ?? "combined";
+        _currentPage = 1;
+    }
+
+    private async Task OnFilterModeChanged(ChangeEventArgs e)
+    {
+        _filterMode = e.Value?.ToString() ?? "year";
+        _currentPage = 1;
+        if (_filterMode == "year")
+        {
+            year = DateTime.Today.Year;
+            SetDefaultDates();
+        }
+        await LoadReport();
+    }
+
+    private async Task OnYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var y))
+        {
+            year = y;
+            _currentPage = 1;
+            await LoadReport();
+        }
     }
 
     private async Task OnFromDateInputChanged(ChangeEventArgs e)
@@ -386,10 +581,11 @@ else
         {
             fromDate = dt;
             isCustomDateRange = true;
+            _currentPage = 1;
             if (toDate.HasValue && fromDate > toDate)
                 toDate = fromDate;
 
-            await ApplyFilter();
+            await LoadReport();
         }
     }
 
@@ -399,19 +595,77 @@ else
         {
             toDate = dt;
             isCustomDateRange = true;
+            _currentPage = 1;
             if (fromDate.HasValue && toDate < fromDate)
                 fromDate = toDate;
 
-            await ApplyFilter();
+            await LoadReport();
         }
     }
+
+    private async Task ResetFilters()
+    {
+        _searchText = "";
+        _selectedLeaveTypeFilter = "combined";
+        _filterMode = "year";
+        year = DateTime.Today.Year;
+        SetDefaultDates();
+        _currentPage = 1;
+        await LoadReport();
+    }
+
+    private void OnPageSizeChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var sz))
+        {
+            _pageSize = sz;
+            _currentPage = 1;
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+            _currentPage = page;
+    }
+
+    /* ───── Navigation to Details ───── */
+    private void OpenDetail(int employeeId, string empNumber, string fullName, string deptName, string? profileImage = null)
+    {
+        var nameParts = (fullName ?? "").Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+
+        selectedEmployee = new EmployeeViewModel
+        {
+            Id = employeeId,
+            EmployeeNumber = empNumber,
+            FirstName = nameParts.Length > 0 ? nameParts[0] : "",
+            LastName = nameParts.Length > 1 ? nameParts[1] : "",
+            DepartmentName = deptName,
+            ProfileImage = profileImage
+        };
+        showDetail = true;
+    }
+
     private void BackToList()
     {
         showDetail = false;
         selectedEmployee = null;
     }
-    private void ToggleFilters()
+
+    /* ───── Helpers ───── */
+    private bool MatchesSearch(string? value) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatLeaveName(int leaveNameId)
     {
-        showFilters = !showFilters;
+        var name = ((arna.HRMS.Core.Enums.LeaveName)leaveNameId).ToString();
+        return System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2");
+    }
+
+    private static string GetInitials(string fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "?";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(fullName);
     }
 }

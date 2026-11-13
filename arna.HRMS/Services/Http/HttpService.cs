@@ -49,6 +49,11 @@ public sealed class HttpService
         return await SendAsync<T>(HttpMethod.Get, url, null, ct);
     }
 
+    public async Task<ApiResult<T>> PostFormDataAsync<T>(string url, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        return await SendAsync<T>(HttpMethod.Post, url, content, ct);
+    }
+
     public async Task<ApiResult<T>> PostAsync<T>(string url, object body, CancellationToken ct = default)
     {
         return await SendAsync<T>(HttpMethod.Post, url, body, ct);
@@ -134,8 +139,17 @@ public sealed class HttpService
 
         if (body != null)
         {
-            var json = JsonSerializer.Serialize(body, JsonOptions);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            if (body is HttpContent httpContent)
+            {
+                request.Content = httpContent;
+            }
+            else
+            {
+                var json = JsonSerializer.Serialize(body, JsonOptions);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+    
+            }
+
         }
 
         var token = await _authProvider.GetAccessTokenAsync();

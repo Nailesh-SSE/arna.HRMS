@@ -17,7 +17,15 @@ public class FestivalHolidayValidator
     {
         if (dto == null)
             return ValidationResult.Fail("Invalid request");
-        return await ValidateCommonAsync(dto);
+
+        var result = await ValidateCommonAsync(dto);
+        if (!result.IsValid)
+            return result;
+
+        if (dto.Date.Date < DateTime.Today.Date)
+            return ValidationResult.Fail("Festival date cannot be in the past");
+
+        return ValidationResult.Success();
     }
 
     public async Task<ValidationResult> ValidateUpdateAsync(FestivalHolidayDto dto)
@@ -55,8 +63,6 @@ public class FestivalHolidayValidator
 
         if (dto.Date == default)
             errors.Add("Festival date is required");
-        else if (dto.Date.Date < DateTime.Today.Date)
-            errors.Add("Festival date cannot be in the past");
 
         if (!string.IsNullOrWhiteSpace(dto.FestivalName))
         {

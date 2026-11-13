@@ -14,7 +14,7 @@
 <AppFormLayout>
     <!-- ═══════════ 1. HEADER CARD ═══════════ -->
     <AppFormHeader Title="@(IsEditMode ? "Edit Role" : "Add New Role")"
-                   Subtitle="@(IsEditMode ? $"Modify authorization parameters and access level for {role.Name}." : "Create new administrative or operational roles for system access control.")"
+                   Subtitle="@(IsEditMode ? $"Modify settings and access level for {role.Name}." : "Create new administrative or operational roles for system access.")"
                    Icon="@(IsEditMode ? "bi-pencil-square" : "bi-shield-lock")"
                    OnBack="GoBack" />
 
@@ -61,7 +61,7 @@
                 <AppFormSection Title="Status Settings" Icon="bi-toggle-on">
                     <AppSwitch @bind-Value="role.IsActive"
                                Label="Active Role"
-                               HelpText="Enable this role for user assignment and permission granting." />
+                               HelpText="Enable this role for user assignment." />
                 </AppFormSection>
 
             </div>

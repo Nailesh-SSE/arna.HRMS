@@ -91,7 +91,8 @@ public class EmployeeRepository
         return await _baseRepository.Query()
             .AsNoTracking()
             .Where(e => e.EmployeeNumber != null)
-            .OrderByDescending(e => e.EmployeeNumber)
+            .OrderByDescending(e => e.EmployeeNumber.Length)
+            .ThenByDescending(e => e.EmployeeNumber)
             .Select(e => e.EmployeeNumber)
             .FirstOrDefaultAsync();
     }

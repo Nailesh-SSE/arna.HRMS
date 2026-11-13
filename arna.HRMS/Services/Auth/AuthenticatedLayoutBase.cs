@@ -19,6 +19,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     private string _userName = string.Empty;
     private string _userFullName = string.Empty;
     private string _role = string.Empty;
+    private string _profileImage = string.Empty;
     private bool _isAuthenticated;
 
     private bool _disposed;
@@ -33,6 +34,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     protected string GetUserName() => _userName;
     protected string GetUserFullName() => _userFullName;
     protected string GetUserRole() => _role;
+    protected string GetProfileImage() => _profileImage;
     protected bool IsAuthenticated() => _isAuthenticated;
 
     // ==============================
@@ -162,6 +164,10 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
             ?? user.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value 
             ?? string.Empty;
 
+        _profileImage = user.FindFirst("ProfileImage")?.Value 
+            ?? user.FindFirst("profileImage")?.Value 
+            ?? string.Empty;
+
         _isAuthenticated = user.Identity?.IsAuthenticated ?? false;
 
         if (!_isAuthenticated)
@@ -255,12 +261,26 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
             || string.Equals(role, Models.Enums.UserRole.Employee.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
+    protected bool IsManager()
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "Manager", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.Manager.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected bool IsHR()
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "HR", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "Human Resources", StringComparison.OrdinalIgnoreCase);
+    }
+
 
     // ==============================
     // Dispose
     // ==============================
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         _disposed = true;
 

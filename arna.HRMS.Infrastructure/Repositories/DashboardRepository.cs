@@ -78,7 +78,7 @@ public class DashboardRepository
         }
 
         var result = attendances
-            .GroupBy(a => new { a.EmployeeId, a.Employee.FullName, a.Employee.EmployeeNumber })
+            .GroupBy(a => new { a.EmployeeId, a.Employee.FullName, a.Employee.EmployeeNumber, a.Employee.ProfileImage })
             .Select(group =>
             {
                 var records = group.ToList();
@@ -126,6 +126,7 @@ public class DashboardRepository
                     EmployeeId = group.Key.EmployeeId,
                     EmployeeName = group.Key.FullName ?? "Unknown",
                     EmployeeNumber = group.Key.EmployeeNumber ?? string.Empty,
+                    ProfileImage = group.Key.ProfileImage,
                     ClockIn = firstClockIn,
                     ClockOut = lastClockOut,
                     WorkingHours = TimeSpan.FromSeconds(workingSeconds > 0 ? workingSeconds : 8 * 3600),
@@ -187,6 +188,7 @@ public class DashboardRepository
             EmployeeId = l.EmployeeId,
             EmployeeNumber = l.Employee?.EmployeeNumber ?? $"EMP{l.EmployeeId:D3}",
             EmployeeName = l.Employee != null ? $"{l.Employee.FirstName} {l.Employee.LastName}".Trim() : "Unknown",
+            ProfileImage = l.Employee?.ProfileImage,
             ClockIn = null,
             ClockOut = null,
             WorkingHours = TimeSpan.Zero,
@@ -212,6 +214,7 @@ public class DashboardRepository
                     EmployeeId = att.EmployeeId,
                     EmployeeNumber = att.Employee?.EmployeeNumber ?? $"EMP{att.EmployeeId:D3}",
                     EmployeeName = att.Employee != null ? $"{att.Employee.FirstName} {att.Employee.LastName}".Trim() : "Unknown",
+                    ProfileImage = att.Employee?.ProfileImage,
                     ClockIn = null,
                     ClockOut = null,
                     WorkingHours = TimeSpan.Zero,
@@ -250,6 +253,7 @@ public class DashboardRepository
                     EmployeeId = emp.Id,
                     EmployeeNumber = emp.EmployeeNumber ?? $"EMP{emp.Id:D3}",
                     EmployeeName = $"{emp.FirstName} {emp.LastName}".Trim(),
+                    ProfileImage = emp.ProfileImage,
                     ClockIn = null,
                     ClockOut = null,
                     WorkingHours = TimeSpan.Zero,

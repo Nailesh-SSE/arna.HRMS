@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.DTOs.Auth;
 using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -43,10 +43,10 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
     {
         if (request?.UserId <= 0)
-            return BadRequest("Invalid userId");
+            return BadRequest(arna.HRMS.Core.Common.Results.ServiceResult<string>.Fail("Invalid userId"));
 
         var result = await _authService.LogoutAsync(request.UserId);
-        return result.IsSuccess ? Ok(result) : Ok("Logout successful");
+        return result.IsSuccess ? Ok(result) : Ok(arna.HRMS.Core.Common.Results.ServiceResult<string>.Success("Logout successful"));
     }
 
     public class LogoutRequest { public int UserId { get; set; } }

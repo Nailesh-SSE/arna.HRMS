@@ -103,7 +103,7 @@ public class AttendanceRequestValidator
 
         if (dto.ClockIn != null && dto.ClockOut != null)
         {
-            if (dto.FromDate == dto.ToDate && dto.ClockOut <= dto.ClockIn)
+            if (dto.FromDate.HasValue && dto.ToDate.HasValue && dto.FromDate.Value.Date == dto.ToDate.Value.Date && dto.ClockOut <= dto.ClockIn)
                 errors.Add("ClockOut must be greater than ClockIn for same-day requests");
         }
         

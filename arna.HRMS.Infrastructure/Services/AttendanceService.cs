@@ -164,7 +164,10 @@ public class AttendanceService : IAttendanceService
 
         // Pre-fetch leave type BEFORE the loop using await (avoids .Result deadlock)
         var leaveTypesResult = await _leaveService.GetLeaveTypesAsync();
-        var defaultLeaveTypeId = leaveTypesResult.Data?.FirstOrDefault()?.Id ?? 0;
+        var defaultLeaveType = leaveTypesResult.Data?.FirstOrDefault(x => x.IsActive && x.LeaveNameId == LeaveName.CasualLeave)
+            ?? leaveTypesResult.Data?.FirstOrDefault(x => x.IsActive)
+            ?? leaveTypesResult.Data?.FirstOrDefault();
+        var defaultLeaveTypeId = defaultLeaveType?.Id ?? 1;
 
         var missingDates = Enumerable
             .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
@@ -176,9 +179,10 @@ public class AttendanceService : IAttendanceService
         {
             bool isHoliday = IsWeekend(date) || festivalDates.Contains(date);
             bool isLeave = leaveDates.Contains(date);
+            bool hasAtt = await _attendanceRepository.HasAttendanceOnDateAsync(employeeId, date);
 
             // Auto-mark daily Attendance as Leave
-            if (!isLeave && !isHoliday)
+            if (!isLeave && !isHoliday && !hasAtt)
             {
                 await _attendanceRepository.CreateAttendanceAsync(new Attendance
                 {

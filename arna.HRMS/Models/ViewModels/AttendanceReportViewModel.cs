@@ -11,6 +11,7 @@ public class AttendanceReportViewModel
     public string? EmployeeNumber { get; set; }
 
     public string? EmployeeName { get; set; }
+    public string? ProfileImage { get; set; }
 
     public string? Department { get; set; }
 

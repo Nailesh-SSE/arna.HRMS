@@ -15,7 +15,7 @@
 @inject IReportService ReportService
 @inject IEmployeeService EmployeeService
 @inject NotificationService NotificationService
-@inject AuthenticationStateProvider AuthProvider
+
 @inject IExcelExportService ExcelExportService
 @inject IJSRuntime JS
 
@@ -76,10 +76,16 @@ else
                     
                     <!-- Left: Employee Identity -->
                     <div class="d-flex align-items-center gap-3">
-                        <div class="att-hero-avatar"
-                             style="background:@GetColor(Employee.FullName ?? "");">
-                            @GetInitials(Employee.FullName ?? "")
-                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Employee.ProfileImage ?? allRecords.FirstOrDefault()?.ProfileImage))
+                        {
+                            <img src="@(Employee.ProfileImage ?? allRecords.FirstOrDefault()?.ProfileImage)" alt="@Employee.FullName" class="att-hero-avatar avatar-img" />
+                        }
+                        else
+                        {
+                            <div class="att-hero-avatar">
+                                @GetInitials(Employee.FullName ?? "")
+                            </div>
+                        }
                         <div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 <h5 class="fw-bold text-dark mb-0">@Employee.FullName</h5>
@@ -128,120 +134,105 @@ else
 
         <!-- ══════════ 3. UNIFIED TABLE & CONTROLS CARD ══════════ -->
         <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-            <div class="card-header bg-white border-bottom p-3 p-md-4">
+            <div class="report-filter-bar">
                 
-                <!-- Unified Controls: Filter Chips + Date Controls -->
-                <div class="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-3">
+                <!-- Unified Controls: Title on Left + Single-Row Controls on Right -->
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
                     
-                    <!-- Status Filter Tabs / Chips -->
-                    <div class="d-flex flex-wrap align-items-center gap-1.5">
-                        <button type="button"
-                                class="btn btn-sm att-stat-chip @(selectedStatusFilter == null ? "active" : "")"
-                                @onclick="() => ToggleStatusFilter(null)"
-                                title="View all records">
-                            <span class="att-chip-dot bg-secondary"></span>
-                            <span class="att-chip-label">All</span>
-                            <strong class="att-chip-value">@cachedFilteredRecords.Count</strong>
-                        </button>
-
-                        <button type="button"
-                                class="btn btn-sm att-stat-chip @(selectedStatusFilter == nameof(AttendanceStatus.Present) ? "active" : "")"
-                                @onclick="() => ToggleStatusFilter(nameof(AttendanceStatus.Present))"
-                                title="Filter Present">
-                            <span class="att-chip-dot bg-success"></span>
-                            <span class="att-chip-label text-success">Present</span>
-                            <strong class="att-chip-value text-success">@presentCount</strong>
-                        </button>
-
-                        <button type="button"
-                                class="btn btn-sm att-stat-chip @(selectedStatusFilter == nameof(AttendanceStatus.Late) ? "active" : "")"
-                                @onclick="() => ToggleStatusFilter(nameof(AttendanceStatus.Late))"
-                                title="Filter Late">
-                            <span class="att-chip-dot bg-warning"></span>
-                            <span class="att-chip-label text-warning-emphasis">Late</span>
-                            <strong class="att-chip-value text-warning-emphasis">@lateCount</strong>
-                        </button>
-
-                        <button type="button"
-                                class="btn btn-sm att-stat-chip @(selectedStatusFilter == nameof(AttendanceStatus.HalfDay) ? "active" : "")"
-                                @onclick="() => ToggleStatusFilter(nameof(AttendanceStatus.HalfDay))"
-                                title="Filter Half Day">
-                            <span class="att-chip-dot bg-info"></span>
-                            <span class="att-chip-label text-info-emphasis">Half Day</span>
-                            <strong class="att-chip-value text-info-emphasis">@halfDayCount</strong>
-                        </button>
-
-                        <button type="button"
-                                class="btn btn-sm att-stat-chip @(selectedStatusFilter == nameof(AttendanceStatus.OnLeave) ? "active" : "")"
-                                @onclick="() => ToggleStatusFilter(nameof(AttendanceStatus.OnLeave))"
-                                title="Filter On Leave">
-                            <span class="att-chip-dot bg-secondary"></span>
-                            <span class="att-chip-label text-secondary">Leave</span>
-                            <strong class="att-chip-value text-secondary">@onLeaveCount</strong>
-                        </button>
+                    <!-- Left: Table Title & Count -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="report-table-title d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-calendar4-week text-primary"></i>
+                            <span>Daily Attendance Logs</span>
+                        </span>
+                        <span class="badge bg-light text-muted border rounded-pill px-2.5 py-1 small fw-normal">
+                            @DisplayRecords.Count @(DisplayRecords.Count == 1 ? "day" : "days")
+                        </span>
                     </div>
 
-                    <!-- Right Controls: Mode Toggle, Month/Year / Range & Reset -->
-                    <div class="d-flex align-items-center flex-wrap gap-2 ms-xl-auto">
+                    <!-- Right Controls: Status Dropdown, Mode Toggle, Month/Year / Range & Reset -->
+                    <div class="d-flex align-items-center flex-wrap gap-2 ms-lg-auto">
                         
-                        <div class="btn-group btn-group-sm" role="group">
+                        <!-- Status Filter Dropdown -->
+                        <div class="filter-select-wrap" style="min-width: 155px;">
+                            <select class="filter-select-modern"
+                                    value="@(selectedStatusFilter ?? "")"
+                                    @onchange="OnStatusFilterChanged"
+                                    title="Filter records by status">
+                                <option value="">All Statuses (@cachedFilteredRecords.Count)</option>
+                                <option value="@nameof(AttendanceStatus.Present)">Present (@presentCount)</option>
+                                <option value="@nameof(AttendanceStatus.Late)">Late (@lateCount)</option>
+                                <option value="@nameof(AttendanceStatus.HalfDay)">Half Day (@halfDayCount)</option>
+                                <option value="@nameof(AttendanceStatus.OnLeave)">Leave (@onLeaveCount)</option>
+                                <option value="@nameof(AttendanceStatus.Absent)">Absent (@absentCount)</option>
+                            </select>
+                        </div>
+
+                        <!-- Modern Segmented Control -->
+                        <div class="view-toggle-segmented" role="group">
                             <button type="button"
-                                    class="btn @(filterMode == "month" ? "btn-primary shadow-sm" : "btn-outline-secondary")"
+                                    class="segmented-btn @(filterMode == "month" ? "active" : "")"
                                     @onclick='() => SwitchFilterMode("month")'>
-                                <i class="bi bi-calendar3 me-1"></i>Monthly
+                                <i class="bi bi-calendar3"></i>
+                                <span>Monthly</span>
                             </button>
                             <button type="button"
-                                    class="btn @(filterMode == "dateRange" ? "btn-primary shadow-sm" : "btn-outline-secondary")"
+                                    class="segmented-btn @(filterMode == "dateRange" ? "active" : "")"
                                     @onclick='() => SwitchFilterMode("dateRange")'>
-                                <i class="bi bi-calendar-range me-1"></i>Range
+                                <i class="bi bi-calendar-range"></i>
+                                <span>Range</span>
                             </button>
                         </div>
 
                         @if (filterMode == "month")
                         {
-                            <select class="form-select form-select-sm"
-                                    style="width: auto; min-width: 120px;"
-                                    value="@selectedMonth"
-                                    @onchange="OnMonthChanged">
-                                @for (int m = 1; m <= 12; m++)
-                                {
-                                    <option value="@m">@MonthName(m)</option>
-                                }
-                            </select>
+                            <div class="filter-select-wrap" style="min-width: 120px;">
+                                <select class="filter-select-modern"
+                                        value="@selectedMonth"
+                                        @onchange="OnMonthChanged">
+                                    @for (int m = 1; m <= 12; m++)
+                                    {
+                                        <option value="@m">@MonthName(m)</option>
+                                    }
+                                </select>
+                            </div>
 
-                            <select class="form-select form-select-sm"
-                                    style="width: auto; min-width: 90px;"
-                                    value="@selectedYear"
-                                    @onchange="OnYearChanged">
-                                @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 1; y++)
-                                {
-                                    <option value="@y">@y</option>
-                                }
-                            </select>
+                            <div class="filter-select-wrap" style="min-width: 90px;">
+                                <select class="filter-select-modern"
+                                        value="@selectedYear"
+                                        @onchange="OnYearChanged">
+                                    @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 1; y++)
+                                    {
+                                        <option value="@y">@y</option>
+                                    }
+                                </select>
+                            </div>
                         }
                         else
                         {
-                            <input type="text"
-                                   class="form-control form-control-sm @(fromDateError ? "is-invalid" : "")"
-                                   placeholder="DD/MM/YY"
-                                   style="width: 120px;"
-                                   maxlength="8"
-                                   value="@FormatDate(fromDate)"
-                                   @onchange="OnFromDateChanged" />
+                            <div class="filter-date-wrap">
+                                <span class="filter-date-label">From:</span>
+                                <input type="date"
+                                       class="filter-date-input-modern"
+                                       value="@fromDate.ToString("yyyy-MM-dd")"
+                                       @onchange="OnFromDateChanged" />
+                            </div>
 
-                            <input type="text"
-                                   class="form-control form-control-sm @(toDateError ? "is-invalid" : "")"
-                                   placeholder="DD/MM/YY"
-                                   style="width: 120px;"
-                                   maxlength="8"
-                                   value="@FormatDate(toDate)"
-                                   @onchange="OnToDateChanged" />
+                            <div class="filter-date-wrap">
+                                <span class="filter-date-label">To:</span>
+                                <input type="date"
+                                       class="filter-date-input-modern"
+                                       value="@toDate.ToString("yyyy-MM-dd")"
+                                       @onchange="OnToDateChanged" />
+                            </div>
                         }
 
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
+                        <button type="button"
+                                class="filter-btn-reset"
                                 @onclick="ResetFilters"
-                                title="Reset to current month">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                                title="Reset to current month and all statuses">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span>Reset</span>
                         </button>
 
                     </div>
@@ -305,7 +296,7 @@ else
     private DateTime toDate;
     private bool fromDateError;
     private bool toDateError;
-    private bool isLoading;
+    private bool isLoading = true;
     private bool isExporting;
     private string loadingMessage = "Loading your attendance report…";
     private string? selectedStatusFilter;
@@ -626,7 +617,7 @@ else
     private async Task OnFromDateChanged(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
-        if (TryParseDate(val, out var d))
+        if (!string.IsNullOrWhiteSpace(val) && (DateTime.TryParse(val, out var d) || TryParseDate(val, out d)))
         {
             fromDate = d;
             fromDateError = false;
@@ -643,7 +634,7 @@ else
     private async Task OnToDateChanged(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
-        if (TryParseDate(val, out var d))
+        if (!string.IsNullOrWhiteSpace(val) && (DateTime.TryParse(val, out var d) || TryParseDate(val, out d)))
         {
             toDate = d;
             toDateError = false;
@@ -655,6 +646,12 @@ else
         {
             toDateError = true;
         }
+    }
+
+    private void OnStatusFilterChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        selectedStatusFilter = string.IsNullOrWhiteSpace(val) ? null : val;
     }
 
     private async Task ResetFilters()
@@ -692,21 +689,11 @@ else
     private static string GetInitials(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return "?";
-        var p = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return p.Length >= 2
-            ? $"{p[0][0]}{p[1][0]}".ToUpper()
-            : p[0][..Math.Min(2, p[0].Length)].ToUpper();
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(name);
     }
 
     private static string MonthName(int m) =>
         System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m);
-
-    private static string GetColor(string name)
-    {
-        string[] palette = { "#4e73df", "#1cc88a", "#36b9cc", "#f6c23e",
-                             "#e74a3b", "#6f42c1", "#fd7e14", "#20c997" };
-        return palette[Math.Abs(name.GetHashCode()) % palette.Length];
-    }
 
     private double ComputeProgressWidth() =>
         cachedFilteredRecords.Count > 0

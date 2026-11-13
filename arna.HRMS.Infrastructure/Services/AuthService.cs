@@ -68,8 +68,7 @@ public class AuthService : IAuthService
         if (await _userServices.UserExistsAsync(dto.Email, dto.PhoneNumber, dto.Id))
             return ServiceResult<AuthResponse>.Fail("Email or phone number already exists.");
 
-        dto.Password = HashPassword(dto.Password);
-
+        // Password is automatically hashed into PasswordHash via AutoMapper UserProfile
         var user = await _userServices.CreateUserEntityAsync(dto);
 
         if (user == null)
@@ -89,6 +88,7 @@ public class AuthService : IAuthService
 
         var user = await _context.Users
             .Include(x => x.Role)
+            .Include(x => x.Employee)
             .FirstOrDefaultAsync(x => x.Id == request.UserId);
 
         if (user == null || user.RefreshToken != request.RefreshToken || user.RefreshTokenExpiryTime == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)

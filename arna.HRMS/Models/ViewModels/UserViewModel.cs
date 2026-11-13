@@ -41,4 +41,5 @@ public class UserViewModel : CommonViewModel
     public int? EmployeeId { get; set; }
     public string? EmployeeName { get; set; }
     public string? PasswordHash { get; set; }
+    public string? ProfileImage { get; set; }
 }

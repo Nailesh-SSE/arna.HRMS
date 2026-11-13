@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 
@@ -23,6 +23,7 @@ public interface ILeaveService
     Task<ServiceResult<LeaveRequestDto>> UpdateLeaveRequestAsync(LeaveRequestDto dto);
     Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id);
     Task<ServiceResult<bool>> UpdateLeaveRequestStatusAsync(int leaveRequestId, Status status, int approvedBy);
+    Task<ServiceResult<int>> BulkApproveLeaveRequestsAsync(List<int> requestIds, int approvedBy);
     Task<ServiceResult<bool>> CancelLeaveRequestAsync(int id, int employeeId);
     Task<ServiceResult<bool>> RevokeLeaveRequestAsync(int employeeId, DateTime fromDate, DateTime toDate);
 }

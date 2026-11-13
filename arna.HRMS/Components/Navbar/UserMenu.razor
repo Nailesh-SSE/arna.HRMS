@@ -16,9 +16,16 @@
 
                 <!-- Avatar + Online Indicator -->
                 <div class="position-relative d-inline-flex flex-shrink-0">
-                    <span class="usermenu-avatar rounded-circle text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0">
-                        @GetInitials()
-                    </span>
+                    @if (!string.IsNullOrWhiteSpace(GetProfileImage()))
+                    {
+                        <img src="@GetProfileImage()" alt="@GetDisplayName()" class="usermenu-avatar rounded-circle object-fit-cover flex-shrink-0" />
+                    }
+                    else
+                    {
+                        <span class="usermenu-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
+                            @GetInitials()
+                        </span>
+                    }
                     <span class="position-absolute usermenu-online-dot bg-success rounded-circle border border-2 border-white"></span>
                 </div>
 
@@ -44,9 +51,16 @@
 
                         <!-- Large Avatar -->
                         <div class="position-relative flex-shrink-0">
-                            <span class="usermenu-avatar-lg rounded-circle text-white fw-bold d-flex align-items-center justify-content-center shadow-sm">
-                                @GetInitials()
-                            </span>
+                            @if (!string.IsNullOrWhiteSpace(GetProfileImage()))
+                            {
+                                <img src="@GetProfileImage()" alt="@GetDisplayName()" class="usermenu-avatar-lg rounded-circle object-fit-cover shadow-sm" />
+                            }
+                            else
+                            {
+                                <span class="usermenu-avatar-lg rounded-circle d-flex align-items-center justify-content-center shadow-sm">
+                                    @GetInitials()
+                                </span>
+                            }
                             <span class="position-absolute usermenu-online-dot-lg bg-success rounded-circle border border-2 border-white"></span>
                         </div>
 
@@ -157,11 +171,7 @@
     private string GetInitials()
     {
         var name = GetDisplayName();
-        if (string.IsNullOrWhiteSpace(name)) return "U";
-        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return parts.Length >= 2
-            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
-            : parts[0][0].ToString().ToUpper();
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(name);
     }
 
     private string GetRoleName()

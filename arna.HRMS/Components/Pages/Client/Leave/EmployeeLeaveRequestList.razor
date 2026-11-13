@@ -1,4 +1,4 @@
-@using arna.HRMS.Components.lib.components.ui.CommonComponent
+﻿@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
@@ -69,40 +69,52 @@
             }
             else
             {
-                var hasPending = FilteredRequests.Any(r => r.StatusId == Status.Pending);
-
                 <AppTable TItem="LeaveRequestViewModel"
                           Items="FilteredRequests"
                           Columns="TableSchemas.LeaveRequestColumns"
-                          ShowActions="hasPending"
+                          ShowActions="true"
                           EnablePagination="true"
                           PageSize="10">
 
                     <ActionTemplate Context="req">
-                        @if (req.StatusId == Status.Pending)
-                        {
-                            <div class="d-flex align-items-center justify-content-center gap-1">
+                        <div class="d-flex align-items-center justify-content-center gap-1.5">
+                            @if (req.StatusId == Status.Pending)
+                            {
                                 <button type="button"
-                                        class="btn btn-sm btn-outline-primary rounded-circle p-1 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 28px; height: 28px;"
+                                        class="btn-action-icon-edit"
                                         title="Edit Request"
                                         @onclick="() => OnEditClicked.InvokeAsync(req)">
-                                    <i class="bi bi-pencil-square" style="font-size: 0.8rem;"></i>
+                                    <i class="bi bi-pencil-square"></i>
                                 </button>
 
                                 <button type="button"
-                                        class="btn btn-sm btn-outline-danger rounded-circle p-1 d-inline-flex align-items-center justify-content-center"
-                                        style="width: 28px; height: 28px;"
+                                        class="btn-action-icon-cancel"
                                         title="Cancel Request"
                                         @onclick="() => CancelRequest(req)">
-                                    <i class="bi bi-x-lg" style="font-size: 0.8rem;"></i>
+                                    <i class="bi bi-x-circle"></i>
                                 </button>
-                            </div>
-                        }
-                        else
-                        {
-                            <span class="text-muted opacity-50">—</span>
-                        }
+
+                                <button type="button"
+                                        class="btn-action-icon-delete"
+                                        title="Delete Request"
+                                        @onclick="() => DeleteRequest(req)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                            else if (req.StatusId == Status.Cancelled || req.StatusId == Status.Rejected)
+                            {
+                                <button type="button"
+                                        class="btn-action-icon-delete"
+                                        title="Delete Request"
+                                        @onclick="() => DeleteRequest(req)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="text-muted opacity-50">—</span>
+                            }
+                        </div>
                     </ActionTemplate>
 
                 </AppTable>
@@ -194,6 +206,22 @@
         await RefreshAsync();
         await OnRequestChanged.InvokeAsync();
         await NotificationService.Success("Leave request cancelled successfully.");
+    }
+
+    private async Task DeleteRequest(LeaveRequestViewModel req)
+    {
+        var confirm = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this leave request?");
+        if (!confirm) return;
+
+        var result = await LeaveService.DeleteLeaveRequestAsync(req.Id);
+        if (result?.IsSuccess != true)
+        {
+            await NotificationService.Error(result?.Message ?? "Failed to delete leave request.");
+            return;
+        }
+        await RefreshAsync();
+        await OnRequestChanged.InvokeAsync();
+        await NotificationService.Success("Leave request deleted successfully.");
     }
 
     private void ClearFilters()

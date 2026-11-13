@@ -5,6 +5,7 @@ public class EmployeeLeaveDetailsReportViewModel
     public int EmployeeId { get; set; }
     public string? EmployeeNumber { get; set; }
     public string? EmployeeName { get; set; }
+    public string? ProfileImage { get; set; }
     public int? LeaveTypeId { get; set; }
     public int? LeaveNameId { get; set; }
     public int? MaxPerYear { get; set; }

@@ -11,6 +11,7 @@
         opacity: 0;
         transform: translateY(2px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -27,6 +28,42 @@
 .profile-side-card {
     border: 1px solid #e2e8f0 !important;
     background: #ffffff;
+}
+
+.profile-avatar-wrapper {
+    width: 68px;
+    height: 68px;
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar-img {
+    object-fit: cover;
+    border: 2px solid #bae6fd;
+}
+
+.avatar-upload-btn {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 26px;
+    height: 26px;
+    background-color: #0284c7;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    font-size: 0.75rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.avatar-upload-btn:hover {
+    background-color: #0369a1;
+    transform: scale(1.1);
 }
 
 .profile-avatar-circle {
@@ -165,27 +202,68 @@
 /* 5. RESPONSIVE DESIGN                                            */
 /* ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 575.98px) {
+    .profile-avatar-wrapper {
+        width: 68px;
+        height: 68px;
+        position: relative;
+        display: inline-block;
+    }
+
+    .profile-avatar-img {
+        object-fit: cover;
+        border: 2px solid #bae6fd;
+    }
+
+    .avatar-upload-btn {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 26px;
+        height: 26px;
+        background-color: #0284c7;
+        color: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 2px solid #ffffff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        font-size: 0.75rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .avatar-upload-btn:hover {
+        background-color: #0369a1;
+        transform: scale(1.1);
+    }
+
     .profile-avatar-circle {
         width: 56px;
         height: 56px;
         font-size: 1.35rem;
     }
+
     .profile-nav-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+
     .profile-nav-tabs .nav-link {
         padding: 0.6rem 0.75rem;
         font-size: 0.80rem;
         white-space: nowrap;
     }
+
     .clean-field-tile {
         padding: 0.65rem 0.85rem;
     }
+
     .field-label {
         font-size: 0.68rem;
     }
+
     .field-value {
         font-size: 0.85rem;
     }

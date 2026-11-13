@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Base;
+using arna.HRMS.Core.Common.Base;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace arna.HRMS.Core.Entities;
@@ -9,7 +9,7 @@ public class Employee : BaseEntity
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Email { get; set; }
-    public string OfficeEmail { get; set; }
+    public string OfficeEmail { get; set; } = string.Empty;
     public string PhoneNumber { get; set; }
     public DateTime DateOfBirth { get; set; }
     public DateTime HireDate { get; set; }
@@ -17,6 +17,7 @@ public class Employee : BaseEntity
     public int? ManagerId { get; set; }
     public string Position { get; set; }
     public decimal Salary { get; set; }
+    public string? ProfileImage { get; set; }
 
     [NotMapped]
     public string FullName => $"{FirstName} {LastName}";

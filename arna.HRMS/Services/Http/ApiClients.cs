@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.Enums;
 using arna.HRMS.Models.ViewModels;
@@ -205,6 +205,20 @@ public sealed class ApiClients
     public sealed class EmployeeApi : BaseCrudApi<EmployeeViewModel>
     {
         public EmployeeApi(HttpService http) : base(http, "api/employees") { }
+
+        public async Task<ApiResult<string>> UploadProfileImageAsync(int employeeId, Stream fileStream, string fileName)
+        {
+            var content = new MultipartFormDataContent();
+            var streamContent = new StreamContent(fileStream);
+            content.Add(streamContent, "file", fileName);
+
+            return await Http.PostFormDataAsync<string>($"{Url}/{employeeId}/profile-image", content);
+        }
+
+        public async Task<ApiResult<bool>> DeleteProfileImageAsync(int employeeId)
+        {
+            return await Http.PostAsync<bool>($"{Url}/{employeeId}/delete-profile-image", new { });
+        }
     }
 
     // =========================================================
@@ -309,6 +323,13 @@ public sealed class ApiClients
                 new { });
         }
 
+        public async Task<ApiResult<int>> BulkApproveAsync(List<int> requestIds, int empId)
+        {
+            return await Http.PostAsync<int>(
+                $"{Url}/bulk-approve",
+                new { RequestIds = requestIds, ApprovedBy = empId });
+        }
+
         public async Task<ApiResult<bool>> CancelRequestAsync(int id, int empId)
         {
             return await Http.PostAsync<bool>(
@@ -364,6 +385,13 @@ public sealed class ApiClients
                 : string.Empty;
 
             return await _http.GetAsync<List<LeaveRequestViewModel>>($"{BaseUrl}/requests/filter{queryString}");
+        }
+
+        public async Task<ApiResult<int>> BulkApproveAsync(List<int> requestIds, int empId)
+        {
+            return await _http.PostAsync<int>(
+                $"{BaseUrl}/requests/bulk-approve",
+                new { RequestIds = requestIds, ApprovedBy = empId });
         }
 
         public async Task<ApiResult<bool>> CancelAsync(int leaveRequestId, int employeeId)

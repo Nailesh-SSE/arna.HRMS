@@ -37,6 +37,9 @@ public class AttendanceReportDto
 
     public AttendanceStatus? AttendanceStatus { get; set; }
 
+    [NotMapped]
+    public string? ProfileImage { get; set; }
+
     [JsonIgnore]
     [NotMapped]
     public List<DeviceType>? Devices =>

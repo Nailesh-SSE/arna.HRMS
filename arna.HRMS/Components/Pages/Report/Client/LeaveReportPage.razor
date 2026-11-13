@@ -1,4 +1,4 @@
-﻿@page "/employee-leave-report"
+@page "/employee-leave-report"
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Report.LeaveReport
 @using arna.HRMS.Components.lib.components.ui.Forms
@@ -16,7 +16,7 @@
 @inject IReportService ReportService
 @inject IEmployeeService EmployeeService
 @inject NotificationService NotificationService
-@inject AuthenticationStateProvider AuthProvider
+
 
 @if (isLoading)
 {

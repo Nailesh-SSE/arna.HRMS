@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -77,17 +77,35 @@ public class AttendanceRequestController : ControllerBase
 
     [HttpPost("{id:int}/status")]
     public async Task<IActionResult> UpdateStatusAsync(
-    int id,
-    [FromQuery] Status status,
-    [FromQuery] int approvedBy)
+        int id,
+        [FromQuery] Status status,
+        [FromQuery] int approvedBy)
     {
+        if (id <= 0)
+            return BadRequest("Invalid request ID.");
+
         if (status != Status.Approved && status != Status.Rejected)
             return BadRequest("Invalid status.");
 
         var result = await _service.UpdateAttendanceRequestStatusAsync(id, status, approvedBy);
 
+        if (result == null)
+            return BadRequest("Failed to update attendance request status.");
+
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 
-    
+    [HttpPost("bulk-approve")]
+    public async Task<IActionResult> BulkApproveAsync([FromBody] BulkApproveRequestDto dto)
+    {
+        if (dto == null || dto.RequestIds == null || !dto.RequestIds.Any())
+            return BadRequest("No attendance request IDs provided.");
+
+        if (dto.ApprovedBy <= 0)
+            return BadRequest("Invalid approver ID.");
+
+        var result = await _service.BulkApproveAttendanceRequestsAsync(dto.RequestIds, dto.ApprovedBy);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+    }
 }

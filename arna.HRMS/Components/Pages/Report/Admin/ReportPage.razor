@@ -1,6 +1,4 @@
 @using arna.HRMS.Components.Loader
-@using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Services
@@ -14,199 +12,329 @@
 
 @if (isLoading && !showDetail)
 {
-    <Loader Visible="isLoading" Message="Loading employee reports…" />
+    <Loader Visible="isLoading" Message="@_loadingMessage" />
 }
 else if (!showDetail)
 {
-    <div class="emp-report-fade-in">
+    <div class="report-page-container emp-report-fade-in">
 
-        <!-- ══════════ HEADER ══════════ -->
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                     style="width:48px; height:48px;">
-                    <i class="bi bi-clipboard-data-fill text-primary fs-4"></i>
+        <!-- ═══════════ 1. PAGE HEADER & ACTIONS ═══════════ -->
+        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h3 class="report-title mb-0">Employees Attendance Report</h3>
+                    @if (!isLoading)
+                    {
+                        <span class="header-count-pill">
+                            @_allEmployees.Count Total
+                        </span>
+                    }
                 </div>
-                <div>
-                    <h4 class="fw-bold mb-0">Employees Attendance Report</h4>
-                    <p class="text-muted mb-0 small">
-                        Monitor attendance data across your team. Click
-                        <strong class="text-primary">View</strong> for detailed insights.
-                    </p>
-                </div>
+                <p class="report-subtitle mb-0">Monitor team attendance metrics, work days, total logged hours, and absence rates.</p>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-3 shadow-xs fw-medium bg-white"
+                        @onclick="LoadEmployees" disabled="@isLoading" title="Refresh attendance data">
+                    <i class="bi bi-arrow-clockwise @(isLoading ? "spin-animation" : "")"></i>
+                    <span>Refresh</span>
+                </button>
             </div>
         </div>
 
-        <!-- ══════════ TABLE CARD ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
-            <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
+        <!-- ═══════════ 2. FILTER & SEARCH CONTROLS BAR ═══════════ -->
+        <div class="report-filter-card mb-3">
+            <div class="d-flex flex-wrap align-items-center gap-3">
 
-                <!-- ═════ TOP ROW ═════ -->
-                <div class="d-flex align-items-center">
-
-                    <!-- LEFT SIDE (Title + Count) -->
-                    @if (!showFilters)
+                <!-- Search Box -->
+                <div class="filter-search-box flex-grow-1">
+                    <i class="bi bi-search filter-search-icon"></i>
+                    <input type="text"
+                           class="filter-search-input"
+                           placeholder="Search by employee name or #..."
+                           value="@_searchText"
+                           @oninput="OnSearchInput" />
+                    @if (!string.IsNullOrWhiteSpace(_searchText))
                     {
-                        <div class="d-flex align-items-center gap-3">
-                            <h6 class="fw-semibold mb-0">
-                                <i class="bi bi-table text-primary me-2"></i>Employee Summary
-                            </h6>
-
-                            <span class="badge bg-light text-dark rounded-pill px-3 py-1 border">
-                                <i class="bi bi-list-ul me-1"></i>@FilteredEmployees.Count employees
-                            </span>
-                        </div>
-                    }
-
-                    <!-- PUSH BUTTON TO RIGHT -->
-                    <div class="ms-auto">
-                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                                @onclick="ToggleFilters">
-                            @if (!showFilters)
-                            {
-                                <span><i class="bi bi-sliders me-1"></i>More</span>
-                            }
-                            else
-                            {
-                                <span><i class="bi bi-x-lg me-1"></i>Close</span>
-                            }
+                        <button type="button" class="filter-clear-btn" @onclick="ClearSearch" title="Clear search">
+                            <i class="bi bi-x-circle-fill"></i>
                         </button>
-                    </div>
-
+                    }
                 </div>
 
-                <!-- ═════ FILTER ROW (Toggle) ═════ -->
-                @if (showFilters)
+                <!-- Filter Mode Selector -->
+                <div class="filter-select-wrap">
+                    <select class="filter-dropdown-select" value="@_filterMode" @onchange="OnFilterModeChanged">
+                        <option value="month">Monthly View</option>
+                        <option value="custom">Custom Date Range</option>
+                    </select>
+                </div>
+
+                @if (_filterMode == "month")
                 {
-                    <div class="d-flex align-items-end flex-wrap gap-3 mt-3">
+                    <!-- Month Selector -->
+                    <div class="filter-select-wrap" style="min-width: 135px;">
+                        <select class="filter-dropdown-select" value="@_selectedMonth" @onchange="OnMonthChanged">
+                            @for (int m = 1; m <= 12; m++)
+                            {
+                                var mNum = m;
+                                <option value="@mNum">@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(mNum)</option>
+                            }
+                        </select>
+                    </div>
 
-                        <!-- From Date -->
-                        <div style="min-width:140px;">
-                            <label class="form-label small fw-semibold text-muted mb-1">
-                                From Date
-                            </label>
-                            <input type="date"
-                                   class="form-control form-control-sm"
-                                   @bind="FromDatePicker" />
-                        </div>
-
-                        <!-- To Date -->
-                        <div style="min-width:140px;">
-                            <label class="form-label small fw-semibold text-muted mb-1">
-                                To Date
-                            </label>
-                            <input type="date"
-                                   class="form-control form-control-sm"
-                                   @bind="ToDatePicker" />
-                        </div>
-
-                        <!-- Reset -->
-                        <div>
-                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                    @onclick="ResetDates">
-                                Reset
-                            </button>
-                        </div>
-
-                        <!-- Spacer -->
-                        <div class="flex-grow-1"></div>
-
-                        <!-- Search -->
-                        <div style="min-width:220px;">
-                            <div class="position-relative">
-                                <i class="bi bi-search position-absolute top-50 translate-middle-y text-muted"
-                                   style="left:10px;"></i>
-
-                                <input type="text"
-                                       class="form-control form-control-sm rounded-pill ps-5"
-                                       placeholder="Search…"
-                                       @bind="_searchText"
-                                       @bind:event="oninput" />
-
-                                @if (!string.IsNullOrWhiteSpace(_searchText))
-                                {
-                                    <button class="btn btn-link btn-sm position-absolute top-50 translate-middle-y border-0 p-0"
-                                            style="right:10px;"
-                                            @onclick="ClearSearch">
-                                        <i class="bi bi-x-lg text-muted"></i>
-                                    </button>
-                                }
-                            </div>
-                        </div>
-
+                    <!-- Year Selector -->
+                    <div class="filter-select-wrap" style="min-width: 95px;">
+                        <select class="filter-dropdown-select" value="@_selectedYear" @onchange="OnYearChanged">
+                            @for (int y = DateTime.Today.Year - 3; y <= DateTime.Today.Year + 1; y++)
+                            {
+                                var yNum = y;
+                                <option value="@yNum">@yNum</option>
+                            }
+                        </select>
                     </div>
                 }
+                else
+                {
+                    <!-- From Date -->
+                    <div class="filter-date-wrap">
+                        <span class="filter-date-label">From:</span>
+                        <input type="date"
+                               class="filter-date-input"
+                               value="@_fromDate.ToString("yyyy-MM-dd")"
+                               @onchange="OnFromDateChanged" />
+                    </div>
+
+                    <!-- To Date -->
+                    <div class="filter-date-wrap">
+                        <span class="filter-date-label">To:</span>
+                        <input type="date"
+                               class="filter-date-input"
+                               value="@_toDate.ToString("yyyy-MM-dd")"
+                               @onchange="OnToDateChanged" />
+                    </div>
+                }
+
+                <!-- Reset Filters Trigger -->
+                @if (HasActiveFilters)
+                {
+                    <div>
+                        <button type="button" class="btn-filter-trigger active-filter" @onclick="ResetFilters" title="Reset all filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span>Reset</span>
+                        </button>
+                    </div>
+                }
+
             </div>
-            <div class="card-body p-0">
-                @if (!FilteredEmployees.Any())
+        </div>
+
+        <!-- ═══════════ 3. EMPLOYEES ATTENDANCE TABLE ═══════════ -->
+        <div class="report-grid-card">
+
+            <!-- Context Header Banner -->
+            <div class="report-context-banner d-flex align-items-center justify-content-between px-3 py-2 bg-light border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="status-dot-sm bg-primary"></span>
+                    <span class="report-banner-title small">Employee Attendance Summary</span>
+                    <span class="text-muted small">• @GetPeriodDescription()</span>
+                </div>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small">
+                    @FilteredEmployees.Count employee(s)
+                </span>
+            </div>
+
+            <div class="report-table-wrapper">
+                @if (isLoading)
+                {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary mb-3" role="status"></div>
+                        <p class="text-muted mb-0 small">Loading attendance reports...</p>
+                    </div>
+                }
+                else if (!FilteredEmployees.Any())
                 {
                     <div class="text-center py-5 px-3">
-                        <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                             style="width:72px; height:72px;">
-                            <i class="bi bi-person-slash fs-2 text-muted opacity-50"></i>
+                        <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-3 text-secondary opacity-75" style="width:64px; height:64px;">
+                            <i class="bi bi-person-slash fs-2"></i>
                         </div>
-                        <h6 class="fw-semibold text-muted mb-1">No Employees Found</h6>
-                        <p class="text-muted small mb-3 mx-auto" style="max-width:360px;">
+                        <h6 class="fw-bold text-dark mb-1">No Employees Found</h6>
+                        <p class="text-muted small mb-3">
                             @if (!string.IsNullOrWhiteSpace(_searchText))
                             {
-                                <span>No employees match "<strong>@_searchText</strong>"</span>
+                                <span>No employees match "<strong>@_searchText</strong>".</span>
                             }
                             else
                             {
-                                <span>
-                                    No attendance data from
-                                    <strong>@FormatDate(fromDate)</strong> to
-                                    <strong>@FormatDate(toDate)</strong>.
-                                </span>
+                                <span>No attendance records found for @GetPeriodDescription().</span>
                             }
                         </p>
-                        @if (!string.IsNullOrWhiteSpace(_searchText))
+                        @if (HasActiveFilters)
                         {
-                            <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
-                                    @onclick="ClearSearch">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Search
-                            </button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-sm btn-primary rounded-pill px-4 shadow-sm"
-                                    @onclick="ResetDates">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Current Month
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" @onclick="ResetFilters">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Filters
                             </button>
                         }
                     </div>
                 }
                 else
                 {
-                    <AppTable TItem="EmployeeAttendanceReportViewModel"
-                              Items="FilteredEmployees"
-                              Columns="TableSchemas.EmployeeReport"
-                              EnablePagination="true"
-                              PageSize="10"
-                              WrapperClass="emp-report-table">
-                        <ActionTemplate Context="emp">
-                            <AppButton ButtonClass="btn btn-sm btn-outline-primary rounded-pill px-3"
-                                       OnClick="() => OpenDetail(emp)">
-                                <i class="bi bi-eye me-1"></i>
-                                <span class="d-none d-sm-inline">View</span>
-                            </AppButton>
-                        </ActionTemplate>
-                    </AppTable>
+                    <table class="report-modern-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 110px;">EMP #</th>
+                                <th style="min-width: 220px;">EMPLOYEE NAME</th>
+                                <th style="width: 110px; text-align: center;">WORK DAYS</th>
+                                <th style="width: 100px; text-align: center;">PRESENT</th>
+                                <th style="width: 100px; text-align: center;">ABSENT</th>
+                                <th style="width: 130px; text-align: center;">TOTAL HOURS</th>
+                                <th style="width: 130px; text-align: center;">AVG WORK HOURS</th>
+                                <th style="width: 130px; text-align: center;">AVG BREAK</th>
+                                <th style="width: 100px; text-align: center;">ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var emp in PagedEmployees)
+                            {
+                                <tr>
+                                    <!-- EMP # (Monospace Code Badge) -->
+                                    <td>
+                                        <span class="report-emp-code">
+                                            @emp.EmployeeNumber
+                                        </span>
+                                    </td>
+
+                                    <!-- EMPLOYEE NAME (Initials Circle + Single-line Name) -->
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (!string.IsNullOrWhiteSpace(emp.ProfileImage))
+                                            {
+                                                <img src="@emp.ProfileImage" alt="@emp.EmployeeName" class="report-avatar-circle avatar-img" />
+                                            }
+                                            else
+                                            {
+                                                <div class="report-avatar-circle">
+                                                    @GetInitials(emp.EmployeeName)
+                                                </div>
+                                            }
+                                            <span class="report-emp-name text-truncate" title="@emp.EmployeeName">
+                                                @emp.EmployeeName
+                                            </span>
+                                        </div>
+                                    </td>
+
+                                    <!-- WORK DAYS -->
+                                    <td class="text-center">
+                                        <span class="report-cell-num">
+                                            @emp.TotalWorkDays
+                                        </span>
+                                    </td>
+
+                                    <!-- PRESENT -->
+                                    <td class="text-center">
+                                        <span class="report-cell-present">
+                                            @emp.TotalPresent
+                                        </span>
+                                    </td>
+
+                                    <!-- ABSENT -->
+                                    <td class="text-center">
+                                        <span class="report-cell-absent">
+                                            @emp.TotalAbsent
+                                        </span>
+                                    </td>
+
+                                    <!-- TOTAL HOURS -->
+                                    <td class="text-center">
+                                        <span class="report-time-val">
+                                            @(string.IsNullOrWhiteSpace(emp.TotalHours) ? "0:00:00" : emp.TotalHours)
+                                        </span>
+                                    </td>
+
+                                    <!-- AVG WORK HOURS -->
+                                    <td class="text-center">
+                                        <span class="report-time-val">
+                                            @(string.IsNullOrWhiteSpace(emp.AvgWorkHours) ? "0:00:00" : emp.AvgWorkHours)
+                                        </span>
+                                    </td>
+
+                                    <!-- AVG BREAK -->
+                                    <td class="text-center">
+                                        <span class="report-time-val">
+                                            @(string.IsNullOrWhiteSpace(emp.AvgBreak) ? "0:00:00" : emp.AvgBreak)
+                                        </span>
+                                    </td>
+
+                                    <!-- ACTION (View Details) -->
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="btn-action-icon-view"
+                                                @onclick="() => OpenDetail(emp)"
+                                                title="View detailed attendance for @emp.EmployeeName">
+                                            <i class="bi bi-eye"></i>
+                                            <span>View</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 }
             </div>
+
+            <!-- ═══════════ 4. PAGINATION FOOTER ═══════════ -->
+            @if (!isLoading && FilteredEmployees.Any())
+            {
+                <div class="report-pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2 text-muted small flex-wrap">
+                        <span>Showing <strong>@StartIndex</strong> to <strong>@EndIndex</strong> of <strong>@TotalCount</strong> employees</span>
+                        <span class="text-black-50">•</span>
+                        <div class="d-flex align-items-center gap-1.5">
+                            <span>Show</span>
+                            <select class="page-size-select" value="@_pageSize" @onchange="OnPageSizeChange">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                            <span>per page</span>
+                        </div>
+                    </div>
+
+                    @if (TotalPages > 1)
+                    {
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button" class="page-btn" disabled="@(_currentPage <= 1)" @onclick="() => GoToPage(_currentPage - 1)" title="Previous page">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+
+                            @for (int p = 1; p <= TotalPages; p++)
+                            {
+                                var pageNum = p;
+                                <button type="button" class="page-btn @(pageNum == _currentPage ? "active" : "")" @onclick="() => GoToPage(pageNum)">
+                                    @pageNum
+                                </button>
+                            }
+
+                            <button type="button" class="page-btn" disabled="@(_currentPage >= TotalPages)" @onclick="() => GoToPage(_currentPage + 1)" title="Next page">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
         </div>
+
     </div>
 }
 else
 {
-    <!-- ═══════════════════════════════════════════
-         FIX: Only pass dates when user manually
-         changed them. Otherwise pass null so
-         detail page defaults to month mode.
-         ═══════════════════════════════════════════ -->
     <ReportDetailPage Employee="selectedEmployee!"
-                      InitialFromDate="@(isCustomDateRange ? (DateTime?)fromDate : null)"
-                      InitialToDate="@(isCustomDateRange ? (DateTime?)toDate : null)"
+                      Year="@_selectedYear"
+                      Month="@_selectedMonth"
+                      InitialFromDate="@(_filterMode == "custom" ? (DateTime?)_fromDate : null)"
+                      InitialToDate="@(_filterMode == "custom" ? (DateTime?)_toDate : null)"
                       OnBackClicked="BackToList" />
 }
 
@@ -216,17 +344,26 @@ else
 
     /* ───── State ───── */
     private bool showDetail;
-    private bool isLoading;
+    private bool isLoading = true;
+    private string _loadingMessage = "Loading attendance reports...";
     private string _searchText = "";
     private EmployeeViewModel? selectedEmployee;
-    private DateTime fromDate;
-    private DateTime toDate;
-    private bool isCustomDateRange;
-    private bool showFilters = false;
 
+    // Filters
+    private string _filterMode = "month"; // "month" or "custom"
+    private int _selectedMonth = (DateTime.Today.Year == 2026 && DateTime.Today.Month == 11) ? 10 : DateTime.Today.Month;
+    private int _selectedYear = 2026;
+    private DateTime _fromDate;
+    private DateTime _toDate;
+
+    // Data
     private List<EmployeeAttendanceReportViewModel> _allEmployees = new();
     private CancellationTokenSource _cts = new();
     private bool _isDisposed;
+
+    // Pagination
+    private int _currentPage = 1;
+    private int _pageSize = 10;
 
     /* ───── Computed ───── */
     private List<EmployeeAttendanceReportViewModel> FilteredEmployees =>
@@ -237,11 +374,42 @@ else
                 MatchesSearch(e.EmployeeNumber)
             ).ToList();
 
+    private int TotalCount => FilteredEmployees.Count;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / _pageSize));
+    private int StartIndex => TotalCount == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+    private int EndIndex => Math.Min(_currentPage * _pageSize, TotalCount);
+
+    private IEnumerable<EmployeeAttendanceReportViewModel> PagedEmployees =>
+        FilteredEmployees.Skip((_currentPage - 1) * _pageSize).Take(_pageSize);
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(_searchText) ||
+        _filterMode != "month" ||
+        _selectedMonth != ((DateTime.Today.Year == 2026 && DateTime.Today.Month == 11) ? 10 : DateTime.Today.Month) ||
+        _selectedYear != DateTime.Today.Year;
+
     /* ───── Lifecycle ───── */
     protected override async Task OnInitializedAsync()
     {
-        SetDefaultDates();
+        SetMonthDateDefaults();
         await LoadEmployees();
+    }
+
+    private void SetMonthDateDefaults()
+    {
+        var today = DateTime.Today;
+        if (today.Year == 2026 && today.Month == 11)
+        {
+            _selectedMonth = 10;
+            _selectedYear = 2026;
+        }
+        else
+        {
+            _selectedMonth = today.Month;
+            _selectedYear = today.Year;
+        }
+        _fromDate = new DateTime(_selectedYear, _selectedMonth, 1);
+        _toDate = new DateTime(_selectedYear, _selectedMonth, DateTime.DaysInMonth(_selectedYear, _selectedMonth));
     }
 
     /* ───── Data Loading ───── */
@@ -252,24 +420,20 @@ else
             isLoading = true;
             StateHasChanged();
 
-            int? yearParam;
-            int? monthParam;
-            DateTime? fromParam;
-            DateTime? toParam;
+            int? yearParam = null;
+            int? monthParam = null;
+            DateTime? fromParam = null;
+            DateTime? toParam = null;
 
-            if (isCustomDateRange)
+            if (_filterMode == "month")
             {
-                yearParam = null;
-                monthParam = null;
-                fromParam = fromDate;
-                toParam = toDate;
+                yearParam = _selectedYear;
+                monthParam = _selectedMonth;
             }
             else
             {
-                yearParam = fromDate.Year;
-                monthParam = fromDate.Month;
-                fromParam = null;
-                toParam = null;
+                fromParam = _fromDate;
+                toParam = _toDate;
             }
 
             var result = await ReportService.GetEmployeeAttendanceReportAsync(
@@ -287,7 +451,7 @@ else
         catch (Exception ex)
         {
             _allEmployees = new();
-            await NotificationService.Error($"Error: {ex.Message}");
+            await NotificationService.Error($"Error loading attendance report: {ex.Message}");
         }
         finally
         {
@@ -296,78 +460,130 @@ else
         }
     }
 
-    /* ───── Date Defaults ───── */
-    private void SetDefaultDates()
+    /* ───── Event Handlers ───── */
+    private async Task OnFilterModeChanged(ChangeEventArgs e)
     {
-        var today = DateTime.Today;
-        fromDate = new DateTime(today.Year, today.Month, 1);
-        toDate = new DateTime(today.Year, today.Month,
-                              DateTime.DaysInMonth(today.Year, today.Month));
-        isCustomDateRange = false;
-    }
+        _filterMode = e.Value?.ToString() ?? "month";
+        _currentPage = 1;
 
-    /* ───── Format: DD/MM/YY ───── */
-    private static string FormatDate(DateTime date)
-        => date.ToString("dd/MM/yy");
-
-    /* ───── Parse: DD/MM/YY ───── */
-    private static bool TryParseDate(string? input, out DateTime result)
-    {
-        result = default;
-        if (string.IsNullOrWhiteSpace(input)) return false;
-
-        string[] formats = {
-            "dd/MM/yy", "dd-MM-yy", "dd.MM.yy",
-            "dd/MM/yyyy", "dd-MM-yyyy", "dd.MM.yyyy"
-        };
-
-        return DateTime.TryParseExact(
-            input.Trim(),
-            formats,
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.None,
-            out result);
-    }
-
-    private DateTime FromDatePicker
-    {
-        get => fromDate;
-        set
+        if (_filterMode == "month")
         {
-            if (fromDate == value) return;
-            fromDate = value;
-            isCustomDateRange = true;
-            if (fromDate > toDate) toDate = fromDate;
-            // fire and forget (UI-driven)
-            _ = LoadEmployees();
+            _fromDate = new DateTime(_selectedYear, _selectedMonth, 1);
+            _toDate = new DateTime(_selectedYear, _selectedMonth, DateTime.DaysInMonth(_selectedYear, _selectedMonth));
         }
-    }
 
-    private DateTime ToDatePicker
-    {
-        get => toDate;
-        set
-        {
-            if (toDate == value) return;
-            toDate = value;
-            isCustomDateRange = true;
-            if (toDate < fromDate) fromDate = toDate;
-            _ = LoadEmployees();
-        }
-    }
-
-    /* ───── Reset ───── */
-    private async Task ResetDates()
-    {
-        SetDefaultDates();
-        _searchText = "";
         await LoadEmployees();
+    }
+
+    private async Task OnMonthChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var m))
+        {
+            _selectedMonth = m;
+            _fromDate = new DateTime(_selectedYear, _selectedMonth, 1);
+            _toDate = new DateTime(_selectedYear, _selectedMonth, DateTime.DaysInMonth(_selectedYear, _selectedMonth));
+            _currentPage = 1;
+            await LoadEmployees();
+        }
+    }
+
+    private async Task OnYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var y))
+        {
+            _selectedYear = y;
+            _fromDate = new DateTime(_selectedYear, _selectedMonth, 1);
+            _toDate = new DateTime(_selectedYear, _selectedMonth, DateTime.DaysInMonth(_selectedYear, _selectedMonth));
+            _currentPage = 1;
+            await LoadEmployees();
+        }
+    }
+
+    private async Task OnFromDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+        {
+            _fromDate = d;
+            if (_fromDate > _toDate) _toDate = _fromDate;
+            _currentPage = 1;
+            await LoadEmployees();
+        }
+    }
+
+    private async Task OnToDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+        {
+            _toDate = d;
+            if (_toDate < _fromDate) _fromDate = _toDate;
+            _currentPage = 1;
+            await LoadEmployees();
+        }
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchText = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+    }
+
+    private void ClearSearch()
+    {
+        _searchText = "";
+        _currentPage = 1;
+    }
+
+    private async Task ResetFilters()
+    {
+        _searchText = "";
+        _filterMode = "month";
+        SetMonthDateDefaults();
+        _currentPage = 1;
+        await LoadEmployees();
+    }
+
+    /* ───── Pagination ───── */
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            _currentPage = page;
+        }
+    }
+
+    private void OnPageSizeChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newSize) && newSize > 0)
+        {
+            _pageSize = newSize;
+            _currentPage = 1;
+        }
+    }
+
+    /* ───── Helpers ───── */
+    private bool MatchesSearch(string? value) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
+
+    private string GetPeriodDescription()
+    {
+        if (_filterMode == "month")
+        {
+            var monthName = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(_selectedMonth);
+            return $"{monthName} {_selectedYear}";
+        }
+        return $"{_fromDate:dd/MM/yyyy} – {_toDate:dd/MM/yyyy}";
+    }
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "--";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(fullName);
     }
 
     /* ───── Navigation ───── */
     private void OpenDetail(EmployeeAttendanceReportViewModel emp)
     {
-        // Split EmployeeName into FirstName and LastName
         var nameParts = (emp.EmployeeName ?? "").Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
 
         selectedEmployee = new EmployeeViewModel
@@ -386,29 +602,6 @@ else
         selectedEmployee = null;
     }
 
-    /* ───── Search ───── */
-    private void ClearSearch() => _searchText = "";
-
-    private bool MatchesSearch(string? value) =>
-        !string.IsNullOrWhiteSpace(value) &&
-        value.Contains(_searchText, StringComparison.OrdinalIgnoreCase);
-
-    /* ───── Stats ───── */
-    private double GetOverallAttendanceRate()
-    {
-        var totalWork = _allEmployees.Sum(e => e.TotalWorkDays);
-        var totalPresent = _allEmployees.Sum(e => e.TotalPresent);
-        return totalWork > 0
-            ? Math.Round((double)totalPresent / totalWork * 100, 1)
-            : 0;
-    }
-
-    private static string GetRateColor(double r) =>
-        r >= 80 ? "text-success" : r >= 60 ? "text-warning" : "text-danger";
-
-    private static string GetRateBarColor(double r) =>
-        r >= 80 ? "bg-success" : r >= 60 ? "bg-warning" : "bg-danger";
-
     /* ───── Dispose ───── */
     public void Dispose()
     {
@@ -416,10 +609,5 @@ else
         _isDisposed = true;
         try { _cts.Cancel(); } catch { }
         try { _cts.Dispose(); } catch { }
-    }
-
-    private void ToggleFilters()
-    {
-        showFilters = !showFilters;
     }
 }

@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
@@ -67,4 +67,5 @@ public class EmployeeViewModel : CommonViewModel
     [Range(1, double.MaxValue, ErrorMessage = "Salary must be greater than 0.")]
     [DataType(DataType.Currency)]
     public decimal Salary { get; set; }
+    public string? ProfileImage { get; set; }
 }

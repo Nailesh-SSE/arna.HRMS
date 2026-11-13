@@ -113,7 +113,7 @@ public class NavigationHelper
             Icon = "bi bi-person-fill-gear",
             Section = "Administration",
             Route = "/user",
-            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR }
+            AllowedRoles = new() { UserRole.SuperAdmin, UserRole.Admin, UserRole.HR, UserRole.Manager, UserRole.Employee }
         },
          new()
         {

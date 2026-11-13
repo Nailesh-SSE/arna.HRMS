@@ -1,6 +1,7 @@
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Repository;
+using arna.HRMS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
@@ -8,15 +9,20 @@ namespace arna.HRMS.Infrastructure.Repositories;
 public class AttendanceRequestRepository
 {
     private readonly IBaseRepository<AttendanceRequest> _baseRepository;
+    private readonly ApplicationDbContext _context;
 
-    public AttendanceRequestRepository(IBaseRepository<AttendanceRequest> baseRepository)
+    public AttendanceRequestRepository(
+        IBaseRepository<AttendanceRequest> baseRepository,
+        ApplicationDbContext? context = null)
     {
         _baseRepository = baseRepository;
+        _context = context;
     }
 
     public async Task<List<AttendanceRequest>> GetAttendanceRequests(int? employeeId, Status? status)
     {
         var query = _baseRepository.Query()
+            .AsNoTracking()
             .Where(ar => !ar.IsDeleted);
 
         if (employeeId.HasValue)
@@ -34,6 +40,7 @@ public class AttendanceRequestRepository
     public async Task<List<AttendanceRequest>> GetPendingAttendanceRequests()
     {
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(ar =>
                 ar.IsActive &&
                 !ar.IsDeleted &&
@@ -96,6 +103,32 @@ public class AttendanceRequestRepository
 
         await _baseRepository.UpdateAsync(entity);
         return true;
+    }
+
+    public async Task<List<AttendanceRequest>> BulkApproveAttendanceRequestsAsync(List<int> requestIds, int approvedBy)
+    {
+        if (requestIds == null || !requestIds.Any())
+            return new List<AttendanceRequest>();
+
+        // Query matching pending requests using LINQ
+        var requestsToApprove = await _context.AttendanceRequest
+            .Where(ar => requestIds.Contains(ar.Id) && ar.StatusId == Status.Pending && !ar.IsDeleted)
+            .ToListAsync();
+
+        if (!requestsToApprove.Any())
+            return new List<AttendanceRequest>();
+
+        var now = DateTime.Now;
+        requestsToApprove.ForEach(ar =>
+        {
+            ar.StatusId = Status.Approved;
+            ar.ApprovedBy = approvedBy;
+            ar.ApprovedOn = now;
+            ar.UpdatedOn = now;
+        });
+
+        await _context.SaveChangesAsync();
+        return requestsToApprove;
     }
 
     public async Task<bool> CancelAttendanceRequestAsync(int id, int employeeId)

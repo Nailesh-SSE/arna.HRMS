@@ -25,6 +25,7 @@ public class ProfileViewModel
     public string Username { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public decimal Salary { get; set; }
+    public string? ProfileImage { get; set; }
 
     public ProfileViewModel() { }
 
@@ -49,6 +50,7 @@ public class ProfileViewModel
         CreatedOn = e.CreatedOn;
         IsActive = e.IsActive;
         Salary = e.Salary;
+        ProfileImage = e.ProfileImage;
     }
 
     public ProfileViewModel(UserViewModel u)

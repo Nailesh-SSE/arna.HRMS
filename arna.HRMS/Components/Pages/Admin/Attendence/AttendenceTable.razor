@@ -1,11 +1,9 @@
 @page "/admin-attendance-management"
 
-
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
-@using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.State.Attendance
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.ViewModels.Attendance
@@ -16,109 +14,483 @@
 @inject IAttendanceService AttendanceService
 @inject IEmployeeService EmployeeService
 @inject NotificationService NotificationService
-
 @implements IDisposable
-
 
 <Loader Visible="isLoading" Message="@loadingMessage" />
 
-@if (!isLoading) 
-{
-    <div class="d-flex align-items-center justify-content-between mb-4">
-            <div>
-                <h3 class="fw-bold mb-1 d-flex align-items-center">
-                    <i class="bi bi-clock-history text-primary me-2"></i>
-                    Attendance
-                </h3>
+<div class="att-page-container">
+
+    <!-- ═══════════ 1. PAGE HEADER ═══════════ -->
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-2 flex-shrink-0">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="att-title mb-0">Attendance</h3>
+                @if (!isLoading)
+                {
+                    <span class="header-count-pill">
+                        @FilteredAttendance.Count @(State.SelectedEmployeeId != 0 ? "Days" : "Employees")
+                    </span>
+                }
             </div>
+            <p class="att-subtitle mb-0">
+                @(State.SelectedEmployeeId != 0
+                    ? $"Detailed monthly attendance history and clock timings for {GetSelectedEmployeeName()}."
+                    : "Real-time employee presence, clock timings, break durations, and working hours.")
+            </p>
         </div>
 
-        <div class="att-list-animate">
-            <div class="card border-0 shadow-sm rounded-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            @if (State.SelectedEmployeeId != 0)
+            {
+                <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs fw-medium bg-white"
+                        @onclick="BackToAllEmployees" title="Back to All Employees">
+                    <i class="bi bi-arrow-left"></i>
+                    <span>All Employees</span>
+                </button>
+            }
 
-                <!-- HEADER -->
-                <div class="card-body py-2 px-3 border-bottom bg-light">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs fw-medium bg-white"
+                    @onclick="LoadData" disabled="@isLoading" title="Refresh attendance directory">
+                <i class="bi bi-arrow-clockwise @(isLoading ? "spin-animation" : "")"></i>
+                <span>Refresh</span>
+            </button>
+        </div>
+    </div>
 
-                        <!-- LEFT -->
-                        <div class="d-flex align-items-center gap-3 flex-wrap">
+    <!-- ═══════════ 2. SMART FILTER & CONTROLS BAR ═══════════ -->
+    <div class="att-filter-card mb-2 flex-shrink-0">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
 
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-search text-primary"></i>
-                                <span class="fw-medium text-muted small">Filter</span>
-                            </div>
+            <!-- LEFT: Filters -->
+            <div class="d-flex flex-wrap align-items-center gap-3 flex-grow-1">
+                
+                <!-- Employee Dropdown Filter -->
+                <div class="filter-component-wrap">
+                    <SearchEmployee Employees="Employees"
+                                    SelectedValue="@GetEmployeeValue()"
+                                    OnChanged="OnEmployeeChanged" />
+                </div>
 
-                            <SearchEmployee Employees="Employees"
-                                            SelectedValue="@GetEmployeeValue()"
-                                            OnChanged="OnEmployeeChanged" />
-
-                            @if (State.SelectedEmployeeId != 0)
-                            {
-                                <SelectMonthAndYear Year="@State.Year"
-                                                    Month="@State.Month"
-                                                    OnChange="OnMonthSelected" />
-                            }
-
-                        </div>
-
-                        <!-- RIGHT -->
-                        <div class="text-muted small">
-                            Showing <b>@_allAttendance.Count</b> records
-                        </div>
+                <!-- Month & Year Selector (When employee selected) -->
+                @if (State.SelectedEmployeeId != 0)
+                {
+                    <div class="filter-component-wrap">
+                        <SelectMonthAndYear Year="@State.Year"
+                                            Month="@State.Month"
+                                            OnChange="OnMonthSelected" />
                     </div>
+                }
+
+                <!-- Status Filter Dropdown -->
+                <div class="filter-select-wrap">
+                    <select class="filter-dropdown-select" value="@_selectedStatus" @onchange="OnStatusFilterChange">
+                        <option value="All">All Statuses</option>
+                        <option value="Present">Present</option>
+                        <option value="WeeklyOff">Weekly Off</option>
+                        <option value="Holiday">Holiday</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Late">Late</option>
+                        <option value="HalfDay">Half Day</option>
+                        <option value="OnLeave">On Leave</option>
+                    </select>
                 </div>
 
-                <!-- SMART TITLE -->
-                <div class="att-smart-header">
-                    @GetViewTitle()
-                </div>
-
-                <!-- TABLE -->
-                <div class="card-body p-0">
-                    @if (!_allAttendance.Any())
+                <!-- Quick Search Input -->
+                <div class="filter-search-box">
+                    <i class="bi bi-search filter-search-icon"></i>
+                    <input type="text"
+                           class="filter-search-input"
+                           placeholder="Search name or ID..."
+                           value="@_searchTerm"
+                           @oninput="OnSearchInput" />
+                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
                     {
-                        <div class="text-center py-5 px-3">
-                            <div class="empty-icon">
-                                <i class="bi bi-calendar-x"></i>
-                            </div>
-                            <h6 class="fw-semibold text-muted mt-3">
-                                @GetEmptyMessage()
-                            </h6>
-                        </div>
+                        <button type="button" class="filter-clear-btn" @onclick="ClearSearch" title="Clear">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                    }
+                </div>
+
+                <!-- Reset Filter Button -->
+                @if (HasActiveFilters)
+                {
+                    <button class="btn-filter-trigger active-filter" @onclick="ResetFilters" title="Reset all filters">
+                        <i class="bi bi-x-lg"></i>
+                        <span>Reset Filters</span>
+                    </button>
+                }
+            </div>
+
+            <!-- RIGHT: View Mode Indicator -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                @if (State.SelectedEmployeeId != 0)
+                {
+                    <span class="view-mode-pill view-mode-employee" title="Monthly individual employee view">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Monthly View (@State.Year-@State.Month.ToString("D2"))</span>
+                    </span>
+                }
+                else
+                {
+                    <span class="view-mode-pill view-mode-today" title="Today's live attendance for all staff">
+                        <span class="live-dot"></span>
+                        <span>Today's Attendance (All Staff)</span>
+                    </span>
+                }
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ═══════════ 3. ATTENDANCE DATA TABLE ═══════════ -->
+    <div class="att-grid-card">
+        
+        @if (State.SelectedEmployeeId != 0)
+        {
+            <div class="att-context-banner d-flex align-items-center justify-content-between px-3 py-2 bg-light border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    @if (!string.IsNullOrWhiteSpace(GetSelectedEmployeeProfileImage()))
+                    {
+                        <img src="@GetSelectedEmployeeProfileImage()" alt="@GetSelectedEmployeeName()" class="avatar-circle avatar-sm avatar-img" />
                     }
                     else
                     {
-                        <AppTable TItem="MonthlyAttendanceViewModel"
-                                  Items="_allAttendance"
-                                  Columns="TableSchemas.EmployeesAttendanceDetail"
-                                  ShowActions="false"
-                                  WrapperClass="att-list-table"
-                                  MaxHeight="540px"
-                                  EnablePagination="false"
-                                  RowClassFunc="GetRowClass"
-                                  OnRowClick="HandleRowClick"
-                                  RowClickable="true">
-                        </AppTable>
+                        <div class="avatar-circle avatar-sm">
+                            @GetInitials(GetSelectedEmployeeName())
+                        </div>
+                    }
+                    <span class="fw-semibold text-dark small">
+                        @GetSelectedEmployeeName()
+                    </span>
+                    <span class="text-muted small">• Monthly Log for @GetMonthYearDisplay()</span>
+                </div>
+                <button type="button" class="btn btn-sm btn-link text-primary text-decoration-none p-0 small fw-semibold" @onclick="BackToAllEmployees">
+                    <i class="bi bi-arrow-left me-1"></i> Switch to All Employees
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="att-context-banner d-flex align-items-center justify-content-between px-3 py-2 bg-light border-bottom">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="status-dot-sm bg-success"></span>
+                    <span class="fw-semibold text-dark small">Today: @DateTime.Today.ToString("dd MMMM yyyy")</span>
+                    <span class="text-muted small">• Real-time Clock Records</span>
+                </div>
+                <small class="text-muted fst-italic">
+                    <i class="bi bi-info-circle me-1"></i> Click any employee row to inspect their monthly attendance
+                </small>
+            </div>
+        }
+
+        <div class="att-table-wrapper">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="text-muted mb-0 small">Loading attendance records...</p>
+                </div>
+            }
+            else if (!FilteredAttendance.Any())
+            {
+                <div class="text-center py-5 px-3">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-3 text-secondary opacity-75" style="width:64px; height:64px;">
+                        <i class="bi bi-calendar-x fs-2"></i>
+                    </div>
+                    <h6 class="fw-bold text-dark mb-1">No Attendance Records Found</h6>
+                    <p class="text-muted small mb-3">
+                        @if (HasActiveFilters)
+                        {
+                            <span>No records match your active search or filter criteria.</span>
+                        }
+                        else
+                        {
+                            <span>@GetEmptyMessage()</span>
+                        }
+                    </p>
+                    @if (HasActiveFilters)
+                    {
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" @onclick="ResetFilters">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Clear Filters
+                        </button>
+                    }
+                    else if (State.SelectedEmployeeId != 0)
+                    {
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" @onclick="BackToAllEmployees">
+                            <i class="bi bi-arrow-left me-1"></i> View All Employees
+                        </button>
                     }
                 </div>
+            }
+            else
+            {
+                <table class="att-modern-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 100px;">EMP ID</th>
+                            <th style="min-width: 180px;">EMPLOYEE</th>
+                            <th style="width: 125px;">DATE</th>
+                            <th style="width: 135px;">ATTENDANCE</th>
+                            <th style="width: 110px; text-align: center;">CLOCK IN</th>
+                            <th style="width: 110px; text-align: center;">CLOCK OUT</th>
+                            <th style="width: 100px; text-align: center;">BREAK</th>
+                            <th style="width: 100px; text-align: center;">WORKING</th>
+                            <th style="width: 100px; text-align: center;">TOTAL</th>
+                            @if (State.SelectedEmployeeId == 0)
+                            {
+                                <th style="width: 70px; text-align: center;">ACTION</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in PagedAttendance)
+                        {
+                            var emp = item.Employees?.FirstOrDefault();
+                            var isClickable = State.SelectedEmployeeId == 0;
+                            var rowTitle = isClickable && emp != null
+                                ? $"Click to view {FormatName(emp.EmployeeName)}'s monthly attendance history"
+                                : "";
 
-            </div>
+                            <tr class="att-data-row @(isClickable ? "att-data-row-clickable" : "") @GetRowClass(item)"
+                                title="@rowTitle"
+                                @onclick="() => HandleRowClick(item)">
+                                
+                                <!-- EMP ID -->
+                                <td>
+                                    <span class="att-id-badge" title="Employee Number: @(emp?.EmployeeNumber ?? "—")">
+                                        @(emp?.EmployeeNumber ?? "—")
+                                    </span>
+                                </td>
+
+                                <!-- EMPLOYEE (Avatar + Name) -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrWhiteSpace(emp?.ProfileImage))
+                                        {
+                                            <img src="@emp.ProfileImage" alt="@emp?.EmployeeName" class="avatar-circle avatar-img" />
+                                        }
+                                        else
+                                        {
+                                            <div class="avatar-circle">
+                                                @GetInitials(emp?.EmployeeName)
+                                            </div>
+                                        }
+                                        <span class="att-emp-name text-truncate">
+                                            @FormatName(emp?.EmployeeName)
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- DATE -->
+                                <td>
+                                    <span class="att-date-badge">
+                                        @item.Date.ToString("dd MMM yyyy")
+                                    </span>
+                                </td>
+
+                                <!-- ATTENDANCE STATUS -->
+                                <td>
+                                    @RenderStatusBadge(emp?.Status)
+                                </td>
+
+                                <!-- CLOCK IN -->
+                                <td class="text-center">
+                                    @if (emp?.ClockIn != null)
+                                    {
+                                        <span class="time-pill time-pill-in">
+                                            <i class="bi bi-box-arrow-in-right"></i>
+                                            <span>@FormatClockTime(emp)</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+
+                                <!-- CLOCK OUT -->
+                                <td class="text-center">
+                                    @if (emp?.ClockOut != null)
+                                    {
+                                        <span class="time-pill time-pill-out">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                            <span>@FormatClockOutTime(emp)</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+
+                                <!-- BREAK -->
+                                <td class="text-center">
+                                    @if (emp != null && emp.Breaks != null && emp.Breaks.Any())
+                                    {
+                                        <span class="time-text fw-medium" title="@GetBreakTooltip(emp)">
+                                            @emp.BreakDuration.ToString(@"hh\:mm\:ss")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+
+                                <!-- WORKING HOURS -->
+                                <td class="text-center">
+                                    @if (emp != null && emp.WorkingHours > TimeSpan.Zero)
+                                    {
+                                        <span class="time-text text-dark">
+                                            @FormatHours(emp.WorkingHours)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+
+                                <!-- TOTAL HOURS -->
+                                <td class="text-center">
+                                    @if (emp != null && emp.TotalHours > TimeSpan.Zero)
+                                    {
+                                        <span class="time-text text-primary">
+                                            @FormatHours(emp.TotalHours)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+
+                                <!-- ACTION CHEVRON (Today View) -->
+                                @if (State.SelectedEmployeeId == 0)
+                                {
+                                    <td class="text-center" style="width: 70px;">
+                                        <button type="button" class="att-row-chevron-btn" title="View monthly history">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
         </div>
-    }
+
+        <!-- ═══════════ PAGINATION & SUMMARY FOOTER ═══════════ -->
+        @if (!isLoading && FilteredAttendance.Any())
+        {
+            <div class="att-pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2 text-muted small flex-wrap">
+                    <span>Showing <strong>@StartIndex</strong> to <strong>@EndIndex</strong> of <strong>@TotalCount</strong> records</span>
+                    <span class="text-black-50">•</span>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <span>Show</span>
+                        <select class="page-size-select" value="@_pageSize" @onchange="OnPageSizeChange">
+                            <option value="15">15</option>
+                            <option value="25">25</option>
+                            <option value="35">Full Month (31)</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>per page</span>
+                    </div>
+                </div>
+
+                @if (TotalPages > 1)
+                {
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="page-btn" disabled="@(_currentPage <= 1)" @onclick="() => GoToPage(_currentPage - 1)" title="Previous page">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        
+                        @for (int p = 1; p <= TotalPages; p++)
+                        {
+                            var pageNum = p;
+                            <button type="button" class="page-btn @(pageNum == _currentPage ? "active" : "")" @onclick="() => GoToPage(pageNum)">
+                                @pageNum
+                            </button>
+                        }
+
+                        <button type="button" class="page-btn" disabled="@(_currentPage >= TotalPages)" @onclick="() => GoToPage(_currentPage + 1)" title="Next page">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+
+</div>
 
 @code {
 
     // ═══════════ STATE ═══════════
     private List<SelectOption> Employees = new();
     private bool isLoading = true;
-    private string loadingMessage = "Loading attendance management...";
+    private string loadingMessage = "Loading attendance records...";
 
     private List<MonthlyAttendanceViewModel> _allAttendance = new();
     private CancellationTokenSource _cts = new();
     private bool _isDisposed;
 
+    // Local Filters & Pagination
+    private string _searchTerm = "";
+    private string _selectedStatus = "All";
+    private int _currentPage = 1;
+    private int _pageSize = 25;
+
     private int Year => State.Year > 0 ? State.Year : DateTime.Today.Year;
     private int Month => State.Month > 0 ? State.Month : DateTime.Today.Month;
+
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(_searchTerm) ||
+        _selectedStatus != "All";
+
+    // ═══════════ COMPUTED ═══════════
+    private List<MonthlyAttendanceViewModel> FilteredAttendance
+    {
+        get
+        {
+            var query = _allAttendance.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                query = query.Where(item =>
+                {
+                    var emp = item.Employees?.FirstOrDefault();
+                    return (emp != null && (
+                        (!string.IsNullOrEmpty(emp.EmployeeName) && emp.EmployeeName.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrEmpty(emp.EmployeeNumber) && emp.EmployeeNumber.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase)))) ||
+                        item.Date.ToString("dd MMM yyyy").Contains(_searchTerm, StringComparison.OrdinalIgnoreCase);
+                });
+            }
+
+            if (_selectedStatus != "All")
+            {
+                query = query.Where(item =>
+                {
+                    var status = item.Employees?.FirstOrDefault()?.Status;
+                    return string.Equals(status, _selectedStatus, StringComparison.OrdinalIgnoreCase);
+                });
+            }
+
+            return query.ToList();
+        }
+    }
+
+    private int TotalCount => FilteredAttendance.Count;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / _pageSize));
+    private int StartIndex => TotalCount == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+    private int EndIndex => Math.Min(_currentPage * _pageSize, TotalCount);
+
+    private List<MonthlyAttendanceViewModel> PagedAttendance =>
+        FilteredAttendance.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
 
     // ═══════════ LIFECYCLE ═══════════
     protected override async Task OnInitializedAsync()
@@ -126,7 +498,7 @@
         EnsureMonth();
         await LoadEmployees();
 
-        // ✅ Default → No employee selected
+        // Default → No employee selected (shows all employees for today)
         State.SelectedEmployeeId = 0;
 
         await LoadData();
@@ -134,33 +506,108 @@
     }
 
     // ═══════════ FILTER HANDLERS ═══════════
-
     private async Task OnMonthSelected((int year, int month) value)
     {
         State.Year = value.year;
         State.Month = value.month;
         State.SelectedMonth = $"{value.year}-{value.month:D2}";
+        _currentPage = 1;
 
         await LoadData();
     }
 
     private async Task OnEmployeeChanged(string? empId)
     {
-        // ✅ Handle selection / reset
         State.SelectedEmployeeId =
             string.IsNullOrWhiteSpace(empId) || empId == "0"
             ? 0
             : int.Parse(empId);
 
-        // ✅ If employee removed → reset to current month
         if (State.SelectedEmployeeId == 0)
         {
             var now = DateTime.Today;
             State.Year = now.Year;
             State.Month = now.Month;
+            _pageSize = 25;
+        }
+        else
+        {
+            _pageSize = 35; // Default to full month so all 30/31 days fit in the scrollable grid
         }
 
+        _currentPage = 1;
         await LoadData();
+    }
+
+    private async Task BackToAllEmployees()
+    {
+        State.SelectedEmployeeId = 0;
+        var now = DateTime.Today;
+        State.Year = now.Year;
+        State.Month = now.Month;
+        _searchTerm = "";
+        _selectedStatus = "All";
+        _pageSize = 25;
+        _currentPage = 1;
+
+        await LoadData();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+    }
+
+    private void ClearSearch()
+    {
+        _searchTerm = "";
+        _currentPage = 1;
+    }
+
+    private void OnStatusFilterChange(ChangeEventArgs e)
+    {
+        _selectedStatus = e.Value?.ToString() ?? "All";
+        _currentPage = 1;
+    }
+
+    private void ResetFilters()
+    {
+        _searchTerm = "";
+        _selectedStatus = "All";
+        _currentPage = 1;
+    }
+
+    private void GoToPage(int page)
+    {
+        _currentPage = Math.Clamp(page, 1, TotalPages);
+    }
+
+    private void OnPageSizeChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size) && size > 0)
+        {
+            _pageSize = size;
+            _currentPage = 1;
+        }
+    }
+
+    // ═══════════ ROW CLICK NAVIGATION (PRESERVED) ═══════════
+    private async Task HandleRowClick(MonthlyAttendanceViewModel item)
+    {
+        var emp = item.Employees?.FirstOrDefault();
+        if (emp == null) return;
+
+        // When in Today's view, clicking any row redirects to that employee's monthly attendance
+        if (State.SelectedEmployeeId == 0)
+        {
+            State.SelectedEmployeeId = emp.EmployeeId;
+            State.Year = item.Date.Year;
+            State.Month = item.Date.Month;
+            _pageSize = 35; // Default to full month so all days are in the scrollable grid
+            _currentPage = 1;
+            await LoadData();
+        }
     }
 
     // ═══════════ CORE DATA LOADER ═══════════
@@ -169,18 +616,19 @@
         try
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-
             bool isEmployeeSelected = State.SelectedEmployeeId != 0;
 
             int? empId = isEmployeeSelected
                 ? State.SelectedEmployeeId
                 : null;
 
+            DateTime? targetDate = isEmployeeSelected ? null : DateTime.Today;
+
             var result = await AttendanceService.GetAttendanceByMonthAsync(
                 Year,
                 Month,
                 empId,
-                null,
+                targetDate,
                 null
             );
 
@@ -190,8 +638,7 @@
                 ? result.Data ?? new()
                 : new();
 
-            // ✅ FINAL RULE
-            // No employee → only today
+            // When no specific employee is selected, show today's attendance for all staff
             if (!isEmployeeSelected)
             {
                 rawData = rawData
@@ -199,15 +646,16 @@
                     .ToList();
             }
 
-            // ✅ FLATTEN DATA
+            // Flatten data
             _allAttendance = rawData
-                .SelectMany(day => day.Employees.Select(emp => new MonthlyAttendanceViewModel
+                .SelectMany(day => (day.Employees ?? Enumerable.Empty<EmployeeDailyAttendanceViewModel>()).Select(emp => new MonthlyAttendanceViewModel
                 {
                     Date = day.Date,
                     Day = day.Day,
                     Employees = new List<EmployeeDailyAttendanceViewModel> { emp }
                 }))
                 .ToList();
+
             StateHasChanged();
         }
         catch
@@ -217,14 +665,11 @@
     }
 
     // ═══════════ HELPERS ═══════════
-
     private void EnsureMonth()
     {
         var now = DateTime.Today;
-
         if (State.Year == 0) State.Year = now.Year;
         if (State.Month == 0) State.Month = now.Month;
-
         State.SelectedMonth = $"{State.Year}-{State.Month:D2}";
     }
 
@@ -233,7 +678,6 @@
         try
         {
             var result = await EmployeeService.GetEmployeesAsync();
-
             Employees = result?.IsSuccess == true && result.Data != null
                 ? result.Data.Select(e => new SelectOption
                 {
@@ -248,74 +692,134 @@
         }
     }
 
-    private static string GetRowClass(MonthlyAttendanceViewModel r)
-    {
-        var today = DateOnly.FromDateTime(DateTime.Today);
-
-        if (r.Date == today)
-            return "att-table-today";
-
-        if (r.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-            return "att-table-weekend";
-
-        var status = r.Employees.FirstOrDefault()?.Status;
-
-        return status switch
-        {
-            "Absent" => "att-table-absent",
-            "Late" => "att-table-late",
-            "Holiday" => "att-table-holiday",
-            "WeeklyOff" => "att-table-weekend",
-            _ => ""
-        };
-    }
-
     private string GetEmployeeValue() =>
         State.SelectedEmployeeId == 0
             ? "0"
             : State.SelectedEmployeeId.ToString();
 
-    private string GetViewTitle()
+    private string GetSelectedEmployeeName()
     {
-        bool isEmployeeSelected = State.SelectedEmployeeId != 0;
+        if (State.SelectedEmployeeId == 0) return "All Employees";
+        var opt = Employees.FirstOrDefault(e => e.Value == State.SelectedEmployeeId.ToString());
+        return opt != null ? opt.Text : "Employee";
+    }
 
-        if (isEmployeeSelected)
-            return "📊 Monthly Attendance (Employee View)";
+    private string? GetSelectedEmployeeProfileImage()
+    {
+        if (State.SelectedEmployeeId == 0) return null;
+        var r = _allAttendance.SelectMany(x => x.Employees).FirstOrDefault(e => e.EmployeeId == State.SelectedEmployeeId);
+        return r?.ProfileImage;
+    }
 
-        return "🟢 Today's Attendance (All Employees)";
+    private string GetMonthYearDisplay()
+    {
+        try
+        {
+            return new DateTime(Year, Month, 1).ToString("MMMM yyyy");
+        }
+        catch
+        {
+            return $"{Year}-{Month:D2}";
+        }
     }
 
     private string GetEmptyMessage()
     {
         bool isEmployeeSelected = State.SelectedEmployeeId != 0;
-
         if (!isEmployeeSelected)
-            return "No attendance found for today";
-
-        return "No records found for selected employee";
+            return "No attendance records found for today.";
+        return "No records found for the selected employee in this month.";
     }
+
+    private static string GetRowClass(MonthlyAttendanceViewModel r)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (r.Date == today)
+            return "att-row-today";
+
+        if (r.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+            return "att-row-weekend";
+
+        var status = r.Employees?.FirstOrDefault()?.Status;
+        return status switch
+        {
+            "Absent" => "att-row-absent",
+            "Late" => "att-row-late",
+            "Holiday" => "att-row-holiday",
+            _ => ""
+        };
+    }
+
+    private static string FormatName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "Employee";
+        var words = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", words.Select(w => char.ToUpper(w[0]) + (w.Length > 1 ? w[1..] : "")));
+    }
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "EM";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(fullName);
+    }
+
+    private static string FormatClockTime(EmployeeDailyAttendanceViewModel? emp)
+    {
+        if (emp?.ClockIn == null) return "—";
+        return emp.ClockIn.Value.ToString(@"hh\:mm\:ss");
+    }
+
+    private static string FormatClockOutTime(EmployeeDailyAttendanceViewModel? emp)
+    {
+        if (emp?.ClockOut == null) return "—";
+        return emp.ClockOut.Value.ToString(@"hh\:mm\:ss");
+    }
+
+    private static string FormatHours(TimeSpan ts)
+    {
+        if (ts == TimeSpan.Zero) return "—";
+        return $"{(int)ts.TotalHours}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+    }
+
+    private static string GetBreakTooltip(EmployeeDailyAttendanceViewModel emp)
+    {
+        if (emp?.Breaks == null || !emp.Breaks.Any()) return "";
+        return string.Join(" | ", emp.Breaks.Select(b => $"{b.BreakStart:hh\\:mm} - {b.BreakEnd:hh\\:mm} ({b.Duration:hh\\:mm})"));
+    }
+
+    private RenderFragment RenderStatusBadge(string? status) => builder =>
+    {
+        var cleanStatus = string.IsNullOrWhiteSpace(status) ? "Pending" : status.Trim();
+        var (cssClass, label) = cleanStatus switch
+        {
+            "Present" => ("att-status-present", "Present"),
+            "WeeklyOff" or "Weekend" => ("att-status-weekend", "Weekly Off"),
+            "Holiday" => ("att-status-holiday", "Holiday"),
+            "Absent" => ("att-status-absent", "Absent"),
+            "Late" => ("att-status-late", "Late"),
+            "HalfDay" => ("att-status-halfday", "Half Day"),
+            "OnLeave" or "Leave" => ("att-status-leave", "On Leave"),
+            _ => ("att-status-default", cleanStatus)
+        };
+
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", $"att-status-pill {cssClass}");
+        builder.OpenElement(2, "span");
+        builder.AddAttribute(3, "class", "status-dot");
+        builder.CloseElement();
+        builder.OpenElement(4, "span");
+        builder.AddContent(5, label);
+        builder.CloseElement();
+        builder.CloseElement();
+    };
 
     // ═══════════ DISPOSE ═══════════
     public void Dispose()
     {
         if (_isDisposed) return;
-
         _isDisposed = true;
 
         try { _cts.Cancel(); } catch { }
         try { _cts.Dispose(); } catch { }
-    }
-
-    private async Task HandleRowClick(MonthlyAttendanceViewModel item)
-    {
-        var emp = item.Employees.FirstOrDefault();
-        if (emp == null) return;
-
-        State.SelectedEmployeeId = emp.EmployeeId;
-
-        State.Year = item.Date.Year;
-        State.Month = item.Date.Month;
-
-        await LoadData();
     }
 }

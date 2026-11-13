@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 
@@ -26,8 +26,7 @@ public class AttendanceValidator
         if (dto.Date == default)
             errors.Add("Date is required");
 
-        if (string.IsNullOrWhiteSpace(dto.Notes))
-            errors.Add("Note is Required.");
+        // Note is optional
 
         if (dto.WorkingHours.HasValue && dto.WorkingHours.Value < TimeSpan.Zero)
             errors.Add("Working hours must be greater than or equal to zero");

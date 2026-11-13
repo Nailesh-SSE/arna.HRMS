@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -54,6 +54,28 @@ public class EmployeesController : ControllerBase
 
         var result = await _service.UpdateEmployeeAsync(dto);
 
+        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+    }
+
+    [HttpPost("{id:int}/profile-image")]
+    public async Task<IActionResult> UploadProfileImageAsync(int id, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No image file was uploaded.");
+
+        if (file.Length > 5 * 1024 * 1024)
+            return BadRequest("File size cannot exceed 5 MB.");
+
+        using var stream = file.OpenReadStream();
+        var result = await _service.UploadProfileImageAsync(id, stream, file.FileName);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+    }
+
+    [HttpPost("{id:int}/delete-profile-image")]
+    public async Task<IActionResult> DeleteProfileImageAsync(int id)
+    {
+        var result = await _service.DeleteProfileImageAsync(id);
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }
 

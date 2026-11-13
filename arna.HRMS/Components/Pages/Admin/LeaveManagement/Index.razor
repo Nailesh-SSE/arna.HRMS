@@ -10,32 +10,43 @@
 
 @inject NavigationManager NavigationManager
 @inherits AuthenticatedLayoutBase
-@implements IDisposable
 
 <Loader Visible="isLoading" Message="@loadingMessage" />
 
 @if (!isLoading)
 {
-    <div class="container-fluid p-0 leave-fade-in">
+    <div class="container-fluid p-0 leave-fade-in h-100 d-flex flex-column min-h-0">
 
-        <!-- ══════════ HEADER ══════════ -->
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div class="d-flex align-items-center gap-2">
-                <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
-                             p-2 d-inline-flex align-items-center justify-content-center">
-                    <i class="bi @GetHeaderIcon() fs-5"></i>
-                </span>
-                <div>
-                    <h5 class="fw-bold mb-0">@GetHeaderTitle()</h5>
-                    <p class="text-muted mb-0 small d-none d-sm-block">
-                        @GetHeaderSubtitle()
-                    </p>
+        <!-- ══════════ 1. EXECUTIVE HEADER (No Icon, Unified Enterprise Style) ══════════ -->
+        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 flex-shrink-0">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h3 class="enterprise-page-title mb-0">@GetHeaderTitle()</h3>
+                    <span class="header-count-pill">@GetHeaderBadgeCount()</span>
                 </div>
+                <div class="enterprise-page-subtitle">@GetHeaderSubtitle()</div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                @if (activeTab == Tab.LeaveTypes && (IsAdmin() || IsSuperAdmin()))
+                {
+                    <button class="btn btn-add-primary" @onclick="CreateLeaveType">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Add Leave Type</span>
+                    </button>
+                }
+                else if (activeTab == Tab.Festivals && (IsAdmin() || IsSuperAdmin()))
+                {
+                    <button class="btn btn-add-primary" @onclick="CreateFestivalHoliday">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Add Holiday</span>
+                    </button>
+                }
             </div>
         </div>
 
         <!-- ══════════ CONTENT ══════════ -->
-        <div class="tab-content">
+        <div class="tab-content flex-grow-1 min-h-0 d-flex flex-column">
 
             @if (activeTab == Tab.LeaveTypes)
             {
@@ -114,6 +125,9 @@
         }
     }
 
+    private void CreateLeaveType() => NavigationManager.NavigateTo("/leave-type/create");
+    private void CreateFestivalHoliday() => NavigationManager.NavigateTo("/festival-holiday/create");
+
     private string GetHeaderTitle() => activeTab switch
     {
         Tab.LeaveTypes => "Leave Types",
@@ -124,22 +138,23 @@
 
     private string GetHeaderSubtitle() => activeTab switch
     {
-        Tab.LeaveTypes => "Configure employee leave categories, quotas, and policies",
-        Tab.Requests => "Review, approve, or reject employee leave applications",
-        Tab.Festivals => "Manage company holidays and festival calendar",
-        _ => "Manage organizational leave policies and employee requests"
+        Tab.LeaveTypes => "Configure employee leave categories, quotas, and corporate entitlement rules.",
+        Tab.Requests => "Review, approve, or reject employee leave applications across the organization.",
+        Tab.Festivals => "Manage company holidays, gazetted days, and festival calendar.",
+        _ => "Manage organizational leave policies and employee requests."
     };
 
-    private string GetHeaderIcon() => activeTab switch
+    private string GetHeaderBadgeCount() => activeTab switch
     {
-        Tab.LeaveTypes => "bi-tags-fill",
-        Tab.Requests => "bi-inbox-fill",
-        Tab.Festivals => "bi-calendar-heart-fill",
-        _ => "bi-briefcase-fill"
+        Tab.LeaveTypes => $"{leaveTypeCount} Categories",
+        Tab.Requests => $"{pendingRequestCount} Pending",
+        Tab.Festivals => $"{festivalCount} Holidays",
+        _ => ""
     };
 
-    public void Dispose()
+    public new void Dispose()
     {
         NavigationManager.LocationChanged -= HandleLocationChanged;
+        base.Dispose();
     }
 }

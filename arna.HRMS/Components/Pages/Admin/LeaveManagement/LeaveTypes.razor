@@ -1,4 +1,4 @@
-@using arna.HRMS.Components.lib.components.ui.Forms
+﻿@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
@@ -12,149 +12,293 @@
 @inject IJSRuntime JsRuntime
 @inherits AuthenticatedLayoutBase
 
-<!-- TOOLBAR -->
-<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-    <div>
-        <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
-            <span class="p-2 rounded-2 bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
-                <i class="bi bi-bookmark-check-fill"></i>
-            </span>
-            Leave Types
-        </h5>
-        <small class="text-muted">Configure corporate leave policies, annual allowances, and entitlements</small>
-    </div>
-    @if (IsAdmin() || IsSuperAdmin())
-    {
-        <button class="btn btn-primary rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-2"
-                @onclick="CreateLeaveType">
-            <i class="bi bi-plus-lg"></i>
-            <span>Add Leave Type</span>
-        </button>
-    }
-</div>
+<div class="leave-types-container">
 
-<!-- LEAVE TYPE CARDS -->
-@if (leaveTypes.Any())
-{
-    <div class="row g-3 mb-4">
-        @foreach (var (lt, idx) in leaveTypes.Select((l, i) => (l, i)))
-        {
-            var color = GetColor(idx);
+    <!-- ═══════════ FILTER & VIEW TOOLBAR ═══════════ -->
+    <div class="card border-0 shadow-xs rounded-3 mb-2 bg-white">
+        <div class="card-body p-2.5">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <!-- Search & Filter Pills -->
+                <div class="d-flex align-items-center flex-wrap gap-2 flex-grow-1">
+                    <div class="position-relative" style="min-width: 200px; max-width: 320px;">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-muted small"></i>
+                        <input type="text" class="form-control form-control-sm ps-4 rounded-3"
+                               placeholder="Search leave types..."
+                               @bind="_searchQuery" @bind:event="oninput" />
+                    </div>
 
-            <div class="col-sm-6 col-lg-4 col-xl-3">
-                <div class="card border-0 shadow-sm rounded-3 h-100 leave-type-card-hover" style="border: 1px solid #f1f5f9 !important;">
-                    <div class="card-body d-flex flex-column p-3">
-
-                        <!-- Header -->
-                        <div class="d-flex align-items-start justify-content-between mb-3">
-                            <div class="leave-type-icon bg-@color bg-opacity-10 rounded-2 p-2 d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                <i class="bi bi-calendar-check text-@color fs-5"></i>
-                            </div>
-                            @if (IsAdmin() || IsSuperAdmin())
-                            {
-                                <div class="d-flex align-items-center gap-1">
-                                    <button class="btn btn-sm btn-light rounded-circle text-primary"
-                                            title="Edit"
-                                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"
-                                            @onclick="() => EditLeaveType(lt.Id)">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-light rounded-circle text-danger"
-                                            title="Delete"
-                                            style="width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center;"
-                                            @onclick="() => DeleteLeaveType(lt)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            }
-                        </div>
-
-                        <!-- Name -->
-                        <h6 class="fw-bold mb-2 text-dark">@FormatName(lt.LeaveNameId.ToString())</h6>
-
-                        <!-- Info Badges -->
-                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                            <span class="badge bg-@color bg-opacity-10 text-@color fw-semibold">
-                                @lt.MaxPerYear days/year
-                            </span>
-                            @if (lt.IsPaid)
-                            {
-                                <span class="badge bg-success bg-opacity-10 text-success">
-                                    <i class="bi bi-cash me-1"></i>Paid
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary">
-                                    Unpaid
-                                </span>
-                            }
-                        </div>
-
-                        <!-- Description -->
-                        @if (!string.IsNullOrWhiteSpace(lt.Description))
-                        {
-                            <p class="text-muted small mb-3 leave-desc flex-grow-1" style="font-size: 0.8rem; line-height: 1.4;">
-                                @lt.Description
-                            </p>
-                        }
-                        else
-                        {
-                            <div class="flex-grow-1"></div>
-                        }
-
-                        <!-- Status -->
-                        <div class="mt-auto pt-2 border-top d-flex align-items-center justify-content-between">
-                            <span class="text-muted" style="font-size: 0.75rem;">Status</span>
-                            @if (lt.IsActive)
-                            {
-                                <span class="badge bg-success bg-opacity-10 text-success">
-                                    <i class="bi bi-check-circle me-1"></i>Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger bg-opacity-10 text-danger">
-                                    <i class="bi bi-x-circle me-1"></i>Inactive
-                                </span>
-                            }
-                        </div>
-
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="btn btn-sm @(_filterType == "all" ? "btn-primary" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
+                                @onclick="@(() => _filterType = "all")">
+                            All (@leaveTypes.Count)
+                        </button>
+                        <button type="button" class="btn btn-sm @(_filterType == "paid" ? "btn-success" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
+                                @onclick="@(() => _filterType = "paid")">
+                            Paid (@leaveTypes.Count(x => x.IsPaid))
+                        </button>
+                        <button type="button" class="btn btn-sm @(_filterType == "unpaid" ? "btn-secondary" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
+                                @onclick="@(() => _filterType = "unpaid")">
+                            Unpaid (@leaveTypes.Count(x => !x.IsPaid))
+                        </button>
+                        <button type="button" class="btn btn-sm @(_filterType == "active" ? "btn-info text-white" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
+                                @onclick="@(() => _filterType = "active")">
+                            Active (@leaveTypes.Count(x => x.IsActive))
+                        </button>
                     </div>
                 </div>
+
+                <!-- Right controls: View Toggle & Refresh -->
+                <div class="d-flex align-items-center gap-2">
+                    <div class="btn-group btn-group-sm rounded-3 shadow-xs" role="group">
+                        <button type="button" class="btn @(!_isCardView ? "btn-primary" : "btn-outline-secondary bg-white")"
+                                title="Table View" @onclick="@(() => _isCardView = false)">
+                            <i class="bi bi-table me-1"></i> Table
+                        </button>
+                        <button type="button" class="btn @(_isCardView ? "btn-primary" : "btn-outline-secondary bg-white")"
+                                title="Grid View" @onclick="@(() => _isCardView = true)">
+                            <i class="bi bi-grid me-1"></i> Grid
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-2.5 py-1 bg-white"
+                            title="Refresh leave categories" @onclick="LoadLeaveTypes">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
             </div>
-        }
-    </div>
-}
-else
-{
-    <div class="card border-0 shadow-sm rounded-3">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-bookmark-x fs-1 text-muted opacity-50 d-block mb-2"></i>
-            <p class="text-muted mb-0">No leave types configured yet</p>
-            @if (IsAdmin() || IsSuperAdmin())
-            {
-                <button class="btn btn-primary mt-3 rounded-pill px-4"
-                        @onclick="CreateLeaveType">
-                    <i class="bi bi-plus me-1"></i> Create First Leave Type
-                </button>
-            }
         </div>
     </div>
-}
+
+    <!-- ═══════════ 3. DATA PRESENTATION ═══════════ -->
+    @if (!FilteredLeaveTypes.Any())
+    {
+        <div class="card border-0 shadow-xs rounded-3 bg-white">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-bookmark-x fs-1 text-muted opacity-50 d-block mb-2"></i>
+                <p class="text-muted mb-0">No leave categories match your criteria.</p>
+                @if (IsAdmin() || IsSuperAdmin())
+                {
+                    <button class="btn btn-primary btn-sm mt-3 rounded-pill px-3"
+                            @onclick="CreateLeaveType">
+                        <i class="bi bi-plus-lg me-1"></i> Create Leave Type
+                    </button>
+                }
+            </div>
+        </div>
+    }
+    else if (!_isCardView)
+    {
+        <!-- ── TABLE VIEW (DEFAULT ENTERPRISE) ── -->
+        <div class="card border-0 shadow-xs rounded-3 overflow-hidden bg-white">
+            <div class="table-responsive" style="max-height: calc(100vh - 225px); overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0 custom-table">
+                    <thead class="bg-light sticky-top" style="z-index: 5;">
+                        <tr>
+                            <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; letter-spacing: 0.02em;">Category</th>
+                            <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; letter-spacing: 0.02em;">Compensation</th>
+                            <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; letter-spacing: 0.02em;">Annual Allowance</th>
+                            <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; letter-spacing: 0.02em;">Policy Description</th>
+                            <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem; letter-spacing: 0.02em;">Status</th>
+                            @if (IsAdmin() || IsSuperAdmin())
+                            {
+                                <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem; width: 90px; letter-spacing: 0.02em;">Actions</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (lt, idx) in FilteredLeaveTypes.Select((l, i) => (l, i)))
+                        {
+                            var color = GetColor(idx);
+                            <tr>
+                                <!-- Category -->
+                                <td class="px-3 py-1.5">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rounded-2 bg-@color bg-opacity-10 text-@color d-inline-flex align-items-center justify-content-center" style="width: 26px; height: 26px; min-width: 26px;">
+                                            <i class="bi bi-calendar-check" style="font-size: 0.75rem;"></i>
+                                        </div>
+                                        <span class="emp-name text-dark" style="font-size: 0.835rem; line-height: 1.2;">
+                                            @FormatName(lt.LeaveNameId.ToString())
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- Compensation -->
+                                <td class="px-3 py-1.5">
+                                    @if (lt.IsPaid)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success fw-medium px-2 py-0.5" style="font-size: 0.72rem;">
+                                            <i class="bi bi-cash me-1"></i>Paid
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary fw-medium px-2 py-0.5" style="font-size: 0.72rem;">
+                                            Unpaid
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- Allowance -->
+                                <td class="px-3 py-1.5">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary fw-semibold px-2 py-0.5" style="font-size: 0.72rem;">
+                                        @lt.MaxPerYear days / year
+                                    </span>
+                                </td>
+
+                                <!-- Policy Description -->
+                                <td class="px-3 py-1.5 text-muted" style="max-width: 320px; font-size: 0.8rem; line-height: 1.25;">
+                                    @(string.IsNullOrWhiteSpace(lt.Description) ? "—" : lt.Description)
+                                </td>
+
+                                <!-- Status -->
+                                <td class="px-3 py-1.5 text-center">
+                                    @if (lt.IsActive)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success fw-medium px-2 py-0.5" style="font-size: 0.72rem;">
+                                            <i class="bi bi-check-circle me-1"></i>Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger bg-opacity-10 text-danger fw-medium px-2 py-0.5" style="font-size: 0.72rem;">
+                                            <i class="bi bi-x-circle me-1"></i>Inactive
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- Actions -->
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <td class="px-3 py-1.5 text-center">
+                                        <div class="d-inline-flex align-items-center gap-1.5">
+                                            <button type="button" class="btn-action-icon-edit"
+                                                    title="Edit Policy"
+                                                    @onclick="() => EditLeaveType(lt.Id)">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button type="button" class="btn-action-icon-delete"
+                                                    title="Delete Policy"
+                                                    @onclick="() => DeleteLeaveType(lt)">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- ── GRID / CARD VIEW ── -->
+        <div class="row g-3">
+            @foreach (var (lt, idx) in FilteredLeaveTypes.Select((l, i) => (l, i)))
+            {
+                var color = GetColor(idx);
+
+                <div class="col-sm-6 col-lg-4 col-xl-3">
+                    <div class="card border-0 shadow-xs rounded-3 h-100 leave-type-card-hover bg-white" style="border: 1px solid #f1f5f9 !important;">
+                        <div class="card-body d-flex flex-column p-2.5">
+
+                            <!-- Header -->
+                            <div class="d-flex align-items-start justify-content-between mb-2">
+                                <div class="leave-type-icon bg-@color bg-opacity-10 rounded-2 p-1.5 d-inline-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                    <i class="bi bi-calendar-check text-@color" style="font-size: 0.9rem;"></i>
+                                </div>
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <div class="d-flex align-items-center gap-1.5">
+                                        <button type="button" class="btn-action-icon-edit"
+                                                title="Edit"
+                                                @onclick="() => EditLeaveType(lt.Id)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <button type="button" class="btn-action-icon-delete"
+                                                title="Delete"
+                                                @onclick="() => DeleteLeaveType(lt)">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Name (Unbolded regular medium weight) -->
+                            <h6 class="emp-name mb-1.5 text-dark" style="font-size: 0.85rem;">@FormatName(lt.LeaveNameId.ToString())</h6>
+
+                            <!-- Info Badges -->
+                            <div class="d-flex align-items-center gap-1.5 mb-2 flex-wrap">
+                                <span class="badge bg-@color bg-opacity-10 text-@color fw-semibold py-0.5 px-2" style="font-size: 0.72rem;">
+                                    @lt.MaxPerYear days/yr
+                                </span>
+                                @if (lt.IsPaid)
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success py-0.5 px-2" style="font-size: 0.72rem;">
+                                        <i class="bi bi-cash me-1"></i>Paid
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary py-0.5 px-2" style="font-size: 0.72rem;">
+                                        Unpaid
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- Description -->
+                            @if (!string.IsNullOrWhiteSpace(lt.Description))
+                            {
+                                <p class="text-muted small mb-2 leave-desc flex-grow-1" style="font-size: 0.78rem; line-height: 1.3;">
+                                    @lt.Description
+                                </p>
+                            }
+                            else
+                            {
+                                <div class="flex-grow-1"></div>
+                            }
+
+                            <!-- Status -->
+                            <div class="mt-auto pt-2 border-top d-flex align-items-center justify-content-between">
+                                <span class="text-muted" style="font-size: 0.75rem;">Status</span>
+                                @if (lt.IsActive)
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success">
+                                        <i class="bi bi-check-circle me-1"></i>Active
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger bg-opacity-10 text-danger">
+                                        <i class="bi bi-x-circle me-1"></i>Inactive
+                                    </span>
+                                }
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+</div>
 
 @code {
 
     [Parameter] public EventCallback<int> OnCountChanged { get; set; }
 
     private List<LeaveTypeViewModel> leaveTypes = new();
+    private string _searchQuery = string.Empty;
+    private string _filterType = "all";
+    private bool _isCardView = false;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
         await LoadLeaveTypes();
     }
-
 
     private async Task LoadLeaveTypes()
     {
@@ -171,6 +315,28 @@ else
             leaveTypes = new();
         }
     }
+
+    private IEnumerable<LeaveTypeViewModel> FilteredLeaveTypes =>
+        leaveTypes.Where(lt =>
+        {
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                var q = _searchQuery.Trim();
+                var name = FormatName(lt.LeaveNameId.ToString());
+                var desc = lt.Description ?? "";
+                if (!name.Contains(q, StringComparison.OrdinalIgnoreCase) &&
+                    !desc.Contains(q, StringComparison.OrdinalIgnoreCase))
+                    return false;
+            }
+
+            return _filterType switch
+            {
+                "paid" => lt.IsPaid,
+                "unpaid" => !lt.IsPaid,
+                "active" => lt.IsActive,
+                _ => true
+            };
+        });
 
     private void CreateLeaveType() => NavigationManager.NavigateTo("/leave-type/create");
 

@@ -12,6 +12,7 @@
 @inject IUserService UserService
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 @inherits AuthenticatedLayoutBase
 
 <Loader Visible="isLoading" Message="@loadingMessage" />
@@ -28,10 +29,43 @@
                 <div class="card border-0 shadow-sm rounded-3 h-100 profile-side-card">
                     <div class="card-body p-4 text-center d-flex flex-column">
                         
-                        <!-- Avatar -->
-                        <div class="profile-avatar-circle mx-auto mb-3">
-                            @Initials
+                        <!-- Avatar & Upload -->
+                        <div class="profile-avatar-wrapper position-relative mx-auto mb-3">
+                            @if (!string.IsNullOrWhiteSpace(profile.ProfileImage))
+                            {
+                                <img src="@profile.ProfileImage" alt="@DisplayName" class="profile-avatar-circle profile-avatar-img" />
+                            }
+                            else
+                            {
+                                <div class="profile-avatar-circle">
+                                    @Initials
+                                </div>
+                            }
+
+                            @if (profile.IsEmployee)
+                            {
+                                <label for="profileImageInput" class="avatar-upload-btn" title="Upload or change profile picture">
+                                    <i class="bi bi-camera-fill"></i>
+                                    <InputFile id="profileImageInput" OnChange="HandleProfileImageUpload" accept=".jpg,.jpeg,.png,.webp" class="d-none" />
+                                </label>
+                            }
                         </div>
+
+                        @if (isUploadingImage)
+                        {
+                            <div class="small text-primary mb-2 d-flex align-items-center justify-content-center gap-1.5">
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span>Uploading photo...</span>
+                            </div>
+                        }
+
+                        @if (profile.IsEmployee && !string.IsNullOrWhiteSpace(profile.ProfileImage))
+                        {
+                            <button type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0 mb-2 small"
+                                    @onclick="RemoveProfileImageAsync" disabled="@isUploadingImage" title="Remove profile picture">
+                                <i class="bi bi-trash3 me-1"></i>Remove Photo
+                            </button>
+                        }
 
                         <!-- Full Name & Badges -->
                         <h4 class="fw-bold text-dark mb-1 fs-5">@DisplayName</h4>
@@ -943,6 +977,123 @@
         }
     }
 
+    private bool isUploadingImage = false;
+
+    private async Task HandleProfileImageUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        var ext = Path.GetExtension(file.Name)?.ToLowerInvariant();
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (string.IsNullOrEmpty(ext) || !allowed.Contains(ext))
+        {
+            await NotificationService.Warning("Only JPG, JPEG, PNG, and WEBP image files are allowed.");
+            return;
+        }
+
+        if (file.Size > 5 * 1024 * 1024)
+        {
+            await NotificationService.Warning("Image size cannot exceed 5 MB.");
+            return;
+        }
+
+        var empId = profile?.EmployeeId ?? employee?.Id ?? 0;
+        if (empId <= 0)
+        {
+            await NotificationService.Error("Employee record not found for profile picture update.");
+            return;
+        }
+
+        isUploadingImage = true;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+
+            var uploadResult = await EmployeeService.UploadProfileImageAsync(empId, stream, file.Name);
+
+            if (uploadResult?.IsSuccess == true && !string.IsNullOrWhiteSpace(uploadResult.Data))
+            {
+                var relativePath = uploadResult.Data;
+                if (profile != null) profile.ProfileImage = relativePath;
+                if (employee != null) employee.ProfileImage = relativePath;
+
+                // Sync file locally to Blazor wwwroot/profile-images so it is accessible immediately
+                try
+                {
+                    var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+                    var localFolder = Path.Combine(webRoot, "profile-images");
+                    if (!Directory.Exists(localFolder)) Directory.CreateDirectory(localFolder);
+
+                    var fileName = Path.GetFileName(relativePath);
+                    var localDest = Path.Combine(localFolder, fileName);
+
+                    // If file is in API folder, copy to Blazor folder
+                    var apiFolder = Path.Combine(Directory.GetCurrentDirectory(), "..", "arna.HRMS.API", "wwwroot", "profile-images");
+                    var apiSource = Path.Combine(apiFolder, fileName);
+                    if (File.Exists(apiSource) && !File.Exists(localDest))
+                    {
+                        File.Copy(apiSource, localDest, true);
+                    }
+                }
+                catch { }
+
+                await NotificationService.Success("Profile picture updated successfully.");
+            }
+            else
+            {
+                await NotificationService.Error(uploadResult?.Message ?? "Failed to upload profile picture.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.Error($"Error uploading picture: {ex.Message}");
+        }
+        finally
+        {
+            isUploadingImage = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveProfileImageAsync()
+    {
+        var empId = profile?.EmployeeId ?? employee?.Id ?? 0;
+        if (empId <= 0) return;
+
+        bool confirm = await JsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to remove your profile photo?");
+        if (!confirm) return;
+
+        isUploadingImage = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await EmployeeService.DeleteProfileImageAsync(empId);
+            if (result?.IsSuccess == true)
+            {
+                if (profile != null) profile.ProfileImage = null;
+                if (employee != null) employee.ProfileImage = null;
+                await NotificationService.Success("Profile picture removed successfully.");
+            }
+            else
+            {
+                await NotificationService.Error(result?.Message ?? "Failed to remove profile picture.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await NotificationService.Error($"Error removing photo: {ex.Message}");
+        }
+        finally
+        {
+            isUploadingImage = false;
+            StateHasChanged();
+        }
+    }
+
     private string ExperienceString
     {
         get
@@ -964,6 +1115,7 @@
         public string? Email { get; init; }
         public string? PhoneNumber { get; init; }
         public DateTime? DateOfBirth { get; init; }
+        public string? ProfileImage { get; init; }
 
         public ProfileSnapshot(ProfileViewModel p)
         {
@@ -972,6 +1124,7 @@
             Email = p.Email?.Trim();
             PhoneNumber = p.PhoneNumber?.Trim();
             DateOfBirth = p.DateOfBirth;
+            ProfileImage = p.ProfileImage;
         }
     }
 }

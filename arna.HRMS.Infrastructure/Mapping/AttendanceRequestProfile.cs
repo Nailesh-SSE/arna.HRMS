@@ -24,6 +24,8 @@ public class AttendanceRequestProfile : Profile
                     src.ApprovedByEmployee != null
                         ? $"{src.ApprovedByEmployee.FirstName} {src.ApprovedByEmployee.LastName}"
                         : string.Empty))
-            ;
+            .ForMember(dest => dest.ProfileImage,
+                opt => opt.MapFrom(src =>
+                    src.Employee != null ? src.Employee.ProfileImage : null));
     }
 }

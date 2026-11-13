@@ -30,6 +30,7 @@
             var isWeekend = day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
             var matchedItem = GetItemForDate(day);
             var hasItem = matchedItem != null;
+            var isSelected = SelectedDate.HasValue && SelectedDate.Value.Date == day.Date;
 
             var cellBgClass = isToday 
                 ? "cal-today-cell" 
@@ -39,7 +40,7 @@
                         ? "cal-weekend-cell" 
                         : "bg-white";
 
-            <div class="card border rounded-2 p-1.5 d-flex flex-column align-items-center justify-content-between user-select-none cal-cell-min cal-day-item @cellBgClass"
+            <div class="card border rounded-2 p-1.5 d-flex flex-column align-items-center justify-content-between user-select-none cal-cell-min cal-day-item @cellBgClass @(isSelected ? "cal-selected-cell" : "")"
                  title="@(hasItem ? GetTitle(matchedItem!) : "")"
                  @onclick="() => OnDateClicked(day, matchedItem)">
 
@@ -65,7 +66,7 @@
                              title="@GetTitle(matchedItem!)">
                             <i class="@EventIcon me-1"></i>
                             <span class="cal-event-text">
-                                @Truncate(GetTitle(matchedItem!), 14)
+                                @Truncate(GetTitle(matchedItem!).Trim(), 20)
                             </span>
                         </div>
                     }
@@ -111,6 +112,7 @@
 
     [Parameter] public int Year { get; set; } = DateTime.Now.Year;
     [Parameter] public int Month { get; set; } = DateTime.Now.Month;
+    [Parameter] public DateTime? SelectedDate { get; set; }
     [Parameter] public List<TItem> Items { get; set; } = new();
     [Parameter] public Func<TItem, DateTime> DateSelector { get; set; } = default!;
     [Parameter] public Func<TItem, string> TitleSelector { get; set; } = default!;

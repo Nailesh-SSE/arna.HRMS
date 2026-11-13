@@ -80,6 +80,7 @@ public class EmployeeServiceTests
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "john@a.com",
+                OfficeEmail = "office.john@a.com",
                 PhoneNumber = "1111111111",
                 Position = "Developer",
                 Salary = 50000,
@@ -93,6 +94,7 @@ public class EmployeeServiceTests
                 FirstName = "Jane",
                 LastName = "Smith",
                 Email = "jane@b.com",
+                OfficeEmail = "office.jane@b.com",
                 PhoneNumber = "2222002222",
                 Position = "Tester",
                 Salary = 4000,
@@ -106,6 +108,7 @@ public class EmployeeServiceTests
                 FirstName = "Pratham",
                 LastName = "Smith",
                 Email = "pratham@b.com",
+                OfficeEmail = "office.pratham@b.com",
                 PhoneNumber = "2222222222",
                 Position = "Tester",
                 Salary = 45000,
@@ -145,6 +148,7 @@ public class EmployeeServiceTests
                 FirstName = "Active",
                 LastName = "User",
                 Email = "active@test.com",
+                OfficeEmail = "office.active@test.com",
                 PhoneNumber = "1111111111",
                 Position = "Dev",
                 Salary = 10000,
@@ -160,6 +164,7 @@ public class EmployeeServiceTests
                 FirstName = "Deleted",
                 LastName = "User",
                 Email = "deleted@test.com",
+                OfficeEmail = "office.deleted@test.com",
                 PhoneNumber = "2222222222",
                 Position = "Dev",
                 Salary = 10000,
@@ -191,6 +196,7 @@ public class EmployeeServiceTests
             FirstName = "Alex",
             LastName = "Brown",
             Email = "alex@test.com",
+            OfficeEmail = "office.alex@test.com",
             PhoneNumber = "3333333333",
             Position = "Manager",
             Salary = 80000,
@@ -217,6 +223,7 @@ public class EmployeeServiceTests
             FirstName = "Dept",
             LastName = "Test",
             Email = "deptmap@test.com",
+            OfficeEmail = "office.deptmap@test.com",
             PhoneNumber = "7777777777",
             Position = "Dev",
             Salary = 20000,
@@ -263,6 +270,7 @@ public class EmployeeServiceTests
             FirstName = "Soft",
             LastName = "Deleted",
             Email = "soft@test.com",
+            OfficeEmail = "office.soft@test.com",
             PhoneNumber = "4444444444",
             Position = "Dev",
             Salary = 50000,
@@ -293,7 +301,7 @@ public class EmployeeServiceTests
             LastName = ln,
             DepartmentName = "INFORMATION TECHNOLOGY",
             Email = Em,
-            PhoneNumber = pn,
+            OfficeEmail = "office." + Em,            PhoneNumber = pn,
             DateOfBirth = DateTime.Now.AddYears(-28),
             HireDate = DateTime.Now,
             DepartmentId = 1,
@@ -342,6 +350,7 @@ public class EmployeeServiceTests
             FirstName = "Old",
             LastName = "User",
             Email = "old@test.com",
+            OfficeEmail = "office.old@test.com",
             PhoneNumber = "9999999990",
             Position = "Dev",
             Salary = 10000,
@@ -447,6 +456,7 @@ public class EmployeeServiceTests
             FirstName = "Old",
             LastName = "User",
             Email = "oldinvalid@test.com",
+            OfficeEmail = "office.oldinvalid@test.com",
             PhoneNumber = "9000000000",
             Position = "Dev",
             Salary = 10000,
@@ -490,6 +500,7 @@ public class EmployeeServiceTests
             FirstName = "Old",
             LastName = "User",
             Email = "oldlower@test.com",
+            OfficeEmail = "office.oldlower@test.com",
             PhoneNumber = "9000000002",
             Position = "Dev",
             Salary = 10000,
@@ -621,6 +632,7 @@ public class EmployeeServiceTests
             FirstName = "Old",
             LastName = "User",
             Email = "duplicate@test.com",
+            OfficeEmail = "office.duplicate@test.com",
             PhoneNumber = "9999999999",
             Position = "Dev",
             Salary = 10000,
@@ -665,6 +677,7 @@ public class EmployeeServiceTests
             FirstName = "Old",
             LastName = "Name",
             Email = "update@test.com",
+            OfficeEmail = "office.update@test.com",
             PhoneNumber = "5555555555",
             Position = "Tester",
             Salary = 40000,
@@ -684,7 +697,7 @@ public class EmployeeServiceTests
             FirstName = "Updated",
             LastName = "User",
             Email = employee.Email,
-            PhoneNumber = employee.PhoneNumber,
+            OfficeEmail = employee.OfficeEmail ?? "office@test.com",            PhoneNumber = employee.PhoneNumber,
             DateOfBirth = employee.DateOfBirth,
             HireDate = employee.HireDate,
             DepartmentId = 1,
@@ -706,6 +719,7 @@ public class EmployeeServiceTests
             FirstName = "Old",
             LastName = "User",
             Email = email,
+            OfficeEmail = "office." + email,
             PhoneNumber = Guid.NewGuid().ToString().Substring(0, 10),
             Position = "Tester",
             Salary = 40000,
@@ -729,7 +743,7 @@ public class EmployeeServiceTests
             FirstName = "Updated",
             LastName = "User",
             Email = employee.Email,
-            PhoneNumber = employee.PhoneNumber,
+            OfficeEmail = employee.OfficeEmail ?? "office@test.com",            PhoneNumber = employee.PhoneNumber,
             DateOfBirth = employee.DateOfBirth,
             HireDate = employee.HireDate,
             DepartmentId = 1,
@@ -817,7 +831,6 @@ public class EmployeeServiceTests
 
         var dto = ValidUpdateDto(employee);
         dto.Email = "invalid-email";
-
         var result = await _employeeService.UpdateEmployeeAsync(dto);
 
         Assert.That(result.IsSuccess, Is.False);
@@ -904,6 +917,7 @@ public class EmployeeServiceTests
             FirstName = "Test",
             LastName = "User",
             Email = "test@test.com",
+            OfficeEmail = "office.test@test.com",
             PhoneNumber = "1234567890",
             DateOfBirth = DateTime.Now.AddYears(-25)
         };
@@ -962,6 +976,7 @@ public class EmployeeServiceTests
             FirstName = "Delete",
             LastName = "Me",
             Email = "delete@test.com",
+            OfficeEmail = "office.delete@test.com",
             PhoneNumber = "6666666666",
             Position = "Support",
             Salary = 30000,
@@ -996,6 +1011,7 @@ public class EmployeeServiceTests
             FirstName = "Soft",
             LastName = "Delete",
             Email = "softdelete@test.com",
+            OfficeEmail = "office.softdelete@test.com",
             PhoneNumber = "8887776666",
             Position = "Dev",
             Salary = 10000,
@@ -1036,6 +1052,7 @@ public class EmployeeServiceTests
             FirstName = "Old",
             LastName = "Deleted",
             Email = "old@test.com",
+            OfficeEmail = "office.old@test.com",
             PhoneNumber = "8888888888",
             Position = "Dev",
             Salary = 20000,
@@ -1053,5 +1070,211 @@ public class EmployeeServiceTests
 
         Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Message, Is.EqualTo("Employee not found"));
+    }
+
+    // -------------------- PROFILE IMAGE TESTS --------------------
+
+    [Test]
+    public async Task UploadProfileImageAsync_WhenInvalidEmployeeId_ReturnsFail()
+    {
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        var result = await _employeeService.UploadProfileImageAsync(0, stream, "avatar.png");
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid employee ID."));
+    }
+
+    [Test]
+    public async Task UploadProfileImageAsync_WhenNullOrEmptyStream_ReturnsFail()
+    {
+        using var emptyStream = new MemoryStream();
+        var result = await _employeeService.UploadProfileImageAsync(1, emptyStream, "avatar.png");
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("No image stream provided."));
+    }
+
+    [Test]
+    public async Task UploadProfileImageAsync_WhenEmployeeNotFound_ReturnsFail()
+    {
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        var result = await _employeeService.UploadProfileImageAsync(9999, stream, "avatar.png");
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee not found."));
+    }
+
+    [TestCase("test.txt")]
+    [TestCase("test.pdf")]
+    [TestCase("test.exe")]
+    [TestCase("test")]
+    public async Task UploadProfileImageAsync_WhenInvalidExtension_ReturnsFail(string fileName)
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "EMP_IMG1",
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "john.doe.img@test.com",
+            OfficeEmail = "john.doe.img@office.com",
+            PhoneNumber = "9999999999",
+            Position = "Developer",
+            Salary = 50000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-25),
+            IsActive = true
+        };
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        var result = await _employeeService.UploadProfileImageAsync(employee.Id, stream, fileName);
+
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Only JPG, JPEG, PNG, and WEBP image files are allowed."));
+    }
+
+    [Test]
+    public async Task UploadProfileImageAsync_WhenValidImage_SavesFileAndUpdatesEmployee()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "EMP_IMG2",
+            FirstName = "Alice",
+            LastName = "Smith",
+            Email = "alice.smith.img@test.com",
+            OfficeEmail = "alice.smith.img@office.com",
+            PhoneNumber = "9898989898",
+            Position = "Designer",
+            Salary = 45000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-26),
+            IsActive = true
+        };
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var imageBytes = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        using var stream = new MemoryStream(imageBytes);
+
+        var result = await _employeeService.UploadProfileImageAsync(employee.Id, stream, "avatar.png");
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Data, Does.StartWith("/profile-images/emp_"));
+        Assert.That(result.Data, Does.EndWith(".png"));
+
+        var updatedEmployee = await _dbContext.Employees.FindAsync(employee.Id);
+        Assert.That(updatedEmployee, Is.Not.Null);
+        Assert.That(updatedEmployee!.ProfileImage, Is.EqualTo(result.Data));
+
+        // Cleanup created file
+        var localFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images");
+        var fileName = Path.GetFileName(result.Data);
+        var fullPath = Path.Combine(localFolder, fileName);
+        if (File.Exists(fullPath))
+        {
+            try { File.Delete(fullPath); } catch { }
+        }
+    }
+
+    [Test]
+    public async Task UploadProfileImageAsync_WhenReplacingExistingImage_DeletesOldFile()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "EMP_IMG3",
+            FirstName = "Bob",
+            LastName = "Taylor",
+            Email = "bob.taylor.img@test.com",
+            OfficeEmail = "bob.taylor.img@office.com",
+            PhoneNumber = "9797979797",
+            Position = "QA",
+            Salary = 40000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-24),
+            IsActive = true
+        };
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        var dummyBytes = new byte[] { 0xFF, 0xD8, 0xFF };
+        using var stream1 = new MemoryStream(dummyBytes);
+        var result1 = await _employeeService.UploadProfileImageAsync(employee.Id, stream1, "first.jpg");
+        Assert.That(result1.IsSuccess, Is.True);
+
+        var firstFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images", Path.GetFileName(result1.Data!));
+        Assert.That(File.Exists(firstFilePath), Is.True);
+
+        using var stream2 = new MemoryStream(dummyBytes);
+        var result2 = await _employeeService.UploadProfileImageAsync(employee.Id, stream2, "second.webp");
+        Assert.That(result2.IsSuccess, Is.True);
+
+        // Old file should be deleted
+        Assert.That(File.Exists(firstFilePath), Is.False);
+
+        // New file should exist
+        var secondFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images", Path.GetFileName(result2.Data!));
+        Assert.That(File.Exists(secondFilePath), Is.True);
+
+        // Cleanup
+        if (File.Exists(secondFilePath))
+        {
+            try { File.Delete(secondFilePath); } catch { }
+        }
+    }
+
+    [Test]
+    public async Task DeleteProfileImageAsync_WhenInvalidEmployeeId_ReturnsFail()
+    {
+        var result = await _employeeService.DeleteProfileImageAsync(0);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Invalid employee ID."));
+    }
+
+    [Test]
+    public async Task DeleteProfileImageAsync_WhenEmployeeNotFound_ReturnsFail()
+    {
+        var result = await _employeeService.DeleteProfileImageAsync(9999);
+        Assert.That(result.IsSuccess, Is.False);
+        Assert.That(result.Message, Is.EqualTo("Employee not found."));
+    }
+
+    [Test]
+    public async Task DeleteProfileImageAsync_WhenEmployeeHasImage_DeletesFileAndSetsProfileImageNull()
+    {
+        var employee = new Employee
+        {
+            EmployeeNumber = "EMP_IMG4",
+            FirstName = "Charlie",
+            LastName = "Brown",
+            Email = "charlie.brown.img@test.com",
+            OfficeEmail = "charlie.brown.img@office.com",
+            PhoneNumber = "9696969696",
+            Position = "DevOps",
+            Salary = 60000,
+            DepartmentId = 1,
+            HireDate = DateTime.Now,
+            DateOfBirth = DateTime.Now.AddYears(-28),
+            IsActive = true
+        };
+        _dbContext.Employees.Add(employee);
+        await _dbContext.SaveChangesAsync();
+
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        var uploadResult = await _employeeService.UploadProfileImageAsync(employee.Id, stream, "test.png");
+        Assert.That(uploadResult.IsSuccess, Is.True);
+
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images", Path.GetFileName(uploadResult.Data!));
+        Assert.That(File.Exists(filePath), Is.True);
+
+        var deleteResult = await _employeeService.DeleteProfileImageAsync(employee.Id);
+        Assert.That(deleteResult.IsSuccess, Is.True);
+        Assert.That(File.Exists(filePath), Is.False);
+
+        var updatedEmployee = await _dbContext.Employees.FindAsync(employee.Id);
+        Assert.That(updatedEmployee!.ProfileImage, Is.Null);
     }
 }

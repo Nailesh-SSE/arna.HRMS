@@ -9,6 +9,7 @@ public class AttendanceRequestViewModel : CommonViewModel
     public int EmployeeId { get; set; }
     public string? EmployeeNumber { get; set; }
     public string? EmployeeName { get; set; }
+    public string? ProfileImage { get; set; }
 
     [Required(ErrorMessage = "FromDate is required.")]
     public DateTime? FromDate { get; set; }

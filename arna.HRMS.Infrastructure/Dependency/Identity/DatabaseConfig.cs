@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Infrastructure.Data;
+using arna.HRMS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +12,11 @@ public static class DatabaseConfig
         services.AddDbContext<ApplicationDbContext>(options =>
             options.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection"),
-                sqlOptions => sqlOptions.MigrationsAssembly("arna.HRMS.Infrastructure")
+                sqlOptions =>
+                {
+                    sqlOptions.MigrationsAssembly("arna.HRMS.Infrastructure");
+                    sqlOptions.UseCompatibilityLevel(110);
+                }
             )
         );
 

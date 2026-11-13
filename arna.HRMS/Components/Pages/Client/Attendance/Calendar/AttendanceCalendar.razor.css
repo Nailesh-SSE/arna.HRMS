@@ -116,3 +116,23 @@
         font-size: 0.55rem;
     }
 }
+
+/* ── Calendar Bottom Action Button ── */
+.cal-action-btn {
+    background-color: #0076ce !important;
+    border: 1px solid #0076ce !important;
+    color: #ffffff !important;
+    transition: all 0.2s ease;
+}
+
+.cal-action-btn:hover {
+    background-color: #005fa3 !important;
+    border-color: #005fa3 !important;
+    box-shadow: 0 4px 12px rgba(0, 118, 206, 0.25) !important;
+    color: #ffffff !important;
+}
+
+.cal-action-btn i,
+.cal-action-btn span {
+    color: #ffffff !important;
+}

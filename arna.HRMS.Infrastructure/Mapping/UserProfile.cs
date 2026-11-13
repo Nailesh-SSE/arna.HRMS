@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using AutoMapper;
 
@@ -15,7 +15,10 @@ public class UserProfile : Profile
                     src.Employee != null ? $"{src.Employee.FirstName} {src.Employee.LastName}" : ""))
             .ForMember(dest => dest.Role,
                 opt => opt.MapFrom(src =>
-                    src.Role != null ? src.Role.Name : ""));
+                    src.Role != null ? src.Role.Name : ""))
+            .ForMember(dest => dest.ProfileImage,
+                opt => opt.MapFrom(src =>
+                    src.Employee != null ? src.Employee.ProfileImage : null));
 
         // Map DTO -> entity 
         CreateMap<UserDto, User>()

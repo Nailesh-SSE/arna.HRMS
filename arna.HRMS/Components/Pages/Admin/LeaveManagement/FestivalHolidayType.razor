@@ -15,59 +15,77 @@
 @inject IJSRuntime JsRuntime
 @inherits AuthenticatedLayoutBase
 
-<!-- ══════════ TOOLBAR ══════════ -->
-<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
-    <div>
-        <h5 class="fw-bold mb-1 d-flex align-items-center gap-2">
-            <span class="p-2 rounded-2 bg-danger bg-opacity-10 text-danger d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
-                <i class="bi bi-calendar-heart-fill"></i>
-            </span>
-            Festival Holidays
-        </h5>
-        <small class="text-muted">Manage corporate and statutory festival holidays across the calendar year</small>
-    </div>
-
-    @if (IsAdmin() || IsSuperAdmin())
-    {
-        <button class="btn btn-primary rounded-pill px-3 shadow-sm d-inline-flex align-items-center gap-2"
-                @onclick="CreateFestivalHoliday">
-            <i class="bi bi-plus-lg"></i>
-            <span>Add Holiday</span>
-        </button>
-    }
-</div>
-
 <!-- ══════════ UNIFIED CONTAINER CARD ══════════ -->
-<div class="card border shadow-sm rounded-3 mb-4 bg-white">
-    <div class="card-body p-2 p-md-3">
+<div class="card border shadow-sm rounded-3 mb-2 bg-white flex-grow-1 min-h-0 d-flex flex-column">
+    <div class="card-body p-2 p-md-3 d-flex flex-column flex-grow-1 min-h-0">
 
-        <!-- Card Header / Toolbar -->
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2 mb-3 border-bottom">
-            <div class="d-flex align-items-center flex-wrap gap-2">
+        <!-- ══════════ TOOLBAR ══════════ -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pb-2 mb-2 border-bottom flex-shrink-0">
+            <!-- Left: Month picker + Quick filter chips + Next Holiday pill -->
+            <div class="d-flex align-items-center flex-wrap gap-2 flex-grow-1">
                 <SelectMonthAndYear Year="@selectedYear"
                                     Month="@(selectedMonth == 0 ? DateTime.Now.Month : selectedMonth)"
                                     OnChange="OnMonthYearSelected" />
 
+                <!-- Quick Filter Chips -->
+                <div class="d-flex align-items-center gap-1">
+                    <button type="button" class="btn-filter-chip @(_filterType == "all" ? "active" : "")"
+                            @onclick='() => _filterType = "all"'>
+                        All (@filteredFestivals.Count)
+                    </button>
+                    <button type="button" class="btn-filter-chip @(_filterType == "upcoming" ? "active" : "")"
+                            @onclick='() => _filterType = "upcoming"'>
+                        Upcoming (@filteredFestivals.Count(f => f.Date.Date >= DateTime.Today))
+                    </button>
+                    <button type="button" class="btn-filter-chip @(_filterType == "past" ? "active" : "")"
+                            @onclick='() => _filterType = "past"'>
+                        Past (@filteredFestivals.Count(f => f.Date.Date < DateTime.Today))
+                    </button>
+                    <button type="button" class="btn-filter-chip @(_filterType == "weekdays" ? "active" : "")"
+                            @onclick='() => _filterType = "weekdays"'>
+                        Weekdays (@filteredFestivals.Count(f => f.Date.DayOfWeek != DayOfWeek.Saturday && f.Date.DayOfWeek != DayOfWeek.Sunday))
+                    </button>
+                </div>
+
                 @if (upcomingHoliday != null)
                 {
-                    <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2.5 py-1.5 rounded-pill d-inline-flex align-items-center gap-1.5 fw-medium" style="font-size: 0.8rem;">
-                        <i class="bi bi-balloon-heart-fill text-primary"></i>
-                        <span>Next: <strong>@upcomingHoliday.FestivalName</strong> (@upcomingHoliday.Date.ToString("MMM dd"))</span>
+                    <span class="next-holiday-pill ms-auto ms-xl-0" title="Next upcoming festival holiday">
+                        <i class="bi bi-balloon-heart-fill"></i>
+                        <span>Next: <strong>@upcomingHoliday.FestivalName</strong> • @upcomingHoliday.Date.ToString("dd MMM")</span>
+                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-1.5 py-0.5" style="font-size: 0.68rem;">
+                            @GetDaysAwayText(upcomingHoliday.Date)
+                        </span>
                     </span>
                 }
             </div>
 
+            <!-- Right: Search (in Table view) + View Toggle + Refresh -->
             <div class="d-flex align-items-center gap-2">
+                @if (activeView == "table")
+                {
+                    <div class="position-relative" style="min-width: 170px; max-width: 220px;">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2.5 text-muted small"></i>
+                        <input type="text" class="form-control form-control-sm ps-4 rounded-3"
+                               placeholder="Search holidays..."
+                               @bind="_searchQuery" @bind:event="oninput" />
+                    </div>
+                }
+
                 <AttendanceViewToggle ActiveView="@activeView"
                                       OnChange="v => activeView = v" />
+
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1 bg-white"
+                        title="Refresh holidays" @onclick="LoadFestivals">
+                    <i class="bi bi-arrow-clockwise @(_isLoading ? "spin-animation" : "")"></i>
+                </button>
             </div>
         </div>
 
-        <!-- Card Content: Table or Calendar -->
-        <div>
+        <!-- ══════════ CONTENT: TABLE OR SPLIT CALENDAR ══════════ -->
+        <div class="flex-grow-1 min-h-0 d-flex flex-column">
             @if (activeView == "table")
             {
-                <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                <div class="d-flex align-items-center justify-content-between mb-2 px-1 flex-shrink-0">
                     <span class="small fw-semibold text-muted">
                         @(selectedMonth > 0 ? $"{GetMonthName(selectedMonth)} {selectedYear}" : $"All {selectedYear}") Holidays
                     </span>
@@ -79,34 +97,26 @@
                             </button>
                         }
                         <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill small">
-                            @filteredFestivals.Count holiday(s)
+                            @DisplayFestivals.Count holiday(s)
                         </span>
                     </div>
                 </div>
 
-                @if (filteredFestivals.Any())
+                @if (!DisplayFestivals.Any())
                 {
-                    <AppTable TItem="FestivalHolidayViewModel"
-                              Items="filteredFestivals"
-                              Columns="TableSchemas.FestivalHolidays"
-                              EnablePagination="true"
-                              PageSize="10"
-                              ShowActions="@(IsAdmin() || IsSuperAdmin())"
-                              OnEdit="EditFestival"
-                              OnDelete="DeleteFestival" />
-                }
-                else
-                {
-                    <div class="text-center py-5">
+                    <div class="card border-0 rounded-3 text-center py-5 my-auto bg-light bg-opacity-50">
                         <i class="bi bi-calendar-x fs-1 text-muted opacity-50 d-block mb-2"></i>
-                        <p class="text-muted mb-2">
-                            No festival holidays for @(selectedMonth > 0 ? $"{GetMonthName(selectedMonth)} {selectedYear}" : selectedYear.ToString())
+                        <div class="fw-semibold text-dark">No Holidays Found</div>
+                        <p class="text-muted small mb-2">
+                            No festival holidays found matching your filters for @(selectedMonth > 0 ? $"{GetMonthName(selectedMonth)} {selectedYear}" : selectedYear.ToString()).
                         </p>
                         @if (selectedMonth > 0)
                         {
-                            <button class="btn btn-sm btn-outline-primary rounded-pill mt-1" @onclick="ShowAllYear">
-                                <i class="bi bi-calendar-range me-1"></i> View All @selectedYear Holidays
-                            </button>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill mt-1" @onclick="ShowAllYear">
+                                    <i class="bi bi-calendar-range me-1"></i> View All @selectedYear Holidays
+                                </button>
+                            </div>
                         }
                         @if (IsAdmin() || IsSuperAdmin())
                         {
@@ -119,20 +129,289 @@
                         }
                     </div>
                 }
+                else
+                {
+                    <div class="card border-0 shadow-xs rounded-3 overflow-hidden bg-white flex-grow-1 min-h-0 d-flex flex-column">
+                        <div class="holiday-table-container flex-grow-1 min-h-0">
+                            <table class="table table-hover align-middle mb-0 custom-table">
+                                <thead class="bg-light sticky-top" style="z-index: 5;">
+                                    <tr>
+                                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; min-width: 220px;">Festival Name</th>
+                                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem; width: 140px;">Date</th>
+                                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem; width: 140px;">Day</th>
+                                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem; width: 120px;">Timeline</th>
+                                        <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom" style="font-size: 0.72rem; min-width: 180px;">Description</th>
+                                        @if (IsAdmin() || IsSuperAdmin())
+                                        {
+                                            <th class="py-1.5 px-3 text-muted text-uppercase fw-semibold border-bottom text-center" style="font-size: 0.72rem; width: 90px;">Action</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var f in DisplayFestivals)
+                                    {
+                                        var isUpcoming = f.Date.Date >= DateTime.Today;
+                                        var isToday = f.Date.Date == DateTime.Today;
+                                        var isWeekend = f.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                                        var isNext = upcomingHoliday?.Id == f.Id;
+
+                                        <tr>
+                                            <!-- Festival Name -->
+                                            <td class="px-3 py-1.5">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="holiday-icon-box">
+                                                        <i class="bi bi-stars"></i>
+                                                    </div>
+                                                    <div class="d-inline-flex align-items-center gap-1.5">
+                                                        <span class="fw-medium text-dark" style="font-size: 0.84rem;">
+                                                            @f.FestivalName
+                                                        </span>
+                                                        @if (isNext)
+                                                        {
+                                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 rounded-pill px-1.5 py-0.5" style="font-size: 0.65rem;">
+                                                                Next
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </td>
+
+                                            <!-- Date -->
+                                            <td class="px-3 py-1.5 text-center text-dark small fw-medium">
+                                                @f.Date.ToString("dd MMM yyyy")
+                                            </td>
+
+                                            <!-- Day -->
+                                            <td class="px-3 py-1.5 text-center">
+                                                @if (isWeekend)
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger border-0 rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
+                                                        @f.Date.ToString("dddd") (Weekend)
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size: 0.72rem;">
+                                                        @f.Date.ToString("dddd")
+                                                    </span>
+                                                }
+                                            </td>
+
+                                            <!-- Timeline -->
+                                            <td class="px-3 py-1.5 text-center">
+                                                @if (isToday)
+                                                {
+                                                    <span class="leave-status-pill leave-status-approved">
+                                                        <span class="status-dot"></span>
+                                                        <span>Today</span>
+                                                    </span>
+                                                }
+                                                else if (isUpcoming)
+                                                {
+                                                    <span class="leave-status-pill leave-status-pending">
+                                                        <span class="status-dot"></span>
+                                                        <span>@GetDaysAwayText(f.Date)</span>
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="leave-status-pill leave-status-cancelled">
+                                                        <span class="status-dot"></span>
+                                                        <span>Passed</span>
+                                                    </span>
+                                                }
+                                            </td>
+
+                                            <!-- Description -->
+                                            <td class="px-3 py-1.5 small text-muted text-truncate" style="max-width: 280px;" title="@f.Description">
+                                                @(string.IsNullOrWhiteSpace(f.Description) ? "—" : f.Description)
+                                            </td>
+
+                                            <!-- Action -->
+                                            @if (IsAdmin() || IsSuperAdmin())
+                                            {
+                                                <td class="px-3 py-1.5 text-center">
+                                                    <div class="d-inline-flex align-items-center gap-1">
+                                                        <button type="button" class="btn-action-icon-edit"
+                                                                title="Edit holiday"
+                                                                @onclick="() => EditFestival(f)">
+                                                            <i class="bi bi-pencil-square"></i>
+                                                        </button>
+                                                        <button type="button" class="btn-action-icon-delete"
+                                                                title="Delete holiday"
+                                                                @onclick="() => DeleteFestival(f)">
+                                                            <i class="bi bi-trash3"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Table Footer -->
+                        <div class="d-flex align-items-center justify-content-between p-2 px-3 border-top bg-light bg-opacity-50 flex-shrink-0 small text-muted">
+                            <span>Showing @DisplayFestivals.Count of @filteredFestivals.Count holiday(s)</span>
+                            <div class="d-flex align-items-center gap-3">
+                                <span><strong>@filteredFestivals.Count(f => f.Date.DayOfWeek != DayOfWeek.Saturday && f.Date.DayOfWeek != DayOfWeek.Sunday)</strong> weekday holiday(s)</span>
+                                @if (selectedMonth > 0)
+                                {
+                                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 small" style="font-size: 0.78rem;" @onclick="ShowAllYear">
+                                        View All @selectedYear
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
             }
             else if (activeView == "calendar")
             {
-                <HolidayCalender TItem="FestivalHolidayViewModel"
-                                 Year="@selectedYear"
-                                 Month="@(selectedMonth == 0 ? DateTime.Now.Month : selectedMonth)"
-                                 Items="allFestivals"
-                                 DateSelector="f => f.Date"
-                                 TitleSelector="f => f.FestivalName"
-                                 EventClass="cal-event-danger"
-                                 EventIcon="bi bi-star-fill"
-                                 EventLegendLabel="Holiday"
-                                 EventLegendDotClass="bg-danger"
-                                 OnMonthChanged="OnCalendarMonthChanged" />
+                <div class="row g-3 flex-grow-1 min-h-0 align-items-stretch">
+                    <!-- Left Column: Interactive Monthly Calendar Grid -->
+                    <div class="col-12 col-xl-8 d-flex flex-column min-h-0">
+                        <div class="card border rounded-3 p-3 bg-white flex-grow-1 d-flex flex-column shadow-2xs">
+                            <HolidayCalender TItem="FestivalHolidayViewModel"
+                                             Year="@selectedYear"
+                                             Month="@(selectedMonth == 0 ? DateTime.Now.Month : selectedMonth)"
+                                             SelectedDate="@_selectedCalendarDate"
+                                             Items="allFestivals"
+                                             DateSelector="f => f.Date"
+                                             TitleSelector="f => f.FestivalName"
+                                             EventClass="cal-event-danger"
+                                             EventIcon="bi bi-star-fill"
+                                             EventLegendLabel="Festival Holiday"
+                                             EventLegendDotClass="bg-danger"
+                                             OnMonthChanged="OnCalendarMonthChanged"
+                                             OnDateClick="OnCalendarDateClick" />
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Month Highlights & Agenda Panel -->
+                    <div class="col-12 col-xl-4 d-flex flex-column min-h-0">
+                        <div class="card border rounded-3 bg-white flex-grow-1 d-flex flex-column shadow-2xs overflow-hidden">
+                            <!-- Agenda Header -->
+                            <div class="d-flex align-items-center justify-content-between p-2.5 px-3 bg-light bg-opacity-50 border-bottom flex-shrink-0">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-2 p-1.5 bg-danger bg-opacity-10 text-danger d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px;">
+                                        <i class="bi bi-calendar-event fs-6"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-dark small" style="line-height: 1.2;">@GetMonthName(selectedMonth == 0 ? DateTime.Now.Month : selectedMonth) Agenda</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">@MonthAgendaHolidays.Count holiday(s) scheduled</div>
+                                    </div>
+                                </div>
+
+                                @if (MonthAgendaHolidays.Any())
+                                {
+                                    var workDaysOff = MonthAgendaHolidays.Count(f => f.Date.DayOfWeek != DayOfWeek.Saturday && f.Date.DayOfWeek != DayOfWeek.Sunday);
+                                    <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">
+                                        <i class="bi bi-briefcase-fill me-1"></i>@workDaysOff Work Day(s) Off
+                                    </span>
+                                }
+                            </div>
+
+                            <!-- Scrollable Agenda Cards -->
+                            <div class="p-2.5 d-flex flex-column gap-2 overflow-y-auto flex-grow-1 agenda-scroll-area">
+                                @if (!MonthAgendaHolidays.Any())
+                                {
+                                    <div class="text-center py-5 my-auto">
+                                        <i class="bi bi-calendar2-check text-muted opacity-50 fs-2 d-block mb-2"></i>
+                                        <div class="fw-semibold text-dark small">No Holidays This Month</div>
+                                        <p class="text-muted small mb-3" style="font-size: 0.75rem;">
+                                            Standard working schedule for @GetMonthName(selectedMonth == 0 ? DateTime.Now.Month : selectedMonth) @selectedYear.
+                                        </p>
+                                        @if (IsAdmin() || IsSuperAdmin())
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                                    @onclick="CreateFestivalHoliday">
+                                                <i class="bi bi-plus-lg me-1"></i> Add Holiday
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    @foreach (var h in MonthAgendaHolidays)
+                                    {
+                                        var isSelected = _selectedCalendarDate.HasValue && _selectedCalendarDate.Value.Date == h.Date.Date;
+                                        var isPast = h.Date.Date < DateTime.Today;
+                                        var isToday = h.Date.Date == DateTime.Today;
+                                        var isWeekend = h.Date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+                                        <div class="card border rounded-3 p-2 holiday-agenda-card @(isSelected ? "active-selected" : "")"
+                                             @onclick="() => _selectedCalendarDate = h.Date.Date">
+                                            <div class="d-flex align-items-start gap-2.5">
+                                                <!-- Date Block -->
+                                                <div class="date-badge-box @(isToday ? "bg-primary text-white" : "bg-danger bg-opacity-10 text-danger")">
+                                                    <div class="fw-bold" style="font-size: 1.15rem; line-height: 1;">@h.Date.Day</div>
+                                                    <div class="text-uppercase fw-semibold" style="font-size: 0.62rem; letter-spacing: 0.04em;">@h.Date.ToString("MMM")</div>
+                                                </div>
+
+                                                <!-- Info -->
+                                                <div class="flex-grow-1 min-w-0">
+                                                    <div class="d-flex align-items-center justify-content-between gap-1 mb-0.5">
+                                                        <span class="fw-semibold text-dark text-truncate small" title="@h.FestivalName">
+                                                            @h.FestivalName
+                                                        </span>
+                                                        @if (IsAdmin() || IsSuperAdmin())
+                                                        {
+                                                            <div class="d-inline-flex align-items-center gap-1 flex-shrink-0">
+                                                                <button type="button" class="btn-action-icon-edit" title="Edit holiday"
+                                                                        @onclick="() => EditFestival(h)" @onclick:stopPropagation="true">
+                                                                    <i class="bi bi-pencil-square"></i>
+                                                                </button>
+                                                                <button type="button" class="btn-action-icon-delete" title="Delete holiday"
+                                                                        @onclick="() => DeleteFestival(h)" @onclick:stopPropagation="true">
+                                                                    <i class="bi bi-trash3"></i>
+                                                                </button>
+                                                            </div>
+                                                        }
+                                                    </div>
+
+                                                    <div class="d-flex align-items-center gap-1.5 flex-wrap mb-1">
+                                                        <span class="badge @(isWeekend ? "bg-danger-subtle text-danger" : "bg-primary bg-opacity-10 text-primary") rounded-pill px-1.5 py-0.5" style="font-size: 0.68rem;">
+                                                            @(isWeekend ? $"{h.Date:dddd} (Weekend)" : h.Date.ToString("dddd"))
+                                                        </span>
+
+                                                        @if (isToday)
+                                                        {
+                                                            <span class="leave-status-pill leave-status-approved" style="font-size: 0.68rem; padding: 1px 7px;">
+                                                                <span class="status-dot"></span>
+                                                                <span>Today</span>
+                                                            </span>
+                                                        }
+                                                    </div>
+
+                                                    @if (!string.IsNullOrWhiteSpace(h.Description))
+                                                    {
+                                                        <div class="text-muted text-truncate" style="font-size: 0.74rem;" title="@h.Description">
+                                                            @h.Description
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+
+                            <!-- Agenda Footer -->
+                            <div class="p-2 px-3 border-top bg-light bg-opacity-50 flex-shrink-0 d-flex align-items-center justify-content-between small text-muted">
+                                <span>Total: <strong>@allFestivals.Count(f => f.Date.Year == selectedYear)</strong> in @selectedYear</span>
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 small"
+                                            @onclick="CreateFestivalHoliday">
+                                        <i class="bi bi-plus-lg me-1"></i>Add Holiday
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
             }
         </div>
 
@@ -148,12 +427,62 @@
     private List<FestivalHolidayViewModel> filteredFestivals = new();
     private FestivalHolidayViewModel? upcomingHoliday;
 
-    // ── Selection ──
+    // ── Selection & Filter State ──
     private int selectedYear = DateTime.Now.Year;
     private int selectedMonth = DateTime.Now.Month;
-
-    // ── View Mode ──
     private string activeView = "calendar";
+    private string _filterType = "all";
+    private string _searchQuery = "";
+    private DateTime? _selectedCalendarDate;
+    private bool _isLoading;
+
+    // ── Computed Properties ──
+
+    private List<FestivalHolidayViewModel> MonthAgendaHolidays
+    {
+        get
+        {
+            var targetMonth = selectedMonth == 0 ? DateTime.Now.Month : selectedMonth;
+            var query = allFestivals
+                .Where(f => f.Date.Year == selectedYear && f.Date.Month == targetMonth);
+
+            query = _filterType switch
+            {
+                "upcoming" => query.Where(f => f.Date.Date >= DateTime.Today),
+                "past" => query.Where(f => f.Date.Date < DateTime.Today),
+                "weekdays" => query.Where(f => f.Date.DayOfWeek != DayOfWeek.Saturday && f.Date.DayOfWeek != DayOfWeek.Sunday),
+                _ => query
+            };
+
+            return query.OrderBy(f => f.Date).ToList();
+        }
+    }
+
+    private List<FestivalHolidayViewModel> DisplayFestivals
+    {
+        get
+        {
+            var query = filteredFestivals.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                var q = _searchQuery.Trim();
+                query = query.Where(f =>
+                    f.FestivalName.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrWhiteSpace(f.Description) && f.Description.Contains(q, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            query = _filterType switch
+            {
+                "upcoming" => query.Where(f => f.Date.Date >= DateTime.Today),
+                "past" => query.Where(f => f.Date.Date < DateTime.Today),
+                "weekdays" => query.Where(f => f.Date.DayOfWeek != DayOfWeek.Saturday && f.Date.DayOfWeek != DayOfWeek.Sunday),
+                _ => query
+            };
+
+            return query.OrderBy(f => f.Date).ToList();
+        }
+    }
 
     // ═══════════ LIFECYCLE ═══════════
 
@@ -169,6 +498,7 @@
     {
         try
         {
+            _isLoading = true;
             var result = await FestivalHolidayService.GetFestivalHolidayAsync();
 
             allFestivals = result?.IsSuccess == true && result.Data != null
@@ -189,6 +519,10 @@
             allFestivals = new();
             filteredFestivals = new();
         }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
     private void ApplyFilters()
@@ -202,9 +536,17 @@
 
     // ═══════════ NAVIGATION ═══════════
 
-    private void CreateFestivalHoliday() => NavigationManager.NavigateTo("/festival-holiday/create");
+    private void CreateFestivalHoliday()
+    {
+        if (!IsAdmin() && !IsSuperAdmin()) return;
+        NavigationManager.NavigateTo("/festival-holiday/create");
+    }
 
-    private void EditFestival(FestivalHolidayViewModel item) => NavigationManager.NavigateTo($"/festival-holiday/edit/{item.Id}");
+    private void EditFestival(FestivalHolidayViewModel item)
+    {
+        if (!IsAdmin() && !IsSuperAdmin()) return;
+        NavigationManager.NavigateTo($"/festival-holiday/edit/{item.Id}");
+    }
 
     // ═══════════ TOOLBAR / FILTER HANDLERS ═══════════
 
@@ -212,6 +554,7 @@
     {
         selectedYear = val.year;
         selectedMonth = val.month;
+        _selectedCalendarDate = null;
         ApplyFilters();
     }
 
@@ -219,17 +562,26 @@
     {
         selectedYear = value.Year;
         selectedMonth = value.Month;
+        _selectedCalendarDate = null;
         ApplyFilters();
+    }
+
+    private void OnCalendarDateClick(DateTime date)
+    {
+        _selectedCalendarDate = date;
     }
 
     private void ShowAllYear()
     {
         selectedMonth = 0;
+        _selectedCalendarDate = null;
         ApplyFilters();
     }
 
     private async Task DeleteFestival(FestivalHolidayViewModel model)
     {
+        if (!IsAdmin() && !IsSuperAdmin()) return;
+
         bool ok = await JsRuntime.InvokeAsync<bool>(
             "confirm", $"Are you sure you want to delete '{model.FestivalName}'?");
         if (!ok) return;
@@ -254,6 +606,16 @@
     }
 
     // ═══════════ HELPERS ═══════════
+
+    private static string GetDaysAwayText(DateTime date)
+    {
+        var days = (date.Date - DateTime.Today).Days;
+        if (days == 0) return "Today";
+        if (days == 1) return "Tomorrow";
+        if (days > 1) return $"In {days} days";
+        if (days == -1) return "Yesterday";
+        return $"{Math.Abs(days)} days ago";
+    }
 
     private static string GetMonthName(int month) =>
         month is >= 1 and <= 12

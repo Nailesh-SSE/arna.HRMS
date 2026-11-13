@@ -121,6 +121,16 @@ public class UserValidator
         if (await _repository.UserExistsAsync(instance.Email, instance.PhoneNumber ?? string.Empty, instance.Id))
             errors.Add("Email or Phone Number already exists");
 
+        // Duplicate Employee Linkage: Ensure an employee cannot be linked to multiple user accounts
+        if (instance.EmployeeId.HasValue && instance.EmployeeId.Value > 0)
+        {
+            var existingUserWithEmp = await _repository.GetUserByEmployeeIdAsync(instance.EmployeeId.Value);
+            if (existingUserWithEmp != null && existingUserWithEmp.Id != instance.Id)
+            {
+                errors.Add("This employee is already linked to another user account.");
+            }
+        }
+
         return errors.Any()
                 ? ValidationResult.Fail(errors.ToArray())
                 : ValidationResult.Success();

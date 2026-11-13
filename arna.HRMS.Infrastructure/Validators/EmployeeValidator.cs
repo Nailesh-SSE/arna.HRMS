@@ -71,8 +71,11 @@ public class EmployeeValidator
             errors.Add("Phone number is required.");
         else if (!new PhoneAttribute().IsValid(instance.PhoneNumber))
             errors.Add("Invalid phone number.");
-        else if (instance.PhoneNumber.Length > 10)
-            errors.Add("Phone number cannot exceed 10 characters.");
+        else if (System.Text.RegularExpressions.Regex.Replace(instance.PhoneNumber, @"\D", "").Length != 10)
+            errors.Add("Phone number must be exactly 10 digits.");
+
+        if (!string.IsNullOrWhiteSpace(instance.OfficeEmail) && !new EmailAddressAttribute().IsValid(instance.OfficeEmail))
+            errors.Add("Invalid OfficeEmail format");
 
         if (instance.DateOfBirth == default)
             errors.Add("DateOfBirth is required");

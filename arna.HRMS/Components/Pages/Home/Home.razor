@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
@@ -11,11 +11,11 @@
 
 @if (!isLoading)
 {
-    @if (IsAdmin() || IsSuperAdmin())
+    @if (IsAdmin() || IsSuperAdmin() || IsHR() || IsManager())
     {
         <AdminDashboard UserFullName="@GetUserFullName()" />
     }
-    else if (IsEmployee())
+    else
     {
         <EmployeeDashboard UserFullName="@GetUserFullName()"
                            EmployeeId="@GetEmployeeId()" />

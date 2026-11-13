@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common.Result;
+using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.Enums;
 using arna.HRMS.Models.ViewModels.Leave;
 using arna.HRMS.Services.Http;
@@ -25,6 +25,7 @@ public interface ILeaveService
     Task<ApiResult<bool>> DeleteLeaveRequestAsync(int id);
     Task<ApiResult<bool>> UpdateLeaveStatusAsync(int leaveRequestId, Status status, int empId);
     Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestsByEmployeeAsync(int employeeId);
+    Task<ApiResult<int>> BulkApproveAsync(List<int> ids, int empId);
     Task<ApiResult<bool>> CancelLeaveRequestAsync(int leaveRequestId, int employeeId);
 }
 
@@ -104,6 +105,11 @@ public class LeaveService : ILeaveService
     public async Task<ApiResult<List<LeaveRequestViewModel>>> GetLeaveRequestsByEmployeeAsync(int employeeId)
     {
         return await _leaveApi.GetByFilterAsync(null, employeeId);
+    }
+
+    public async Task<ApiResult<int>> BulkApproveAsync(List<int> ids, int empId)
+    {
+        return await _leaveApi.BulkApproveAsync(ids, empId);
     }
 
     public async Task<ApiResult<bool>> CancelLeaveRequestAsync(int leaveRequestId, int employeeId)

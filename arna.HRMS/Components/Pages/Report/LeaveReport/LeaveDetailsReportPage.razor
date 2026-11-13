@@ -14,209 +14,273 @@
 {
     <Loader Visible="isLoading" Message="@loadingMessage" />
 }
+else if (Employee == null)
+{
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-body text-center py-5">
+            <div class="mb-3">
+                <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+            </div>
+            <h5 class="fw-semibold text-muted mb-2">Employee Not Found</h5>
+            <p class="text-muted mb-0">Unable to load employee information.</p>
+            @if (ShowBackButton == true)
+            {
+                <button class="btn btn-sm btn-outline-primary rounded-pill px-4 mt-3" @onclick="HandleBack">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Reports
+                </button>
+            }
+        </div>
+    </div>
+}
 else
 {
-    <div class="att-detail-animated">
+    <div class="att-animate">
 
-        <!-- ══════════ BACK + BREADCRUMB ══════════ -->
-        @if (ShowBackButton == true)
-        {
-            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
-                <button class="btn btn-sm btn-outline-primary rounded-pill px-3 att-detail-back-btn"
-                        @onclick="HandleBack">
-                    <i class="bi bi-arrow-left me-1"></i>Back
-                </button>
-                <nav>
-                    <ol class="breadcrumb mb-0 small">
+        <!-- ══════════ 1. BACK + BREADCRUMB ══════════ -->
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                @if (ShowBackButton == true)
+                {
+                    <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-pill shadow-xs fw-medium bg-white att-back-btn"
+                            @onclick="HandleBack" title="Back to leave overview">
+                        <i class="bi bi-arrow-left"></i>
+                        <span>Back</span>
+                    </button>
+                }
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0 small ps-1">
                         <li class="breadcrumb-item">
-                            <a href="javascript:void(0)" @onclick="HandleBack"
-                               class="text-decoration-none text-primary">
-                                Leave Report
-                            </a>
+                            @if (ShowBackButton == true)
+                            {
+                                <a href="javascript:void(0)" @onclick="HandleBack" class="text-decoration-none text-primary">
+                                    Leave Reports
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-primary fw-semibold">Leave Report</span>
+                            }
                         </li>
-                        <li class="breadcrumb-item active text-muted">@Employee.FullName</li>
+                        <li class="breadcrumb-item active text-muted" aria-current="page">
+                            @Employee.FullName
+                        </li>
                     </ol>
                 </nav>
             </div>
-        }
+        </div>
 
-        <!-- ══════════ EMPLOYEE HERO PROFILE CARD ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 mb-3 bg-white">
+        <!-- ══════════ 2. EMPLOYEE HERO PROFILE CARD ══════════ -->
+        <div class="card border-0 shadow-sm rounded-3 mb-3 employee-hero-card">
             <div class="card-body p-3 p-md-4">
-                <div class="row align-items-center g-3">
-                    <div class="col-12 col-md-auto text-center text-md-start">
-                        <div class="att-detail-avatar mx-auto mx-md-0"
-                             style="background-color:@GetColor(Employee.FullName ?? "")">
-                            @GetInitials(Employee.FullName ?? "")
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm text-center text-sm-start">
-                        <h4 class="fw-bold mb-1 text-dark">@Employee.FullName</h4>
-                        <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-sm-start align-items-center">
-                            <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">
-                                <i class="bi bi-person-badge me-1"></i>@Employee.EmployeeNumber
-                            </span>
-                            @if (Employee.Designation.HasValue)
-                            {
-                                <span class="badge bg-secondary bg-opacity-10 text-secondary rounded-pill px-3 py-1">
-                                    <i class="bi bi-briefcase me-1"></i>@Employee.Designation.Value
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+
+                    <!-- Left: Employee Identity -->
+                    <div class="d-flex align-items-center gap-3">
+                        @if (!string.IsNullOrWhiteSpace(Employee.ProfileImage ?? allRecords.FirstOrDefault()?.ProfileImage))
+                        {
+                            <img src="@(Employee.ProfileImage ?? allRecords.FirstOrDefault()?.ProfileImage)" alt="@Employee.FullName" class="att-hero-avatar avatar-img" />
+                        }
+                        else
+                        {
+                            <div class="att-hero-avatar">
+                                @GetInitials(Employee.FullName ?? "")
+                            </div>
+                        }
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <h5 class="fw-bold text-dark mb-0">@Employee.FullName</h5>
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 fw-semibold small">
+                                    @Employee.EmployeeNumber
                                 </span>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(Employee.DepartmentName))
-                            {
-                                <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-1">
-                                    <i class="bi bi-building me-1"></i>@Employee.DepartmentName
-                                </span>
-                            }
-                        </div>
-                    </div>
-                    <div class="col-12 col-md-auto text-center text-md-end">
-                        <div class="d-flex flex-column align-items-center align-items-md-end gap-2">
-                            <span class="badge bg-light text-primary border px-3 py-2 fs-6 rounded-pill shadow-xs">
-                                <i class="bi bi-calendar3 me-1"></i>
-                                @if (filterMode == "month")
+                            </div>
+                            <div class="text-muted small mt-1 d-flex align-items-center gap-2">
+                                @if (Employee.Designation.HasValue)
                                 {
-                                    <span>@MonthName(selectedMonth) @selectedYear</span>
+                                    <span><i class="bi bi-briefcase me-1 text-primary"></i>@Employee.Designation.Value</span>
                                 }
-                                else
+                                @if (!string.IsNullOrEmpty(Employee.DepartmentName))
                                 {
-                                    <span>@FormatDate(fromDate) - @FormatDate(toDate)</span>
+                                    <span>•</span>
+                                    <span><i class="bi bi-building me-1 text-primary"></i>@Employee.DepartmentName</span>
                                 }
-                            </span>
-                            <div class="d-flex gap-2">
-                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill small">
-                                    <i class="bi bi-card-checklist me-1"></i><strong>@cachedFilteredRecords.Count</strong> Records
-                                </span>
-                                <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-1 rounded-pill small">
-                                    <i class="bi bi-calendar-event me-1"></i><strong>@cachedFilteredRecords.Sum(r => r.LeaveDays)</strong> Days
-                                </span>
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- ══════════ FILTER TOOLBAR CARD ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 mb-3 bg-white">
-            <div class="card-body p-3">
-                <div class="row align-items-end g-3">
-                    <!-- Filter Mode Toggle -->
-                    <div class="col-12 col-sm-auto">
-                        <label class="form-label small fw-semibold text-muted mb-1">
-                            <i class="bi bi-funnel me-1"></i>Filter By
-                        </label>
-                        <div class="btn-group btn-group-sm d-flex" role="group">
-                            <button type="button"
-                                    class="btn @(filterMode == "month" ? "btn-primary shadow-sm" : "btn-outline-primary")"
-                                    @onclick='() => SwitchFilterMode("month")'>
-                                <i class="bi bi-calendar3 me-1"></i>Monthly
-                            </button>
-                            <button type="button"
-                                    class="btn @(filterMode == "dateRange" ? "btn-primary shadow-sm" : "btn-outline-primary")"
-                                    @onclick='() => SwitchFilterMode("dateRange")'>
-                                <i class="bi bi-calendar-range me-1"></i>Date Range
-                            </button>
+                    <!-- Right: Active Period & Stat Pill -->
+                    <div class="d-flex align-items-center gap-3 ms-auto flex-wrap">
+                        <div class="text-end d-none d-sm-block">
+                            <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Active Period</small>
+                            <div class="fw-semibold text-dark small">
+                                <i class="bi bi-calendar3 text-primary me-1"></i>
+                                @(filterMode == "month" ? (selectedMonth > 0 ? $"{MonthName(selectedMonth)} {selectedYear}" : $"All Months {selectedYear}") : $"{FormatDate(fromDate)} - {FormatDate(toDate)}")
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Month & Year -->
-                    @if (filterMode == "month")
-                    {
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">Month</label>
-                            <select class="form-select form-select-sm"
-                                    value="@selectedMonth"
-                                    @onchange="OnMonthChanged">
-                                @for (int m = 1; m <= 12; m++)
-                                {
-                                    <option value="@m">@MonthName(m)</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">Year</label>
-                            <select class="form-select form-select-sm"
-                                    value="@selectedYear"
-                                    @onchange="OnYearChanged">
-                                @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 1; y++)
-                                {
-                                    <option value="@y">@y</option>
-                                }
-                            </select>
-                        </div>
-                    }
+                        <div class="vr opacity-25 d-none d-sm-block" style="height: 36px;"></div>
 
-                    <!-- Date Range (DD/MM/YY) -->
-                    @if (filterMode == "dateRange")
-                    {
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">From</label>
-                            <input type="date"
-                                   class="form-control form-control-sm"
-                                   value="@fromDate.ToString("yyyy-MM-dd")"
-                                   @onchange="OnFromDateInputChanged" />
+                        <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 shadow-xs">
+                            <div class="fs-4 fw-bold">@cachedFilteredRecords.Sum(r => r.LeaveDays)</div>
+                            <div class="lh-sm text-start">
+                                <div class="fw-semibold small">Leave Days</div>
+                                <small class="opacity-75" style="font-size: 0.72rem;">@cachedFilteredRecords.Count records</small>
+                            </div>
                         </div>
-                        <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                            <label class="form-label small fw-semibold text-muted mb-1">To</label>
-                            <input type="date"
-                                   class="form-control form-control-sm"
-                                   value="@toDate.ToString("yyyy-MM-dd")"
-                                   @onchange="OnToDateInputChanged" />
-                        </div>
-                    }
 
-                    <!-- Reset -->
-                    <div class="col-auto">
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                @onclick="ResetFilters"
-                                title="Reset to current month">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ══════════ DATA TABLE OR EMPTY STATE ══════════ -->
-        <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
-            <div class="card-header bg-white border-0 py-3 px-3 px-md-4">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                    <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                        <i class="bi bi-table text-primary"></i>
-                        Leave History
-                        <span class="badge bg-light text-dark border rounded-pill">
-                            @cachedFilteredRecords.Count
+        <!-- ══════════ 3. UNIFIED TABLE & CONTROLS CARD ══════════ -->
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="report-detail-filter-bar">
+
+                <!-- Unified Controls: Title on Left + Single-Row Toolbar on Right -->
+                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+
+                    <!-- Left: Table Title & Count -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="report-table-title d-inline-flex align-items-center gap-2">
+                            <i class="bi bi-calendar4-week text-primary"></i>
+                            <span>Leave History Logs</span>
                         </span>
-                    </h6>
-                    <small class="text-muted">
-                        Showing leave details for <strong>@Employee.FullName</strong>
-                    </small>
+                        <span class="badge bg-light text-muted border rounded-pill px-2.5 py-1 small fw-normal">
+                            @cachedFilteredRecords.Count @(cachedFilteredRecords.Count == 1 ? "record" : "records")
+                        </span>
+                    </div>
+
+                    <!-- Right Controls (Single Clean Row) -->
+                    <div class="d-flex align-items-center flex-wrap gap-2 ms-lg-auto">
+
+                        <!-- Leave Type Filter -->
+                        @if (AvailableLeaveTypes.Any())
+                        {
+                            <div class="filter-select-wrap" style="min-width: 160px;">
+                                <select class="filter-select-modern"
+                                        value="@selectedLeaveTypeFilter"
+                                        @onchange="OnLeaveTypeFilterChanged"
+                                        title="Filter by leave type">
+                                    <option value="">All Leave Types (@allRecords.Count)</option>
+                                    @foreach (var lt in AvailableLeaveTypes)
+                                    {
+                                        <option value="@lt.Key">@lt.Value (@GetCountForLeaveType(lt.Key))</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+
+                        <!-- Status Filter -->
+                        <div class="filter-select-wrap" style="min-width: 135px;">
+                            <select class="filter-select-modern"
+                                    value="@selectedStatusFilter"
+                                    @onchange="OnStatusFilterChanged"
+                                    title="Filter by status">
+                                <option value="">All Statuses (@allRecords.Count)</option>
+                                <option value="@((int)Status.Approved)">Approved (@approvedCount)</option>
+                                <option value="@((int)Status.Pending)">Pending (@pendingCount)</option>
+                                <option value="@((int)Status.Rejected)">Rejected (@rejectedCount)</option>
+                            </select>
+                        </div>
+
+                        <!-- Segmented Mode Toggle -->
+                        <div class="view-toggle-segmented" role="group">
+                            <button type="button"
+                                    class="segmented-btn @(filterMode == "month" ? "active" : "")"
+                                    @onclick='() => SwitchFilterMode("month")'>
+                                <i class="bi bi-calendar3"></i>
+                                <span>Monthly</span>
+                            </button>
+                            <button type="button"
+                                    class="segmented-btn @(filterMode == "dateRange" ? "active" : "")"
+                                    @onclick='() => SwitchFilterMode("dateRange")'>
+                                <i class="bi bi-calendar-range"></i>
+                                <span>Range</span>
+                            </button>
+                        </div>
+
+                        <!-- Month & Year Pickers -->
+                        @if (filterMode == "month")
+                        {
+                            <div class="filter-select-wrap" style="min-width: 140px;">
+                                <select class="filter-select-modern"
+                                        value="@selectedMonth"
+                                        @onchange="OnMonthChanged">
+                                    <option value="0">All Months (Year)</option>
+                                    @for (int m = 1; m <= 12; m++)
+                                    {
+                                        <option value="@m">@MonthName(m)</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="filter-select-wrap" style="min-width: 90px;">
+                                <select class="filter-select-modern"
+                                        value="@selectedYear"
+                                        @onchange="OnYearChanged">
+                                    @for (int y = DateTime.Today.Year - 5; y <= DateTime.Today.Year + 1; y++)
+                                    {
+                                        <option value="@y">@y</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+
+                        <!-- Date Range Pickers -->
+                        @if (filterMode == "dateRange")
+                        {
+                            <div class="filter-date-wrap">
+                                <span class="filter-date-label">From:</span>
+                                <input type="date"
+                                       class="filter-date-input-modern"
+                                       value="@fromDate.ToString("yyyy-MM-dd")"
+                                       @onchange="OnFromDateInputChanged" />
+                            </div>
+                            <div class="filter-date-wrap">
+                                <span class="filter-date-label">To:</span>
+                                <input type="date"
+                                       class="filter-date-input-modern"
+                                       value="@toDate.ToString("yyyy-MM-dd")"
+                                       @onchange="OnToDateInputChanged" />
+                            </div>
+                        }
+
+                        <!-- Reset -->
+                        <button type="button"
+                                class="filter-btn-reset"
+                                @onclick="ResetFilters"
+                                title="Reset all filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            <span>Reset</span>
+                        </button>
+
+                    </div>
                 </div>
             </div>
 
+            <!-- Table or Empty State -->
             <div class="card-body p-0">
                 @if (!cachedFilteredRecords.Any())
                 {
                     <div class="text-center py-5">
                         <div class="mb-3">
-                            <i class="bi bi-calendar-x display-3 text-muted opacity-25"></i>
+                            <i class="bi bi-calendar-x display-4 text-muted opacity-50"></i>
                         </div>
-                        <h5 class="fw-semibold text-muted mb-1">No Leave Records Found</h5>
+                        <h6 class="fw-semibold text-dark mt-2 mb-1">No Leave Records Found</h6>
                         <p class="text-muted small mb-3">
                             No leave data found for <strong>@Employee.FullName</strong>
                             @if (filterMode == "month")
                             {
-                                <span>in <strong>@MonthName(selectedMonth) @selectedYear</strong>.</span>
+                                <span> in <strong>@(selectedMonth > 0 ? $"{MonthName(selectedMonth)} {selectedYear}" : $"Year {selectedYear}")</strong>.</span>
                             }
                             else
                             {
-                                <span>from <strong>@FormatDate(fromDate)</strong> to <strong>@FormatDate(toDate)</strong>.</span>
+                                <span> from <strong>@FormatDate(fromDate)</strong> to <strong>@FormatDate(toDate)</strong>.</span>
                             }
                         </p>
-                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3"
                                 @onclick="ResetFilters">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Current Month
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>Reset to Full Year
                         </button>
                     </div>
                 }
@@ -243,7 +307,7 @@ else
 
     [Parameter] public EventCallback OnBackClicked { get; set; }
     [Parameter] public int Year { get; set; }
-    [Parameter] public int Month { get; set; }
+    [Parameter] public int? Month { get; set; }
     [Parameter] public DateTime? InitialFromDate { get; set; }
     [Parameter] public DateTime? InitialToDate { get; set; }
     [Parameter] public string? EmployeeNumber { get; set; }
@@ -252,15 +316,34 @@ else
 
     private string filterMode = "month";
     private int selectedYear;
-    private int selectedMonth;
+    private int selectedMonth; // 0 = All Months / Full Year, 1..12 = Jan..Dec
     private DateTime fromDate;
     private DateTime toDate;
     private bool isLoading;
     private string loadingMessage = "Loading leave details…";
     private List<EmployeeLeaveDetailsReportViewModel> allRecords = new();
     private List<EmployeeLeaveDetailsReportViewModel> cachedFilteredRecords = new();
-    private int _prevYear, _prevMonth;
+    private string selectedLeaveTypeFilter = "";
+    private string selectedStatusFilter = "";
+    private int _prevYear;
+    private int? _prevMonth;
     private int? _prevEmployeeId;
+
+    private Dictionary<int, string> AvailableLeaveTypes => allRecords
+        .Where(r => r.LeaveNameId.HasValue)
+        .Select(r => r.LeaveNameId!.Value)
+        .Distinct()
+        .ToDictionary(
+            id => id,
+            id => System.Text.RegularExpressions.Regex.Replace(((LeaveName)id).ToString(), "([a-z])([A-Z])", "$1 $2")
+        );
+
+    private int GetCountForLeaveType(int leaveTypeId) =>
+        allRecords.Count(r => r.LeaveNameId == leaveTypeId);
+
+    private int approvedCount => allRecords.Count(r => r.StatusId == (int)Status.Approved);
+    private int pendingCount => allRecords.Count(r => r.StatusId == (int)Status.Pending);
+    private int rejectedCount => allRecords.Count(r => r.StatusId == (int)Status.Rejected);
 
     protected override async Task OnInitializedAsync()
     {
@@ -276,7 +359,7 @@ else
         {
             filterMode = "month";
             selectedYear = Year > 0 ? Year : DateTime.Today.Year;
-            selectedMonth = Month > 0 ? Month : DateTime.Today.Month;
+            selectedMonth = Month.HasValue ? Month.Value : 0;
             SetDefaultDateRange();
         }
 
@@ -300,7 +383,7 @@ else
             _prevEmployeeId = Employee?.Id;
 
             selectedYear = Year > 0 ? Year : DateTime.Today.Year;
-            selectedMonth = Month > 0 ? Month : DateTime.Today.Month;
+            selectedMonth = Month.HasValue ? Month.Value : 0;
 
             await LoadDataAsync();
         }
@@ -321,7 +404,7 @@ else
             if (filterMode == "month")
             {
                 yearParam = selectedYear;
-                monthParam = selectedMonth;
+                monthParam = selectedMonth > 0 ? selectedMonth : null;
                 fromParam = null;
                 toParam = null;
             }
@@ -361,25 +444,55 @@ else
 
     private void RefreshCache()
     {
+        var query = allRecords.AsEnumerable();
+
         if (filterMode == "dateRange")
         {
-            cachedFilteredRecords = allRecords
-                .Where(r => r.StartDate.HasValue 
-                          && r.EndDate.HasValue
-                          && r.StartDate.Value.Date <= toDate.Date 
-                          && r.EndDate.Value.Date >= fromDate.Date)
-                .OrderBy(r => r.StartDate)
-                .ToList();
+            query = query.Where(r => r.StartDate.HasValue 
+                                  && r.EndDate.HasValue
+                                  && r.StartDate.Value.Date <= toDate.Date 
+                                  && r.EndDate.Value.Date >= fromDate.Date);
         }
         else
         {
-            cachedFilteredRecords = allRecords
-                .Where(r => r.StartDate.HasValue && 
+            if (selectedMonth > 0)
+            {
+                query = query.Where(r => r.StartDate.HasValue && 
                     ((r.StartDate.Value.Year == selectedYear && r.StartDate.Value.Month == selectedMonth)
-                     || (r.EndDate.HasValue && r.EndDate.Value.Year == selectedYear && r.EndDate.Value.Month == selectedMonth)))
-                .OrderBy(r => r.StartDate)
-                .ToList();
+                     || (r.EndDate.HasValue && r.EndDate.Value.Year == selectedYear && r.EndDate.Value.Month == selectedMonth)));
+            }
+            else
+            {
+                // Full Year / All Months
+                query = query.Where(r => r.StartDate.HasValue && 
+                    (r.StartDate.Value.Year == selectedYear 
+                     || (r.EndDate.HasValue && r.EndDate.Value.Year == selectedYear)));
+            }
         }
+
+        if (!string.IsNullOrEmpty(selectedLeaveTypeFilter) && int.TryParse(selectedLeaveTypeFilter, out var ltId))
+        {
+            query = query.Where(r => r.LeaveNameId == ltId);
+        }
+
+        if (!string.IsNullOrEmpty(selectedStatusFilter) && int.TryParse(selectedStatusFilter, out var statusId))
+        {
+            query = query.Where(r => r.StatusId == statusId);
+        }
+
+        cachedFilteredRecords = query.OrderByDescending(r => r.StartDate).ToList();
+    }
+
+    private void OnLeaveTypeFilterChanged(ChangeEventArgs e)
+    {
+        selectedLeaveTypeFilter = e.Value?.ToString() ?? "";
+        RefreshCache();
+    }
+
+    private void OnStatusFilterChanged(ChangeEventArgs e)
+    {
+        selectedStatusFilter = e.Value?.ToString() ?? "";
+        RefreshCache();
     }
 
     /* ───── Format Date ───── */
@@ -396,7 +509,7 @@ else
         if (filterMode == "month")
         {
             selectedYear = fromDate.Year;
-            selectedMonth = fromDate.Month;
+            selectedMonth = (fromDate.Month == 1 && toDate.Month == 12 && fromDate.Year == toDate.Year) ? 0 : fromDate.Month;
         }
         else
         {
@@ -411,6 +524,7 @@ else
         if (int.TryParse(e.Value?.ToString(), out int m))
         {
             selectedMonth = m;
+            SetDefaultDateRange();
             await LoadDataAsync();
         }
     }
@@ -420,6 +534,7 @@ else
         if (int.TryParse(e.Value?.ToString(), out int y))
         {
             selectedYear = y;
+            SetDefaultDateRange();
             await LoadDataAsync();
         }
     }
@@ -450,9 +565,11 @@ else
 
     private async Task ResetFilters()
     {
+        selectedLeaveTypeFilter = "";
+        selectedStatusFilter = "";
         filterMode = "month";
-        selectedYear = DateTime.Today.Year;
-        selectedMonth = DateTime.Today.Month;
+        selectedYear = Year > 0 ? Year : DateTime.Today.Year;
+        selectedMonth = Month.HasValue ? Month.Value : 0;
         SetDefaultDateRange();
         await LoadDataAsync();
     }
@@ -460,9 +577,16 @@ else
     private void SetDefaultDateRange()
     {
         var year = selectedYear > 0 ? selectedYear : DateTime.Today.Year;
-        var month = selectedMonth > 0 ? selectedMonth : DateTime.Today.Month;
-        fromDate = new DateTime(year, month, 1);
-        toDate = new DateTime(year, month, DateTime.DaysInMonth(year, month));
+        if (selectedMonth > 0 && selectedMonth <= 12)
+        {
+            fromDate = new DateTime(year, selectedMonth, 1);
+            toDate = new DateTime(year, selectedMonth, DateTime.DaysInMonth(year, selectedMonth));
+        }
+        else
+        {
+            fromDate = new DateTime(year, 1, 1);
+            toDate = new DateTime(year, 12, 31);
+        }
     }
 
     /* ───── Navigation ───── */
@@ -476,22 +600,12 @@ else
     private static string GetInitials(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return "?";
-        var p = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        return p.Length >= 2
-            ? $"{p[0][0]}{p[1][0]}".ToUpper()
-            : p[0][..Math.Min(2, p[0].Length)].ToUpper();
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(name);
     }
 
     private static string MonthName(int m)
     {
         if (m < 1 || m > 12) return "";
         return System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(m);
-    }
-
-    private static string GetColor(string name)
-    {
-        string[] palette = { "#4e73df", "#1cc88a", "#36b9cc", "#f6c23e",
-                             "#e74a3b", "#6f42c1", "#fd7e14", "#20c997" };
-        return palette[Math.Abs(name.GetHashCode()) % palette.Length];
     }
 }

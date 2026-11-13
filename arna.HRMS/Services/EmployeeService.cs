@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common.Result;
+using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.ViewModels;
 using arna.HRMS.Services.Http;
 
@@ -11,6 +11,8 @@ public interface IEmployeeService
     Task<ApiResult<EmployeeViewModel>> CreateEmployeeAsync(EmployeeViewModel model);
     Task<ApiResult<bool>> UpdateEmployeeAsync(int id, EmployeeViewModel model);
     Task<ApiResult<bool>> DeleteEmployeeAsync(int id);
+    Task<ApiResult<string>> UploadProfileImageAsync(int employeeId, Stream fileStream, string fileName);
+    Task<ApiResult<bool>> DeleteProfileImageAsync(int employeeId);
 }
 
 public class EmployeeService : IEmployeeService
@@ -45,5 +47,15 @@ public class EmployeeService : IEmployeeService
     public async Task<ApiResult<bool>> DeleteEmployeeAsync(int id)
     {
         return await _employees.DeleteAsync(id);
+    }
+
+    public async Task<ApiResult<string>> UploadProfileImageAsync(int employeeId, Stream fileStream, string fileName)
+    {
+        return await _employees.UploadProfileImageAsync(employeeId, fileStream, fileName);
+    }
+
+    public async Task<ApiResult<bool>> DeleteProfileImageAsync(int employeeId)
+    {
+        return await _employees.DeleteProfileImageAsync(employeeId);
     }
 }

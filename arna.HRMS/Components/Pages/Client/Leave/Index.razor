@@ -23,35 +23,35 @@
 
 @if (!isLoading)
 {
-    <div class="container-fluid p-0 leave-fade-in">
+    <div class="container-fluid p-0 leave-fade-in h-100 d-flex flex-column min-h-0">
 
-        <!-- ══════════ HEADER ══════════ -->
-        <div class="d-flex align-items-center justify-content-between mb-4">
-            <div class="d-flex align-items-center gap-2">
-                <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
-                             p-2 d-inline-flex align-items-center justify-content-center">
-                    <i class="bi @(activeTab == Tab.Leaves ? "bi-bookmark-check-fill" : "bi-calendar-heart-fill") fs-5"></i>
-                </span>
-                <div>
-                    <h5 class="fw-bold mb-0">@(activeTab == Tab.Leaves ? "Leave Requests" : "Festival Holidays")</h5>
-                    <p class="text-muted mb-0 small d-none d-sm-block">
-                        @(activeTab == Tab.Leaves ? "View and manage your leave requests and balances" : "View organizational holidays and upcoming festival calendar")
-                    </p>
+        <!-- ══════════ 1. EXECUTIVE HEADER (Unified Enterprise Style) ══════════ -->
+        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2 flex-shrink-0">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h3 class="enterprise-page-title mb-0">@(activeTab == Tab.Leaves ? "Leave Requests" : "Festival Holidays")</h3>
+                    <span class="header-count-pill">@(activeTab == Tab.Leaves ? $"{leaveRequestCount} Requests" : $"{festivalCount} Holidays")</span>
+                </div>
+                <div class="enterprise-page-subtitle">
+                    @(activeTab == Tab.Leaves ? "View and manage your leave requests and balances." : "Company holidays, gazetted days, and festival calendar.")
                 </div>
             </div>
 
-            @if (activeTab == Tab.Leaves)
-            {
-                <button class="btn btn-primary btn-sm rounded-pill px-3 py-1.5 shadow-sm d-inline-flex align-items-center gap-1.5 fw-medium"
-                        @onclick="() => leaveTab?.OpenApplyModal()">
-                    <i class="bi bi-plus-lg"></i>
-                    <span>Apply Leave</span>
-                </button>
-            }
+            <div class="d-flex align-items-center gap-2">
+                @if (activeTab == Tab.Leaves)
+                {
+                    <button class="btn btn-add-primary"
+                            @onclick="() => leaveTab?.OpenApplyModal()">
+                        <i class="bi bi-plus-lg"></i>
+                        <span>Apply Leave</span>
+                    </button>
+                }
+                @* Note: For employee side, Festival Holidays is strictly read-only (No Add/Edit/Delete) *@
+            </div>
         </div>
 
         <!-- ══════════ CONTENT ══════════ -->
-        <div class="tab-content">
+        <div class="tab-content flex-grow-1 min-h-0 d-flex flex-column">
 
             @if (activeTab == Tab.Leaves)
             {
@@ -106,8 +106,8 @@
         }
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
-        NavigationManager.LocationChanged -= HandleLocationChanged;
+        NavigationManager.LocationChanged -= HandleLocationChanged; base.Dispose();
     }
 }

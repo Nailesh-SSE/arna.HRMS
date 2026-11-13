@@ -9,12 +9,13 @@
 <div class="mb-3">
     @if (isLoading)
     {
-        <div class="row g-2 @GetRowColsClass()">
+        <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4">
             @for (int i = 0; i < 2; i++)
             {
                 <div class="col">
-                    <div class="card border rounded-3 bg-white p-3 shadow-sm placeholder-glow" style="min-height: 70px;">
-                        <div class="placeholder col-6 mb-1"></div>
+                    <div class="card border rounded-3 bg-white p-3 shadow-sm placeholder-glow" style="min-height: 120px;">
+                        <div class="placeholder col-6 mb-2"></div>
+                        <div class="placeholder col-4 mb-3"></div>
                         <div class="placeholder col-12"></div>
                     </div>
                 </div>
@@ -30,7 +31,7 @@
     }
     else
     {
-        <div class="row g-2 @GetRowColsClass()">
+        <div class="row g-3 row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4">
             @foreach (var (s, idx) in summaries.Select((item, i) => (item, i)))
             {
                 var isExceeded = s.IsExceeded;
@@ -38,49 +39,80 @@
                 var isSelected = SelectedLeaveTypeId == s.LeaveTypeId;
 
                 <div class="col">
-                    <div class="card border rounded-3 bg-white shadow-sm leave-balance-card p-2.5 p-sm-3 @(isSelected ? "border-primary shadow" : isExceeded ? "border-danger border-opacity-25" : "")"
-                         style="cursor: pointer;"
+                    <div class="card leave-balance-card p-3 @(isSelected ? "is-selected" : "") @(isExceeded ? "is-exceeded" : "")"
+                         role="button"
+                         tabindex="0"
+                         title="Click to @(isSelected ? "clear filter" : "filter requests by " + s.LeaveTypeName)"
                          @onclick="() => ToggleSelectLeaveType(s.LeaveTypeId)">
                         
-                        <!-- Top Line: Icon + Title on Left | Value + Badge on Right -->
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <div class="d-flex align-items-center gap-2.5 text-truncate me-2">
-                                <span class="rounded-2 bg-@color bg-opacity-10 text-@color d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
-                                    <i class="bi @GetIcon(s.LeaveTypeName)" style="font-size: 0.95rem;"></i>
+                        <!-- Top Line: Icon + Title + Status Pill -->
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div class="d-flex align-items-center gap-2.5 min-w-0">
+                                <span class="leave-icon-badge bg-@color-subtle text-@color">
+                                    <i class="bi @GetIcon(s.LeaveTypeName)"></i>
                                 </span>
                                 <div class="text-truncate">
-                                    <div class="fw-semibold text-dark text-truncate lh-sm" style="font-size: 0.85rem;" title="@s.LeaveTypeName">
+                                    <div class="leave-type-name text-truncate" title="@s.LeaveTypeName">
                                         @s.LeaveTypeName
                                     </div>
-                                    <span class="text-muted" style="font-size: 0.72rem;">
-                                        @s.UsedDays used of @s.TotalDays d
-                                    </span>
+                                    <div class="leave-quota-subtext text-muted">
+                                        @s.TotalDays d annual quota
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="text-end flex-shrink-0">
-                                <div class="d-flex align-items-baseline justify-content-end gap-1">
-                                    <span class="fw-bold @(isExceeded ? "text-danger" : $"text-{color}")" style="font-size: 1.18rem; line-height: 1;">
-                                        @s.RemainingDays
-                                    </span>
-                                    <span class="@(isExceeded ? "text-danger fw-semibold" : "text-muted")" style="font-size: 0.7rem;">
-                                        @(isExceeded ? "over" : "left")
-                                    </span>
-                                </div>
-                                @if (isExceeded)
-                                {
-                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-1.5 py-0" style="font-size: 0.62rem; font-weight: 600;">
-                                        Quota Exceeded
-                                    </span>
-                                }
-                            </div>
+                            @if (isExceeded)
+                            {
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 flex-shrink-0" style="font-size: 0.68rem; font-weight: 600;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>Over Quota
+                                </span>
+                            }
+                            else if (isSelected)
+                            {
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 flex-shrink-0" style="font-size: 0.68rem; font-weight: 600;">
+                                    <i class="bi bi-funnel-fill me-1"></i>Filtered
+                                </span>
+                            }
                         </div>
 
-                        <!-- Progress Bar -->
-                        <div class="progress leave-balance-progress" style="height: 5px; border-radius: 6px; background-color: #f1f5f9;">
-                            <div class="progress-bar @GetProgressClass(s, color)"
-                                 role="progressbar"
-                                 style="width: @GetClampedPercent(s)%; border-radius: 6px;">
+                        <!-- Middle: Big Metric -->
+                        <div class="d-flex align-items-baseline justify-content-between my-2">
+                            <div class="d-flex align-items-baseline gap-1.5">
+                                <span class="leave-metric-value @(isExceeded ? "text-danger" : $"text-{color}")">
+                                    @(isExceeded ? "0" : s.RemainingDays.ToString())
+                                </span>
+                                <span class="leave-metric-label text-muted">
+                                    days available
+                                </span>
+                            </div>
+
+                            @if (isExceeded)
+                            {
+                                <span class="text-danger small fw-semibold" title="@s.ExceededDays days exceeded">
+                                    +@s.ExceededDays d over
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">
+                                    @s.UsedDays d used
+                                </span>
+                            }
+                        </div>
+
+                        <!-- Bottom: Progress Bar + Subtext -->
+                        <div class="leave-progress-wrap mt-1">
+                            <div class="progress leave-progress-track">
+                                <div class="progress-bar @GetProgressClass(s, color)"
+                                     role="progressbar"
+                                     style="width: @GetClampedPercent(s)%;">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1 text-muted" style="font-size: 0.72rem;">
+                                <span>@s.UsedDays of @s.TotalDays days used</span>
+                                <span class="fw-semibold @(isExceeded ? "text-danger" : "")">
+                                    @(isExceeded ? $"{GetPercent(s)}% (exceeded)" : $"{GetPercent(s)}%")
+                                </span>
                             </div>
                         </div>
 
@@ -125,17 +157,6 @@
     {
         await LoadDataAsync();
         StateHasChanged();
-    }
-
-    private string GetRowColsClass()
-    {
-        return summaries.Count switch
-        {
-            1 => "row-cols-1",
-            2 => "row-cols-1 row-cols-sm-2",
-            3 => "row-cols-1 row-cols-sm-2 row-cols-md-3",
-            _ => "row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4"
-        };
     }
 
     private async Task LoadDataAsync()
@@ -201,7 +222,7 @@
     }
 
     private int GetPercent(LeaveBalanceViewModel s) =>
-        s.TotalDays == 0 ? 0 : (int)((s.UsedDays * 100.0) / s.TotalDays);
+        s.TotalDays == 0 ? 0 : (int)Math.Round((s.UsedDays * 100.0) / s.TotalDays);
 
     private int GetClampedPercent(LeaveBalanceViewModel s) =>
         Math.Min(100, Math.Max(0, GetPercent(s)));
@@ -210,9 +231,9 @@
     {
         0 => "primary",
         1 => "success",
-        2 => "info",
-        3 => "warning",
-        4 => "purple",
+        2 => "warning",
+        3 => "purple",
+        4 => "info",
         _ => "secondary"
     };
 

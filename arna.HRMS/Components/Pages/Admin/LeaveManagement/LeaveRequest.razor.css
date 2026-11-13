@@ -1,71 +1,125 @@
-
-/* Add ::deep before the class name */
-::deep .action-btn {
-    width: 28px !important;
-    height: 28px !important;
-    padding: 0;
+.avatar-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-weight: 500;
+    font-size: 0.72rem;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50% !important; /* This creates the circle */
-    transition: all 0.2s ease;
-    font-size: 0.82rem;
+    flex-shrink: 0;
+    letter-spacing: -0.01em;
+    background-color: #e0f2fe;
+    color: #0284c7;
+    border: 1px solid #bae6fd;
 }
 
-    ::deep .action-btn:hover {
-        transform: scale(1.1);
-        box-shadow: 0 2px 8px rgba(0,0,0,.15);
-    }
-
-
 .request-scroll-area {
-    max-height: 500px;
     overflow-y: auto;
-    overflow-x: hidden;
-}
-
-    .request-scroll-area::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    .request-scroll-area::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .request-scroll-area::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 10px;
-    }
-
-.request-scroll-area {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 
-::deep .stat-card {
-    border: 2px solid transparent !important;
-    transition: all 0.2s ease;
-    cursor: pointer;
+.request-scroll-area::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
-    ::deep .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
-    }
+.request-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+}
 
-    /* Active Borders */
-    ::deep .stat-card.active-all {
-        border-color: var(--bs-primary) !important;
-    }
+.request-scroll-area::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
 
-    ::deep .stat-card.active-pending {
-        border-color: var(--bs-warning) !important;
-    }
+.leave-request-row {
+    transition: background-color 0.15s ease;
+}
 
-    ::deep .stat-card.active-approved {
-        border-color: var(--bs-success) !important;
-    }
+.leave-request-row:hover {
+    background-color: #f8fafc;
+}
 
-    ::deep .stat-card.active-rejected {
-        border-color: var(--bs-danger) !important;
-    }
+.custom-table th {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+
+.custom-table td {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+    font-size: 0.835rem;
+}
+
+/* Status Pills (matching AttendenceRequest enterprise standard) */
+.leave-status-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 2px 8px !important;
+    border-radius: 9999px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+}
+
+.leave-status-pill .status-dot {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+}
+
+.leave-status-pending {
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+}
+.leave-status-pending .status-dot {
+    background-color: #f59e0b !important;
+}
+
+.leave-status-approved {
+    background-color: #ecfdf5 !important;
+    color: #065f46 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+.leave-status-approved .status-dot {
+    background-color: #10b981 !important;
+}
+
+.leave-status-rejected {
+    background-color: #fef2f2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fecaca !important;
+}
+.leave-status-rejected .status-dot {
+    background-color: #ef4444 !important;
+}
+
+.leave-status-cancelled {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+.leave-status-cancelled .status-dot {
+    background-color: #94a3b8 !important;
+}
+
+.leave-status-default {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.leave-status-default .status-dot {
+    background-color: #94a3b8 !important;
+}
+
+.leave-row-selected {
+    background-color: #f0fdf4 !important;
+}
+

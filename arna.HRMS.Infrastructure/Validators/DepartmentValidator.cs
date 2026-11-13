@@ -55,9 +55,9 @@ public class DepartmentValidator
         else if (instance.Code.Length > 50)
             errors.Add("Department Code must be at most 50 characters");
 
-        // Description
-        if (string.IsNullOrWhiteSpace(instance.Description))
-            errors.Add("Department Description Required");
+        // Description (optional)
+        if (!string.IsNullOrWhiteSpace(instance.Description) && instance.Description.Length > 500)
+            errors.Add("Department Description must be at most 500 characters");
 
         // Duplicate 
         var duplicate = await _repository.DepartmentExistsAsync(instance.Name, instance.Id);

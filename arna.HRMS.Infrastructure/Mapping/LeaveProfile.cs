@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using AutoMapper;
@@ -56,6 +56,13 @@ public class LeaveProfile : Profile
                 opt => opt.MapFrom(src =>
                     src.Employee != null
                         ? src.Employee.EmployeeNumber
+                        : null)
+            )
+            .ForMember(
+                dest => dest.ProfileImage,
+                opt => opt.MapFrom(src =>
+                    src.Employee != null
+                        ? src.Employee.ProfileImage
                         : null)
             );
 

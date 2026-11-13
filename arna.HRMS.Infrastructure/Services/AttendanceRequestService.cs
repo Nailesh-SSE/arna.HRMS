@@ -118,6 +118,23 @@ public class AttendanceRequestService : IAttendanceRequestService
         return ServiceResult<bool>.Success(true, "Attendance request status updated successfully.");
     }
 
+    public async Task<ServiceResult<int>> BulkApproveAttendanceRequestsAsync(List<int> requestIds, int approvedBy)
+    {
+        if (requestIds == null || !requestIds.Any() || approvedBy <= 0)
+            return ServiceResult<int>.Fail("Invalid request data.");
+
+        var approvedEntities = await _repository.BulkApproveAttendanceRequestsAsync(requestIds, approvedBy);
+
+        if (!approvedEntities.Any())
+            return ServiceResult<int>.Fail("No pending attendance requests were found to approve.");
+
+        // Process attendance record creation using LINQ Task.WhenAll
+        var dtos = approvedEntities.Select(ar => _mapper.Map<AttendanceRequestDto>(ar)).ToList();
+        await Task.WhenAll(dtos.Select(dto => CreateAttendanceFromRequestAsync(dto)));
+
+        return ServiceResult<int>.Success(approvedEntities.Count, $"Successfully approved {approvedEntities.Count} attendance request(s).");
+    }
+
     public async Task<ServiceResult<bool>> CancelAttendanceRequestAsync(int id, int employeeId)
     {
         if (id <= 0 || employeeId <= 0)
@@ -140,29 +157,17 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         await _leaveService.RevokeLeaveRequestAsync(req.EmployeeId, fromDate, toDate);
 
-        if (fromDate == toDate)
-        {
-            await InsertAttendanceAsync(req, fromDate, clockIn, null, TimeSpan.Zero);
-            await InsertAttendanceAsync(req, fromDate, null, clockOut, req.TotalHours);
-            return;
-        }
-
-        // For the first day: clock-in record
-        await InsertAttendanceAsync(req, fromDate, clockIn, null, TimeSpan.Zero);
-
-        // For intermediate days (between fromDate and toDate):
-        for (var d = fromDate.AddDays(1); d < toDate; d = d.AddDays(1))
+        for (var d = fromDate; d <= toDate; d = d.AddDays(1))
         {
             if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
             {
-                await InsertAttendanceAsync(req, d, clockIn, null, TimeSpan.Zero);
-                await InsertAttendanceAsync(req, d, null, clockOut, req.TotalHours);
+                var workHours = req.TotalHours > TimeSpan.Zero
+                    ? req.TotalHours
+                    : (clockOut > clockIn ? clockOut - clockIn : TimeSpan.Zero);
+
+                await InsertAttendanceAsync(req, d, clockIn, clockOut, workHours);
             }
         }
-
-        // For the last day: clock-out record
-        var lastDayHours = clockOut;
-        await InsertAttendanceAsync(req, toDate, null, clockOut, lastDayHours > TimeSpan.Zero ? lastDayHours : req.TotalHours);
     }
 
     private async Task InsertAttendanceAsync(AttendanceRequestDto req, DateTime date, TimeSpan? clockIn, TimeSpan? clockOut, TimeSpan totalHours)
@@ -175,7 +180,7 @@ public class AttendanceRequestService : IAttendanceRequestService
             ClockOutTime = clockOut,
             WorkingHours = totalHours,
             StatusId = AttendanceStatus.Present,
-            Notes = req.Description ?? string.Empty,
+            Notes = string.IsNullOrWhiteSpace(req.Description) ? "Attendance Request Approved" : req.Description,
             DeviceId = DeviceType.LaptopDesktop
         });
     }

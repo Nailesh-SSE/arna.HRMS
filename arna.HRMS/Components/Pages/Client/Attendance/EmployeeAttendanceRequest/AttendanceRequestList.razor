@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels.Attendance
@@ -8,48 +8,26 @@
 
 <div class="card border-0 shadow-sm rounded-3">
 
-    <!-- ═══════════ HEADER ═══════════ -->
-    <div class="card-header bg-white border-bottom py-2 py-md-3 px-2 px-md-3">
-        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
-                    justify-content-between gap-2">
-
-            <div class="d-flex align-items-center gap-2">
-                <span class="req-list-header-icon bg-warning bg-opacity-10 text-warning
-                             rounded-2 d-inline-flex align-items-center justify-content-center
-                             flex-shrink-0">
-                    <i class="bi bi-inbox-fill"></i>
-                </span>
-                <div>
-                    <h6 class="fw-semibold mb-0 small">
-                        <span class="d-none d-sm-inline">Attendance Requests</span>
-                        <span class="d-sm-none">Requests</span>
-                    </h6>
-                    <small class="text-muted d-none d-md-block">
-                        Track your submitted attendance corrections
-                    </small>
-                </div>
-            </div>
-
-            <!-- Status Filter + Count -->
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                @foreach (var filter in StatusFilters)
-                {
-                    <button class="btn btn-sm rounded-pill px-2 px-md-3 req-list-filter-btn
-                                       @(IsActiveFilter(filter.Status)
-                                                                   ? filter.ActiveClass
-                                                                   : "btn-outline-secondary")"
-                                                                                             @onclick="() => ToggleFilter(filter.Status)">
-                                                                                         <span class="d-none d-md-inline">@filter.Label</span>
-                                                                                         <span class="d-md-none">@filter.ShortLabel</span>
-                                                                                         <span class="badge rounded-pill ms-1
-                                         @(IsActiveFilter(filter.Status)
-                                                                       ? "bg-white text-dark"
-                                                                       : "bg-secondary bg-opacity-25")">
+    <!-- ═══════════ STATUS FILTERS ═══════════ -->
+    <div class="card-header bg-white border-bottom py-2 px-3">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            @foreach (var filter in StatusFilters)
+            {
+                <button class="btn btn-sm rounded-pill px-2 px-md-3 req-list-filter-btn
+                               @(IsActiveFilter(filter.Status)
+                                   ? filter.ActiveClass
+                                   : "btn-outline-secondary")"
+                        @onclick="() => ToggleFilter(filter.Status)">
+                    <span class="d-none d-md-inline">@filter.Label</span>
+                    <span class="d-md-none">@filter.ShortLabel</span>
+                    <span class="badge rounded-pill ms-1
+                                 @(IsActiveFilter(filter.Status)
+                                     ? "bg-white text-dark"
+                                     : "bg-secondary bg-opacity-25")">
                         @filter.Count
                     </span>
                 </button>
-                                }
-            </div>
+            }
         </div>
     </div>
 
@@ -145,15 +123,13 @@
                                 @* ── Employee Actions ── *@
                                 @if (HasEmployeeActions)
                                 {
-                                    <button class="req-action-btn btn btn-outline-primary btn-sm rounded-circle
-                                           d-inline-flex align-items-center justify-content-center"
+                                    <button type="button" class="btn-action-icon-edit"
                                             title="Edit Request"
                                             @onclick="() => EditClicked.InvokeAsync(req)">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
 
-                                    <button class="req-action-btn btn btn-outline-warning btn-sm rounded-circle
-                                           d-inline-flex align-items-center justify-content-center"
+                                    <button type="button" class="btn-action-icon-cancel"
                                             title="Cancel Request"
                                             @onclick="() => CancelClicked.InvokeAsync(req)">
                                         <i class="bi bi-x-circle"></i>
@@ -247,10 +223,10 @@
     private IEnumerable<StatusFilterModel> StatusFilters => new[]
     {
         new StatusFilterModel(null,              "All",       "All", Requests.Count,  "btn-primary"),
-        new StatusFilterModel(Status.Pending,    "Pending",   "⏳",  PendingCount,    "btn-warning"),
-        new StatusFilterModel(Status.Approved,   "Approved",  "✅",  ApprovedCount,   "btn-success"),
-        new StatusFilterModel(Status.Rejected,   "Rejected",  "❌",  RejectedCount,   "btn-danger"),
-        new StatusFilterModel(Status.Cancelled,  "Cancelled", "🚫",  CancelledCount,  "btn-secondary"),
+        new StatusFilterModel(Status.Pending,    "Pending",   "Pending",  PendingCount,    "btn-warning"),
+        new StatusFilterModel(Status.Approved,   "Approved",  "Approved",  ApprovedCount,   "btn-success"),
+        new StatusFilterModel(Status.Rejected,   "Rejected",  "Rejected",  RejectedCount,   "btn-danger"),
+        new StatusFilterModel(Status.Cancelled,  "Cancelled", "Cancelled",  CancelledCount,  "btn-secondary"),
     };
 
     private IEnumerable<StatusSummaryModel> StatusSummary => new[]

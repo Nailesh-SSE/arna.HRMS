@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using Microsoft.Data.SqlClient;
@@ -51,6 +51,7 @@ public class ReportRepository
                 parameters.ToArray())
             .ToListAsync();
 
+        await EnrichProfileImagesAsync(result);
         return result;
     }
 
@@ -77,6 +78,7 @@ public class ReportRepository
                 parameters)
             .ToListAsync();
 
+        await EnrichProfileImagesAsync(result);
         return result;
     }
 
@@ -106,6 +108,7 @@ public class ReportRepository
                     @DepartmentId",
                 parameters)
             .ToListAsync();
+        await EnrichProfileImagesAsync(result);
         return result;
     }
     public async Task<List<EmployeeLeaveDetailsReportDto>> GetEmployeeLeaveDetailsReportAsync(
@@ -137,6 +140,60 @@ public class ReportRepository
                     @EmployeeNumber",
                 parameters)
             .ToListAsync();
+        await EnrichProfileImagesAsync(result);
         return result;
+    }
+
+    private async Task<Dictionary<int, string?>> GetEmployeeImagesMapAsync()
+    {
+        var rows = await _context.Employees
+            .AsNoTracking()
+            .Select(e => new { e.Id, e.ProfileImage })
+            .ToListAsync();
+        return rows.ToDictionary(e => e.Id, e => e.ProfileImage);
+    }
+
+    private async Task EnrichProfileImagesAsync(IEnumerable<AttendanceReportDto> list)
+    {
+        if (!list.Any()) return;
+        var images = await GetEmployeeImagesMapAsync();
+        foreach (var item in list)
+        {
+            if (images.TryGetValue(item.EmployeeId, out var img))
+                item.ProfileImage = img;
+        }
+    }
+
+    private async Task EnrichProfileImagesAsync(IEnumerable<EmployeeAttendanceReportDto> list)
+    {
+        if (!list.Any()) return;
+        var images = await GetEmployeeImagesMapAsync();
+        foreach (var item in list)
+        {
+            if (images.TryGetValue(item.EmployeeId, out var img))
+                item.ProfileImage = img;
+        }
+    }
+
+    private async Task EnrichProfileImagesAsync(IEnumerable<LeaveSummaryReportDto> list)
+    {
+        if (!list.Any()) return;
+        var images = await GetEmployeeImagesMapAsync();
+        foreach (var item in list)
+        {
+            if (item.EmployeeId.HasValue && images.TryGetValue(item.EmployeeId.Value, out var img))
+                item.ProfileImage = img;
+        }
+    }
+
+    private async Task EnrichProfileImagesAsync(IEnumerable<EmployeeLeaveDetailsReportDto> list)
+    {
+        if (!list.Any()) return;
+        var images = await GetEmployeeImagesMapAsync();
+        foreach (var item in list)
+        {
+            if (images.TryGetValue(item.EmployeeId, out var img))
+                item.ProfileImage = img;
+        }
     }
 }

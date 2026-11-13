@@ -1,8 +1,6 @@
 @page "/user"
 
 @using arna.HRMS.Components.Loader
-@using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
@@ -19,40 +17,62 @@
 
 <div class="user-page-container">
 
-    <!-- ═══════════ 1. PAGE HEADER ═══════════ -->
+    <!-- ═══════════ 1. PAGE HEADER & PRIMARY ACTION ═══════════ -->
     <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-4">
         <div>
-            <h3 class="user-title mb-1">Users</h3>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="user-title mb-0">Users</h3>
+                @if (!_isLoading)
+                {
+                    <span class="header-count-pill">
+                        @_users.Count Total
+                    </span>
+                }
+            </div>
             <p class="user-subtitle mb-0">Manage system users, access credentials, and assigned roles.</p>
         </div>
 
-        @if (IsAdmin() || IsSuperAdmin())
-        {
-            <button class="btn btn-add-primary"
-                    @onclick="@(() => NavigateTo("/user/create"))">
-                <i class="bi bi-plus-lg"></i>
-                <span>Add User</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-3 shadow-xs fw-medium bg-white"
+                    @onclick="LoadDataAsync" disabled="@_isLoading" title="Refresh user directory">
+                <i class="bi bi-arrow-clockwise @(_isLoading ? "spin-animation" : "")"></i>
+                <span>Refresh</span>
             </button>
-        }
+
+            @if (IsAdmin() || IsSuperAdmin())
+            {
+                <button class="btn btn-add-primary"
+                        @onclick="@(() => NavigateTo("/user/create"))">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Add User</span>
+                </button>
+            }
+        </div>
     </div>
 
-    <!-- ═══════════ 2. FILTER & SEARCH BAR ═══════════ -->
+    <!-- ═══════════ SEARCH & ADVANCED FILTER BAR ═══════════ -->
     <div class="user-filter-card mb-4">
         <div class="d-flex flex-wrap align-items-center gap-3">
             
             <!-- Search Box -->
-            <div class="filter-search-box">
+            <div class="filter-search-box flex-grow-1">
                 <i class="bi bi-search filter-search-icon"></i>
                 <input type="text"
                        class="filter-search-input"
-                       placeholder="Search by name, email, or username..."
-                       @bind="_searchTerm"
-                       @bind:event="oninput" />
+                       placeholder="Search by username, email, full name, role, employee..."
+                       value="@_searchTerm"
+                       @oninput="OnSearchInput" />
+                @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                {
+                    <button type="button" class="filter-clear-btn" @onclick="ClearSearch" title="Clear search">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                }
             </div>
 
             <!-- Role Filter -->
-            <div>
-                <select class="filter-dropdown-select" @bind="_selectedRole">
+            <div class="filter-select-wrap">
+                <select class="filter-dropdown-select" value="@_selectedRole" @onchange="OnRoleChange">
                     <option value="">All Roles</option>
                     @foreach (var role in _roles)
                     {
@@ -62,30 +82,21 @@
             </div>
 
             <!-- Status Filter -->
-            <div>
-                <select class="filter-dropdown-select" @bind="_selectedStatus">
+            <div class="filter-select-wrap">
+                <select class="filter-dropdown-select" value="@_selectedStatus" @onchange="OnStatusChange">
                     <option value="All">All Status</option>
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                 </select>
             </div>
 
-            <!-- Reset / Clear Filters -->
+            <!-- Reset / Active Filter Trigger -->
             @if (HasActiveFilters)
             {
                 <div>
                     <button class="btn-filter-trigger active-filter" @onclick="ClearAllFilters" title="Reset all filters">
-                        <i class="bi bi-x-circle"></i>
-                        <span>Reset</span>
-                    </button>
-                </div>
-            }
-            else
-            {
-                <div>
-                    <button class="btn-filter-trigger" @onclick="() => {}">
-                        <i class="bi bi-funnel"></i>
-                        <span>Filters</span>
+                        <i class="bi bi-x-lg"></i>
+                        <span>Reset Filters</span>
                     </button>
                 </div>
             }
@@ -93,7 +104,7 @@
         </div>
     </div>
 
-    <!-- ═══════════ 3. USERS GRID CARD ═══════════ -->
+    <!-- ═══════════ USERS DIRECTORY TABLE ═══════════ -->
     <div class="user-grid-card">
         <div class="user-table-wrapper">
             @if (_isLoading)
@@ -107,13 +118,13 @@
             {
                 <div class="text-center py-5 px-3">
                     <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-3 text-secondary opacity-75" style="width:64px; height:64px;">
-                        <i class="bi bi-person-gear fs-2"></i>
+                        <i class="bi bi-people fs-2"></i>
                     </div>
                     <h6 class="fw-bold text-dark mb-1">No Users Found</h6>
                     <p class="text-muted small mb-3">
                         @if (HasActiveFilters)
                         {
-                            <span>No user records match the selected filters.</span>
+                            <span>No user records match your active search or filter criteria.</span>
                         }
                         else
                         {
@@ -136,16 +147,189 @@
             }
             else
             {
-                <AppTable TItem="UserViewModel"
-                          Items="FilteredUsers"
-                          Columns="TableSchemas.Users"
-                          EnablePagination="true"
-                          PageSize="_pageSize"
-                          ShowActions="@(IsAdmin() || IsSuperAdmin())"
-                          OnEdit="EditUser"
-                          OnDelete="DeleteUser" />
+                <table class="user-modern-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">USERNAME</th>
+                            <th style="min-width: 200px;">USER</th>
+                            <th style="min-width: 130px;">PHONE</th>
+                            <th style="min-width: 220px;">EMAIL</th>
+                            <th style="min-width: 140px;">ROLE</th>
+                            <th style="min-width: 180px;">LINKED EMPLOYEE</th>
+                            <th style="width: 110px; text-align: center;">STATUS</th>
+                            @if (IsAdmin() || IsSuperAdmin())
+                            {
+                                <th style="width: 110px; text-align: center;">ACTIONS</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in PagedUsers)
+                        {
+                            <tr>
+                                <!-- USERNAME -->
+                                <td>
+                                    <span class="user-id-badge" title="@user.Username">
+                                        @user.Username
+                                    </span>
+                                </td>
+
+                                <!-- USER (Avatar Circle + Formatted Name Only - Single Data) -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrWhiteSpace(user.ProfileImage))
+                                        {
+                                            <img src="@user.ProfileImage" alt="@GetDisplayName(user)" class="avatar-circle avatar-img" />
+                                        }
+                                        else
+                                        {
+                                            <div class="avatar-circle">
+                                                @GetInitials(GetDisplayName(user))
+                                            </div>
+                                        }
+                                        <span class="user-name text-truncate" title="@FormatName(GetDisplayName(user))">
+                                            @FormatName(GetDisplayName(user))
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- PHONE -->
+                                <td>
+                                    <span class="user-phone-text" title="@(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "—" : user.PhoneNumber)">
+                                        @(string.IsNullOrWhiteSpace(user.PhoneNumber) ? "—" : user.PhoneNumber)
+                                    </span>
+                                </td>
+
+                                <!-- EMAIL -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-1.5 text-secondary">
+                                        <i class="bi bi-envelope text-muted" style="font-size: 0.85rem;"></i>
+                                        <span class="user-email text-truncate" title="@user.Email">
+                                            @(string.IsNullOrWhiteSpace(user.Email) ? "—" : user.Email)
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- ROLE -->
+                                <td>
+                                    <span class="role-badge">
+                                        <i class="bi bi-shield-check"></i>
+                                        <span>@(string.IsNullOrWhiteSpace(user.Role) ? "—" : user.Role)</span>
+                                    </span>
+                                </td>
+
+                                <!-- LINKED EMPLOYEE -->
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(user.EmployeeName))
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (!string.IsNullOrWhiteSpace(user.ProfileImage))
+                                            {
+                                                <img src="@user.ProfileImage" alt="@user.EmployeeName" class="avatar-circle avatar-sm avatar-img" />
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-circle avatar-sm">
+                                                    @GetInitials(user.EmployeeName)
+                                                </div>
+                                            }
+                                            <span class="user-emp-text text-truncate" title="@user.EmployeeName">
+                                                @FormatName(user.EmployeeName)
+                                            </span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+
+                                <!-- STATUS -->
+                                <td class="text-center">
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="status-pill status-pill-active">
+                                            <span class="status-dot"></span>
+                                            <span>Active</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill status-pill-inactive">
+                                            <span class="status-dot"></span>
+                                            <span>Inactive</span>
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- ACTIONS -->
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <td class="text-center">
+                                        <div class="d-inline-flex align-items-center gap-1.5">
+                                            <button type="button"
+                                                    class="user-action-btn user-action-edit"
+                                                    title="Edit user account"
+                                                    @onclick="() => EditUser(user)">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="user-action-btn user-action-delete"
+                                                    title="Delete user account"
+                                                    @onclick="() => DeleteUser(user)">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             }
         </div>
+
+        <!-- ═══════════ PAGINATION & SUMMARY FOOTER ═══════════ -->
+        @if (!_isLoading && FilteredUsers.Any())
+        {
+            <div class="user-pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2 text-muted small flex-wrap">
+                    <span>Showing <strong>@StartIndex</strong> to <strong>@EndIndex</strong> of <strong>@TotalCount</strong> records</span>
+                    <span class="text-black-50">•</span>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <span>Show</span>
+                        <select class="page-size-select" value="@_pageSize" @onchange="OnPageSizeChange">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>per page</span>
+                    </div>
+                </div>
+
+                @if (TotalPages > 1)
+                {
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="page-btn" disabled="@(_currentPage <= 1)" @onclick="() => GoToPage(_currentPage - 1)" title="Previous page">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        
+                        @for (int p = 1; p <= TotalPages; p++)
+                        {
+                            var pageNum = p;
+                            <button type="button" class="page-btn @(pageNum == _currentPage ? "active" : "")" @onclick="() => GoToPage(pageNum)">
+                                @pageNum
+                            </button>
+                        }
+
+                        <button type="button" class="page-btn" disabled="@(_currentPage >= TotalPages)" @onclick="() => GoToPage(_currentPage + 1)" title="Next page">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
     </div>
 
 </div>
@@ -164,6 +348,7 @@
     private string _selectedStatus = "All";
 
     // Pagination
+    private int _currentPage = 1;
     private int _pageSize = 10;
 
     // ═══════════ COMPUTED ═══════════
@@ -186,7 +371,9 @@
                     MatchesSearch(u.FirstName) ||
                     MatchesSearch(u.LastName) ||
                     MatchesSearch(u.FullName) ||
-                    MatchesSearch(u.EmployeeName));
+                    MatchesSearch(u.PhoneNumber) ||
+                    MatchesSearch(u.EmployeeName) ||
+                    MatchesSearch(u.Role));
             }
 
             if (!string.IsNullOrWhiteSpace(_selectedRole))
@@ -206,6 +393,14 @@
             return query.ToList();
         }
     }
+
+    private int TotalCount => FilteredUsers.Count;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / _pageSize));
+    private int StartIndex => TotalCount == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+    private int EndIndex => Math.Min(_currentPage * _pageSize, TotalCount);
+
+    private List<UserViewModel> PagedUsers =>
+        FilteredUsers.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
 
     // ═══════════ LIFECYCLE ═══════════
     protected override async Task OnInitializedAsync()
@@ -256,7 +451,79 @@
         }
     }
 
-    // ═══════════ EVENTS & HELPERS ═══════════
+    // ═══════════ FILTER & PAGINATION EVENTS ═══════════
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString();
+        _currentPage = 1;
+    }
+
+    private void ClearSearch()
+    {
+        _searchTerm = string.Empty;
+        _currentPage = 1;
+    }
+
+    private void OnRoleChange(ChangeEventArgs e)
+    {
+        _selectedRole = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+    }
+
+    private void OnStatusChange(ChangeEventArgs e)
+    {
+        _selectedStatus = e.Value?.ToString() ?? "All";
+        _currentPage = 1;
+    }
+
+    private void ClearAllFilters()
+    {
+        _searchTerm = null;
+        _selectedRole = "";
+        _selectedStatus = "All";
+        _currentPage = 1;
+    }
+
+    private void GoToPage(int page)
+    {
+        _currentPage = Math.Clamp(page, 1, TotalPages);
+    }
+
+    private void OnPageSizeChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size) && size > 0)
+        {
+            _pageSize = size;
+            _currentPage = 1;
+        }
+    }
+
+    // ═══════════ FORMATTING & UTILITIES ═══════════
+    private static string GetDisplayName(UserViewModel u)
+    {
+        if (!string.IsNullOrWhiteSpace(u.FullName)) return u.FullName;
+        var combined = $"{u.FirstName} {u.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(combined) ? u.Username : combined;
+    }
+
+    private static string FormatName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "User";
+        var words = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", words.Select(w => char.ToUpper(w[0]) + (w.Length > 1 ? w[1..] : "")));
+    }
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "US";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(fullName);
+    }
+
+    private bool MatchesSearch(string? value)
+        => !string.IsNullOrWhiteSpace(value) &&
+           value.Contains(_searchTerm!, StringComparison.OrdinalIgnoreCase);
+
+    // ═══════════ NAVIGATION & ACTIONS ═══════════
     private void NavigateTo(string route) => NavigationManager.NavigateTo(route);
 
     private void EditUser(UserViewModel model)
@@ -280,15 +547,4 @@
         await NotificationService.Success("User deleted successfully.");
         await LoadDataAsync();
     }
-
-    private void ClearAllFilters()
-    {
-        _searchTerm = null;
-        _selectedRole = "";
-        _selectedStatus = "All";
-    }
-
-    private bool MatchesSearch(string? value)
-        => !string.IsNullOrWhiteSpace(value) &&
-           value.Contains(_searchTerm!, StringComparison.OrdinalIgnoreCase);
 }

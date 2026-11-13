@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
@@ -163,6 +163,20 @@ public class LeaveController : ControllerBase
             return BadRequest("Invalid status.");
 
         var result = await _service.UpdateLeaveRequestStatusAsync(id, status, approvedBy);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+    }
+
+    [HttpPost("requests/bulk-approve")]
+    public async Task<IActionResult> BulkApproveAsync([FromBody] BulkApproveRequestDto dto)
+    {
+        if (dto == null || dto.RequestIds == null || !dto.RequestIds.Any())
+            return BadRequest("No leave request IDs provided.");
+
+        if (dto.ApprovedBy <= 0)
+            return BadRequest("Invalid approver ID.");
+
+        var result = await _service.BulkApproveLeaveRequestsAsync(dto.RequestIds, dto.ApprovedBy);
 
         return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
     }

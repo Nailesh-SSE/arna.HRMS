@@ -15,7 +15,14 @@
                 <div class="d-flex flex-column justify-content-center">
                     <span class="stat-label">@Label</span>
                     <span class="stat-value">
-                        @Count
+                        @if (!string.IsNullOrEmpty(CustomValue))
+                        {
+                            @CustomValue
+                        }
+                        else
+                        {
+                            @Count
+                        }
                     </span>
                     <div class="stat-trend d-flex align-items-center gap-1">
                         @if (!string.IsNullOrEmpty(TrendText) || !string.IsNullOrEmpty(Subtext))
@@ -54,6 +61,7 @@
     [Parameter] public string TextClass { get; set; } = "";
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public int Count { get; set; }
+    [Parameter] public string? CustomValue { get; set; }
     [Parameter] public string CardClass { get; set; } = "";
     [Parameter] public EventCallback OnClick { get; set; }
 
@@ -65,12 +73,24 @@
 
     private bool HasDefaultAction =>
         Label?.Trim().Equals("Leave Pending Requests", StringComparison.OrdinalIgnoreCase) == true ||
-        Label?.Trim().Equals("Attendance Pending Requests", StringComparison.OrdinalIgnoreCase) == true;
+        Label?.Trim().Equals("Attendance Pending Requests", StringComparison.OrdinalIgnoreCase) == true ||
+        Label?.Trim().Equals("Total Workforce", StringComparison.OrdinalIgnoreCase) == true ||
+        Label?.Trim().Equals("Total Employees", StringComparison.OrdinalIgnoreCase) == true ||
+        Label?.Trim().Equals("Monthly Attendance Rate", StringComparison.OrdinalIgnoreCase) == true;
 
     private string? DefaultTrend
     {
         get
         {
+            if (Label?.Trim().Equals("Total Workforce", StringComparison.OrdinalIgnoreCase) == true ||
+                Label?.Trim().Equals("Total Employees", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return "<span class=\"trend-green\">Active Directory</span>";
+            }
+            if (Label?.Trim().Equals("Monthly Attendance Rate", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return "<span class=\"trend-green\">Period average</span>";
+            }
             if (Label?.Trim().Equals("Present Today", StringComparison.OrdinalIgnoreCase) == true)
             {
                 return Count > 0 
@@ -112,6 +132,15 @@
         else if (Label?.Trim().Equals("Attendance Pending Requests", StringComparison.OrdinalIgnoreCase) == true)
         {
             Nav.NavigateTo("/admin-attendance-requests");
+        }
+        else if (Label?.Trim().Equals("Total Workforce", StringComparison.OrdinalIgnoreCase) == true ||
+                 Label?.Trim().Equals("Total Employees", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            Nav.NavigateTo("/employee");
+        }
+        else if (Label?.Trim().Equals("Monthly Attendance Rate", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            Nav.NavigateTo("/admin-report-management");
         }
     }
 }

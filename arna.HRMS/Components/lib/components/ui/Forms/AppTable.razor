@@ -1,4 +1,4 @@
-@typeparam TItem
+﻿@typeparam TItem
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 
@@ -92,24 +92,26 @@
                         }
                         @if (ShowActions)
                         {
-                            <td class="text-center px-3 py-2">
-                                <div class="d-inline-flex gap-2">
+                            <td class="text-center px-3 py-1.5">
+                                <div class="d-inline-flex align-items-center gap-1.5 justify-content-center">
                                     @if (ActionTemplate != null)
                                     {
                                         @ActionTemplate(item)
                                     }
                                     else
                                     {
-                                        <AppButton ButtonClass="req-action-btn btn btn-outline-primary btn-sm rounded-circle
-                                                               d-inline-flex align-items-center justify-content-center"
-                                                   OnClick="() => OnEdit.InvokeAsync(item)">
+                                        <button type="button"
+                                                class="btn-action-icon-edit"
+                                                title="Edit"
+                                                @onclick="() => OnEdit.InvokeAsync(item)">
                                             <i class="bi bi-pencil-square"></i>
-                                        </AppButton>
-                                        <AppButton ButtonClass="req-action-btn btn btn-outline-danger btn-sm rounded-circle
-                                                               d-inline-flex align-items-center justify-content-center"
-                                                   OnClick="() => OnDelete.InvokeAsync(item)">
-                                            <i class="bi bi-trash"></i>
-                                        </AppButton>
+                                        </button>
+                                        <button type="button"
+                                                class="btn-action-icon-delete"
+                                                title="Delete"
+                                                @onclick="() => OnDelete.InvokeAsync(item)">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
                                     }
                                 </div>
                             </td>

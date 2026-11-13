@@ -160,3 +160,598 @@ body.loading {
         opacity: 1;
     }
 }
+/* ═══════════════════════════════════════════════════════════════
+   UNIFIED ENTERPRISE PAGE HERO & BADGES
+   ═══════════════════════════════════════════════════════════════ */
+.enterprise-page-title {
+    font-size: 1.65rem;
+    font-weight: 800;
+    color: #0a2540;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.enterprise-page-subtitle {
+    font-size: 0.875rem;
+    color: #52667d;
+    margin-top: 2px;
+}
+
+.header-count-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2.5px 10px;
+    border-radius: 9999px;
+    background-color: #f0f7ff;
+    color: #0076ce;
+    border: 1px solid #bae6fd;
+    font-size: 0.735rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+
+.btn-add-primary {
+    background: linear-gradient(180deg, #0284c7 0%, #0076ce 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 9px;
+    padding: 0.55rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 4px 12px rgba(0, 118, 206, 0.22);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-add-primary:hover {
+    background: linear-gradient(180deg, #0076ce 0%, #0060a8 100%);
+    color: #ffffff;
+    transform: translateY(-1.5px);
+    box-shadow: 0 6px 16px rgba(0, 118, 206, 0.32);
+}
+
+.btn-add-primary:active {
+    transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STANDARDIZED APPROVE / REJECT ACTION BUTTONS (Point 1)
+   Approve: Solid green rounded-rect with white checkmark
+   Reject:  Crisp red outline rounded-rect with red cross
+   ═══════════════════════════════════════════════════════════════ */
+.btn-action-approve-solid {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 6px;
+    background-color: #16a34a !important;
+    border: 1px solid #16a34a !important;
+    color: #ffffff !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s ease-in-out;
+    box-shadow: 0 1px 2px rgba(22, 163, 74, 0.2);
+}
+
+.btn-action-approve-solid:hover:not(:disabled) {
+    background-color: #15803d !important;
+    border-color: #15803d !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(22, 163, 74, 0.35);
+}
+
+.btn-action-approve-solid:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-action-approve-solid:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.btn-action-reject-outline {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 6px;
+    background-color: #ffffff !important;
+    border: 1.5px solid #ef4444 !important;
+    color: #ef4444 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s ease-in-out;
+    box-shadow: 0 1px 2px rgba(239, 68, 68, 0.1);
+}
+
+.btn-action-reject-outline:hover:not(:disabled) {
+    background-color: #fef2f2 !important;
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(239, 68, 68, 0.25);
+}
+
+.btn-action-reject-outline:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-action-reject-outline:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STANDARDIZED ACTION ICON BUTTONS (Edit / Delete / Cancel)
+   Uniform styling across entire application:
+   - Edit: Pastel soft sky-blue box, blue pencil icon, solid blue on hover
+   - Delete: Pastel soft pink/red box, red trash icon, solid red on hover
+   ═══════════════════════════════════════════════════════════════ */
+.btn-action-icon-edit,
+.emp-action-edit,
+.user-action-edit,
+.dept-action-edit {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border-radius: 7px !important;
+    border: 1px solid #bae6fd !important;
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.btn-action-icon-edit:hover:not(:disabled),
+.emp-action-edit:hover:not(:disabled),
+.user-action-edit:hover:not(:disabled),
+.dept-action-edit:hover:not(:disabled) {
+    background-color: #0284c7 !important;
+    border-color: #0284c7 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(2, 132, 199, 0.25) !important;
+}
+
+.btn-action-icon-delete,
+.emp-action-delete,
+.user-action-delete,
+.dept-action-delete {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border-radius: 7px !important;
+    border: 1px solid #fecaca !important;
+    background-color: #fee2e2 !important;
+    color: #ef4444 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.btn-action-icon-delete:hover:not(:disabled),
+.emp-action-delete:hover:not(:disabled),
+.user-action-delete:hover:not(:disabled),
+.dept-action-delete:hover:not(:disabled) {
+    background-color: #ef4444 !important;
+    border-color: #ef4444 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.25) !important;
+}
+
+.btn-action-icon-cancel {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    border-radius: 7px !important;
+    border: 1px solid #fde68a !important;
+    background-color: #fffbeb !important;
+    color: #d97706 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.82rem !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+.btn-action-icon-cancel:hover:not(:disabled) {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(217, 119, 6, 0.25) !important;
+}
+
+.btn-action-icon-edit:disabled,
+.btn-action-icon-delete:disabled,
+.btn-action-icon-cancel:disabled,
+.emp-action-btn:disabled,
+.user-action-btn:disabled,
+.dept-action-btn:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn-action-icon-edit:active,
+.btn-action-icon-delete:active,
+.btn-action-icon-cancel:active,
+.emp-action-btn:active,
+.user-action-btn:active,
+.dept-action-btn:active {
+    transform: translateY(0) scale(0.96) !important;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   PROJECT-WIDE GRID TYPOGRAPHY: STRICTLY NO BOLD TEXT IN ANY GRID
+   Guarantees that across the entire application, table body cells,
+   text, names, numbers, badges, and values render in regular
+   unbolded font weight (400 / 500).
+   ═══════════════════════════════════════════════════════════════ */
+table tbody td,
+table tbody td *,
+.custom-table tbody td,
+.custom-table tbody td *,
+.modern-table tbody td,
+.modern-table tbody td *,
+.dept-modern-table tbody td,
+.dept-modern-table tbody td *,
+.user-modern-table tbody td,
+.user-modern-table tbody td *,
+.emp-modern-table tbody td,
+.emp-modern-table tbody td *,
+.role-modern-table tbody td,
+.role-modern-table tbody td *,
+.att-modern-table tbody td,
+.att-modern-table tbody td *,
+.att-req-modern-table tbody td,
+.att-req-modern-table tbody td *,
+.leave-modern-table tbody td,
+.leave-modern-table tbody td *,
+.app-table-wrapper table tbody td,
+.app-table-wrapper table tbody td * {
+    font-weight: 400 !important;
+}
+
+/* Subtle medium weight (500) for clean legibility on primary names without bolding */
+.user-name,
+.emp-name,
+.dept-name,
+.role-name,
+.att-emp-name,
+.user-id-badge,
+.emp-id-badge,
+.dept-code-badge,
+.att-id-badge,
+.dept-icon-circle,
+.role-icon-circle {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: #1e293b !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.01em;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL ENTERPRISE GRID SCROLL & VIEWPORT FIT
+   Guarantees all tables scroll INTERNALLY with sticky headers
+   and eliminates the outer window/page scrollbar across all grids
+   ═══════════════════════════════════════════════════════════════ */
+.dept-table-scroll,
+.role-table-scroll,
+.user-table-wrapper,
+.emp-table-wrapper,
+.request-scroll-area,
+.att-table-wrapper,
+.att-req-table-wrapper {
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: #cbd5e1 #f8fafc !important;
+}
+
+.att-table-wrapper {
+    max-height: calc(100vh - 295px) !important;
+}
+
+.att-req-table-wrapper {
+    max-height: calc(100vh - 280px) !important;
+}
+
+.request-scroll-area {
+    max-height: calc(100vh - 245px) !important;
+}
+
+.emp-table-wrapper,
+.user-table-wrapper {
+    max-height: calc(100vh - 275px) !important;
+}
+
+.dept-table-scroll,
+.role-table-scroll {
+    max-height: calc(100vh - 260px) !important;
+}
+
+/* Tight compact enterprise grid cell spacing */
+.custom-table th,
+.att-modern-table th,
+.att-req-modern-table th,
+.emp-modern-table th,
+.user-modern-table th {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+
+.custom-table td,
+.att-modern-table td,
+.att-req-modern-table td,
+.emp-modern-table td,
+.user-modern-table td {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+}
+
+.dept-table-scroll::-webkit-scrollbar,
+.role-table-scroll::-webkit-scrollbar,
+.user-table-wrapper::-webkit-scrollbar,
+.emp-table-wrapper::-webkit-scrollbar,
+.request-scroll-area::-webkit-scrollbar,
+.att-table-wrapper::-webkit-scrollbar,
+.att-req-table-wrapper::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+.dept-table-scroll::-webkit-scrollbar-track,
+.role-table-scroll::-webkit-scrollbar-track,
+.user-table-wrapper::-webkit-scrollbar-track,
+.emp-table-wrapper::-webkit-scrollbar-track,
+.request-scroll-area::-webkit-scrollbar-track,
+.att-table-wrapper::-webkit-scrollbar-track,
+.att-req-table-wrapper::-webkit-scrollbar-track {
+    background: #f8fafc !important;
+}
+
+.dept-table-scroll::-webkit-scrollbar-thumb,
+.role-table-scroll::-webkit-scrollbar-thumb,
+.user-table-wrapper::-webkit-scrollbar-thumb,
+.emp-table-wrapper::-webkit-scrollbar-thumb,
+.request-scroll-area::-webkit-scrollbar-thumb,
+.att-table-wrapper::-webkit-scrollbar-thumb,
+.att-req-table-wrapper::-webkit-scrollbar-thumb {
+    background: #cbd5e1 !important;
+    border-radius: 4px !important;
+}
+
+.dept-table-scroll::-webkit-scrollbar-thumb:hover,
+.role-table-scroll::-webkit-scrollbar-thumb:hover,
+.user-table-wrapper::-webkit-scrollbar-thumb:hover,
+.emp-table-wrapper::-webkit-scrollbar-thumb:hover,
+.request-scroll-area::-webkit-scrollbar-thumb:hover,
+.att-table-wrapper::-webkit-scrollbar-thumb:hover,
+.att-req-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8 !important;
+}
+
+/* Ensure sticky table header on all enterprise tables */
+.emp-modern-table thead,
+.user-modern-table thead,
+.att-modern-table thead,
+.custom-table thead {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background-color: #f8fafc !important;
+}
+
+.emp-modern-table thead th,
+.user-modern-table thead th,
+.att-modern-table thead th,
+.custom-table thead th,
+.sticky-th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 5 !important;
+    background-color: #f8fafc !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS BADGES / PILLS (High-contrast, enterprise standard)
+   ═══════════════════════════════════════════════════════════════ */
+.leave-status-pill {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 2px 8px !important;
+    border-radius: 9999px !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+}
+
+.leave-status-pill .status-dot {
+    width: 6px !important;
+    height: 6px !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+    flex-shrink: 0 !important;
+}
+
+.leave-status-pending {
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid #fde68a !important;
+}
+.leave-status-pending .status-dot {
+    background-color: #f59e0b !important;
+}
+
+.leave-status-approved {
+    background-color: #ecfdf5 !important;
+    color: #065f46 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+.leave-status-approved .status-dot {
+    background-color: #10b981 !important;
+}
+
+.leave-status-rejected {
+    background-color: #fef2f2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fecaca !important;
+}
+.leave-status-rejected .status-dot {
+    background-color: #ef4444 !important;
+}
+
+.leave-status-cancelled {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+.leave-status-cancelled .status-dot {
+    background-color: #94a3b8 !important;
+}
+
+.leave-status-default {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.leave-status-default .status-dot {
+    background-color: #94a3b8 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLOBAL PROFILE IMAGE AVATARS
+   Ensures round avatars and perfect aspect ratio everywhere
+   ═══════════════════════════════════════════════════════════════ */
+.avatar-img {
+    object-fit: cover !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+}
+
+img.avatar-circle {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+}
+
+img.avatar-circle.avatar-sm,
+img.avatar-sm {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    min-height: 26px !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+}
+
+img.report-avatar-circle {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+}
+
+img.att-hero-avatar,
+img.att-detail-avatar {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+}
+
+div.avatar-circle,
+span.avatar-circle,
+div.report-avatar-circle,
+span.report-avatar-circle {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    border-radius: 50% !important;
+    font-weight: 500 !important;
+    font-size: 0.72rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    letter-spacing: -0.01em !important;
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+    border: 1px solid #bae6fd !important;
+    text-transform: uppercase !important;
+    user-select: none !important;
+}
+
+div.avatar-circle.avatar-sm,
+span.avatar-circle.avatar-sm,
+div.avatar-sm,
+span.avatar-sm {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    font-size: 0.62rem !important;
+    font-weight: 500 !important;
+}
+
+div.att-hero-avatar,
+div.att-detail-avatar {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    min-height: 56px !important;
+    border-radius: 50% !important;
+    font-weight: 600 !important;
+    font-size: 1.25rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    background-color: #e0f2fe !important;
+    color: #0284c7 !important;
+    border: 1px solid #bae6fd !important;
+    text-transform: uppercase !important;
+    user-select: none !important;
+}
+
+
+
+

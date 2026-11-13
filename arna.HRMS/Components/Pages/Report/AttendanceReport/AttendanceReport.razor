@@ -1,130 +1,15 @@
 @page "/attendance-report"
 
-@using arna.HRMS.Models.Enums
-@using arna.HRMS.Models.ViewModels
-@using arna.HRMS.Services.Report
+@inject NavigationManager Navigation
 
-@inject IReportService ReportService
-
-<div class="container-fluid p-0">
-
-    <h3 class="fw-bold mb-3">
-        <i class="bi bi-bar-chart-line"></i> Attendance Report
-    </h3>
-
-    <div class="mb-3">
-
-        <select class="form-select w-auto"
-                @bind="selectedGraph"
-                @bind:after="GraphChanged">
-
-            <option value="histogram">Work Hours</option>
-            <option value="status">Attendance Status</option>
-            <option value="table">Table View</option>
-
-        </select>
-
-    </div>
-
-
-    @if (selectedGraph == "histogram")
-    {
-        <HistogramChart ReportData="reportData"
-                        Year="year"
-                        Month="month"
-                        EmployeeId="employeeId"
-                        OnFilter="LoadReport" />
-    }
-
-    @if (selectedGraph == "status")
-    {
-        <StatusBarChart ReportData="reportData"
-                        Year="year"
-                        Month="month"
-                        EmployeeId="employeeId"
-                        OnFilter="LoadReport" />
-    }
-
-    @if (selectedGraph == "table")
-    {
-        <AttendanceTable ReportData="reportData"
-                         OnFilter="LoadReport" />
-    }
-
+<div class="p-4 text-center text-muted">
+    <div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div>
+    <span>Redirecting to modern Reports module...</span>
 </div>
 
 @code {
-
-    List<AttendanceReportViewModel> reportData = new();
-
-    string selectedGraph = "histogram";
-
-    int? year;
-    int? month;
-    int? employeeId;
-    DeviceType? Device;
-    AttendanceStatus? status;
-    DateTime? fromDate;
-    DateTime? toDate;
-
-
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await LoadReport(new ReportFilter());
+        Navigation.NavigateTo("/admin-report-management", replace: true);
     }
-
-
-
-    async Task GraphChanged()
-    {
-        await LoadReport(new ReportFilter
-        {
-            Year = year,
-            Month = month,
-            EmployeeId = employeeId,
-            Status = status,
-            Device = Device,
-            FromDate = fromDate,
-            ToDate = toDate
-        });
-    }
-
-
-
-    async Task LoadReport(ReportFilter filter)
-    {
-        year = filter.Year;
-        month = filter.Month;
-        employeeId = filter.EmployeeId;
-        status = filter.Status;
-        Device = filter.Device;
-        fromDate = filter.FromDate;
-        toDate = filter.ToDate;
-
-        reportData = new List<AttendanceReportViewModel>();
-        await InvokeAsync(StateHasChanged);
-
-        var result = await ReportService.GetEmployeeDailyAttendanceReportAsync(
-            year,
-            month,
-            employeeId,
-            status,
-            Device,
-            fromDate,
-            toDate
-        );
-
-        if (result.IsSuccess && result.Data != null)
-        {
-            reportData = result.Data.ToList();
-        }
-        else
-        {
-            reportData = new List<AttendanceReportViewModel>();
-        }
-
-        await InvokeAsync(StateHasChanged);
-    }
-
 }

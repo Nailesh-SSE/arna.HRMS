@@ -1,6 +1,7 @@
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Repository;
+using arna.HRMS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
@@ -9,13 +10,16 @@ public class LeaveRepository
 {
     private readonly IBaseRepository<LeaveType> _leaveTypeRepository;
     private readonly IBaseRepository<LeaveRequest> _leaveRequestRepository;
+    private readonly ApplicationDbContext _context;
 
     public LeaveRepository(
         IBaseRepository<LeaveType> leaveTypeRepository,
-        IBaseRepository<LeaveRequest> leaveRequestRepository)
+        IBaseRepository<LeaveRequest> leaveRequestRepository,
+        ApplicationDbContext? context = null)
     {
         _leaveTypeRepository = leaveTypeRepository;
         _leaveRequestRepository = leaveRequestRepository;
+        _context = context;
     }
 
     // =========================
@@ -190,6 +194,31 @@ public class LeaveRepository
         return true;
     }
 
+    public async Task<List<LeaveRequest>> BulkApproveLeaveRequestsAsync(List<int> requestIds, int approvedBy)
+    {
+        if (requestIds == null || !requestIds.Any())
+            return new List<LeaveRequest>();
+
+        var requestsToApprove = await _context.LeaveRequests
+            .Where(lr => requestIds.Contains(lr.Id) && lr.StatusId == Status.Pending && !lr.IsDeleted)
+            .ToListAsync();
+
+        if (!requestsToApprove.Any())
+            return new List<LeaveRequest>();
+
+        var now = DateTime.Now;
+        requestsToApprove.ForEach(lr =>
+        {
+            lr.StatusId = Status.Approved;
+            lr.ApprovedBy = approvedBy;
+            lr.ApprovedDate = now;
+            lr.UpdatedOn = now;
+        });
+
+        await _context.SaveChangesAsync();
+        return requestsToApprove;
+    }
+
     public async Task<bool> CancelLeaveRequestAsync(int id, int employeeId)
     {
         var leaveRequest = await _leaveRequestRepository.Query()
@@ -208,17 +237,23 @@ public class LeaveRepository
         return true;
     }
 
-    public async Task<List<LeaveRequest>> GetApprovedLeavesCoveringDateAsync(int employeeId, DateTime date)
+    public async Task<List<LeaveRequest>> GetApprovedLeavesOverlappingRangeAsync(int employeeId, DateTime startDate, DateTime endDate)
     {
-        var targetDate = date.Date;
+        var start = startDate.Date;
+        var end = endDate.Date;
         return await _leaveRequestRepository.Query()
             .Where(x =>
                 x.EmployeeId == employeeId &&
                 x.IsActive && !x.IsDeleted &&
                 x.StatusId == Status.Approved &&
-                x.StartDate.Date <= targetDate &&
-                x.EndDate.Date >= targetDate)
+                x.StartDate.Date <= end &&
+                x.EndDate.Date >= start)
             .ToListAsync();
+    }
+
+    public Task<List<LeaveRequest>> GetApprovedLeavesCoveringDateAsync(int employeeId, DateTime date)
+    {
+        return GetApprovedLeavesOverlappingRangeAsync(employeeId, date, date);
     }
 
     public async Task<bool> SoftDeleteLeaveRequestAsync(LeaveRequest leave)

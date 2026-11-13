@@ -12,8 +12,9 @@ public class TableSchemas
     public static List<TableColumn<UserViewModel>> Users = new()
     {
         new() { Header = "Username", Value = u => u.Username },
-        new() { Header = "Email", Value = u => u.Email },
         new() { Header = "Name", Value = u => u.FullName },
+        new() { Header = "Phone", Value = u => string.IsNullOrWhiteSpace(u.PhoneNumber) ? "—" : u.PhoneNumber },
+        new() { Header = "Email", Value = u => u.Email },
         new() { Header = "Role", Value = u => u.Role },
         new() { Header = "Employee", Value = u => u.EmployeeName },
         new()
@@ -88,11 +89,11 @@ public class TableSchemas
     {
         new() { Header = "Emp#", Value = u => u.EmployeeNumber },
         new() { Header = "Employee Name", Value = u => u.EmployeeName },
-        new() { Header = "Leave Type Id", Value = u => u.LeaveTypeName },
+        new() { Header = "Leave Type", Value = u => u.LeaveTypeName },
         new () {Header = "Reason" , Value = u => string.IsNullOrWhiteSpace(u.Reason) ? "-" : u.Reason},
         new() { Header = "Total Days", Value = u => u.LeaveDays },
         new() { Header = "Status", Value = u => u.StatusId },
-        new() { Header = "ApprovedBy", Value = u => u.ApprovedByName },
+        new() { Header = "Approved By", Value = u => u.ApprovedByName },
         new() { Header = "Start Date", Value = u => u.StartDate.ToString("dd MMM yyyy") },
         new() { Header = "End Date", Value = u => u.EndDate.Date.ToString("dd MMM yyyy") },
     };
@@ -107,7 +108,7 @@ public class TableSchemas
          new()
         {
             Header = "Employee",
-            Value = u => $"{u.EmployeeName}"
+            Value = u => RenderEmployeeAvatar(u.EmployeeName, u.ProfileImage)
         },
         new()
         {
@@ -179,9 +180,21 @@ public class TableSchemas
     {
         new() { Header = "Leave Type", Value = u => u.LeaveTypeName },
         new () {Header = "Reason" , Value = u => string.IsNullOrWhiteSpace(u.Reason) ? "-" : u.Reason},
-        new() { Header = "Total Days", Value = u => u.LeaveDays.ToString() },
+        new() { Header = "Total Days", Value = u => $"{u.LeaveDays}d" },
         new() { Header = "Start Date", Value = u => u.StartDate.ToString("dd MMM yyyy") },
         new() { Header = "End Date", Value = u => u.EndDate.ToString("dd MMM yyyy") },
+        new()
+        {
+            Header = "Status",
+            Value = u => u.StatusId switch
+            {
+                Status.Pending => new MarkupString("<span class=\"leave-status-pill leave-status-pending\"><span class=\"status-dot\"></span>Pending</span>"),
+                Status.Approved => new MarkupString("<span class=\"leave-status-pill leave-status-approved\"><span class=\"status-dot\"></span>Approved</span>"),
+                Status.Rejected => new MarkupString("<span class=\"leave-status-pill leave-status-rejected\"><span class=\"status-dot\"></span>Rejected</span>"),
+                Status.Cancelled => new MarkupString("<span class=\"leave-status-pill leave-status-cancelled\"><span class=\"status-dot\"></span>Cancelled</span>"),
+                _ => new MarkupString($"<span class=\"leave-status-pill leave-status-default\"><span class=\"status-dot\"></span>{u.StatusId}</span>")
+            }
+        }
     };
 
     public static List<TableColumn<MonthlyAttendanceViewModel>> GetAttendanceColumns(int employeeId) => new()
@@ -348,7 +361,7 @@ public class TableSchemas
             var from = u.FromDate.Value;
             var to = u.ToDate;
 
-            if (from != to)
+            if (to.HasValue && from != to.Value)
             {
                 return $"{from:dd}-{to.Value:dd MMM yyyy}";
             }
@@ -441,7 +454,7 @@ public class TableSchemas
                     return new MarkupString(
                         $"<a href=\"https://www.google.com/maps?q={lat},{lon}\" " +
                         $"target=\"_blank\" rel=\"noopener noreferrer\" " +
-                        $"class=\"btn btn-sm btn-light border border-primary-subtle text-primary rounded-pill py-0 px-2 d-inline-flex align-items-center gap-1 text-decoration-none shadow-none\" " +
+                        $"class=\"btn btn-sm btn-light border border-primary border-opacity-25 text-primary rounded-pill py-0 px-2 d-inline-flex align-items-center gap-1 text-decoration-none shadow-none\" " +
                         $"title=\"GPS: {lat}, {lon} - Click to open Google Maps\">" +
                         $"<i class=\"bi bi-geo-alt-fill text-danger\"></i><span class=\"fw-medium\">View Map</span></a>");
                 }
@@ -477,11 +490,11 @@ public class TableSchemas
 
     public static List<TableColumn<EmployeeAttendanceReportViewModel>> EmployeeReport = new()
     {
-        new() { Header = "Emp #", Value = u => u.EmployeeNumber, CssClass = "fw-medium" },
-        new() { Header = "Employee Name", Value = u => u.EmployeeName, CssClass = "fw-semibold text-dark" },
+        new() { Header = "Emp #", Value = u => u.EmployeeNumber, CssClass = "text-muted" },
+        new() { Header = "Employee Name", Value = u => u.EmployeeName, CssClass = "text-dark" },
         new() { Header = "Work Days", Value = u => u.TotalWorkDays },
-        new() { Header = "Present", Value = u => u.TotalPresent, CssClass = "text-success fw-semibold" },
-        new() { Header = "Absent", Value = u => u.TotalAbsent, CssClass = "text-danger fw-semibold" },
+        new() { Header = "Present", Value = u => u.TotalPresent, CssClass = "text-success" },
+        new() { Header = "Absent", Value = u => u.TotalAbsent, CssClass = "text-danger" },
         new() { Header = "Total Hours", Value = u => u.TotalHours },
         new() { Header = "Avg Work Hours", Value = u => u.AvgWorkHours },
         new() { Header = "Avg Break", Value = u => u.AvgBreak },
@@ -490,7 +503,7 @@ public class TableSchemas
     public static List<TableColumn<EmployeeDailyAttendanceViewModel>> PresentEmployee = new()
     {
         new() { Header = "Emp #", Value = x => x.EmployeeNumber, CssClass = "font-monospace text-secondary small" },
-        new() { Header = "Name", Value = x => x.EmployeeName, CssClass = "fw-semibold text-dark" },
+        new() { Header = "Name", Value = x => RenderEmployeeAvatar(x.EmployeeName, x.ProfileImage) },
         new() { Header = "Clock In", Value = x => x.ClockIn.HasValue ? x.ClockIn.Value.ToString(@"hh\:mm\:ss") : "--", CssClass = "text-success fw-medium font-monospace small" },
         new() { Header = "Clock Out", Value = x => x.ClockOut.HasValue ? x.ClockOut.Value.ToString(@"hh\:mm\:ss") : "--", CssClass = "text-muted font-monospace small" },
         new() { Header = "Working", Value = x => x.WorkingHours.ToString(@"hh\:mm\:ss"), CssClass = "fw-semibold font-monospace small" },
@@ -530,13 +543,13 @@ public class TableSchemas
                     """;
             }
         },
-        new() { Header = "Total", Value = x => x.TotalHours.ToString(@"hh\:mm\:ss"), CssClass = "fw-bold font-monospace small text-primary" },
+        new() { Header = "Total", Value = x => x.TotalHours.ToString(@"hh\:mm\:ss"), CssClass = "font-monospace small text-primary" },
     };
 
     public static List<TableColumn<LeaveSummaryReportViewModel>> LeaveSummaryReport = new()
     {
         new() { Header = "Emp #", Value = u => u.EmployeeNumber, CssClass = "fw-medium" },
-        new() { Header = "Employee Name", Value = u => u.EmployeeName, CssClass = "fw-semibold text-dark" },
+        new() { Header = "Employee Name", Value = u => RenderEmployeeAvatar(u.EmployeeName, u.ProfileImage), CssClass = "text-dark" },
         new()
         {
             Header = "Leave Type",
@@ -544,55 +557,73 @@ public class TableSchemas
             CssClass = "badge bg-primary bg-opacity-10 text-primary"
         },
         new() { Header = "Annual Quota", Value = u => $"{u.MaxPerYear} days" },
-        new() { Header = "Used Leave", Value = u => $"{u.UsedLeave} days", CssClass = "text-danger fw-semibold" },
-        new() { Header = "Balance", Value = u => $"{Math.Max(0, u.MaxPerYear - u.UsedLeave)} days", CssClass = "text-success fw-semibold" },
+        new() { Header = "Used Leave", Value = u => $"{u.UsedLeave} days", CssClass = "text-danger" },
+        new() { Header = "Balance", Value = u => $"{Math.Max(0, u.MaxPerYear - u.UsedLeave)} days", CssClass = "text-success" },
     };
 
     public static List<TableColumn<EmployeeLeaveDetailsReportViewModel>> EmployeeLeaveDetailsReport = new()
     {
         new() { Header = "Emp #", Value = u => u.EmployeeNumber, CssClass = "fw-medium" },
-        new() { Header = "Employee Name", Value = u => u.EmployeeName, CssClass = "fw-semibold text-dark" },
+        new() { Header = "Employee Name", Value = u => RenderEmployeeAvatar(u.EmployeeName, u.ProfileImage), CssClass = "text-dark" },
         new()
         {
             Header = "Leave Type",
             Value = u => u.LeaveNameId.HasValue
-                ? System.Text.RegularExpressions.Regex.Replace(((LeaveName)u.LeaveNameId.Value).ToString(), "([a-z])([A-Z])", "$1 $2")
-                : "-",
-            CssClass = "badge bg-primary bg-opacity-10 text-primary"
+                ? new MarkupString($"<span class=\"badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1 fw-normal small\">{System.Text.RegularExpressions.Regex.Replace(((LeaveName)u.LeaveNameId.Value).ToString(), "([a-z])([A-Z])", "$1 $2")}</span>")
+                : new MarkupString("<span class=\"text-muted\">-</span>")
         },
         new() { Header = "Reason", Value = u => string.IsNullOrWhiteSpace(u.Reason) ? "-" : u.Reason },
         new() { Header = "Start Date", Value = u => u.StartDate.HasValue ? u.StartDate.Value.ToString("dd MMM yyyy") : "-" },
         new() { Header = "End Date", Value = u => u.EndDate.HasValue ? u.EndDate.Value.ToString("dd MMM yyyy") : "-" },
-        new() { Header = "Total Days", Value = u => $"{u.LeaveDays} days", CssClass = "fw-semibold" },
+        new() { Header = "Total Days", Value = u => $"{u.LeaveDays} days" },
         new()
         {
             Header = "Status",
-            Value = u => u.StatusId.HasValue ? ((Status)u.StatusId.Value).ToString() : "-",
-            CssClassFunc = u => u.StatusId switch
+            Value = u => u.StatusId.HasValue ? (Status)u.StatusId.Value switch
             {
-                (int)Status.Pending => "badge bg-warning bg-opacity-15 text-warning fw-semibold",
-                (int)Status.Approved => "badge bg-success bg-opacity-15 text-success fw-semibold",
-                (int)Status.Rejected => "badge bg-danger bg-opacity-15 text-danger fw-semibold",
-                _ => "badge bg-secondary"
-            }
+                Status.Pending => new MarkupString("<span class=\"leave-status-pill leave-status-pending\"><span class=\"status-dot\"></span>Pending</span>"),
+                Status.Approved => new MarkupString("<span class=\"leave-status-pill leave-status-approved\"><span class=\"status-dot\"></span>Approved</span>"),
+                Status.Rejected => new MarkupString("<span class=\"leave-status-pill leave-status-rejected\"><span class=\"status-dot\"></span>Rejected</span>"),
+                Status.Cancelled => new MarkupString("<span class=\"leave-status-pill leave-status-cancelled\"><span class=\"status-dot\"></span>Cancelled</span>"),
+                _ => new MarkupString($"<span class=\"leave-status-pill leave-status-default\"><span class=\"status-dot\"></span>{((Status)u.StatusId.Value).ToString()}</span>")
+            } : new MarkupString("<span class=\"text-muted\">-</span>")
         },
     };
 
     public static List<TableColumn<EmployeeDailyAttendanceViewModel>> LeaveEmployee = new()
     {
         new() { Header = "Emp #", Value = x => x.EmployeeNumber, CssClass = "font-monospace text-secondary small" },
-        new() { Header = "Name", Value = x => x.EmployeeName, CssClass = "fw-semibold text-dark" },
+        new() { Header = "Name", Value = x => RenderEmployeeAvatar(x.EmployeeName, x.ProfileImage) },
         new() { Header = "Reason", Value = x => string.IsNullOrWhiteSpace(x.Note) ? "Approved Leave" : x.Note, CssClass = "text-secondary small" },
         new()
         {
             Header = "Status",
-            Value = x => string.IsNullOrWhiteSpace(x.Status) ? "On Leave" : x.Status,
-            CssClassFunc = x => (x.Status ?? "").Contains("Leave", StringComparison.OrdinalIgnoreCase)
-                ? "badge bg-success bg-opacity-15 text-success fw-semibold px-2.5 py-1"
-                : "badge bg-warning bg-opacity-25 text-warning fw-semibold px-2.5 py-1"
+            Value = x => (x.Status ?? "").Contains("Leave", StringComparison.OrdinalIgnoreCase)
+                ? new MarkupString("<span class=\"leave-status-pill leave-status-approved\"><span class=\"status-dot\"></span>On Leave</span>")
+                : new MarkupString("<span class=\"leave-status-pill leave-status-pending\"><span class=\"status-dot\"></span>Pending</span>")
         },
     };
 
+
+    private static MarkupString RenderEmployeeAvatar(string? name, string? profileImage)
+    {
+        var safeName = string.IsNullOrWhiteSpace(name) ? "Employee" : name.Trim();
+        var initials = arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(safeName);
+        if (!string.IsNullOrWhiteSpace(profileImage))
+        {
+            return new MarkupString($@"<div class=""d-flex align-items-center gap-2""><img src=""{profileImage}"" alt=""{safeName}"" class=""avatar-circle avatar-sm avatar-img"" /><span>{safeName}</span></div>");
+        }
+        return new MarkupString($@"<div class=""d-flex align-items-center gap-2""><div class=""avatar-circle avatar-sm"">{initials}</div><span>{safeName}</span></div>");
+    }
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "EM";
+        var parts = fullName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return $"{char.ToUpper(parts[0][0])}{char.ToUpper(parts[1][0])}";
+        return fullName.Length >= 2 ? fullName[..2].ToUpper() : fullName.ToUpper();
+    }
 
     private static string TruncateText(string? text, int maxLength)
     {
@@ -601,5 +632,5 @@ public class TableSchemas
     }
 
     private static EmployeeDailyAttendanceViewModel? GetEmp(MonthlyAttendanceViewModel day, int empId)
-        => day.Employees.FirstOrDefault(e => e.EmployeeId == empId);
+        => day.Employees?.FirstOrDefault(e => e.EmployeeId == empId);
 }

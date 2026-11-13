@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
@@ -9,6 +9,7 @@ public class LeaveRequestViewModel : CommonViewModel
     public int EmployeeId { get; set; }
     public string? EmployeeName { get; set; }
     public string? EmployeeNumber { get; set; }
+    public string? ProfileImage { get; set; }
 
     public int LeaveTypeId { get; set; }
     public string? LeaveTypeName { get; set; }

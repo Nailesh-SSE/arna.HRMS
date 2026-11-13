@@ -14,7 +14,7 @@
     }
 }
 
-/* ═══════════════ AVATAR & HERO ═══════════════ */
+/* ═══════════════ EMPLOYEE HERO CARD ═══════════════ */
 .employee-hero-card {
     background: #ffffff;
     border: 1px solid #edf2f7 !important;
@@ -23,94 +23,153 @@
 .att-hero-avatar {
     width: 48px;
     height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.att-detail-avatar {
-    width: 48px;
-    height: 48px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.1rem;
-    font-weight: 700;
-    color: #fff;
+    font-weight: 600;
+    background-color: #e0f2fe;
+    color: #0284c7;
+    border: 2px solid #bae6fd;
     letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.att-detail-avatar-sm {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.3px;
     flex-shrink: 0;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08);
 }
 
-/* ═══════════════ KPI STAT CHIPS & PERIOD ═══════════════ */
-.att-stat-chip {
+/* ═══════════════ UNIFIED FILTER BAR ═══════════════ */
+.report-filter-bar {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 18px;
+}
+
+.report-table-title {
+    font-size: 0.925rem;
+    font-weight: 600;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+}
+
+/* ═══════════════ CONTROLS TOOLBAR ═══════════════ */
+.view-toggle-segmented {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.22rem 0.55rem;
-    border-radius: 9999px;
-    background-color: #f8fafc;
+    background: #f1f5f9;
     border: 1px solid #e2e8f0;
-    color: #475569;
-    font-size: 0.76rem;
-    line-height: 1.2;
-    transition: all 0.15s ease;
-    cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    border-radius: 9px;
+    padding: 3px;
+    height: 36px;
 }
 
-.att-stat-chip:hover {
-    background-color: #f1f5f9;
-    border-color: #cbd5e1;
-}
-
-.att-stat-chip.active {
-    background-color: #eff6ff !important;
-    border-color: #3b82f6 !important;
-    color: #1d4ed8 !important;
-    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2) !important;
-}
-
-.att-chip-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.att-chip-label {
+.segmented-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.8rem;
     font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
 }
 
-.att-chip-value {
-    font-weight: 700;
-    font-size: 0.78rem;
+.segmented-btn:hover:not(.active) {
+    color: #1e293b;
 }
 
-.att-period-chip {
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+.segmented-btn.active {
+    background: #ffffff;
+    color: #0076ce;
+    box-shadow: 0 2px 6px rgba(10, 37, 64, 0.08);
+}
+
+.filter-select-wrap {
+    position: relative;
+}
+
+.filter-select-modern {
+    width: 100%;
+    height: 36px;
+    padding: 0 28px 0 12px;
+    border: 1.5px solid #dce8f5;
+    border-radius: 9px;
+    background-color: #ffffff;
+    font-size: 0.815rem;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 11px;
+}
+
+.filter-select-modern:focus {
+    border-color: #0076ce;
+    box-shadow: 0 0 0 3px rgba(0, 118, 206, 0.12);
+}
+
+.filter-date-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-date-label {
+    font-size: 0.775rem;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.filter-date-input-modern {
+    height: 36px;
+    padding: 0 10px;
+    border: 1.5px solid #dce8f5;
+    border-radius: 9px;
+    background-color: #ffffff;
+    font-size: 0.815rem;
+    color: #334155;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.filter-date-input-modern:focus {
+    border-color: #0076ce;
+    box-shadow: 0 0 0 3px rgba(0, 118, 206, 0.12);
+}
+
+.filter-btn-reset {
+    height: 36px;
+    padding: 0 13px;
+    border: 1.5px solid #dce8f5;
+    border-radius: 9px;
+    background-color: #ffffff;
+    color: #475569;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    white-space: nowrap;
+}
+
+.filter-btn-reset:hover {
+    background-color: #eff6ff;
+    border-color: #bae6fd;
+    color: #0076ce;
+    transform: translateY(-1px);
 }
 
 /* ═══════════════ EXPORT BUTTON ═══════════════ */
@@ -136,6 +195,7 @@
 /* ═══════════════ TABLE WRAPPER & ROWS ═══════════════ */
 .att-detail-table {
     border-radius: 0 0 0.5rem 0.5rem;
+    overflow-x: auto;
 }
 
 .att-detail-table table {
@@ -162,7 +222,7 @@
     background-color: #f1f5f9 !important;
 }
 
-/* Clean cell padding and typography */
+/* Clean cell padding and unbolded typography */
 .att-detail-table thead th {
     font-size: 0.72rem !important;
     letter-spacing: 0.6px;
@@ -170,19 +230,27 @@
     color: #64748b !important;
     border-bottom: 1px solid #e2e8f0 !important;
     background-color: #f8fafc !important;
+    padding: 8px 14px !important;
+    white-space: nowrap;
 }
 
 .att-detail-table tbody td {
     vertical-align: middle;
-    font-size: 0.85rem;
+    font-size: 0.835rem;
     border-bottom: 1px solid #f1f5f9;
+    padding: 6px 14px !important;
+    font-weight: 400 !important;
+}
+
+.att-detail-table tbody td * {
+    font-weight: 400 !important;
 }
 
 /* ═══════════════ RESPONSIVE ═══════════════ */
 @media (max-width: 576px) {
-    .att-detail-avatar {
-        width: 50px;
-        height: 50px;
-        font-size: 1.1rem;
+    .att-hero-avatar {
+        width: 42px;
+        height: 42px;
+        font-size: 1rem;
     }
 }

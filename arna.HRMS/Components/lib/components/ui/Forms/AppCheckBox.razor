@@ -1,28 +1,33 @@
-﻿<div class="form-check mb-2">
-    <input class="form-check-input"
+<div class="@ResolvedContainerClass">
+    <input class="@ResolvedInputClass"
            type="checkbox"
            id="@Id"
-           onselect="@ResolvedClass"
            checked="@Value"
            @onchange="OnChange"
            disabled="@Disabled"
            @attributes="AdditionalAttributes" />
 
-    <label class="form-check-label" for="@Id">
-        @Label
-    </label>
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="form-check-label @LabelClass" for="@Id">
+            @Label
+        </label>
+    }
 
     @ChildContent
 </div>
 
 @code {
     [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string LabelClass { get; set; } = "";
     [Parameter] public bool Value { get; set; }
     [Parameter] public EventCallback<bool> ValueChanged { get; set; }
     [Parameter] public string DefaultClass { get; set; } = "form-check-input";
+    [Parameter] public string Class { get; set; } = "";
+    [Parameter] public string ContainerClass { get; set; } = "";
     [Parameter] public bool Disabled { get; set; }
 
-    [Parameter] public string Id { get; set; } = Guid.NewGuid().ToString();
+    [Parameter] public string Id { get; set; } = $"chk_{Guid.NewGuid():N}";
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -33,11 +38,18 @@
     {
         if (e.Value is bool checkedValue)
         {
+            Value = checkedValue;
             await ValueChanged.InvokeAsync(checkedValue);
         }
     }
-    private string ResolvedClass =>
-        string.IsNullOrWhiteSpace(DefaultClass)
-            ? "form-check-input"
-            : DefaultClass;
+
+    private string ResolvedContainerClass =>
+        string.IsNullOrWhiteSpace(ContainerClass)
+            ? "form-check mb-2"
+            : ContainerClass;
+
+    private string ResolvedInputClass =>
+        !string.IsNullOrWhiteSpace(Class)
+            ? Class
+            : (!string.IsNullOrWhiteSpace(DefaultClass) ? DefaultClass : "form-check-input");
 }
