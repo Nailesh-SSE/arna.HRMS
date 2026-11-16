@@ -34,11 +34,11 @@ public class RoleRepository
         if (string.IsNullOrWhiteSpace(name))
             return null;
 
-        name = name.Trim().ToLower();
+        name = name.Trim();
 
         return await _baseRepository.Query()
             .FirstOrDefaultAsync(x =>
-                x.Name.Trim().ToLower() == name &&
+                x.Name == name &&
                 x.IsActive &&
                 !x.IsDeleted);
     }
@@ -58,6 +58,7 @@ public class RoleRepository
         var role = await _baseRepository.Query()
             .FirstOrDefaultAsync(x =>
                 x.Id == id &&
+                x.IsActive &&
                 !x.IsDeleted);
 
         if (role == null)

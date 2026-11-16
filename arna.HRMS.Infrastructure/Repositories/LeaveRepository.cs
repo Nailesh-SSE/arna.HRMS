@@ -177,12 +177,7 @@ public class LeaveRepository
         if (leaveRequest == null)
             return false;
 
-        bool canUpdate =
-            leaveRequest.StatusId == Status.Pending ||
-            (leaveRequest.StatusId == Status.Approved && status == Status.Rejected) ||
-            (leaveRequest.StatusId == Status.Rejected && status == Status.Approved);
-
-        if (!canUpdate)
+        if (leaveRequest.StatusId != Status.Pending)
             return false;
 
         leaveRequest.StatusId = status;

@@ -26,7 +26,8 @@ public class AttendanceValidator
         if (dto.Date == default)
             errors.Add("Date is required");
 
-        // Note is optional
+        if (string.IsNullOrWhiteSpace(dto.Notes))
+            errors.Add("Note is Required.");
 
         if (dto.WorkingHours.HasValue && dto.WorkingHours.Value < TimeSpan.Zero)
             errors.Add("Working hours must be greater than or equal to zero");

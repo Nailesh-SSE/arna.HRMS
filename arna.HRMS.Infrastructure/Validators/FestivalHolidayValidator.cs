@@ -40,7 +40,14 @@ public class FestivalHolidayValidator
         if (exist == null)
             return ValidationResult.Fail("no such Date found");
 
-        return await ValidateCommonAsync(dto);
+        var result = await ValidateCommonAsync(dto);
+        if (!result.IsValid)
+            return result;
+
+        if (dto.Date.Date < DateTime.Today.Date)
+            return ValidationResult.Fail("Festival date cannot be in the past");
+
+        return ValidationResult.Success();
     }
 
     public ValidationResult ValidationByMonthAndYearAsync(int year, int month)

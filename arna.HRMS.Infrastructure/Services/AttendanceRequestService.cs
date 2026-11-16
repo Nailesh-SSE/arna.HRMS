@@ -46,12 +46,12 @@ public class AttendanceRequestService : IAttendanceRequestService
     public async Task<ServiceResult<AttendanceRequestDto?>> GetAttendanceRequestByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<AttendanceRequestDto?>.Fail("Invalid attendance request ID.");
+            return ServiceResult<AttendanceRequestDto?>.Fail("Invalid AttendanceRequest ID");
 
         var entity = await _repository.GetAttendanceRequestByIdAsync(id);
 
         if (entity == null)
-            return ServiceResult<AttendanceRequestDto?>.Fail("Attendance request not found.");
+            return ServiceResult<AttendanceRequestDto?>.Fail("Attendance request not found");
 
         return ServiceResult<AttendanceRequestDto?>.Success(_mapper.Map<AttendanceRequestDto>(entity));
     }
@@ -66,7 +66,7 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         var created = await _repository.CreateAttendanceRequestAsync(entity);
 
-        return ServiceResult<AttendanceRequestDto>.Success(_mapper.Map<AttendanceRequestDto>(created), "Attendance request created successfully.");
+        return ServiceResult<AttendanceRequestDto>.Success(_mapper.Map<AttendanceRequestDto>(created), "Attendance request created successfully");
     }
 
     public async Task<ServiceResult<AttendanceRequestDto>> UpdateAttendanceRequestAsync(AttendanceRequestDto dto)
@@ -80,19 +80,19 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         var updated = await _repository.UpdateAttendanceRequestAsync(entity);
 
-        return ServiceResult<AttendanceRequestDto>.Success(_mapper.Map<AttendanceRequestDto>(updated), "Attendance request updated successfully.");
+        return ServiceResult<AttendanceRequestDto>.Success(_mapper.Map<AttendanceRequestDto>(updated), "Attendance request updated successfully");
     }
 
     public async Task<ServiceResult<bool>> DeleteAttendanceRequestAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid attendance request ID.");
+            return ServiceResult<bool>.Fail("Attendance request not found");
 
         var deleted = await _repository.DeleteAttendanceRequestAsync(id);
 
         return deleted
-            ? ServiceResult<bool>.Success(true, "Attendance request deleted successfully.")
-            : ServiceResult<bool>.Fail("Attendance request not found.");
+            ? ServiceResult<bool>.Success(true, "Attendance request deleted successfully")
+            : ServiceResult<bool>.Fail("Attendance request not found");
     }
 
     public async Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id, Status status, int approvedBy)
@@ -115,7 +115,7 @@ public class AttendanceRequestService : IAttendanceRequestService
                 await CreateAttendanceFromRequestAsync(_mapper.Map<AttendanceRequestDto>(request));
         }
 
-        return ServiceResult<bool>.Success(true, "Attendance request status updated successfully.");
+        return ServiceResult<bool>.Success(true, "Attendance request status updated successfully");
     }
 
     public async Task<ServiceResult<int>> BulkApproveAttendanceRequestsAsync(List<int> requestIds, int approvedBy)
@@ -126,7 +126,7 @@ public class AttendanceRequestService : IAttendanceRequestService
         var approvedEntities = await _repository.BulkApproveAttendanceRequestsAsync(requestIds, approvedBy);
 
         if (!approvedEntities.Any())
-            return ServiceResult<int>.Fail("No pending attendance requests were found to approve.");
+            return ServiceResult<int>.Fail("No pending attendance requests were found to approve");
 
         // Process attendance record creation using LINQ Task.WhenAll
         var dtos = approvedEntities.Select(ar => _mapper.Map<AttendanceRequestDto>(ar)).ToList();
@@ -138,13 +138,13 @@ public class AttendanceRequestService : IAttendanceRequestService
     public async Task<ServiceResult<bool>> CancelAttendanceRequestAsync(int id, int employeeId)
     {
         if (id <= 0 || employeeId <= 0)
-            return ServiceResult<bool>.Fail("Invalid request.");
+            return ServiceResult<bool>.Fail("Invalid request");
 
         var cancelled = await _repository.CancelAttendanceRequestAsync(id, employeeId);
 
         return cancelled
-            ? ServiceResult<bool>.Success(true, "Attendance request cancelled successfully.")
-            : ServiceResult<bool>.Fail("Failed to cancel attendance request.");
+            ? ServiceResult<bool>.Success(true, "Attendance request cancelled successfully")
+            : ServiceResult<bool>.Fail("Failed to cancel attendance request");
     }
 
     private async Task CreateAttendanceFromRequestAsync(AttendanceRequestDto req)
@@ -157,16 +157,17 @@ public class AttendanceRequestService : IAttendanceRequestService
 
         await _leaveService.RevokeLeaveRequestAsync(req.EmployeeId, fromDate, toDate);
 
-        for (var d = fromDate; d <= toDate; d = d.AddDays(1))
-        {
-            if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
-            {
-                var workHours = req.TotalHours > TimeSpan.Zero
-                    ? req.TotalHours
-                    : (clockOut > clockIn ? clockOut - clockIn : TimeSpan.Zero);
+        var requestDates = Enumerable.Range(0, (toDate - fromDate).Days + 1)
+            .Select(offset => fromDate.AddDays(offset))
+            .Where(d => fromDate == toDate || d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
 
-                await InsertAttendanceAsync(req, d, clockIn, clockOut, workHours);
-            }
+        var workHours = req.TotalHours > TimeSpan.Zero
+            ? req.TotalHours
+            : (clockOut > clockIn ? clockOut - clockIn : TimeSpan.Zero);
+
+        foreach (var d in requestDates)
+        {
+            await InsertAttendanceAsync(req, d, clockIn, clockOut, workHours);
         }
     }
 

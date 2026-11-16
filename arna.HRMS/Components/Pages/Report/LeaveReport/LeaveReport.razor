@@ -412,7 +412,7 @@ else
                         LeaveType = "All Types",
                         Quota = g.Sum(x => x.MaxPerYear),
                         Used = g.Sum(x => x.UsedLeave),
-                        Balance = Math.Max(0, g.Sum(x => x.MaxPerYear) - g.Sum(x => x.UsedLeave)),
+                        Balance = g.Sum(x => x.MaxPerYear) - g.Sum(x => x.UsedLeave),
                         IsSummary = true
                     })
                     .OrderBy(e => e.EmployeeNumber)
@@ -433,7 +433,7 @@ else
                         LeaveType = FormatLeaveName(r.LeaveNameId),
                         Quota = r.MaxPerYear,
                         Used = r.UsedLeave,
-                        Balance = Math.Max(0, r.MaxPerYear - r.UsedLeave),
+                        Balance = r.MaxPerYear - r.UsedLeave,
                         IsSummary = false
                     })
                     .OrderBy(e => e.EmployeeNumber)
@@ -453,7 +453,7 @@ else
                         LeaveType = FormatLeaveName(r.LeaveNameId),
                         Quota = r.MaxPerYear,
                         Used = r.UsedLeave,
-                        Balance = Math.Max(0, r.MaxPerYear - r.UsedLeave),
+                        Balance = r.MaxPerYear - r.UsedLeave,
                         IsSummary = false
                     })
                     .OrderBy(e => e.EmployeeNumber)

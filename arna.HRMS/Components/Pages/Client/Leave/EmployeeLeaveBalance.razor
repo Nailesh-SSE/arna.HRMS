@@ -79,7 +79,7 @@
                         <div class="d-flex align-items-baseline justify-content-between my-2">
                             <div class="d-flex align-items-baseline gap-1.5">
                                 <span class="leave-metric-value @(isExceeded ? "text-danger" : $"text-{color}")">
-                                    @(isExceeded ? "0" : s.RemainingDays.ToString())
+                                    @s.RemainingDays.ToString()
                                 </span>
                                 <span class="leave-metric-label text-muted">
                                     days available

@@ -36,12 +36,12 @@ public class UserServices : IUserServices
     public async Task<ServiceResult<UserDto?>> GetUserByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<UserDto?>.Fail("Invalid user ID.");
+            return ServiceResult<UserDto?>.Fail("Invalid User ID");
 
         var user = await _repository.GetUserByIdAsync(id);
 
         if (user == null)
-            return ServiceResult<UserDto?>.Fail("User not found.");
+            return ServiceResult<UserDto?>.Fail("User not found");
 
         return ServiceResult<UserDto?>.Success(_mapper.Map<UserDto>(user));
     }
@@ -114,13 +114,13 @@ public class UserServices : IUserServices
     public async Task<ServiceResult<bool>> DeleteUserAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid user ID.");
+            return ServiceResult<bool>.Fail("Fail to Delete User");
 
         var deleted = await _repository.DeleteUserAsync(id);
 
         return deleted
-            ? ServiceResult<bool>.Success(true, "User deleted successfully.")
-            : ServiceResult<bool>.Fail("User not found.");
+            ? ServiceResult<bool>.Success(true, "User deleted successfully")
+            : ServiceResult<bool>.Fail("Fail to Delete User");
     }
 
     public async Task<ServiceResult<bool>> ChangeUserPasswordAsync(int id, string newPassword)
@@ -134,7 +134,7 @@ public class UserServices : IUserServices
 
         return changed
             ? ServiceResult<bool>.Success(true, "Password updated successfully.")
-            : ServiceResult<bool>.Fail("User not found.");
+            : ServiceResult<bool>.Fail("No Data Found");
     }
 
     public async Task<bool> UserExistsAsync(string email, string phoneNumber, int? id)

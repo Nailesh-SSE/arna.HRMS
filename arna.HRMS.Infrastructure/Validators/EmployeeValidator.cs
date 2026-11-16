@@ -66,6 +66,8 @@ public class EmployeeValidator
             errors.Add("Email is required");
         else if (!new EmailAddressAttribute().IsValid(instance.Email))
             errors.Add("Invalid Email format");
+        else if (!string.IsNullOrWhiteSpace(instance.OfficeEmail) && !new EmailAddressAttribute().IsValid(instance.OfficeEmail))
+            errors.Add("Invalid OfficeEmail format");
 
         if (string.IsNullOrWhiteSpace(instance.PhoneNumber))
             errors.Add("Phone number is required.");
@@ -73,9 +75,6 @@ public class EmployeeValidator
             errors.Add("Invalid phone number.");
         else if (System.Text.RegularExpressions.Regex.Replace(instance.PhoneNumber, @"\D", "").Length != 10)
             errors.Add("Phone number must be exactly 10 digits.");
-
-        if (!string.IsNullOrWhiteSpace(instance.OfficeEmail) && !new EmailAddressAttribute().IsValid(instance.OfficeEmail))
-            errors.Add("Invalid OfficeEmail format");
 
         if (instance.DateOfBirth == default)
             errors.Add("DateOfBirth is required");

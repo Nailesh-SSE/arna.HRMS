@@ -26,13 +26,10 @@ public class AttendanceRepository
 
     public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId)
     {
-        // Perf 4: Default to last 6 months to avoid loading entire history
-        var sixMonthsAgo = DateTime.Today.AddDays(-30);
-
         var query = _baseRepository.Query()
             .AsNoTracking()
             .Include(x => x.Employee)
-            .Where(x => !x.IsDeleted && x.Date >= sixMonthsAgo);
+            .Where(x => x.IsActive && !x.IsDeleted);
 
         if (status.HasValue)
             query = query.Where(x => x.StatusId == status.Value); 
@@ -49,7 +46,7 @@ public class AttendanceRepository
     {
         return await _baseRepository.Query()
             .AsNoTracking()
-            .Where(x => !x.IsDeleted && x.Id == id)
+            .Where(x => x.IsActive && !x.IsDeleted && x.Id == id)
             .FirstOrDefaultAsync();
     }
 
@@ -241,7 +238,8 @@ public class AttendanceRepository
             .Where(x =>
                 x.IsActive &&
                 !x.IsDeleted &&
-                x.EmployeeId == employeeId)
+                x.EmployeeId == employeeId &&
+                x.StatusId == AttendanceStatus.Present)
             .OrderByDescending(x => x.Date)
             .Select(x => (DateTime?)x.Date)
             .FirstOrDefaultAsync();
@@ -263,18 +261,9 @@ public class AttendanceRepository
         return await _baseRepository.Query()
             .AsNoTracking()
             .Where(a =>
-                a.IsActive &&
-                !a.IsDeleted &&
                 a.EmployeeId == employeeId &&
-                a.Date.Date == today &&
-                (
-                    a.StatusId == AttendanceStatus.Present ||
-                    a.StatusId == AttendanceStatus.Late ||
-                    a.StatusId == AttendanceStatus.HalfDay
-                ) &&
-                (a.ClockIn != null || a.ClockOut != null)
-            )
-            .OrderByDescending(a => a.CreatedOn)
+                a.Date.Date == today)
+            .OrderByDescending(a => a.Id)
             .FirstOrDefaultAsync();
     }
 

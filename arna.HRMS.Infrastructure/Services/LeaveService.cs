@@ -77,12 +77,12 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<LeaveTypeDto?>> GetLeaveTypeByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<LeaveTypeDto?>.Fail("Invalid leave type ID.");
+            return ServiceResult<LeaveTypeDto?>.Fail("Invalid ID");
 
         var entity = await _leaveRepository.GetLeaveTypeByIdAsync(id);
 
         if (entity == null)
-            return ServiceResult<LeaveTypeDto?>.Fail("Leave type not found.");
+            return ServiceResult<LeaveTypeDto?>.Fail("Leave not found");
 
         return ServiceResult<LeaveTypeDto?>.Success(_mapper.Map<LeaveTypeDto>(entity));
     }
@@ -119,13 +119,13 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<bool>> DeleteLeaveTypeAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid leave type ID.");
+            return ServiceResult<bool>.Fail("Leave Type not found");
 
         var deleted = await _leaveRepository.DeleteLeaveTypeAsync(id);
 
         return deleted
             ? ServiceResult<bool>.Success(true, "Leave type deleted successfully.")
-            : ServiceResult<bool>.Fail("Leave type not found.");
+            : ServiceResult<bool>.Fail("Leave Type not found");
     }
 
     // =========================================================
@@ -149,12 +149,12 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<LeaveRequestDto?>> GetLeaveRequestByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<LeaveRequestDto?>.Fail("Invalid leave request ID.");
+            return ServiceResult<LeaveRequestDto?>.Fail("Invalid ID");
 
         var entity = await _leaveRepository.GetLeaveRequestByIdAsync(id);
 
         if (entity == null)
-            return ServiceResult<LeaveRequestDto?>.Fail("Leave request not found.");
+            return ServiceResult<LeaveRequestDto?>.Fail("Leave request not found");
 
         return ServiceResult<LeaveRequestDto?>.Success(_mapper.Map<LeaveRequestDto>(entity));
     }
@@ -162,9 +162,12 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<List<LeaveRequestDto>>> GetLeaveRequestsByEmployeeIdAsync(int employeeId)
     {
         if (employeeId <= 0)
-            return ServiceResult<List<LeaveRequestDto>>.Fail("Invalid employee ID.");
+            return ServiceResult<List<LeaveRequestDto>>.Fail("Invalid Employee Id");
 
         var entities = await _leaveRepository.GetLeaveRequestByEmployeeIdAsync(employeeId);
+
+        if (entities == null || !entities.Any())
+            return ServiceResult<List<LeaveRequestDto>>.Fail("Leave requests not found for this employee");
 
         return ServiceResult<List<LeaveRequestDto>>.Success(_mapper.Map<List<LeaveRequestDto>>(entities));
     }
@@ -205,13 +208,13 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<bool>> DeleteLeaveRequestAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid leave request ID.");
+            return ServiceResult<bool>.Fail("Leave request not found");
 
         var deleted = await _leaveRepository.DeleteLeaveRequestAsync(id);
 
         return deleted
             ? ServiceResult<bool>.Success(true, "Leave request deleted successfully.")
-            : ServiceResult<bool>.Fail("Leave request not found.");
+            : ServiceResult<bool>.Fail("Leave request not found");
     }
 
     // =========================================================
@@ -221,12 +224,12 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<bool>> UpdateLeaveRequestStatusAsync(int leaveRequestId, Status status, int approvedBy)
     {
         if (leaveRequestId <= 0)
-            return ServiceResult<bool>.Fail("Invalid leave request ID."); 
+            return ServiceResult<bool>.Fail("Invalid Leave Request Id"); 
 
         var updated = await _leaveRepository.UpdateLeaveRequestStatusAsync(leaveRequestId, status, approvedBy);
 
         if (!updated)
-            return ServiceResult<bool>.Fail("Failed to update leave status.");
+            return ServiceResult<bool>.Fail("Failed to update leave status or status is not approved.");
 
         if (status == Status.Approved)
             await HandleApprovedLeaveAsync(leaveRequestId);
@@ -259,18 +262,18 @@ public class LeaveService : ILeaveService
     public async Task<ServiceResult<bool>> CancelLeaveRequestAsync(int id, int employeeId)
     {
         if (id <= 0 || employeeId <= 0)
-            return ServiceResult<bool>.Fail("Invalid request.");
+            return ServiceResult<bool>.Fail("Invalid Id");
 
         var leave = await _leaveRepository.GetLeaveRequestByIdAsync(id);
 
         if (leave == null)
-            return ServiceResult<bool>.Fail("Leave request not found.");
+            return ServiceResult<bool>.Fail("Leave Request not found");
 
         if (leave.EmployeeId != employeeId)
             return ServiceResult<bool>.Fail("Unauthorized action.");
 
         if (leave.StatusId is Status.Approved or Status.Rejected or Status.Cancelled)
-            return ServiceResult<bool>.Fail("Leave cannot be cancelled.");
+            return ServiceResult<bool>.Fail("Cannot cancel this leave request");
 
         var cancelled = await _leaveRepository.CancelLeaveRequestAsync(id, employeeId);
 
@@ -321,10 +324,13 @@ public class LeaveService : ILeaveService
                             CreatedOn = DateTime.Now
                         });
 
-                        for (var d = leftStart.Date; d <= leftEnd.Date; d = d.AddDays(1))
+                        var leftDates = Enumerable.Range(0, (leftEnd.Date - leftStart.Date).Days + 1)
+                            .Select(offset => leftStart.Date.AddDays(offset))
+                            .Where(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
+
+                        foreach (var d in leftDates)
                         {
-                            if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
-                                await _attendanceRepository.EnsureLeaveAttendanceAsync(leave.EmployeeId, d, leave.Reason);
+                            await _attendanceRepository.EnsureLeaveAttendanceAsync(leave.EmployeeId, d, leave.Reason);
                         }
                     }
                 }
@@ -355,10 +361,13 @@ public class LeaveService : ILeaveService
                             CreatedOn = DateTime.Now
                         });
 
-                        for (var d = rightStart.Date; d <= rightEnd.Date; d = d.AddDays(1))
+                        var rightDates = Enumerable.Range(0, (rightEnd.Date - rightStart.Date).Days + 1)
+                            .Select(offset => rightStart.Date.AddDays(offset))
+                            .Where(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
+
+                        foreach (var d in rightDates)
                         {
-                            if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
-                                await _attendanceRepository.EnsureLeaveAttendanceAsync(leave.EmployeeId, d, leave.Reason);
+                            await _attendanceRepository.EnsureLeaveAttendanceAsync(leave.EmployeeId, d, leave.Reason);
                         }
                     }
                 }
@@ -366,7 +375,10 @@ public class LeaveService : ILeaveService
         }
 
         // 4. Soft-delete conflicting Attendance records with StatusId == Leave across the range
-        for (var date = targetStart; date <= targetEnd; date = date.AddDays(1))
+        var revokeDates = Enumerable.Range(0, (targetEnd - targetStart).Days + 1)
+            .Select(offset => targetStart.AddDays(offset));
+
+        foreach (var date in revokeDates)
         {
             await _attendanceRepository.DeleteAttendanceAsync(date, employeeId, AttendanceStatus.Leave);
         }
@@ -382,6 +394,83 @@ public class LeaveService : ILeaveService
     {
         var leaveRequest = await _leaveRepository.GetLeaveRequestByIdAsync(leaveRequestId);
         if (leaveRequest == null) return;
+
+        // Auto-leave duplicate prevention:
+        // If an auto-marked leave already exists that overlaps with this newly approved leave request,
+        // soft-delete the auto-leave (or split any remaining non-overlapping segments) to prevent
+        // duplicate leave records and duplicate leave balance deductions.
+        var overlappingLeaves = await _leaveRepository.GetApprovedLeavesOverlappingRangeAsync(
+            leaveRequest.EmployeeId,
+            leaveRequest.StartDate.Date,
+            leaveRequest.EndDate.Date);
+
+        var autoLeaves = overlappingLeaves
+            .Where(lr => lr.Id != leaveRequest.Id &&
+                         (lr.Reason == "Auto Leave Marked" ||
+                          lr.ApprovalNotes == "Auto Approved" ||
+                          lr.ApprovalNotes == "Auto Adjusted"))
+            .ToList();
+
+        foreach (var autoLeave in autoLeaves)
+        {
+            await _leaveRepository.SoftDeleteLeaveRequestAsync(autoLeave);
+
+            // Left segment (dates before leaveRequest.StartDate)
+            if (autoLeave.StartDate.Date < leaveRequest.StartDate.Date)
+            {
+                var leftStart = autoLeave.StartDate.Date;
+                var leftEnd = leaveRequest.StartDate.Date.AddDays(-1);
+                var leftDays = await CalculateActualLeaveDaysAsync(leftStart, leftEnd);
+
+                if (leftDays > 0)
+                {
+                    await _leaveRepository.CreateLeaveRequestAsync(new LeaveRequest
+                    {
+                        EmployeeId = autoLeave.EmployeeId,
+                        LeaveTypeId = autoLeave.LeaveTypeId,
+                        StartDate = leftStart,
+                        EndDate = leftEnd,
+                        LeaveDays = leftDays,
+                        Reason = "Auto Leave Marked",
+                        StatusId = Status.Approved,
+                        ApprovalNotes = "Auto Adjusted",
+                        ApprovedBy = autoLeave.ApprovedBy,
+                        ApprovedDate = autoLeave.ApprovedDate ?? DateTime.Now,
+                        IsActive = true,
+                        IsDeleted = false,
+                        CreatedOn = DateTime.Now
+                    });
+                }
+            }
+
+            // Right segment (dates after leaveRequest.EndDate)
+            if (autoLeave.EndDate.Date > leaveRequest.EndDate.Date)
+            {
+                var rightStart = leaveRequest.EndDate.Date.AddDays(1);
+                var rightEnd = autoLeave.EndDate.Date;
+                var rightDays = await CalculateActualLeaveDaysAsync(rightStart, rightEnd);
+
+                if (rightDays > 0)
+                {
+                    await _leaveRepository.CreateLeaveRequestAsync(new LeaveRequest
+                    {
+                        EmployeeId = autoLeave.EmployeeId,
+                        LeaveTypeId = autoLeave.LeaveTypeId,
+                        StartDate = rightStart,
+                        EndDate = rightEnd,
+                        LeaveDays = rightDays,
+                        Reason = "Auto Leave Marked",
+                        StatusId = Status.Approved,
+                        ApprovalNotes = "Auto Adjusted",
+                        ApprovedBy = autoLeave.ApprovedBy,
+                        ApprovedDate = autoLeave.ApprovedDate ?? DateTime.Now,
+                        IsActive = true,
+                        IsDeleted = false,
+                        CreatedOn = DateTime.Now
+                    });
+                }
+            }
+        }
 
         var festivalDates = await GetFestivalDatesAsync();
 
@@ -422,19 +511,8 @@ public class LeaveService : ILeaveService
     private async Task<int> CalculateActualLeaveDaysAsync(DateTime startDate, DateTime endDate)
     {
         var festivalDates = await GetFestivalDatesAsync();
-        int leaveDays = 0;
-
-        for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
-        {
-            if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
-                continue;
-
-            if (festivalDates.Contains(date))
-                continue;
-
-            leaveDays++;
-        }
-
-        return leaveDays;
+        return Enumerable.Range(0, (endDate.Date - startDate.Date).Days + 1)
+            .Select(offset => startDate.Date.AddDays(offset))
+            .Count(date => date.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) && !festivalDates.Contains(date));
     }
 }

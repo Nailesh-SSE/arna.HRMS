@@ -23,7 +23,7 @@ public class AttendanceRequestRepository
     {
         var query = _baseRepository.Query()
             .AsNoTracking()
-            .Where(ar => !ar.IsDeleted);
+            .Where(ar => ar.IsActive && !ar.IsDeleted);
 
         if (employeeId.HasValue)
             query = query.Where(ar => ar.EmployeeId == employeeId.Value);
@@ -53,7 +53,7 @@ public class AttendanceRequestRepository
     public async Task<AttendanceRequest?> GetAttendanceRequestByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(ar => ar.Id == id && !ar.IsDeleted)
+            .Where(ar => ar.Id == id && ar.IsActive && !ar.IsDeleted)
             .Include(ar => ar.Employee)
             .FirstOrDefaultAsync();
     }
@@ -73,6 +73,7 @@ public class AttendanceRequestRepository
         var entity = await _baseRepository.Query()
             .FirstOrDefaultAsync(ar =>
                 ar.Id == id &&
+                ar.IsActive &&
                 !ar.IsDeleted);
 
         if (entity == null)
@@ -91,6 +92,7 @@ public class AttendanceRequestRepository
         var entity = await _baseRepository.Query()
             .FirstOrDefaultAsync(ar =>
                 ar.Id == id &&
+                ar.IsActive &&
                 !ar.IsDeleted);
 
         if (entity == null)
@@ -137,6 +139,7 @@ public class AttendanceRequestRepository
             .FirstOrDefaultAsync(ar =>
                 ar.Id == id &&
                 ar.EmployeeId == employeeId &&
+                ar.IsActive &&
                 !ar.IsDeleted);
 
         if (entity == null || entity.StatusId != Status.Pending)

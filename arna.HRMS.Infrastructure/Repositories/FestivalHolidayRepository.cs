@@ -83,6 +83,7 @@ public class FestivalHolidayRepository
         return await _baseRepository.Query()
             .AsNoTracking()
             .Where(h =>
+                h.IsActive &&
                 !h.IsDeleted &&
                 h.FestivalName.Trim().ToLower() == name)
             .ToListAsync();

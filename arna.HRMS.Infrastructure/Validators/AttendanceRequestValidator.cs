@@ -88,8 +88,11 @@ public class AttendanceRequestValidator
 
         if (dto.FromDate != null && dto.ToDate != null)
         {
-            if (dto.FromDate.Value.Date > DateTime.Now.Date || dto.ToDate.Value.Date > DateTime.Now.Date)
-                errors.Add("Future Date is not allowed");
+            if (dto.FromDate.Value.Date >= DateTime.Now.Date)
+                errors.Add("Future or current From Date is not allowed");
+
+            if (dto.ToDate.Value.Date >= DateTime.Now.Date)
+                errors.Add("Future or current To Date is not allowed");
 
             if (dto.FromDate.Value.Date > dto.ToDate.Value.Date)
                 errors.Add("From Date cannot be greater than To Date");

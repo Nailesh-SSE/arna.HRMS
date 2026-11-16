@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Service;
@@ -34,12 +34,12 @@ public class FestivalHolidayService : IFestivalHolidayService
     public async Task<ServiceResult<FestivalHolidayDto?>> GetFestivalHolidayByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<FestivalHolidayDto?>.Fail("Invalid festival holiday ID.");
+            return ServiceResult<FestivalHolidayDto?>.Fail("Invalid FestivalHoliday ID");
 
         var entity = await _repository.GetFestivalHolidayByIdAsync(id);
 
         if (entity == null)
-            return ServiceResult<FestivalHolidayDto?>.Fail("Festival holiday not found.");
+            return ServiceResult<FestivalHolidayDto?>.Fail("Festival holiday not found");
 
         return ServiceResult<FestivalHolidayDto?>.Success(_mapper.Map<FestivalHolidayDto>(entity));
     }
@@ -53,15 +53,21 @@ public class FestivalHolidayService : IFestivalHolidayService
 
         var data = await _repository.GetByMonthAsync(year, month);
 
+        if (data == null || !data.Any())
+            return ServiceResult<List<FestivalHolidayDto>>.Fail("Festival holidays not found");
+
         return ServiceResult<List<FestivalHolidayDto>>.Success(_mapper.Map<List<FestivalHolidayDto>>(data));
     }
 
     public async Task<ServiceResult<List<FestivalHolidayDto>>> GetFestivalHolidaysByNameAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return ServiceResult<List<FestivalHolidayDto>>.Fail("Festival name is required.");
+            return ServiceResult<List<FestivalHolidayDto>>.Fail("Festival name is required");
 
         var data = await _repository.GetByNameAsync(name);
+
+        if (data == null || !data.Any())
+            return ServiceResult<List<FestivalHolidayDto>>.Fail("No Data Found");
 
         return ServiceResult<List<FestivalHolidayDto>>.Success(_mapper.Map<List<FestivalHolidayDto>>(data));
     }
@@ -99,12 +105,12 @@ public class FestivalHolidayService : IFestivalHolidayService
     public async Task<ServiceResult<bool>> DeleteFestivalHolidayAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid festival holiday ID.");
+            return ServiceResult<bool>.Fail("Festival holiday not found");
 
         var deleted = await _repository.DeleteFestivalHolidayAsync(id);
 
         return deleted
-            ? ServiceResult<bool>.Success(true, "Festival holiday deleted successfully.")
-            : ServiceResult<bool>.Fail("Festival holiday not found.");
+            ? ServiceResult<bool>.Success(true, "Festival holiday deleted successfully")
+            : ServiceResult<bool>.Fail("Festival holiday not found");
     }
 }

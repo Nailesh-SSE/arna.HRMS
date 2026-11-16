@@ -99,6 +99,12 @@ public class LeaveValidator
         if (dto.StartDate.Date > dto.EndDate.Date)
             errors.Add("Start date cannot be after End date");
 
+        if (dto.Reason != "Auto Leave Marked" && dto.ApprovalNotes != "Auto Approved")
+        {
+            if (dto.StartDate.Date < DateTime.Today.Date || dto.EndDate.Date < DateTime.Today.Date)
+                errors.Add("Leave dates cannot be in the past");
+        }
+
         return Task.FromResult(
             errors.Any()
                 ? ValidationResult.Fail(errors.ToArray())

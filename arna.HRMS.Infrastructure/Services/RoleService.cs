@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Service;
@@ -36,27 +36,35 @@ public class RoleService : IRoleService
     public async Task<ServiceResult<RoleDto?>> GetRoleByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<RoleDto?>.Fail("Invalid role ID.");
+            return ServiceResult<RoleDto?>.Fail("Invalid Role ID");
 
         var role = await _repository.GetRoleByIdAsync(id);
 
         if (role == null)
-            return ServiceResult<RoleDto?>.Fail("Role not found.");
+            return ServiceResult<RoleDto?>.Fail("Role not found");
 
-        return ServiceResult<RoleDto?>.Success(_mapper.Map<RoleDto>(role));
+        var dto = _mapper.Map<RoleDto>(role);
+        if (dto == null)
+            return ServiceResult<RoleDto?>.Fail("No Data Found");
+
+        return ServiceResult<RoleDto?>.Success(dto);
     }
 
     public async Task<ServiceResult<RoleDto?>> GetRoleByNameAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return ServiceResult<RoleDto?>.Fail("Role name is required.");
+            return ServiceResult<RoleDto?>.Fail("Role name is required");
 
         var role = await _repository.GetRoleByNameAsync(name.Trim());
 
         if (role == null)
-            return ServiceResult<RoleDto?>.Fail("Role not found.");
+            return ServiceResult<RoleDto?>.Fail("Role not found");
 
-        return ServiceResult<RoleDto?>.Success(_mapper.Map<RoleDto>(role));
+        var dto = _mapper.Map<RoleDto>(role);
+        if (dto == null)
+            return ServiceResult<RoleDto?>.Fail("No Data Found");
+
+        return ServiceResult<RoleDto?>.Success(dto);
     }
 
     public async Task<ServiceResult<RoleDto>> CreateRoleAsync(RoleDto dto)
@@ -70,8 +78,11 @@ public class RoleService : IRoleService
         var entity = _mapper.Map<Role>(dto);
 
         var created = await _repository.CreateRoleAsync(entity);
+        var mapped = _mapper.Map<RoleDto>(created);
+        if (mapped == null)
+            return ServiceResult<RoleDto>.Fail("Fail to create Role");
 
-        return ServiceResult<RoleDto>.Success(_mapper.Map<RoleDto>(created), "Role created successfully.");
+        return ServiceResult<RoleDto>.Success(mapped, "Role created successfully");
     }
 
     public async Task<ServiceResult<RoleDto>> UpdateRoleAsync(RoleDto dto)
@@ -86,20 +97,24 @@ public class RoleService : IRoleService
         var updated = await _repository.UpdateRoleAsync(entity);
 
         if (updated == null)
-            return ServiceResult<RoleDto>.Fail("Role not found.");
+            return ServiceResult<RoleDto>.Fail("No Data Found");
 
-        return ServiceResult<RoleDto>.Success(_mapper.Map<RoleDto>(updated), "Role updated successfully.");
+        var mapped = _mapper.Map<RoleDto>(updated);
+        if (mapped == null)
+            return ServiceResult<RoleDto>.Fail("Fail to Update Role");
+
+        return ServiceResult<RoleDto>.Success(mapped, "Role updated successfully");
     }
 
     public async Task<ServiceResult<bool>> DeleteRoleAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid role ID.");
+            return ServiceResult<bool>.Fail("Role not found");
 
         var deleted = await _repository.DeleteRoleAsync(id);
 
         return deleted
-            ? ServiceResult<bool>.Success(true, "Role deleted successfully.")
-            : ServiceResult<bool>.Fail("Role not found.");
+            ? ServiceResult<bool>.Success(true, "Role deleted successfully")
+            : ServiceResult<bool>.Fail("Role not found");
     }
 }

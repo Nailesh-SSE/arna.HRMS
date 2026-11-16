@@ -17,7 +17,7 @@ public class EmployeeRepository
     {
         return await _baseRepository.Query()
             .AsNoTracking()
-            .Where(e => !e.IsDeleted)
+            .Where(e => e.IsActive && !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
             .OrderByDescending(e => e.Id)
@@ -64,8 +64,8 @@ public class EmployeeRepository
 
     public async Task<bool> EmployeeExistsAsync(string? email, string? phoneNumber, string? officeEmail , int? employeeId = 0)
     {
-        if (string.IsNullOrWhiteSpace(email) ||
-            string.IsNullOrWhiteSpace(phoneNumber) ||
+        if (string.IsNullOrWhiteSpace(email) &&
+            string.IsNullOrWhiteSpace(phoneNumber) &&
             string.IsNullOrWhiteSpace(officeEmail))
             return false;
 
@@ -75,7 +75,7 @@ public class EmployeeRepository
 
         return await _baseRepository.Query()
             .AsNoTracking()
-            .Where(e => !e.IsDeleted)
+            .Where(e => e.IsActive && !e.IsDeleted)
             .AnyAsync(e =>
                e.Id != employeeId &&
                 (
