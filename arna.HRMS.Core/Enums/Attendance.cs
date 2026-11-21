@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Core.Enums;
+namespace arna.HRMS.Core.Enums;
 
 public enum AttendanceLocation
 {

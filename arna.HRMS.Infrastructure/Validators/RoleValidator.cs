@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 
@@ -26,8 +26,8 @@ public class RoleValidator
             return ValidationResult.Fail("Invalid request");
         if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid role ID");
-        var exist = _repository.GetRoleByIdAsync(instance.Id);
-        if (exist.Result == null)
+        var exist = await _repository.GetRoleByIdAsync(instance.Id);
+        if (exist == null)
             return ValidationResult.Fail("No Data Found");
         return await ValidateCommonAsync(instance);
     }

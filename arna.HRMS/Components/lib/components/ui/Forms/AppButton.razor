@@ -1,11 +1,11 @@
-﻿<button type="@Type"
+<button type="@Type"
         class="@ResolvedClass"
         disabled="@Disabled"
         @onclick="OnClick"
         @attributes="AdditionalAttributes">
     @if (ChildContent is not null)
     {
-        <span class="d-inline-flex align-items-center gap-2">
+        <span class="d-inline-flex align-items-center gap-1.5">
             @ChildContent
 
             @if (!string.IsNullOrWhiteSpace(Text))
@@ -27,15 +27,16 @@
 
     [Parameter] public string DefaultClass { get; set; } = "btn btn-primary";
     [Parameter] public string ButtonClass { get; set; } = "";
+    [Parameter] public string Class { get; set; } = "";
 
-    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private string ResolvedClass =>
-        string.IsNullOrWhiteSpace(ButtonClass)
-            ? DefaultClass
-            : ButtonClass;
+        !string.IsNullOrWhiteSpace(Class)
+            ? Class
+            : (!string.IsNullOrWhiteSpace(ButtonClass) ? ButtonClass : DefaultClass);
 }

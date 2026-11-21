@@ -1,4 +1,4 @@
-﻿/* ─── Header Icon ─── */
+/* ─── Header Icon ─── */
 .req-list-header-icon {
     width: 32px;
     height: 32px;
@@ -61,10 +61,10 @@
    Action Buttons (Pending — Icon Only)
    ═══════════════════════════════════════════ */
 .req-action-btn {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     padding: 0;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     transition: all 0.2s ease;
 }
 
@@ -94,9 +94,9 @@
    Status Icons (Non-Pending — Icon Only)
    ═══════════════════════════════════════════ */
 .req-status-icon {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem;
 }
 
 .req-icon-approved {
@@ -119,15 +119,15 @@
    ═══════════════════════════════════════════ */
 @media (max-width: 575.98px) {
     .req-action-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 0.75rem;
+        width: 26px;
+        height: 26px;
+        font-size: 0.72rem;
     }
 
     .req-status-icon {
-        width: 28px;
-        height: 28px;
-        font-size: 0.8rem;
+        width: 26px;
+        height: 26px;
+        font-size: 0.75rem;
     }
 }
 
@@ -136,14 +136,14 @@
    ═══════════════════════════════════════════ */
 @media (min-width: 992px) {
     .req-action-btn {
-        width: 34px;
-        height: 34px;
-        font-size: 0.9rem;
+        width: 28px;
+        height: 28px;
+        font-size: 0.8rem;
     }
 
     .req-status-icon {
-        width: 34px;
-        height: 34px;
-        font-size: 0.95rem;
+        width: 28px;
+        height: 28px;
+        font-size: 0.82rem;
     }
 }

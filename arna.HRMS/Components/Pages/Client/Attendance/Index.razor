@@ -1,4 +1,5 @@
-﻿@page "/emp-attendance-management"
+@page "/emp-attendance-management"
+@page "/emp-attendance-requests"
 
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.Pages.Client.Attendance.EmployeeAttendanceRequest
@@ -18,95 +19,59 @@
 @using arna.HRMS.Services.Common
 
 @inherits AuthenticatedLayoutBase
+@implements IDisposable
 
 @inject AttendanceState State
 @inject NotificationService NotificationService
 @inject IAttendanceService AttendanceService
 @inject IAttendanceRequestService AttendanceRequestService
 @inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
 
 <Loader Visible="@_isLoading" Message="@_loaderMessage" />
 
 @if (!_isLoading)
 {
-    <div class="container-fluid px-3 px-md-4 py-3 py-md-4">
+    <div class="container-fluid p-0">
 
         <!-- ================= HEADER ================= -->
-        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
-                                justify-content-between gap-2 gap-sm-3 mb-4">
-
-            <div class="d-flex align-items-start gap-2">
-                <span class="dash-header-icon bg-primary bg-opacity-10 text-primary rounded-2
-                                         p-2 d-inline-flex align-items-center justify-content-center">
-                    <i class="bi bi-calendar-check-fill fs-5"></i>
-                </span>
-
-                <div>
-                    <h5 class="fw-bold mb-0">Attendance</h5>
-                    <p class="text-muted mb-0 small d-none d-sm-block">
-                        View and track your daily attendance records
-                    </p>
+        <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h3 class="enterprise-page-title mb-0">@(_activeTab == Tab.Attendance ? "My Attendance" : "Attendance Requests")</h3>
+                    <span class="header-count-pill">
+                        @(_activeTab == Tab.Attendance ? $"{State.AttendanceList.Count} Days" : $"{_pendingRequestCount} Pending")
+                    </span>
                 </div>
+                <p class="enterprise-page-subtitle mb-0">
+                    @(_activeTab == Tab.Attendance ? "View and track your daily attendance records and clock timings." : "Track and manage your attendance regularization requests.")
+                </p>
             </div>
 
-            <button class="btn btn-primary btn-sm rounded-pill px-4"
-                    @onclick="OpenNewRequest">
-                <i class="bi bi-plus-lg me-1"></i>
-                New Request
-            </button>
-        </div>
-
-        <!-- ================= TAB NAVIGATION ================= -->
-        <div class="py-3 attendence-fade-in">
-            <div class="card border-0 shadow-sm rounded-3 mb-4 ">
-                <div class="card-body p-0">
-                    <ul class="nav nav-tabs attendence-tabs px-3 pt-3">
-
-                        <li class="nav-item">
-                            <button class="nav-link @(_activeTab == Tab.Attendance ? "active" : "")"
-                                    @onclick="() => SetTab(Tab.Attendance)">
-                                <i class="bi bi-calendar-check me-2"></i>
-                                Attendance
-
-                                @if (_attendanceCount > 0)
-                                {
-                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-2">
-                                        @_attendanceCount
-                                    </span>
-                                }
-                            </button>
-                        </li>
-
-                        <li class="nav-item">
-                            <button class="nav-link @(_activeTab == Tab.Requests ? "active" : "")"
-                                    @onclick="() => SetTab(Tab.Requests)">
-                                <i class="bi bi-inbox me-2"></i>
-                                Attendance Requests
-
-                                @if (_pendingRequestCount > 0)
-                                {
-                                    <span class="badge bg-warning text-dark rounded-pill ms-2">
-                                        @_pendingRequestCount
-                                    </span>
-                                }
-                            </button>
-                        </li>
-
-                    </ul>
-                </div>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-3 shadow-xs fw-medium bg-white"
+                        @onclick="LoadData" disabled="@_isLoading" title="Refresh attendance">
+                    <i class="bi bi-arrow-clockwise @(_isLoading ? "spin-animation" : "")"></i>
+                    <span>Refresh</span>
+                </button>
+                <button class="btn btn-add-primary"
+                        @onclick="OpenNewRequest">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>New Request</span>
+                </button>
             </div>
         </div>
-        <!-- ================= TAB CONTENT ================= -->
-        <div class="tab-content">
+
+        <!-- ================= CONTENT ================= -->
+        <div class="attendence-fade-in">
 
             @if (_activeTab == Tab.Attendance)
             {
-                <!-- Month + Toggle -->
-                <div class="card border-0 shadow-sm rounded-3 mb-4">
-                    <div class="card-body">
-
+                <!-- Month Filter & View Mode Bar -->
+                <div class="card border-0 shadow-sm rounded-3 mb-3 bg-white">
+                    <div class="card-body py-2 px-3">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2">
+                            <div class="d-flex align-items-center flex-wrap gap-2">
                                 <SelectMonthAndYear Year="@State.Year"
                                                     Month="@State.Month"
                                                     OnChange="OnMonthSelected" />
@@ -115,28 +80,31 @@
                                     System Triggered Leave (@_leaveCount)
                                 </span>
                             </div>
+
                             <AttendanceViewToggle ActiveView="@_attendanceViewMode"
-                                                  OnChange="SetAttendanceView" />
+                                                   OnChange="SetAttendanceView" />
                         </div>
-
-                        <div class="mt-3">
-                            @switch (_attendanceViewMode)
-                            {
-                                case AttendanceState.TABLE:
-                                    <EmployeeAttendanceTableView Attendance="State.AttendanceList" />
-                                    break;
-
-                                case AttendanceState.CALENDAR:
-                                    <AttendanceCalendar Year="@State.Year"
-                                                        Month="@State.Month"
-                                                        AttendanceLookup="State.AttendanceLookup" />
-                                    break;
-                            }
-                        </div>
-
                     </div>
                 </div>
 
+                <!-- Grid / Calendar Views -->
+                <div>
+                    @switch (_attendanceViewMode)
+                    {
+                        case AttendanceState.TABLE:
+                            <EmployeeAttendanceTableView Attendance="State.AttendanceList" />
+                            break;
+
+                        case AttendanceState.CALENDAR:
+                            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                                <AttendanceCalendar Year="@State.Year"
+                                                    Month="@State.Month"
+                                                    AttendanceLookup="State.AttendanceLookup"
+                                                    OnRequestAttendance="HandleRequestForDate" />
+                            </div>
+                            break;
+                    }
+                </div>
             }
 
             @if (_activeTab == Tab.Requests)
@@ -152,35 +120,39 @@
         <EmployeeRequestDrawer IsOpen="@_isDrawerOpen"
                                IsOpenChanged="OnDrawerOpenChanged"
                                Title="@(_editModel != null
-                                                               ? "Edit Attendance Request"
-                                                               : "New Attendance Request")"
-                           EditModel="_editModel" />
-</div>
+                                     ? "Edit Attendance Request"
+                                     : "New Attendance Request")"
+                               EditModel="_editModel" />
+    </div>
 }
+
 @code {
 
-    // ═══════════ CONSTANTS ═══════════
+    // â•â•â•â•â•â•â•â•â•â•â• CONSTANTS â•â•â•â•â•â•â•â•â•â•â•
 
     private const int ExpectedDailyHours = 8;
     private int _leaveCount;
 
-    // ═══════════ STATE ═══════════
+    // â•â•â•â•â•â•â•â•â•â•â• STATE â•â•â•â•â•â•â•â•â•â•â•
 
     private bool _isLoading = true;
     private bool _isDrawerOpen;
     private string _loaderMessage = "Loading attendance information...";
 
     private AttendanceRequestViewModel? _editModel;
-    private string _attendanceViewMode = AttendanceState.TABLE;
+    private string _attendanceViewMode = AttendanceState.CALENDAR;
 
     private enum Tab { Attendance, Requests }
     private Tab _activeTab = Tab.Attendance;
 
-    // ── Badge counts ──
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
+
+    // â”€â”€ Badge counts â”€â”€
     private int _attendanceCount;
     private int _pendingRequestCount;
 
-    // ═══════════ LIFECYCLE ═══════════
+    // â•â•â•â•â•â•â•â•â•â•â• LIFECYCLE â•â•â•â•â•â•â•â•â•â•â•
 
     protected override async Task OnInitializedAsync()
     {
@@ -188,13 +160,35 @@
 
         if (!IsAuthenticated()) return;
 
+        NavigationManager.LocationChanged += HandleLocationChanged;
+        SyncTabFromUri(NavigationManager.Uri);
+
         EnsureSelectedMonth();
         await LoadData();
 
         _isLoading = false;
     }
 
-    // ═══════════ DATA LOADING ═══════════
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SyncTabFromUri(e.Location);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncTabFromUri(string uri)
+    {
+        if (uri.Contains("/emp-attendance-requests", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(TabQuery, "requests", StringComparison.OrdinalIgnoreCase))
+        {
+            _activeTab = Tab.Requests;
+        }
+        else
+        {
+            _activeTab = Tab.Attendance;
+        }
+    }
+
+    // â•â•â•â•â•â•â•â•â•â•â• DATA LOADING â•â•â•â•â•â•â•â•â•â•â•
 
     private void EnsureSelectedMonth()
     {
@@ -273,6 +267,14 @@
     {
         if (_activeTab == tab) return;
         _activeTab = tab;
+        if (tab == Tab.Requests)
+        {
+            NavigationManager.NavigateTo("/emp-attendance-requests", false);
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/emp-attendance-management", false);
+        }
     }
 
     private async Task SetAttendanceView(string mode)
@@ -294,6 +296,22 @@
         State.Month = value.month;
         State.SelectedMonth = $"{value.year}-{value.month:D2}";
         await LoadData();
+    }
+
+    private async Task NavigateMonth(int delta)
+    {
+        var d = new DateTime(State.Year, State.Month, 1).AddMonths(delta);
+        await OnMonthSelected((d.Year, d.Month));
+    }
+
+    private void HandleRequestForDate(DateTime date)
+    {
+        _editModel = new AttendanceRequestViewModel
+        {
+            FromDate = date,
+            ToDate = date
+        };
+        _isDrawerOpen = true;
     }
 
     private void OpenNewRequest()
@@ -413,5 +431,10 @@
         int minutes = ts.Minutes;
         int seconds = ts.Seconds;
         return $"{totalHours}:{minutes:D2}:{seconds:D2}";
+    }
+
+    public override void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged; base.Dispose();
     }
 }

@@ -1,15 +1,15 @@
-﻿@page "/employee"
+@page "/employee"
 
 @using arna.HRMS.Components.Loader
-@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
-@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Common
 
 @inject IEmployeeService EmployeeService
+@inject IDepartmentService DepartmentService
 @inject NavigationManager NavigationManager
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
@@ -17,192 +17,453 @@
 
 <Loader Visible="_isLoading" Message="@_loadingMessage" />
 
-<div class="container-fluid px-3 px-md-4 py-3 py-md-4">
+<div class="emp-page-container">
 
-    <!-- ═══════════ HEADER ═══════════ -->
-    <!-- IMPROVED HEADER SECTION -->
-    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center
-            justify-content-between gap-3 gap-sm-4 mb-4 mb-md-5">
-        <div class="d-flex align-items-center gap-3">
-            <div class="emp-header-icon bg-primary bg-opacity-10 text-primary rounded-2
-                   d-inline-flex align-items-center justify-content-center flex-shrink-0">
-                <i class="bi bi-people-fill"></i>
+    <!-- ═══════════ 1. PAGE HEADER & PRIMARY ACTION ═══════════ -->
+    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="emp-title mb-0">Employees</h3>
+                @if (!_isLoading)
+                {
+                    <span class="header-count-pill">
+                        @_employees.Count Total
+                    </span>
+                }
             </div>
-            <div>
-                <h4 class="fw-bold mb-0">Employees</h4>
-            </div>
+            <p class="emp-subtitle mb-0">Manage employee records, organizational departments, and reporting hierarchy.</p>
         </div>
 
-        @if (IsAdmin() || IsSuperAdmin())
-        {
-            <button class="btn btn-primary btn-sm rounded-pill px-2 py-1 emp-add-btn w-auto"
-                    @onclick="@(() => NavigateTo("/employee/create"))">
-                <i class="bi bi-plus-lg me-1"></i>
-                <span class="d-none d-sm-inline">Add Employee</span>
-                <span class="d-sm-none">Add</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1.5 px-3 py-2 rounded-3 shadow-xs fw-medium bg-white"
+                    @onclick="LoadDataAsync" disabled="@_isLoading" title="Refresh directory">
+                <i class="bi bi-arrow-clockwise @(_isLoading ? "spin-animation" : "")"></i>
+                <span>Refresh</span>
             </button>
-        }
+
+            @if (IsAdmin() || IsSuperAdmin())
+            {
+                <button class="btn btn-add-primary"
+                        @onclick="@(() => NavigateTo("/employee/create"))">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Add Employee</span>
+                </button>
+            }
+        </div>
     </div>
 
-    <!-- IMPROVED TABLE SECTION -->
-    <div class="card border-0 shadow-sm rounded-3">
-        <div class="card-header bg-white border-bottom py-3 px-3 px-md-4">
-            <div class="d-flex align-items-center justify-content-between">
-
-                <!-- LEFT SIDE -->
-                <div class="d-flex align-items-center gap-3 w-100">
-
-                    <!-- Filter Label -->
-                    <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-search text-primary"></i>
-                        <span class="fw-medium text-muted small">Filter</span>
-                    </div>
-
-                    <!-- SEARCH (FULL WIDTH) -->
-                    <div style="width: 400px;">
-                        <input type="text"
-                               class="form-control bg-light rounded-pill px-3 py-2"
-                               style="background:#f8fafc; border:2px solid #e5e7eb;"
-                               placeholder="Search by name, email, or employee number..."
-                               @bind="_searchTerm"
-                               @bind:event="oninput" />
-                    </div>
-                    <!-- CLEAR BUTTON -->
-                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
-                    {
-                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3"
-                                @onclick="ClearSearch">
-                            <i class="bi bi-x-lg me-1"></i>
-                            <span class="d-none d-sm-inline">Clear</span>
-                        </button>
-                    }
-
-                </div>
-
-                <!-- RIGHT SIDE -->
-                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 ms-3">
-                    @FilteredEmployees.Count
-                    <span class="d-none d-sm-inline ms-1">employees</span>
-                </span>
-
+    <!-- ═══════════ SEARCH & ADVANCED FILTER BAR ═══════════ -->
+    <div class="emp-filter-card mb-4">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            
+            <!-- Search Box -->
+            <div class="filter-search-box flex-grow-1">
+                <i class="bi bi-search filter-search-icon"></i>
+                <input type="text"
+                       class="filter-search-input"
+                       placeholder="Search by employee name, email, employee ID, designation..."
+                       value="@_searchTerm"
+                       @oninput="OnSearchInput" />
+                @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                {
+                    <button type="button" class="filter-clear-btn" @onclick="ClearSearch" title="Clear search">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                }
             </div>
-        </div>
 
-        <div class="card-body p-0">
+            <!-- Department Filter -->
+            <div class="filter-select-wrap">
+                <AppSearchableSelect Value="@_selectedDepartmentId.ToString()"
+                                     ValueChanged="OnDepartmentFilterChanged"
+                                     Placeholder="All Departments"
+                                     AllowClear="false"
+                                     Options="DepartmentFilterOptions" />
+            </div>
+
+            <!-- Designation Filter -->
+            <div class="filter-select-wrap">
+                <AppSearchableSelect Value="@_selectedDesignation"
+                                     ValueChanged="OnDesignationFilterChanged"
+                                     Placeholder="All Designations"
+                                     AllowClear="false"
+                                     Options="DesignationFilterOptions" />
+            </div>
+
+            <!-- Status Filter -->
+            <div class="filter-select-wrap">
+                <AppSearchableSelect Value="@_selectedStatus"
+                                     ValueChanged="OnStatusFilterChanged"
+                                     Placeholder="All Status"
+                                     AllowClear="false"
+                                     Options="StatusFilterOptions" />
+            </div>
+
+            <!-- Reset / Active Filter Trigger -->
+            @if (HasActiveFilters)
+            {
+                <div>
+                    <button class="btn-filter-trigger active-filter" @onclick="ClearAllFilters" title="Reset all filters">
+                        <i class="bi bi-x-lg"></i>
+                        <span>Reset Filters</span>
+                    </button>
+                </div>
+            }
+
+        </div>
+    </div>
+
+    <!-- ═══════════ 4. EMPLOYEES DIRECTORY TABLE ═══════════ -->
+    <div class="emp-grid-card">
+        
+        <div class="emp-table-wrapper">
             @if (_isLoading)
             {
-                <div class="text-center py-5 py-md-6">
+                <div class="text-center py-5">
                     <div class="spinner-border text-primary mb-3" role="status"></div>
-                    <p class="text-muted mb-0 small">Loading employees…</p>
+                    <p class="text-muted mb-0 small">Loading employee records...</p>
                 </div>
             }
             else if (!FilteredEmployees.Any())
             {
-                <div class="text-center py-5 py-md-6 px-3">
-                    <div class="emp-empty-icon bg-light rounded-3 d-inline-flex
-                                align-items-center justify-content-center mx-auto mb-3">
-                        <i class="bi bi-inbox fs-1 text-muted opacity-50"></i>
+                <div class="text-center py-5 px-3">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle p-3 mb-3 text-secondary opacity-75" style="width:64px; height:64px;">
+                        <i class="bi bi-people fs-2"></i>
                     </div>
-                    <h6 class="fw-semibold text-muted mb-2">No Employees Found</h6>
-                    <p class="text-muted small mb-4 emp-empty-text mx-auto">
-                        @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                    <h6 class="fw-bold text-dark mb-1">No Employees Found</h6>
+                    <p class="text-muted small mb-3">
+                        @if (HasActiveFilters)
                         {
-                            <span>No employees match "<strong>@_searchTerm</strong>"</span>
+                            <span>No employee records match your active search or filter criteria.</span>
                         }
                         else
                         {
-                            <span>No employees have been added yet.</span>
+                            <span>No employees have been added to the system yet.</span>
                         }
                     </p>
-                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                    @if (HasActiveFilters)
                     {
-                        <button class="btn btn-sm btn-outline-primary rounded-pill px-4"
-                                @onclick="ClearSearch">
-                            <i class="bi bi-arrow-counterclockwise me-1"></i>Clear Search
+                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3" @onclick="ClearAllFilters">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> Clear Filters
                         </button>
                     }
                     else if (IsAdmin() || IsSuperAdmin())
                     {
-                        <button class="btn btn-sm btn-primary rounded-pill px-4"
-                                @onclick="@(() => NavigateTo("/employee/create"))">
-                            <i class="bi bi-plus-lg me-1"></i>Add First Employee
+                        <button class="btn btn-sm btn-primary rounded-pill px-3" @onclick="@(() => NavigateTo("/employee/create"))">
+                            <i class="bi bi-plus-lg me-1"></i> Add First Employee
                         </button>
                     }
                 </div>
             }
             else
             {
-                <div class="emp-table-scroll">
-                    <AppTable TItem="EmployeeViewModel"
-                              Items="FilteredEmployees"
-                              Columns="TableSchemas.Employees"
-                              EnablePagination="true"
-                              PageSize="10"
-                              WrapperClass="att-list-table"
-                              OnEdit="EditEmployee"
-                              OnDelete="DeleteEmployee"
-                              ShowActions="IsAdmin() || IsSuperAdmin()" />
-                </div>
+                <table class="emp-modern-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 75px; text-align: center;">PROFILE</th>
+                            <th style="width: 105px;">EMP ID</th>
+                            <th style="min-width: 230px;">EMPLOYEE</th>
+                            <th style="min-width: 220px;">OFFICE EMAIL</th>
+                            <th style="min-width: 150px;">DEPARTMENT</th>
+                            <th style="min-width: 180px;">DESIGNATION</th>
+                            <th style="min-width: 180px;">REPORTING MANAGER</th>
+                            <th style="width: 110px; text-align: center;">STATUS</th>
+                            @if (IsAdmin() || IsSuperAdmin())
+                            {
+                                <th style="width: 110px; text-align: center;">ACTIONS</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var emp in PagedEmployees)
+                        {
+                            <tr>
+                                <!-- PROFILE -->
+                                <td class="text-center">
+                                    @if (!string.IsNullOrWhiteSpace(emp.ProfileImage))
+                                    {
+                                        <img src="@emp.ProfileImage" alt="@emp.FullName" class="avatar-circle avatar-img mx-auto" />
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar-circle mx-auto">
+                                            @GetInitials(emp.FullName)
+                                        </div>
+                                    }
+                                </td>
+
+                                <!-- EMP ID -->
+                                <td>
+                                    <span class="emp-id-badge" title="Employee ID: @(string.IsNullOrWhiteSpace(emp.EmployeeNumber) ? $"EMP{emp.Id:D3}" : emp.EmployeeNumber)">
+                                        @(string.IsNullOrWhiteSpace(emp.EmployeeNumber) ? $"EMP{emp.Id:D3}" : emp.EmployeeNumber)
+                                    </span>
+                                </td>
+
+                                <!-- EMPLOYEE -->
+                                <td>
+                                    <span class="emp-name text-truncate">
+                                        @FormatName(emp.FullName)
+                                    </span>
+                                </td>
+
+                                <!-- OFFICE EMAIL -->
+                                <td>
+                                    <div class="d-flex align-items-center gap-1.5 text-secondary">
+                                        <i class="bi bi-envelope text-muted" style="font-size: 0.85rem;"></i>
+                                        <span class="emp-email text-truncate" title="@emp.OfficeEmail">
+                                            @(string.IsNullOrWhiteSpace(emp.OfficeEmail) ? (string.IsNullOrWhiteSpace(emp.Email) ? "—" : emp.Email) : emp.OfficeEmail)
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <!-- DEPARTMENT -->
+                                <td>
+                                    <span class="dept-badge">
+                                        <i class="bi bi-building"></i>
+                                        <span>@GetDepartmentDisplay(emp)</span>
+                                    </span>
+                                </td>
+
+                                <!-- DESIGNATION -->
+                                <td>
+                                    <span class="designation-text">
+                                        @FormatPosition(emp.Position)
+                                    </span>
+                                </td>
+
+                                <!-- REPORTING MANAGER -->
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(emp.ManagerFullName))
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-circle avatar-sm">
+                                                @GetInitials(emp.ManagerFullName)
+                                            </div>
+                                            <span class="emp-manager-text text-truncate" title="@emp.ManagerFullName">
+                                                @FormatName(emp.ManagerFullName)
+                                            </span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">—</span>
+                                    }
+                                </td>
+
+                                <!-- STATUS -->
+                                <td class="text-center">
+                                    @if (emp.IsActive)
+                                    {
+                                        <span class="status-pill status-pill-active">
+                                            <span class="status-dot"></span>
+                                            <span>Active</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill status-pill-inactive">
+                                            <span class="status-dot"></span>
+                                            <span>Inactive</span>
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- ACTIONS -->
+                                @if (IsAdmin() || IsSuperAdmin())
+                                {
+                                    <td class="text-center">
+                                        <div class="d-inline-flex align-items-center gap-1.5">
+                                            <button type="button"
+                                                    class="emp-action-btn emp-action-edit"
+                                                    title="Edit employee record"
+                                                    @onclick="() => EditEmployee(emp)">
+                                                <i class="bi bi-pencil-square"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="emp-action-btn emp-action-delete"
+                                                    title="Delete employee record"
+                                                    @onclick="() => DeleteEmployee(emp)">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             }
         </div>
+
+        <!-- ═══════════ PAGINATION & SUMMARY FOOTER ═══════════ -->
+        @if (!_isLoading && FilteredEmployees.Any())
+        {
+            <div class="emp-pagination-bar d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-2 text-muted small flex-wrap">
+                    <span>Showing <strong>@StartIndex</strong> to <strong>@EndIndex</strong> of <strong>@TotalCount</strong> records</span>
+                    <span class="text-black-50">•</span>
+                    <div class="d-flex align-items-center gap-1.5">
+                        <span>Show</span>
+                        <select class="page-size-select" value="@_pageSize" @onchange="OnPageSizeChange">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>per page</span>
+                    </div>
+                </div>
+
+                @if (TotalPages > 1)
+                {
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="page-btn" disabled="@(_currentPage <= 1)" @onclick="() => GoToPage(_currentPage - 1)" title="Previous page">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        
+                        @for (int p = 1; p <= TotalPages; p++)
+                        {
+                            var pageNum = p;
+                            <button type="button" class="page-btn @(pageNum == _currentPage ? "active" : "")" @onclick="() => GoToPage(pageNum)">
+                                @pageNum
+                            </button>
+                        }
+
+                        <button type="button" class="page-btn" disabled="@(_currentPage >= TotalPages)" @onclick="() => GoToPage(_currentPage + 1)" title="Next page">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
     </div>
+
 </div>
 
-
 @code {
-
     // ═══════════ STATE ═══════════
-
     private List<EmployeeViewModel> _employees = new();
+    private List<DepartmentViewModel> _departments = new();
+    private List<string> _designations = new();
+
     private bool _isLoading = true;
     private string _loadingMessage = "Loading employees...";
-    private string? _searchTerm;
 
-    // ═══════════ COMPUTED ═══════════
+    // Filters
+    private string? _searchTerm;
+    private int _selectedDepartmentId = 0;
+    private string _selectedDesignation = "";
+    private string _selectedStatus = "All";
+
+    // Pagination
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+
+    // ═══════════ COMPUTED FILTERS & PAGINATION ═══════════
+    private bool HasActiveFilters =>
+        !string.IsNullOrWhiteSpace(_searchTerm) ||
+        _selectedDepartmentId > 0 ||
+        !string.IsNullOrWhiteSpace(_selectedDesignation) ||
+        _selectedStatus != "All";
 
     private List<EmployeeViewModel> FilteredEmployees
-        => string.IsNullOrWhiteSpace(_searchTerm)
-            ? _employees
-            : _employees
-                .Where(e =>
+    {
+        get
+        {
+            var query = _employees.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(_searchTerm))
+            {
+                query = query.Where(e =>
                     MatchesSearch(e.FullName) ||
                     MatchesSearch(e.Email) ||
                     MatchesSearch(e.OfficeEmail) ||
                     MatchesSearch(e.EmployeeNumber) ||
-                    MatchesSearch(e.Position))
-                .ToList();
+                    MatchesSearch(e.Position) ||
+                    MatchesSearch(e.DepartmentName) ||
+                    MatchesSearch(e.ManagerFullName));
+            }
+
+            if (_selectedDepartmentId > 0)
+            {
+                query = query.Where(e => e.DepartmentId == _selectedDepartmentId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(_selectedDesignation))
+            {
+                query = query.Where(e => string.Equals(e.Position, _selectedDesignation, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_selectedStatus == "Active")
+            {
+                query = query.Where(e => e.IsActive);
+            }
+            else if (_selectedStatus == "Inactive")
+            {
+                query = query.Where(e => !e.IsActive);
+            }
+
+            return query.ToList();
+        }
+    }
+
+    private int TotalCount => FilteredEmployees.Count;
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / _pageSize));
+    private int StartIndex => TotalCount == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+    private int EndIndex => Math.Min(_currentPage * _pageSize, TotalCount);
+
+    private List<EmployeeViewModel> PagedEmployees =>
+        FilteredEmployees.Skip((_currentPage - 1) * _pageSize).Take(_pageSize).ToList();
 
     // ═══════════ LIFECYCLE ═══════════
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        await LoadEmployeesAsync();
+        await LoadDataAsync();
     }
 
-    // ═══════════ DATA ═══════════
-
-    private async Task LoadEmployeesAsync()
+    // ═══════════ DATA LOADING ═══════════
+    private async Task LoadDataAsync()
     {
         _isLoading = true;
 
         try
         {
-            var result = await EmployeeService.GetEmployeesAsync();
+            var empTask = EmployeeService.GetEmployeesAsync();
+            var deptTask = DepartmentService.GetDepartmentsAsync();
 
-            if (result.IsSuccess && result.Data != null)
+            await Task.WhenAll(empTask, deptTask);
+
+            var empResult = await empTask;
+            var deptResult = await deptTask;
+
+            if (empResult.IsSuccess && empResult.Data != null)
             {
-                _employees = result.Data;
+                _employees = empResult.Data;
+                _designations = _employees
+                    .Where(e => e.IsActive && !e.IsDeleted && !string.IsNullOrWhiteSpace(e.Position))
+                    .Select(e => e.Position!.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(x => x)
+                    .ToList();
             }
             else
             {
-                await NotificationService.Error("Failed to load employees");
+                _employees = new();
+                await NotificationService.Error(empResult.Message ?? "Failed to load employees");
+            }
+
+            if (deptResult.IsSuccess && deptResult.Data != null)
+            {
+                _departments = deptResult.Data.Where(d => d.IsActive && !d.IsDeleted).OrderBy(d => d.Name).ToList();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading employees: {ex.Message}");
-            await NotificationService.Error("Something went wrong while loading employees");
+            Console.WriteLine($"[EmployeeGrid] Error loading: {ex.Message}");
+            await NotificationService.Error("An error occurred while loading employees.");
+            _employees = new();
         }
         finally
         {
@@ -210,10 +471,152 @@
         }
     }
 
-    // ═══════════ EVENTS ═══════════
+    // ═══════════ FILTER & PAGINATION EVENTS ═══════════
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchTerm = e.Value?.ToString();
+        _currentPage = 1;
+    }
 
-    private void NavigateTo(string route)
-        => NavigationManager.NavigateTo(route);
+    private void ClearSearch()
+    {
+        _searchTerm = string.Empty;
+        _currentPage = 1;
+    }
+
+    private List<SelectOption> DepartmentFilterOptions =>
+        new List<SelectOption> { new() { Value = "0", Text = "All Departments" } }
+        .Concat(_departments.Select(d => new SelectOption { Value = d.Id.ToString(), Text = d.Name }))
+        .ToList();
+
+    private List<SelectOption> DesignationFilterOptions =>
+        new List<SelectOption> { new() { Value = "", Text = "All Designations" } }
+        .Concat(_designations.Select(d => new SelectOption { Value = d, Text = FormatPosition(d) }))
+        .ToList();
+
+    private List<SelectOption> StatusFilterOptions => new()
+    {
+        new() { Value = "All", Text = "All Status" },
+        new() { Value = "Active", Text = "Active" },
+        new() { Value = "Inactive", Text = "Inactive" }
+    };
+
+    private void OnDepartmentFilterChanged(string? val)
+    {
+        _selectedDepartmentId = int.TryParse(val, out var id) ? id : 0;
+        _currentPage = 1;
+    }
+
+    private void OnDesignationFilterChanged(string? val)
+    {
+        _selectedDesignation = val ?? "";
+        _currentPage = 1;
+    }
+
+    private void OnStatusFilterChanged(string? val)
+    {
+        _selectedStatus = val ?? "All";
+        _currentPage = 1;
+    }
+
+    private void OnDepartmentChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var deptId))
+            _selectedDepartmentId = deptId;
+        else
+            _selectedDepartmentId = 0;
+
+        _currentPage = 1;
+    }
+
+    private void OnDesignationChange(ChangeEventArgs e)
+    {
+        _selectedDesignation = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+    }
+
+    private void OnStatusChange(ChangeEventArgs e)
+    {
+        _selectedStatus = e.Value?.ToString() ?? "All";
+        _currentPage = 1;
+    }
+
+    private void ClearAllFilters()
+    {
+        _searchTerm = null;
+        _selectedDepartmentId = 0;
+        _selectedDesignation = "";
+        _selectedStatus = "All";
+        _currentPage = 1;
+    }
+
+    private void GoToPage(int page)
+    {
+        _currentPage = Math.Clamp(page, 1, TotalPages);
+    }
+
+    private void OnPageSizeChange(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var size) && size > 0)
+        {
+            _pageSize = size;
+            _currentPage = 1;
+        }
+    }
+
+    // ═══════════ FORMATTING & UTILITIES ═══════════
+    private static string FormatName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "Employee";
+        var words = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", words.Select(w => char.ToUpper(w[0]) + (w.Length > 1 ? w[1..] : "")));
+    }
+
+    private static string FormatPosition(string? pos)
+    {
+        if (string.IsNullOrWhiteSpace(pos)) return "—";
+        // Convert CamelCase/PascalCase to words with spaces (e.g. "JuniorDeveloper" -> "Junior Developer")
+        return System.Text.RegularExpressions.Regex.Replace(pos.Trim(), "(\\B[A-Z])", " $1").Trim();
+    }
+
+    private static string GetInitials(string? fullName)
+    {
+        if (string.IsNullOrWhiteSpace(fullName)) return "EM";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(fullName);
+    }
+
+
+    private string GetDepartmentDisplay(EmployeeViewModel emp)
+    {
+        if (!string.IsNullOrWhiteSpace(emp.DepartmentName))
+            return emp.DepartmentName.Trim();
+
+        if (emp.DepartmentId.HasValue && emp.DepartmentId.Value > 0)
+        {
+            var dept = _departments.FirstOrDefault(d => d.Id == emp.DepartmentId.Value);
+            if (dept != null && !string.IsNullOrWhiteSpace(dept.Name))
+                return dept.Name.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(emp.DepartmentCode))
+        {
+            var clean = emp.DepartmentCode.Trim().ToUpperInvariant();
+            if (clean == "DP" || clean == "DEV") return "Development";
+            if (clean == "IT" || clean == "IT001") return "Information Technology";
+            if (clean == "HR") return "Human Resources";
+            if (clean == "QA") return "Quality Assurance";
+            return emp.DepartmentCode.Trim();
+        }
+
+        return "General Staff";
+    }
+
+    private bool MatchesSearch(string? value)
+        => !string.IsNullOrWhiteSpace(value) &&
+           value.Contains(_searchTerm!, StringComparison.OrdinalIgnoreCase);
+
+    // ═══════════ NAVIGATION & ACTIONS ═══════════
+    private void NavigateTo(string route) => NavigationManager.NavigateTo(route);
 
     private void EditEmployee(EmployeeViewModel model)
         => NavigationManager.NavigateTo($"/employee/edit/{model.Id}");
@@ -221,7 +624,7 @@
     private async Task DeleteEmployee(EmployeeViewModel model)
     {
         var confirmed = await JsRuntime.InvokeAsync<bool>(
-            "confirm", "Are you sure you want to delete this employee?");
+            "confirm", $"Are you sure you want to delete employee record for {FormatName(model.FullName)}?");
 
         if (!confirmed) return;
 
@@ -234,19 +637,6 @@
         }
 
         await NotificationService.Success("Employee deleted successfully.");
-        await LoadEmployeesAsync();
+        await LoadDataAsync();
     }
-
-    private void ClearSearch() => _searchTerm = null;
-
-    // ═══════════ HELPERS ═══════════
-
-    private bool MatchesSearch(string? value)
-        => !string.IsNullOrWhiteSpace(value) &&
-           value.Contains(_searchTerm!, StringComparison.OrdinalIgnoreCase);
-
-    // ═══════════ INNER TYPES ═══════════
-
-    private record StatCardModel(
-        string Icon, string BgClass, string TextClass, int Count, string Label);
 }

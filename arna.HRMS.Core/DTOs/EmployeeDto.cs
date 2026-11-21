@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Base;
+using arna.HRMS.Core.Common.Base;
 
 namespace arna.HRMS.Core.DTOs;
 
@@ -19,5 +19,6 @@ public class EmployeeDto : BaseEntity
     public string? ManagerFullName { get; set; }
     public string Position { get; set; }
     public decimal Salary { get; set; }
+    public string? ProfileImage { get; set; }
     public string FullName => $"{FirstName} {LastName}";
 }

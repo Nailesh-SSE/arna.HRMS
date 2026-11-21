@@ -19,6 +19,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     private string _userName = string.Empty;
     private string _userFullName = string.Empty;
     private string _role = string.Empty;
+    private string _profileImage = string.Empty;
     private bool _isAuthenticated;
 
     private bool _disposed;
@@ -33,6 +34,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     protected string GetUserName() => _userName;
     protected string GetUserFullName() => _userFullName;
     protected string GetUserRole() => _role;
+    protected string GetProfileImage() => _profileImage;
     protected bool IsAuthenticated() => _isAuthenticated;
 
     // ==============================
@@ -43,15 +45,37 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     {
         try
         {
-            AuthProvider.AuthenticationStateChanged += HandleAuthStateChanged;
-            await LoadUserAsync();
-            IsInitialized = true;
+            if (!IsInitialized)
+            {
+                AuthProvider.AuthenticationStateChanged += HandleAuthStateChanged;
+                await LoadUserAsync();
+                IsInitialized = true;
+            }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error during layout initialization");
         }
     }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+        try
+        {
+            if (!IsInitialized)
+            {
+                AuthProvider.AuthenticationStateChanged += HandleAuthStateChanged;
+                await LoadUserAsync();
+                IsInitialized = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during OnParametersSetAsync in AuthenticatedLayoutBase");
+        }
+    }
+
 
     // MUST be async void (event handler pattern)
     private async void HandleAuthStateChanged(Task<AuthenticationState> task)
@@ -66,6 +90,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         {
             var authState = await task;
             SetUser(authState.User);
+            await PopulateEmployeeIdFromStorageAsync();
 
             await RedirectIfUnauthenticatedAsync();
 
@@ -92,6 +117,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         {
             var authState = await AuthProvider.GetAuthenticationStateAsync();
             SetUser(authState.User);
+            await PopulateEmployeeIdFromStorageAsync();
             await RedirectIfUnauthenticatedAsync();
         }
         catch (Exception ex)
@@ -108,25 +134,48 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     {
         User = user;
 
-        int.TryParse(user.FindFirst(ClaimTypes.NameIdentifier)?.Value, out _userId);
-        int.TryParse(user.FindFirst("EmployeeId")?.Value, out _employeeId);
+        int.TryParse(FindClaimValue(user, ClaimTypes.NameIdentifier, "nameid", "UserId", "userId", "id"), out _userId);
+        int.TryParse(FindClaimValue(user, "EmployeeId", "employeeId"), out _employeeId);
 
-        // ✅ FIX: Moved all assignments INSIDE a clear scope — the original code had a
-        // misplaced brace that made it look like assignments were inside the if-block
-        // but they were actually always executed. Made explicit now for clarity.
-        if (user.Claims.Count() <= 0 || _employeeId <= 0)
-        {
-            Logger.LogWarning("Auth Fail — no claims or missing EmployeeId.");
-        }
+        _userName = FindClaimValue(user, ClaimTypes.Name, "unique_name", "name", "Username");
+        _userFullName = FindClaimValue(user, "FullName", "fullName", "name");
+        _role = FindClaimValue(user, ClaimTypes.Role, "role", "Role", "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+        _profileImage = FindClaimValue(user, "ProfileImage", "profileImage");
 
-        _userName = user.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-        _userFullName = user.FindFirst("FullName")?.Value ?? string.Empty;
-        _role = user.FindFirst(ClaimTypes.Role)?.Value ?? string.Empty;
         _isAuthenticated = user.Identity?.IsAuthenticated ?? false;
+
+        if (!_isAuthenticated)
+        {
+            Logger.LogDebug("No authenticated user is available for this layout instance.");
+        }
+        else if (_employeeId <= 0)
+        {
+            Logger.LogDebug("Authenticated user has no EmployeeId claim. UserId={UserId}, Role={Role}", _userId, _role);
+        }
 
         Logger.LogDebug(
             "User updated: Authenticated={Auth}, UserId={UserId}, Role={Role}",
             _isAuthenticated, _userId, _role);
+    }
+
+    private static string FindClaimValue(ClaimsPrincipal user, params string[] claimTypes)
+    {
+        return claimTypes
+            .Select(type => user.FindFirst(type)?.Value)
+            .FirstOrDefault(val => !string.IsNullOrEmpty(val)) ?? string.Empty;
+    }
+
+    private async Task PopulateEmployeeIdFromStorageAsync()
+    {
+        if (!_isAuthenticated || _employeeId > 0)
+            return;
+
+        var storedEmployeeId = await AuthProvider.GetEmployeeIdAsync();
+        if (storedEmployeeId > 0)
+        {
+            _employeeId = storedEmployeeId;
+            Logger.LogDebug("EmployeeId loaded from protected storage. UserId={UserId}, EmployeeId={EmployeeId}", _userId, _employeeId);
+        }
     }
 
     // ==============================
@@ -140,7 +189,7 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
 
         try
         {
-            Logger.LogWarning("Unauthenticated access. Redirecting to login.");
+            Logger.LogDebug("Unauthenticated access. Redirecting to login.");
 
             await InvokeAsync(() =>
                 Navigation.NavigateTo("/login", replace: true));
@@ -170,19 +219,49 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     // ==============================
 
     protected bool IsSuperAdmin()
-        => GetUserRole() == Models.Enums.UserRole.SuperAdmin.ToString();
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "SuperAdmin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "Super Admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.SuperAdmin.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
 
     protected bool IsAdmin()
-        => GetUserRole() == Models.Enums.UserRole.Admin.ToString();
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "Administrator", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.Admin.ToString(), StringComparison.OrdinalIgnoreCase)
+            || IsSuperAdmin();
+    }
 
     protected bool IsEmployee()
-        => GetUserRole() == Models.Enums.UserRole.Employee.ToString();
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "Employee", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.Employee.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected bool IsManager()
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "Manager", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, Models.Enums.UserRole.Manager.ToString(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    protected bool IsHR()
+    {
+        var role = GetUserRole();
+        return string.Equals(role, "HR", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "Human Resources", StringComparison.OrdinalIgnoreCase);
+    }
+
 
     // ==============================
     // Dispose
     // ==============================
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         _disposed = true;
 

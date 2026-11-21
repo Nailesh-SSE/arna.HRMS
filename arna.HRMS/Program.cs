@@ -54,30 +54,18 @@ public class Program
         .AddHttpMessageHandler<AuthHeaderHandler>()
         .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
-        // ✅ FIX: RefreshClient has NO AuthHeaderHandler attached.
-        // This is the dedicated client used ONLY for token refresh calls in HttpService.
-        // Using the AuthorizedClient for refresh creates an infinite retry loop:
-        //   401 → TryRefreshTokenAsync → uses same client → 401 → loop → ObjectDisposedException
-        // The RefreshClient bypasses the auth handler entirely, hitting /api/auth/refresh directly.
         builder.Services.AddHttpClient("RefreshClient", client =>
         {
             client.BaseAddress = new Uri(baseUrl);
             client.Timeout = TimeSpan.FromSeconds(30);
-            client.DefaultRequestHeaders.Add("User-Agent", "arna.HRMS/1.0"); // ← add this
+            client.DefaultRequestHeaders.Add("User-Agent", "arna.HRMS/1.0");
         });
 
-        // Default injected HttpClient = AuthorizedClient
         builder.Services.AddScoped(sp =>
             sp.GetRequiredService<IHttpClientFactory>()
                 .CreateClient("AuthorizedClient"));
 
-        // ==========================
-        // Core App Services
-        // ==========================
         builder.Services.AddScoped<NotificationService>();
-
-        // ✅ FIX: HttpService now requires IHttpClientFactory to create the RefreshClient
-        // internally for token refresh (preventing infinite refresh loop).
         builder.Services.AddScoped<HttpService>();
 
         builder.Services.AddScoped<ApiClients>(sp =>
@@ -102,6 +90,7 @@ public class Program
         builder.Services.AddScoped<IRoleService, RoleService>();
         builder.Services.AddScoped<IFestivalHolidayService, FestivalHolidayService>();
         builder.Services.AddScoped<IReportService, ReportService>();
+        builder.Services.AddScoped<arna.HRMS.Services.Export.IExcelExportService, arna.HRMS.Services.Export.ExcelExportService>();
 
         builder.Services.AddScoped<AttendanceState>();
 

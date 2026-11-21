@@ -3,6 +3,7 @@ using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.ViewModels.Auth;
 using arna.HRMS.Services.Auth;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 
@@ -10,7 +11,6 @@ namespace arna.HRMS.Services.Http;
 
 public sealed class HttpService
 {
-    private readonly HttpClient _httpClient;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly CustomAuthStateProvider _authProvider;
     private readonly ILogger<HttpService> _logger;
@@ -26,12 +26,10 @@ public sealed class HttpService
         new() { PropertyNameCaseInsensitive = true };
 
     public HttpService(
-        HttpClient httpClient,
         IHttpClientFactory httpClientFactory,
         CustomAuthStateProvider authProvider,
         ILogger<HttpService> logger)
     {
-        _httpClient = httpClient;
         _httpClientFactory = httpClientFactory;
         _authProvider = authProvider;
         _logger = logger;
@@ -49,6 +47,11 @@ public sealed class HttpService
     public async Task<ApiResult<T>> GetAsync<T>(string url, CancellationToken ct = default)
     {
         return await SendAsync<T>(HttpMethod.Get, url, null, ct);
+    }
+
+    public async Task<ApiResult<T>> PostFormDataAsync<T>(string url, MultipartFormDataContent content, CancellationToken ct = default)
+    {
+        return await SendAsync<T>(HttpMethod.Post, url, content, ct);
     }
 
     public async Task<ApiResult<T>> PostAsync<T>(string url, object body, CancellationToken ct = default)
@@ -81,8 +84,21 @@ public sealed class HttpService
         {
             return ApiResult<T>.Fail("Request cancelled.", 499);
         }
+        catch (ObjectDisposedException ex)
+        {
+            _logger.LogWarning(ex, "HTTP request was cancelled because the Blazor circuit or HTTP pipeline was disposed");
+            return ApiResult<T>.Fail("Request cancelled because the connection was closed.", 499);
+        }
         catch (HttpRequestException ex)
         {
+            if (IsConnectionRefused(ex))
+            {
+                _logger.LogWarning(
+                    "API is unavailable. Check that arna.HRMS.API is running at the configured ApiSettings:BaseUrl. Error: {Message}",
+                    ex.Message);
+                return ApiResult<T>.Fail("API service is not running. Please start the API and try again.", 503);
+            }
+
             _logger.LogError(ex, "Network error");
             return ApiResult<T>.Fail("Network error occurred.", 503);
         }
@@ -123,18 +139,36 @@ public sealed class HttpService
 
         if (body != null)
         {
-            var json = JsonSerializer.Serialize(body, JsonOptions);
-            request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            if (body is HttpContent httpContent)
+            {
+                request.Content = httpContent;
+            }
+            else
+            {
+                var json = JsonSerializer.Serialize(body, JsonOptions);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+    
+            }
+
         }
 
-        // ✅ FIX: Removed duplicate manual token injection here.
-        // AuthHeaderHandler (registered as DelegatingHandler on "AuthorizedClient") already
-        // injects the Bearer token at the pipeline level. Having both caused double-header
-        // attempts and race conditions during token refresh scenarios.
-        // The AuthHeaderHandler checks: if (request.Headers.Authorization is null) → sets it.
-        // So we just let the pipeline handle it cleanly.
+        var token = await _authProvider.GetAccessTokenAsync();
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            request.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        }
 
-        return await _httpClient.SendAsync(request, ct);
+        try
+        {
+            var httpClient = _httpClientFactory.CreateClient("AuthorizedClient");
+            return await httpClient.SendAsync(request, ct);
+        }
+        catch
+        {
+            request.Dispose();
+            throw;
+        }
     }
 
     // =====================================================
@@ -152,18 +186,11 @@ public sealed class HttpService
             if (userId <= 0 || string.IsNullOrWhiteSpace(refreshToken))
                 return false;
 
-            // ✅ FIX: Use the dedicated "RefreshClient" (no AuthHeaderHandler attached)
-            // instead of going through _apiClients which uses the same HttpService pipeline.
-            // Using _apiClients.Auth.RefreshTokenAsync() here caused an INFINITE LOOP:
-            //   SendAsync → 401 → TryRefreshTokenAsync → RefreshTokenAsync → SendAsync
-            //   → 401 (refresh endpoint also returns 401 with expired token) → infinite loop
-            // → eventually causes ObjectDisposedException / stack overflow on the server.
             var refreshHttpClient = _httpClientFactory.CreateClient("RefreshClient");
 
             var requestBody = JsonSerializer.Serialize(new
             {
                 UserId = userId,
-                // ✅ Also fixes: Frontend RefreshToken VM had "Token" property but backend expects "RefreshToken"
                 RefreshToken = refreshToken
             }, JsonOptions);
 
@@ -175,28 +202,14 @@ public sealed class HttpService
                 return false;
 
             var raw = await response.Content.ReadAsStringAsync();
-
-            if (string.IsNullOrWhiteSpace(raw))
-                return false;
-
-            var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
-
-            if (wrapper == null || !wrapper.IsSuccess)
-                return false;
-
-            if (wrapper.Data.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-                return false;
-
-            var data = JsonSerializer.Deserialize<AuthResponse>(wrapper.Data.GetRawText(), JsonOptions);
-
-            if (data == null || string.IsNullOrWhiteSpace(data.AccessToken))
-                return false;
-
-            await _authProvider.UpdateTokensAsync(
-                data.AccessToken,
-                data.RefreshToken ?? refreshToken);
-
-            return true;
+            return await ParseAndApplyRefreshedTokensAsync(raw, refreshToken);
+        }
+        catch (HttpRequestException ex) when (IsConnectionRefused(ex))
+        {
+            _logger.LogWarning(
+                "Token refresh skipped because the API is unavailable. Check ApiSettings:BaseUrl and start arna.HRMS.API. Error: {Message}",
+                ex.Message);
+            return false;
         }
         catch (Exception ex)
         {
@@ -207,6 +220,29 @@ public sealed class HttpService
         {
             _refreshLock.Release();
         }
+    }
+
+    private async Task<bool> ParseAndApplyRefreshedTokensAsync(string raw, string existingRefreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+
+        var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
+        if (wrapper == null || !wrapper.IsSuccess || wrapper.Data.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            return false;
+
+        var data = JsonSerializer.Deserialize<AuthResponse>(wrapper.Data.GetRawText(), JsonOptions);
+        if (data == null || string.IsNullOrWhiteSpace(data.AccessToken))
+            return false;
+
+        await _authProvider.UpdateTokensAsync(data.AccessToken, data.RefreshToken ?? existingRefreshToken);
+        return true;
+    }
+
+    private static bool IsConnectionRefused(HttpRequestException ex)
+    {
+        return ex.InnerException is SocketException socketException
+               && socketException.SocketErrorCode == SocketError.ConnectionRefused;
     }
 
     // =====================================================

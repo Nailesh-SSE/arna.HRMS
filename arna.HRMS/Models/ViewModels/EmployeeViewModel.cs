@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,27 +11,26 @@ public class EmployeeViewModel : CommonViewModel
 
     [Required(ErrorMessage = "First name is required.")]
     [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters.")]
-    public string FirstName { get; set; }
+    public string FirstName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Last name is required.")]
     [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters.")]
-    public string LastName { get; set; }
+    public string LastName { get; set; } = string.Empty;
 
     [Display(Name = "Full Name")]
-    public string FullName => $"{FirstName} {LastName}";
+    public string FullName => $"{FirstName} {LastName}".Trim();
 
-    [Required(ErrorMessage = "Email is required.")]
-    [EmailAddress(ErrorMessage = "Invalid email format.")]
-    public string Email { get; set; }
+    [Required(ErrorMessage = "Personal email is required.")]
+    [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Please enter a valid email address.")]
+    public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Email is required.")]
-    [EmailAddress(ErrorMessage = "Invalid email format.")]
-    public string OfficeEmail { get; set; }
+    [Required(ErrorMessage = "Office email is required.")]
+    [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Please enter a valid office email address.")]
+    public string OfficeEmail { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Phone number is required.")]
-    [Phone(ErrorMessage = "Invalid phone number.")]
-    [StringLength(10)]
-    public string PhoneNumber { get; set; }
+    [RegularExpression(@"^\+?[0-9\s\-]{7,15}$", ErrorMessage = "Please enter a valid phone number (7-15 digits).")]
+    public string PhoneNumber { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Date of Birth is required.")]
     [DataType(DataType.Date)]
@@ -43,7 +42,7 @@ public class EmployeeViewModel : CommonViewModel
     [Display(Name = "Hire Date")]
     public DateTime HireDate { get; set; }
 
-    [Required(ErrorMessage = "Department is required.")]
+    [Required(ErrorMessage = "Please select a department.")]
     [Range(1, int.MaxValue, ErrorMessage = "Please select a department.")]
     public int? DepartmentId { get; set; }
 
@@ -57,14 +56,16 @@ public class EmployeeViewModel : CommonViewModel
     [Display(Name = "Manager")]
     public string? ManagerFullName { get; set; }
 
-    [Required(ErrorMessage = "Position is required.")]
     [StringLength(100, ErrorMessage = "Position cannot exceed 100 characters.")]
     public string? Position { get; set; } 
+
+    [Required(ErrorMessage = "Designation is required.")]
     public EmployeePosition? Designation { get; set; }
 
-
     [Required(ErrorMessage = "Salary is required.")]
-    [Range(1, double.MaxValue, ErrorMessage = "Salary must be greater than 0.")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "Salary must be greater than 0.")]
     [DataType(DataType.Currency)]
     public decimal Salary { get; set; }
+
+    public string? ProfileImage { get; set; }
 }

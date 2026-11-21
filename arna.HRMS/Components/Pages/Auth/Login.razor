@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @layout LoginLayout
 
 @using System.ComponentModel.DataAnnotations
@@ -14,128 +14,157 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NotificationService NotificationService
 
-<PageTitle>Arna Technosoft - Login</PageTitle>
+<PageTitle>Arna HRMS - Login</PageTitle>
 
-<div class="container-fluid p-0">
-    <div class="row g-0 min-vh-100">
+<div class="login-page-wrap">
 
-        <!-- ══════════ LEFT BRAND PANEL (Desktop only) ══════════ -->
-        <div class="col-lg-6 d-none d-lg-flex align-items-center
-                    justify-content-center text-white position-relative
-                    overflow-hidden login-brand-bg">
+    <!-- ══════════ AMBIENT FLUID WAVES & BACKGROUND CANVAS ══════════ -->
+    <div class="page-bg-ambient" aria-hidden="true">
+        <div class="ambient-glow glow-top-left"></div>
+        <div class="ambient-glow glow-top-right"></div>
+        <div class="ambient-glow glow-bottom-left"></div>
 
-            <div class="text-center p-5 position-relative z-1">
+        <svg class="ambient-wave-canvas" viewBox="0 0 1600 1000" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="wave1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#93cbfb" stop-opacity="0.6" />
+                    <stop offset="45%" stop-color="#cbe5fe" stop-opacity="0.4" />
+                    <stop offset="100%" stop-color="#edf5fc" stop-opacity="0.08" />
+                </linearGradient>
+                <linearGradient id="wave2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#7ec3f8" stop-opacity="0.5" />
+                    <stop offset="55%" stop-color="#bee0fc" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="#edf5fc" stop-opacity="0.08" />
+                </linearGradient>
+                <linearGradient id="wave3" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#bae6fd" stop-opacity="0.65" />
+                    <stop offset="50%" stop-color="#dff0fd" stop-opacity="0.35" />
+                    <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05" />
+                </linearGradient>
+                <linearGradient id="waveAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.25" />
+                    <stop offset="100%" stop-color="#0076ce" stop-opacity="0.15" />
+                </linearGradient>
+            </defs>
 
-                <div class="bg-white bg-opacity-25 rounded-circle
-                            d-inline-flex align-items-center justify-content-center
-                            mb-4 p-4">
-                    <i class="bi bi-building-fill-gear display-3"></i>
+            <!-- Organic Flow Wave 1 (Left & Center Sweeping Ribbon) -->
+            <path d="M0,0 L920,0 C800,160 640,290 680,440 C730,600 940,650 1040,790 C1100,880 1020,950 940,1000 L0,1000 Z" fill="url(#wave1)" />
+
+            <!-- Organic Flow Wave 2 (Right Sweeping Arc) -->
+            <path d="M1600,0 L1120,0 C1220,180 1370,300 1300,490 C1220,690 1070,760 1170,1000 L1600,1000 Z" fill="url(#wave2)" />
+
+            <!-- Organic Flow Wave 3 (Bottom Sweeping Ribbon) -->
+            <path d="M0,720 C320,640 560,840 850,760 C1140,680 1340,840 1600,780 L1600,1000 L0,1000 Z" fill="url(#wave3)" />
+
+            <!-- Delicate Wave Contour Line -->
+            <path d="M0,720 C320,640 560,840 850,760 C1140,680 1340,840 1600,780" stroke="url(#waveAccent)" stroke-width="2.5" />
+        </svg>
+
+        <!-- Elegant Decorative Floating Rings -->
+        <div class="geo-circle geo-circle-1"></div>
+        <div class="geo-circle geo-circle-2"></div>
+        <div class="geo-circle geo-circle-3"></div>
+
+        <!-- Subtle Dot Grid Texture -->
+        <div class="ambient-dots"></div>
+    </div>
+
+    <div class="container-fluid p-0 position-relative z-1">
+        <div class="row g-0 min-vh-100">
+
+            <!-- ══════════ LEFT HERO SHOWCASE PANEL (Desktop only) ══════════ -->
+            <div class="col-lg-6 col-xl-7 d-none d-lg-flex login-hero-panel">
+
+                <div class="hero-inner-wrap">
+
+                    <!-- Brand Header -->
+                    <div class="hero-brand-wrap">
+                        <img src="companyLogo/arna_logo.svg"
+                             alt="Arna HRMS"
+                             class="hero-brand-logo" />
+                    </div>
+
+                    <!-- Headline & Lead Description -->
+                    <h1 class="hero-headline">
+                        Manage People,<br />
+                        <span class="hero-headline-highlight">Build a Better Workplace</span>
+                    </h1>
+                    <p class="hero-lead">
+                        A unified HR platform for attendance, leave management, and workforce intelligence.
+                    </p>
+
+                    <!-- Minimalist Capability Badges -->
+                    <div class="hero-badges-row">
+                        <div class="hero-badge-item">
+                            <i class="bi bi-calendar2-check"></i>
+                            <span>Attendance &amp; Leave</span>
+                        </div>
+                        <div class="hero-badge-item">
+                            <i class="bi bi-bar-chart-line"></i>
+                            <span>Reports &amp; Analytics</span>
+                        </div>
+                        <div class="hero-badge-item">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Enterprise Security</span>
+                        </div>
+                    </div>
+
                 </div>
 
-                <h2 class="fw-bold mb-3">Arna HRMS</h2>
-                <p class="lead opacity-75 mb-4 px-4">
-                    Streamline your workforce management with our
-                    comprehensive HR solution
-                </p>
-
-                <div class="d-flex gap-4 justify-content-center mt-4">
-                    <div class="text-center">
-                        <div class="bg-white bg-opacity-10 rounded-circle
-                                    d-flex align-items-center justify-content-center
-                                    mx-auto mb-2 login-stat-icon">
-                            <i class="bi bi-people-fill fs-4"></i>
-                        </div>
-                        <small class="opacity-75">Employees</small>
-                    </div>
-                    <div class="text-center">
-                        <div class="bg-white bg-opacity-10 rounded-circle
-                                    d-flex align-items-center justify-content-center
-                                    mx-auto mb-2 login-stat-icon">
-                            <i class="bi bi-calendar-check fs-4"></i>
-                        </div>
-                        <small class="opacity-75">Attendance</small>
-                    </div>
-                    <div class="text-center">
-                        <div class="bg-white bg-opacity-10 rounded-circle
-                                    d-flex align-items-center justify-content-center
-                                    mx-auto mb-2 login-stat-icon">
-                            <i class="bi bi-bar-chart-fill fs-4"></i>
-                        </div>
-                        <small class="opacity-75">Reports</small>
-                    </div>
-                </div>
             </div>
 
-            <!-- Decorative shapes -->
-            <div class="login-shape login-shape-1"></div>
-            <div class="login-shape login-shape-2"></div>
-        </div>
+            <!-- ══════════ RIGHT FORM PANEL ══════════ -->
+            <div class="col-12 col-lg-6 col-xl-5 login-form-panel">
 
-        <!-- ══════════ RIGHT FORM PANEL ══════════ -->
-        <div class="col-12 col-lg-6 d-flex align-items-center
-                    justify-content-center bg-light p-3 p-sm-4 p-lg-5">
+                <div class="auth-card-container">
 
-            <div class="w-100" style="max-width: 440px;">
+                    <div class="auth-card">
 
-                <div class="card border-0 shadow rounded-4 overflow-hidden">
+                        <!-- Card Header -->
+                        <div class="auth-card-header">
+                            <img src="companyLogo/arna_logo.svg"
+                                 alt="Arna HRMS"
+                                 class="auth-brand-logo" />
+                            <div class="auth-brand-sub">HRMS</div>
 
-                    <!-- Accent bar -->
-                    <div class="login-accent-bar"></div>
-
-                    <div class="card-body p-4 p-sm-5">
-
-                        <!-- Logo -->
-                        <div class="text-center mb-4">
-                            <div class="bg-primary bg-opacity-10 rounded-circle
-                                        d-inline-flex align-items-center
-                                        justify-content-center mb-3 login-logo-circle">
-                                <img src="Images/ArnaLogo.png"
-                                     alt="Arna Technosoft"
-                                     class="login-logo-img" />
-                            </div>
-                            <h4 class="fw-bold mb-1">Welcome Back</h4>
-                            <p class="text-muted small mb-0">
-                                Sign in to continue to your dashboard
+                            <h2 class="auth-card-title">Welcome Back</h2>
+                            <p class="auth-card-subtitle">
+                                Sign in to continue to your account
                             </p>
                         </div>
 
-                        <!-- Error -->
+                        <!-- Error Alert -->
                         @if (!string.IsNullOrWhiteSpace(errorMessage))
                         {
-                            <div class="alert alert-danger border-0 rounded-3
-                                            d-flex align-items-center gap-2
-                                            py-2 px-3 small fade show">
-                                <i class="bi bi-exclamation-triangle-fill
-                                              flex-shrink-0"></i>
-                                <span>@errorMessage</span>
-                                <AppButton Type="button"
-                                        Buttonclass="btn-close ms-auto"
-                                        Onclick="() => errorMessage = null"
+                            <div class="auth-alert auth-alert-danger mb-3" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>
+                                <span class="flex-grow-1">@errorMessage</span>
+                                <button type="button"
+                                        class="btn-close ms-2"
+                                        style="font-size: 0.7rem;"
+                                        @onclick="() => errorMessage = null"
                                         aria-label="Close">
-                                </AppButton>
+                                </button>
                             </div>
                         }
 
-                        <!-- Form -->
-                        <EditForm Model="@loginModel"
-                                  OnValidSubmit="HandleLogin">
+                        <!-- Login Form -->
+                        <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
                             <DataAnnotationsValidator />
 
                             <!-- Username -->
                             <div class="mb-3">
-                                <label class="form-label fw-semibold small
-                                              text-secondary">
+                                <label class="auth-label">
                                     Username
                                 </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white
-                                                 border-end-0 text-muted">
-                                        <i class="bi bi-person"></i>
+                                <div class="auth-input-group">
+                                    <span class="auth-field-icon">
+                                        <i class="bi bi-person-fill"></i>
                                     </span>
                                     <AppInput @bind-Value="loginModel.UserName"
                                               Type="text"
                                               ShowWrapper="false"
-                                              CssClass="border-start-0 ps-0"
+                                              CssClass="auth-field-input"
                                               placeholder="Enter your username"
                                               autofocus="true" />
                                 </div>
@@ -145,88 +174,69 @@
 
                             <!-- Password -->
                             <div class="mb-4">
-                                <label class="form-label fw-semibold small
-                                              text-secondary">
+                                <label class="auth-label">
                                     Password
                                 </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white
-                                                 border-end-0 text-muted">
-                                        <i class="bi bi-lock"></i>
+                                <div class="auth-input-group">
+                                    <span class="auth-field-icon">
+                                        <i class="bi bi-lock-fill"></i>
                                     </span>
                                     <AppInput @bind-Value="loginModel.Password"
                                               Type="@passwordInputType"
                                               ShowWrapper="false"
-                                              CssClass="border-start-0 border-end-0 ps-0"
+                                              CssClass="auth-field-input"
                                               placeholder="Enter your password" />
-                                    <AppButton Type="button"
-                                               ButtonClass="btn btn-outline-light
-                                                   border text-muted"
-                                            Onclick="TogglePasswordVisibility"
-                                            tabindex="-1">
-                                        <i class="bi @(showPassword
-                                                                                       ? "bi-eye-slash"
-                                                                                       : "bi-eye")"></i>
-                                    </AppButton>
+                                    <button type="button"
+                                            class="auth-eye-btn"
+                                            @onclick="TogglePasswordVisibility"
+                                            tabindex="-1"
+                                            aria-label="Toggle password visibility">
+                                        <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                                    </button>
                                 </div>
                                 <ValidationMessage For="@(() => loginModel.Password)"
                                                    class="text-danger small mt-1" />
                             </div>
 
-                            <!-- Submit -->
-                            <div class="d-grid mb-3">
-                                <AppButton Type="submit"
-                                           ButtonClass="btn btn-primary btn-lg
-                                               fw-semibold rounded-3"
+                            <!-- Submit Button ("→ Sign In") -->
+                            <div class="d-grid mb-2">
+                                <button type="submit"
+                                        class="btn auth-btn-primary w-100"
                                         disabled="@isLoading">
                                     @if (isLoading)
                                     {
-                                        <span class="spinner-border
-                                                         spinner-border-sm me-2"
-                                              role="status"></span>
+                                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                         <span>Signing in…</span>
                                     }
                                     else
                                     {
-                                        <i class="bi bi-box-arrow-in-right
-                                                      me-2"></i>
+                                        <i class="bi bi-arrow-right"></i>
                                         <span>Sign In</span>
                                     }
-                                </AppButton>
+                                </button>
                             </div>
                         </EditForm>
 
-                        <!-- Info -->
-                        <div class="text-center mt-3">
-                            <small class="text-muted">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Contact your admin if you forgot credentials
-                            </small>
+                        <!-- Card Security Footer -->
+                        <div class="auth-footer-shield">
+                            <i class="bi bi-shield-check"></i>
+                            <span>Secured by <strong class="text-primary">Arna Technosoft</strong></span>
                         </div>
 
                     </div>
 
-                    <!-- Footer -->
-                    <div class="card-footer bg-body-secondary border-0
-                                text-center py-3">
-                        <small class="text-muted">
-                            <i class="bi bi-shield-lock-fill me-1
-                                      text-success"></i>
-                            Secured by
-                            <span class="fw-semibold">Arna Technosoft</span>
-                        </small>
-                    </div>
+                    <!-- Page Copyright -->
+                    <p class="auth-copyright">
+                        &copy; @DateTime.Now.Year Arna Technosoft. All rights reserved.
+                    </p>
+
                 </div>
 
-                <!-- Copyright -->
-                <p class="text-center text-muted mt-3 mb-0 small">
-                    &copy; @DateTime.Now.Year Arna Technosoft.
-                    All rights reserved.
-                </p>
             </div>
-        </div>
 
+        </div>
     </div>
+
 </div>
 
 @code {
@@ -240,11 +250,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var state = await AuthStateProvider
-            .GetAuthenticationStateAsync();
-
-        if (state.User.Identity?.IsAuthenticated == true)
-            NavigationManager.NavigateTo("/", true);
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/", replace: true);
+        }
     }
 
     private async Task HandleLogin()
@@ -262,9 +272,12 @@
                 return;
             }
 
-            await NotificationService.Success(
-                "User Login Successfully!");
+            await NotificationService.Success("User Login Successfully!");
             NavigationManager.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"An unexpected error occurred: {ex.Message}";
         }
         finally
         {

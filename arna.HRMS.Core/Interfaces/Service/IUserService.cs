@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 
@@ -13,6 +13,7 @@ public interface IUserServices
     Task<ServiceResult<UserDto>> UpdateUserAsync(UserDto dto);
     Task<ServiceResult<bool>> DeleteUserAsync(int id);
     Task<ServiceResult<bool>> ChangeUserPasswordAsync(int id, string newPassword);
+    Task<ServiceResult<bool>> CheckUsernameExistsAsync(string username, int? excludeUserId = null);
     Task<bool> UserExistsAsync(string email, string phoneNumber, int? id);
     Task<User?> GetUserByUserNameOrEmailAsync(string userNameOrEmail);
     Task<User> CreateUserEntityAsync(UserDto dto);

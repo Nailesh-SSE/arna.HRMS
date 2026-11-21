@@ -1,14 +1,18 @@
-﻿<div class="view-toggle">
-    <button class="icon-btn @(ActiveView == TableView ? "active" : "")"
+<div class="view-toggle-container" role="group" aria-label="Attendance View Toggle">
+    <button type="button"
+            class="view-toggle-btn @(ActiveView == TableView ? "active" : "")"
             @onclick="() => OnChange.InvokeAsync(TableView)"
             title="Table View">
-        📊
+        <i class="bi bi-table"></i>
+        <span>Table</span>
     </button>
 
-    <button class="icon-btn @(ActiveView == CalendarView ? "active" : "")"
+    <button type="button"
+            class="view-toggle-btn @(ActiveView == CalendarView ? "active" : "")"
             @onclick="() => OnChange.InvokeAsync(CalendarView)"
             title="Calendar View">
-        📅
+        <i class="bi bi-calendar3"></i>
+        <span>Calendar</span>
     </button>
 </div>
 

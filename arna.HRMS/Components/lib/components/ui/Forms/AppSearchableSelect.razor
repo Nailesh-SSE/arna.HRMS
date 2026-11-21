@@ -1,0 +1,279 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Linq.Expressions
+@using arna.HRMS.Components.lib.components.ui.Model
+@implements IDisposable
+
+<div class="app-searchable-wrapper @WrapperClass">
+    @if (!string.IsNullOrWhiteSpace(Label))
+    {
+        <label class="form-label">
+            @Label
+            @if (IsRequired)
+            {
+                <span class="text-danger">*</span>
+            }
+        </label>
+    }
+
+    <div class="searchable-control-group position-relative">
+        <div class="searchable-control @(Disabled ? "disabled" : "") @(IsInvalid ? "is-invalid" : "") @(_isOpen ? "focused" : "")"
+             @onclick="ToggleDropdown"
+             @onblur="HandleBlur"
+             tabindex="@(Disabled ? "-1" : "0")">
+
+            @if (!string.IsNullOrWhiteSpace(Icon))
+            {
+                <span class="searchable-addon @(IsInvalid ? "text-danger" : "")">
+                    <i class="bi @Icon"></i>
+                </span>
+            }
+
+            <div class="searchable-value-container">
+                @if (!string.IsNullOrWhiteSpace(SelectedText))
+                {
+                    <span class="searchable-selected-text">@SelectedText</span>
+                }
+                else
+                {
+                    <span class="searchable-placeholder">@FormattedPlaceholder</span>
+                }
+            </div>
+
+            <div class="searchable-actions">
+                @if (AllowClear && !IsRequired && !string.IsNullOrWhiteSpace(Value) && !Disabled)
+                {
+                    <button type="button" class="searchable-clear-btn" @onclick="ClearSelection" @onclick:stopPropagation title="Clear">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </button>
+                }
+                <span class="searchable-arrow @(_isOpen ? "open" : "") @(IsInvalid ? "text-danger" : "")">
+                    <i class="bi @paramChevronClass"></i>
+                </span>
+            </div>
+        </div>
+
+        @if (_isOpen && !Disabled)
+        {
+            <div class="searchable-backdrop" @onclick="CloseDropdown"></div>
+
+            <div class="searchable-popover shadow-lg">
+                <div class="searchable-search-box">
+                    <i class="bi bi-search searchable-search-icon"></i>
+                    <input type="text"
+                           class="searchable-search-input"
+                           placeholder="@SearchPlaceholder"
+                           @bind="_searchTerm"
+                           @bind:event="oninput"
+                           @onclick:stopPropagation />
+                    @if (!string.IsNullOrWhiteSpace(_searchTerm))
+                    {
+                        <button type="button" class="searchable-search-clear" @onclick="ClearSearch" @onclick:stopPropagation>
+                            <i class="bi bi-x"></i>
+                        </button>
+                    }
+                </div>
+
+                <div class="searchable-options-list">
+                    @if (!IsRequired && !string.IsNullOrWhiteSpace(Placeholder) && !Options.Any(o => string.IsNullOrEmpty(o.Value)))
+                    {
+                        <div class="searchable-option @(string.IsNullOrEmpty(Value) ? "selected" : "")"
+                             @onclick='() => SelectOption("")'>
+                            <span class="text-muted fst-italic">@FormattedPlaceholder</span>
+                            @if (string.IsNullOrEmpty(Value))
+                            {
+                                <i class="bi bi-check2 text-primary fw-bold ms-auto"></i>
+                            }
+                        </div>
+                    }
+
+                    @if (FilteredOptions.Any())
+                    {
+                        @foreach (var opt in FilteredOptions)
+                        {
+                            <div class="searchable-option @(opt.Value == Value ? "selected" : "") @(opt.IsDisabled ? "disabled" : "")"
+                                 @onclick="async () => { if (!opt.IsDisabled) await SelectOption(opt.Value); }">
+                                <span class="searchable-option-text">@opt.Text</span>
+                                @if (opt.Value == Value)
+                                {
+                                    <i class="bi bi-check2 text-primary fw-bold ms-auto"></i>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="searchable-empty">
+                            <i class="bi bi-search me-1 text-muted"></i> No matching options
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(HelpText))
+    {
+        <small class="text-muted d-block mt-1">@HelpText</small>
+    }
+
+    @if (IsInvalid && !string.IsNullOrEmpty(FirstErrorMessage))
+    {
+        <div class="text-danger small mt-1">
+            @FirstErrorMessage
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] private EditContext? EditContext { get; set; }
+
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public bool IsRequired { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "Select";
+    [Parameter] public string SearchPlaceholder { get; set; } = "Search...";
+
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
+    [Parameter] public List<SelectOption> Options { get; set; } = new();
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool AllowClear { get; set; } = true;
+    [Parameter] public string WrapperClass { get; set; } = string.Empty;
+    [Parameter] public string? HelpText { get; set; }
+
+    private bool _isOpen;
+    private string _searchTerm = string.Empty;
+    private FieldIdentifier _fieldIdentifier;
+    private bool _isTouched;
+    private EditContext? _previousEditContext;
+
+    private string paramChevronClass => "bi-chevron-down";
+
+    private bool HasError => EditContext != null && ValidationExpression != null && EditContext.GetValidationMessages(_fieldIdentifier).Any();
+
+    private bool IsInvalid => HasError && (_isTouched || (EditContext != null && EditContext.IsModified(_fieldIdentifier)));
+
+    private string? FirstErrorMessage => EditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault();
+
+    private string FormattedPlaceholder =>
+        string.IsNullOrWhiteSpace(Placeholder)
+            ? "Select"
+            : (Placeholder.StartsWith("--") ? Placeholder : $"-- {Placeholder} --");
+
+    private string SelectedText
+    {
+        get
+        {
+            var match = Options.FirstOrDefault(o => o.Value == Value);
+            if (match != null)
+                return match.Text;
+
+            if (string.IsNullOrEmpty(Value))
+                return string.Empty;
+
+            return Value;
+        }
+    }
+
+    private IEnumerable<SelectOption> FilteredOptions =>
+        string.IsNullOrWhiteSpace(_searchTerm)
+            ? Options
+            : Options.Where(o => !string.IsNullOrEmpty(o.Text) &&
+                                 o.Text.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override void OnParametersSet()
+    {
+        if (EditContext != null && ValidationExpression != null)
+        {
+            _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+            if (EditContext != _previousEditContext)
+            {
+                if (_previousEditContext != null)
+                {
+                    _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+                }
+                _previousEditContext = EditContext;
+                _previousEditContext.OnValidationRequested += HandleValidationRequested;
+            }
+        }
+    }
+
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
+    {
+        _isTouched = true;
+        StateHasChanged();
+    }
+
+    private void ToggleDropdown()
+    {
+        if (Disabled) return;
+        _isOpen = !_isOpen;
+        if (_isOpen)
+        {
+            _searchTerm = string.Empty;
+        }
+        else
+        {
+            _isTouched = true;
+            NotifyFieldChanged();
+        }
+    }
+
+    private void CloseDropdown()
+    {
+        _isOpen = false;
+        _searchTerm = string.Empty;
+        _isTouched = true;
+        NotifyFieldChanged();
+    }
+
+    private void HandleBlur(FocusEventArgs e)
+    {
+        if (!_isOpen)
+        {
+            _isTouched = true;
+            NotifyFieldChanged();
+        }
+    }
+
+    private void ClearSearch()
+    {
+        _searchTerm = string.Empty;
+    }
+
+    private async Task ClearSelection()
+    {
+        if (Disabled) return;
+        await SelectOption(string.Empty);
+    }
+
+    private async Task SelectOption(string? val)
+    {
+        Value = val;
+        _isOpen = false;
+        _searchTerm = string.Empty;
+        _isTouched = true;
+
+        await ValueChanged.InvokeAsync(val);
+
+        NotifyFieldChanged();
+    }
+
+    private void NotifyFieldChanged()
+    {
+        if (EditContext != null && ValidationExpression != null)
+        {
+            EditContext.NotifyFieldChanged(_fieldIdentifier);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_previousEditContext != null)
+        {
+            _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+        }
+    }
+}

@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 
@@ -13,5 +13,6 @@ public interface IAttendanceRequestService
     Task<ServiceResult<AttendanceRequestDto>> UpdateAttendanceRequestAsync(AttendanceRequestDto dto);
     Task<ServiceResult<bool>> DeleteAttendanceRequestAsync(int id);
     Task<ServiceResult<bool>> UpdateAttendanceRequestStatusAsync(int id, Status status, int approvedBy);
+    Task<ServiceResult<int>> BulkApproveAttendanceRequestsAsync(List<int> requestIds, int approvedBy);
     Task<ServiceResult<bool>> CancelAttendanceRequestAsync(int id, int employeeId);
 }

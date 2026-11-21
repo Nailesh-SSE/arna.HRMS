@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +8,6 @@ namespace arna.HRMS.API.Controllers;
 [Route("api/[controller]")]
 public class DashboardController : ControllerBase
 {
-
     private readonly IDashboardService _dashboardService;
 
     public DashboardController(IDashboardService dashboardService)
@@ -19,8 +18,14 @@ public class DashboardController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetEmployeeAndAdminDashboardAsync([FromQuery] Status? status, [FromQuery] int? employeeId)
     {
-        var dashboard = await _dashboardService.GetDashboardAsync(status, employeeId);
-
-        return Ok(dashboard);
+        try
+        {
+            var dashboard = await _dashboardService.GetDashboardAsync(status, employeeId);
+            return Ok(dashboard);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 }

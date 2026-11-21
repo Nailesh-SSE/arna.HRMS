@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 
@@ -17,7 +17,15 @@ public class FestivalHolidayValidator
     {
         if (dto == null)
             return ValidationResult.Fail("Invalid request");
-        return await ValidateCommonAsync(dto);
+
+        var result = await ValidateCommonAsync(dto);
+        if (!result.IsValid)
+            return result;
+
+        if (dto.Date.Date < DateTime.Today.Date)
+            return ValidationResult.Fail("Festival date cannot be in the past");
+
+        return ValidationResult.Success();
     }
 
     public async Task<ValidationResult> ValidateUpdateAsync(FestivalHolidayDto dto)
@@ -28,11 +36,18 @@ public class FestivalHolidayValidator
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid FestivalHoliday ID");
 
-        var exist = _repository.GetFestivalHolidayByIdAsync(dto.Id);
-        if (exist.Result == null)
+        var exist = await _repository.GetFestivalHolidayByIdAsync(dto.Id);
+        if (exist == null)
             return ValidationResult.Fail("no such Date found");
 
-        return await ValidateCommonAsync(dto);
+        var result = await ValidateCommonAsync(dto);
+        if (!result.IsValid)
+            return result;
+
+        if (dto.Date.Date < DateTime.Today.Date)
+            return ValidationResult.Fail("Festival date cannot be in the past");
+
+        return ValidationResult.Success();
     }
 
     public ValidationResult ValidationByMonthAndYearAsync(int year, int month)
@@ -55,8 +70,6 @@ public class FestivalHolidayValidator
 
         if (dto.Date == default)
             errors.Add("Festival date is required");
-        else if (dto.Date.Date < DateTime.Today.Date)
-            errors.Add("Festival date cannot be in the past");
 
         if (!string.IsNullOrWhiteSpace(dto.FestivalName))
         {

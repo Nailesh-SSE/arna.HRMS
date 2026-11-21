@@ -1,36 +1,123 @@
-﻿/* ══════════ UPCOMING BANNER ══════════ */
-.upcoming-banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* ══════════ NEXT HOLIDAY PILL ══════════ */
+.next-holiday-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background-color: #fff1f2;
+    color: #9f1239;
+    border: 1px solid #fecdd3;
+    font-size: 0.78rem;
+    font-weight: 500;
 }
 
-.upcoming-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    display: flex;
+/* ══════════ QUICK FILTER BUTTONS ══════════ */
+.btn-filter-chip {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    background-color: #f1f5f9;
+    color: #475569;
+}
+.btn-filter-chip:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+}
+.btn-filter-chip.active {
+    background-color: #0d6efd;
+    color: #ffffff;
+    border-color: #0d6efd;
+    box-shadow: 0 1px 3px rgba(13, 110, 253, 0.25);
+}
+
+/* ══════════ HOLIDAY ICON BOX (Table & Agenda) ══════════ */
+.holiday-icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    background-color: #fff1f2;
+    color: #e11d48;
+    border: 1px solid #fecdd3;
 }
 
-/* ══════════ SCROLL ══════════ */
-.festival-scroll-area {
-    max-height: 420px;
+/* ══════════ AGENDA PANEL (Calendar View) ══════════ */
+.holiday-agenda-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+    border-color: #e2e8f0;
+    background-color: #ffffff;
+}
+.holiday-agenda-card:hover {
+    border-color: #93c5fd;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+}
+.holiday-agenda-card.active-selected {
+    border-color: #3b82f6 !important;
+    background-color: #eff6ff !important;
+    box-shadow: 0 0 0 1px #3b82f6 !important;
+}
+
+.date-badge-box {
+    width: 44px;
+    padding: 4px 2px;
+    text-align: center;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.agenda-scroll-area {
     overflow-y: auto;
     overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+.agenda-scroll-area::-webkit-scrollbar {
+    width: 5px;
+}
+.agenda-scroll-area::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
 }
 
-    .festival-scroll-area::-webkit-scrollbar {
-        width: 5px;
-    }
-
-    .festival-scroll-area::-webkit-scrollbar-thumb {
-        background: #d1d5db;
-        border-radius: 10px;
-    }
-
-.festival-scroll-area {
+/* ══════════ TABLE VIEW CUSTOMIZATIONS ══════════ */
+.holiday-table-container {
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
-    scrollbar-color: #d1d5db transparent;
+    scrollbar-color: #cbd5e1 #f8fafc;
+}
+.holiday-table-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.holiday-table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.custom-table th {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+}
+
+.custom-table td {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
 }

@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Attendance
 
@@ -22,7 +22,9 @@
                   Items="Attendance"
                   Columns="TableSchemas.EmployeeAttendence"
                   WrapperClass="att-list-table"
+                  MaxHeight="540px"
                   ShowActions="false"
+                  EnablePagination="false"
                   RowClassFunc="GetRowClass" />
     }
 </div>

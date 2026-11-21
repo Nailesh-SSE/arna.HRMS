@@ -1,0 +1,27 @@
+<div class="erp-section-card @CssClass">
+    @if (!string.IsNullOrWhiteSpace(Title) || !string.IsNullOrWhiteSpace(Icon))
+    {
+        <div class="d-flex align-items-center gap-2 mb-3 fw-bold text-dark" style="font-size: 0.9375rem;">
+            @if (!string.IsNullOrWhiteSpace(Icon))
+            {
+                <i class="bi @Icon text-dark"></i>
+            }
+            <span>@Title</span>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <span class="text-muted fw-normal ms-1" style="font-size: 0.78rem;">— @Subtitle</span>
+            }
+        </div>
+    }
+
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public string CssClass { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
+

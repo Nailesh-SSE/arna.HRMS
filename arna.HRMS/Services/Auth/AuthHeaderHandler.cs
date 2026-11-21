@@ -25,7 +25,15 @@ public sealed class AuthHeaderHandler : DelegatingHandler
                 {
                     try
                     {
-                        var token = await _authProvider.GetAccessTokenAsync();
+                        //var token = await _authProvider.GetAccessTokenAsync();
+
+                        request.Options.TryGetValue(
+                            new HttpRequestOptionsKey<CustomAuthStateProvider>("AuthProvider"),
+                            out var scopedProvider);
+
+                        var provider = scopedProvider ?? _authProvider; // ← only change
+
+                        var token = await provider.GetAccessTokenAsync(); // ← was _authProvider
                         if (!string.IsNullOrWhiteSpace(token))
                             request.Headers.Authorization =
                                 new AuthenticationHeaderValue("Bearer", token);
