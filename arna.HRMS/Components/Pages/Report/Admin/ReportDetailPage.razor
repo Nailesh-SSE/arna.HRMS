@@ -175,7 +175,7 @@ else
                                 <option value="@nameof(AttendanceStatus.Present)">Present (@presentCount)</option>
                                 <option value="@nameof(AttendanceStatus.Late)">Late (@lateCount)</option>
                                 <option value="@nameof(AttendanceStatus.HalfDay)">Half Day (@halfDayCount)</option>
-                                <option value="@nameof(AttendanceStatus.OnLeave)">Leave (@onLeaveCount)</option>
+                                <option value="@nameof(AttendanceStatus.Leave)">Leave (@onLeaveCount)</option>
                                 <option value="@nameof(AttendanceStatus.Absent)">Absent (@absentCount)</option>
                             </select>
                         </div>
@@ -521,7 +521,7 @@ else
         absentCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Absent);
         lateCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Late);
         halfDayCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.HalfDay);
-        onLeaveCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.OnLeave);
+        onLeaveCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Leave);
         holidayCount = records.Count(r => r.AttendanceStatus == AttendanceStatus.Holiday);
 
         weightedPresentDays = presentCount + lateCount + (halfDayCount * 0.5);

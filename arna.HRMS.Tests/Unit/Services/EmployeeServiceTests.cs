@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Service;
@@ -1162,7 +1162,7 @@ public class EmployeeServiceTests
         var result = await _employeeService.UploadProfileImageAsync(employee.Id, stream, "avatar.png");
 
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Data, Does.StartWith("/profile-images/emp_"));
+        Assert.That(result.Data, Does.StartWith("/profile/emp_"));
         Assert.That(result.Data, Does.EndWith(".png"));
 
         var updatedEmployee = await _dbContext.Employees.FindAsync(employee.Id);
@@ -1170,7 +1170,7 @@ public class EmployeeServiceTests
         Assert.That(updatedEmployee!.ProfileImage, Is.EqualTo(result.Data));
 
         // Cleanup created file
-        var localFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images");
+        var localFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile");
         var fileName = Path.GetFileName(result.Data);
         var fullPath = Path.Combine(localFolder, fileName);
         if (File.Exists(fullPath))
@@ -1205,7 +1205,7 @@ public class EmployeeServiceTests
         var result1 = await _employeeService.UploadProfileImageAsync(employee.Id, stream1, "first.jpg");
         Assert.That(result1.IsSuccess, Is.True);
 
-        var firstFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images", Path.GetFileName(result1.Data!));
+        var firstFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile", Path.GetFileName(result1.Data!));
         Assert.That(File.Exists(firstFilePath), Is.True);
 
         using var stream2 = new MemoryStream(dummyBytes);
@@ -1216,7 +1216,7 @@ public class EmployeeServiceTests
         Assert.That(File.Exists(firstFilePath), Is.False);
 
         // New file should exist
-        var secondFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images", Path.GetFileName(result2.Data!));
+        var secondFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile", Path.GetFileName(result2.Data!));
         Assert.That(File.Exists(secondFilePath), Is.True);
 
         // Cleanup
@@ -1267,7 +1267,7 @@ public class EmployeeServiceTests
         var uploadResult = await _employeeService.UploadProfileImageAsync(employee.Id, stream, "test.png");
         Assert.That(uploadResult.IsSuccess, Is.True);
 
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile-images", Path.GetFileName(uploadResult.Data!));
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "profile", Path.GetFileName(uploadResult.Data!));
         Assert.That(File.Exists(filePath), Is.True);
 
         var deleteResult = await _employeeService.DeleteProfileImageAsync(employee.Id);

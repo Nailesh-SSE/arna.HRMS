@@ -88,12 +88,33 @@ public class EmployeeRepository
 
     public async Task<string?> GetLastEmployeeNumberAsync()
     {
+        var numbers = await _baseRepository.Query()
+            .AsNoTracking()
+            .Where(e => !string.IsNullOrEmpty(e.EmployeeNumber))
+            .Select(e => e.EmployeeNumber)
+            .ToListAsync();
+
+        if (!numbers.Any())
+            return null;
+
+        return numbers
+            .Select(num =>
+            {
+                var digits = new string(num.Where(char.IsDigit).ToArray());
+                return int.TryParse(digits, out int val) ? (Num: val, Raw: num) : (Num: -1, Raw: num);
+            })
+            .OrderByDescending(x => x.Num)
+            .Select(x => x.Raw)
+            .FirstOrDefault();
+    }
+
+    public async Task<bool> EmployeeNumberExistsAsync(string employeeNumber)
+    {
+        if (string.IsNullOrWhiteSpace(employeeNumber))
+            return false;
+
         return await _baseRepository.Query()
             .AsNoTracking()
-            .Where(e => e.EmployeeNumber != null)
-            .OrderByDescending(e => e.EmployeeNumber.Length)
-            .ThenByDescending(e => e.EmployeeNumber)
-            .Select(e => e.EmployeeNumber)
-            .FirstOrDefaultAsync();
+            .AnyAsync(e => e.EmployeeNumber == employeeNumber);
     }
 }

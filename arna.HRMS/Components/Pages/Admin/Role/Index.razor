@@ -1,6 +1,8 @@
 @page "/role"
 
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
@@ -71,11 +73,11 @@
 
             <!-- Role Status Filter -->
             <div class="filter-select-wrap">
-                <select class="filter-dropdown-select" value="@_selectedStatus" @onchange="OnStatusFilterChange">
-                    <option value="All">All Roles</option>
-                    <option value="Active">Active Roles</option>
-                    <option value="Inactive">Inactive Roles</option>
-                </select>
+                <AppSearchableSelect Value="@_selectedStatus"
+                                     ValueChanged="OnStatusFilterChanged"
+                                     Placeholder="All Roles"
+                                     AllowClear="false"
+                                     Options="StatusFilterOptions" />
             </div>
 
             <!-- Reset Filters Trigger -->
@@ -399,6 +401,19 @@
     private void ClearSearch()
     {
         _searchTerm = null;
+        _currentPage = 1;
+    }
+
+    private List<SelectOption> StatusFilterOptions => new()
+    {
+        new() { Value = "All", Text = "All Roles" },
+        new() { Value = "Active", Text = "Active Roles" },
+        new() { Value = "Inactive", Text = "Inactive Roles" }
+    };
+
+    private void OnStatusFilterChanged(string? val)
+    {
+        _selectedStatus = val ?? "All";
         _currentPage = 1;
     }
 

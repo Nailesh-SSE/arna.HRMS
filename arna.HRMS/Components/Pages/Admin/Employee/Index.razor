@@ -1,6 +1,8 @@
 @page "/employee"
 
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
@@ -72,33 +74,29 @@
 
             <!-- Department Filter -->
             <div class="filter-select-wrap">
-                <select class="filter-dropdown-select" value="@_selectedDepartmentId" @onchange="OnDepartmentChange">
-                    <option value="0">All Departments</option>
-                    @foreach (var dept in _departments)
-                    {
-                        <option value="@dept.Id">@dept.Name</option>
-                    }
-                </select>
+                <AppSearchableSelect Value="@_selectedDepartmentId.ToString()"
+                                     ValueChanged="OnDepartmentFilterChanged"
+                                     Placeholder="All Departments"
+                                     AllowClear="false"
+                                     Options="DepartmentFilterOptions" />
             </div>
 
             <!-- Designation Filter -->
             <div class="filter-select-wrap">
-                <select class="filter-dropdown-select" value="@_selectedDesignation" @onchange="OnDesignationChange">
-                    <option value="">All Designations</option>
-                    @foreach (var desig in _designations)
-                    {
-                        <option value="@desig">@FormatPosition(desig)</option>
-                    }
-                </select>
+                <AppSearchableSelect Value="@_selectedDesignation"
+                                     ValueChanged="OnDesignationFilterChanged"
+                                     Placeholder="All Designations"
+                                     AllowClear="false"
+                                     Options="DesignationFilterOptions" />
             </div>
 
             <!-- Status Filter -->
             <div class="filter-select-wrap">
-                <select class="filter-dropdown-select" value="@_selectedStatus" @onchange="OnStatusChange">
-                    <option value="All">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
+                <AppSearchableSelect Value="@_selectedStatus"
+                                     ValueChanged="OnStatusFilterChanged"
+                                     Placeholder="All Status"
+                                     AllowClear="false"
+                                     Options="StatusFilterOptions" />
             </div>
 
             <!-- Reset / Active Filter Trigger -->
@@ -444,7 +442,7 @@
             {
                 _employees = empResult.Data;
                 _designations = _employees
-                    .Where(e => !string.IsNullOrWhiteSpace(e.Position))
+                    .Where(e => e.IsActive && !e.IsDeleted && !string.IsNullOrWhiteSpace(e.Position))
                     .Select(e => e.Position!.Trim())
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(x => x)
@@ -458,7 +456,7 @@
 
             if (deptResult.IsSuccess && deptResult.Data != null)
             {
-                _departments = deptResult.Data.Where(d => d.IsActive).OrderBy(d => d.Name).ToList();
+                _departments = deptResult.Data.Where(d => d.IsActive && !d.IsDeleted).OrderBy(d => d.Name).ToList();
             }
         }
         catch (Exception ex)
@@ -483,6 +481,41 @@
     private void ClearSearch()
     {
         _searchTerm = string.Empty;
+        _currentPage = 1;
+    }
+
+    private List<SelectOption> DepartmentFilterOptions =>
+        new List<SelectOption> { new() { Value = "0", Text = "All Departments" } }
+        .Concat(_departments.Select(d => new SelectOption { Value = d.Id.ToString(), Text = d.Name }))
+        .ToList();
+
+    private List<SelectOption> DesignationFilterOptions =>
+        new List<SelectOption> { new() { Value = "", Text = "All Designations" } }
+        .Concat(_designations.Select(d => new SelectOption { Value = d, Text = FormatPosition(d) }))
+        .ToList();
+
+    private List<SelectOption> StatusFilterOptions => new()
+    {
+        new() { Value = "All", Text = "All Status" },
+        new() { Value = "Active", Text = "Active" },
+        new() { Value = "Inactive", Text = "Inactive" }
+    };
+
+    private void OnDepartmentFilterChanged(string? val)
+    {
+        _selectedDepartmentId = int.TryParse(val, out var id) ? id : 0;
+        _currentPage = 1;
+    }
+
+    private void OnDesignationFilterChanged(string? val)
+    {
+        _selectedDesignation = val ?? "";
+        _currentPage = 1;
+    }
+
+    private void OnStatusFilterChanged(string? val)
+    {
+        _selectedStatus = val ?? "All";
         _currentPage = 1;
     }
 

@@ -153,47 +153,24 @@ public class ReportRepository
         return rows.ToDictionary(e => e.Id, e => e.ProfileImage);
     }
 
-    private async Task EnrichProfileImagesAsync(IEnumerable<AttendanceReportDto> list)
+    private async Task EnrichImagesAsync<T>(IEnumerable<T> list, Func<T, int?> getEmployeeId, Action<T, string?> setProfileImage)
     {
         if (!list.Any()) return;
         var images = await GetEmployeeImagesMapAsync();
-        foreach (var item in list)
-        {
-            if (images.TryGetValue(item.EmployeeId, out var img))
-                item.ProfileImage = img;
-        }
+        list.Where(item => getEmployeeId(item).HasValue && images.ContainsKey(getEmployeeId(item)!.Value))
+            .ToList()
+            .ForEach(item => setProfileImage(item, images[getEmployeeId(item)!.Value]));
     }
 
-    private async Task EnrichProfileImagesAsync(IEnumerable<EmployeeAttendanceReportDto> list)
-    {
-        if (!list.Any()) return;
-        var images = await GetEmployeeImagesMapAsync();
-        foreach (var item in list)
-        {
-            if (images.TryGetValue(item.EmployeeId, out var img))
-                item.ProfileImage = img;
-        }
-    }
+    private Task EnrichProfileImagesAsync(IEnumerable<AttendanceReportDto> list) =>
+        EnrichImagesAsync(list, x => x.EmployeeId, (x, img) => x.ProfileImage = img);
 
-    private async Task EnrichProfileImagesAsync(IEnumerable<LeaveSummaryReportDto> list)
-    {
-        if (!list.Any()) return;
-        var images = await GetEmployeeImagesMapAsync();
-        foreach (var item in list)
-        {
-            if (item.EmployeeId.HasValue && images.TryGetValue(item.EmployeeId.Value, out var img))
-                item.ProfileImage = img;
-        }
-    }
+    private Task EnrichProfileImagesAsync(IEnumerable<EmployeeAttendanceReportDto> list) =>
+        EnrichImagesAsync(list, x => x.EmployeeId, (x, img) => x.ProfileImage = img);
 
-    private async Task EnrichProfileImagesAsync(IEnumerable<EmployeeLeaveDetailsReportDto> list)
-    {
-        if (!list.Any()) return;
-        var images = await GetEmployeeImagesMapAsync();
-        foreach (var item in list)
-        {
-            if (images.TryGetValue(item.EmployeeId, out var img))
-                item.ProfileImage = img;
-        }
-    }
+    private Task EnrichProfileImagesAsync(IEnumerable<LeaveSummaryReportDto> list) =>
+        EnrichImagesAsync(list, x => x.EmployeeId, (x, img) => x.ProfileImage = img);
+
+    private Task EnrichProfileImagesAsync(IEnumerable<EmployeeLeaveDetailsReportDto> list) =>
+        EnrichImagesAsync(list, x => x.EmployeeId, (x, img) => x.ProfileImage = img);
 }

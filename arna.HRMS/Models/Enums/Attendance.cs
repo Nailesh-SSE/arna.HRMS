@@ -26,7 +26,6 @@ public enum AttendanceStatus
     Absent = 2,
     Late = 3,
     HalfDay = 4,
-    OnLeave = 5,
     Leave = 5,
     Holiday = 6,
     WeeklyOff = 7,

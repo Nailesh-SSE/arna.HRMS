@@ -1,5 +1,6 @@
 @using System.Linq.Expressions
 @using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
 
 <div class="app-textarea-wrapper @WrapperClass">
     @if (!string.IsNullOrWhiteSpace(Label))
@@ -16,7 +17,7 @@
     @if (!string.IsNullOrWhiteSpace(Icon))
     {
         <div class="input-group">
-            <span class="input-group-text align-items-start pt-2">
+            <span class="input-group-text align-items-start pt-2 @(IsInvalid ? "border-danger text-danger" : "")">
                 <i class="bi @Icon"></i>
             </span>
             <textarea class="form-control @(IsInvalid ? "is-invalid" : "")"
@@ -27,6 +28,7 @@
                       disabled="@Disabled"
                       @onchange="OnChange"
                       @oninput="OnInput"
+                      @onblur="HandleBlur"
                       @attributes="AdditionalAttributes">
             </textarea>
         </div>
@@ -41,6 +43,7 @@
                   disabled="@Disabled"
                   @onchange="OnChange"
                   @oninput="OnInput"
+                  @onblur="HandleBlur"
                   @attributes="AdditionalAttributes">
         </textarea>
     }
@@ -50,10 +53,10 @@
         <small class="text-muted d-block mt-1">@HelpText</small>
     }
 
-    @if (ValidationExpression != null)
+    @if (IsInvalid && !string.IsNullOrEmpty(FirstErrorMessage))
     {
         <div class="text-danger small mt-1">
-            <ValidationMessage For="ValidationExpression" />
+            @FirstErrorMessage
         </div>
     }
 </div>
@@ -74,22 +77,53 @@
     [Parameter] public bool ReadOnly { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private FieldIdentifier _fieldIdentifier;
+    private bool _isTouched;
+    private EditContext? _previousEditContext;
 
-    private bool IsInvalid =>
-        EditContext != null &&
-        ValidationExpression != null &&
-        EditContext.IsModified(_fieldIdentifier) &&
-        EditContext.GetValidationMessages(_fieldIdentifier).Any();
+    private bool HasError => EditContext != null && ValidationExpression != null && EditContext.GetValidationMessages(_fieldIdentifier).Any();
+
+    private bool IsInvalid => HasError && (_isTouched || (EditContext != null && EditContext.IsModified(_fieldIdentifier)));
+
+    private string? FirstErrorMessage => EditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault();
 
     protected override void OnParametersSet()
     {
         if (EditContext != null && ValidationExpression != null)
         {
             _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+            if (EditContext != _previousEditContext)
+            {
+                if (_previousEditContext != null)
+                {
+                    _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+                }
+                _previousEditContext = EditContext;
+                _previousEditContext.OnValidationRequested += HandleValidationRequested;
+            }
+        }
+    }
+
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
+    {
+        _isTouched = true;
+        StateHasChanged();
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        if (ReadOnly || Disabled) return;
+
+        var newVal = e.Value?.ToString();
+        await ValueChanged.InvokeAsync(newVal);
+
+        if (_isTouched || HasError)
+        {
+            NotifyFieldChanged();
         }
     }
 
@@ -98,15 +132,28 @@
         if (ReadOnly || Disabled) return;
 
         await ValueChanged.InvokeAsync(e.Value?.ToString());
-
-        if (ValidationExpression != null)
-            EditContext?.NotifyFieldChanged(_fieldIdentifier);
+        NotifyFieldChanged();
     }
 
-    private async Task OnInput(ChangeEventArgs e)
+    private async Task HandleBlur(FocusEventArgs e)
     {
-        if (ReadOnly || Disabled) return;
+        _isTouched = true;
+        NotifyFieldChanged();
+        if (OnBlur.HasDelegate)
+            await OnBlur.InvokeAsync(e);
+    }
 
-        await ValueChanged.InvokeAsync(e.Value?.ToString());
+    private void NotifyFieldChanged()
+    {
+        if (ValidationExpression != null && EditContext != null)
+            EditContext.NotifyFieldChanged(_fieldIdentifier);
+    }
+
+    public void Dispose()
+    {
+        if (_previousEditContext != null)
+        {
+            _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+        }
     }
 }

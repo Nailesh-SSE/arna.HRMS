@@ -15,7 +15,6 @@ public static class DatabaseConfig
                 sqlOptions =>
                 {
                     sqlOptions.MigrationsAssembly("arna.HRMS.Infrastructure");
-                    sqlOptions.UseCompatibilityLevel(110);
                 }
             )
         );

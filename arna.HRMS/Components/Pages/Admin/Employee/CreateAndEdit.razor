@@ -224,7 +224,7 @@
 
         _departmentOptions = result is { IsSuccess: true, Data: not null }
             ? result.Data
-                .Where(d => d.IsActive || d.Id == _employee.DepartmentId)
+                .Where(d => d.IsActive && !d.IsDeleted)
                 .Select(d => new SelectOption { Value = d.Id.ToString(), Text = d.Name })
                 .ToList()
             : new();
@@ -236,7 +236,7 @@
 
         _managerOptions = result is { IsSuccess: true, Data: not null }
             ? result.Data
-                .Where(e => (!Id.HasValue || e.Id != Id.Value) && (e.IsActive || e.Id == _employee.ManagerId))
+                .Where(e => (!Id.HasValue || e.Id != Id.Value) && e.IsActive && !e.IsDeleted)
                 .Select(e => new SelectOption { Value = e.Id.ToString(), Text = e.FullName })
                 .ToList()
             : new();

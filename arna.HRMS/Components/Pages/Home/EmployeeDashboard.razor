@@ -151,19 +151,6 @@
                 <div class="card-body px-3 px-lg-4 py-3 d-flex flex-column justify-content-between">
                     <div class="d-flex flex-column gap-3">
                         
-                        <!-- Shift & Mode Badges Strip -->
-                        <div class="d-flex flex-wrap align-items-center gap-2 pb-1">
-                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-20 px-3 py-1.5 rounded-pill small fw-medium d-inline-flex align-items-center">
-                                <i class="bi bi-briefcase-fill me-1.5"></i> General Shift: 09:30 AM - 06:30 PM
-                            </span>
-                            <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill small fw-medium d-inline-flex align-items-center">
-                                <i class="bi bi-building me-1.5"></i> Hybrid (5 Days)
-                            </span>
-                            <span class="badge bg-light text-secondary border px-3 py-1.5 rounded-pill small fw-medium d-inline-flex align-items-center">
-                                <i class="bi bi-clock me-1.5"></i> 8h Policy
-                            </span>
-                        </div>
-
                         <!-- 7-Day Visual Activity Strip -->
                         <div class="week-strip-container">
                             <div class="row g-2 text-center">
@@ -900,7 +887,7 @@
         {
             // 1. Process Leave Requests from Backend Dashboard
             var leaveList = dashboard.Requests ?? myRequests ?? new List<LeaveRequestViewModel>();
-            foreach (var req in leaveList)
+            var mappedLeaves = leaveList.Select(req =>
             {
                 var rawName = !string.IsNullOrWhiteSpace(req.LeaveTypeName)
                     ? req.LeaveTypeName
@@ -912,7 +899,7 @@
                     ? req.CreatedOn.ToString("MMM dd, yyyy") 
                     : req.StartDate.ToString("MMM dd, yyyy");
 
-                list.Add(new CombinedRequestItem
+                return new CombinedRequestItem
                 {
                     Id = req.Id,
                     RequestType = "Leave Request",
@@ -922,8 +909,9 @@
                     StatusId = req.StatusId,
                     SortDate = req.CreatedOn != default ? req.CreatedOn : req.StartDate,
                     LinkUrl = "/emp-leave-management"
-                });
-            }
+                };
+            });
+            list.AddRange(mappedLeaves);
 
             // 2. Process Attendance Requests from Backend Dashboard
             var attendanceList = dashboard.AttendanceRequests;
@@ -938,7 +926,7 @@
 
             if (attendanceList != null && attendanceList.Any())
             {
-                foreach (var req in attendanceList)
+                var mappedAtts = attendanceList.Select(req =>
                 {
                     var reasonName = GetAttendanceReasonTitle(req.ReasonTypeId);
                     var attDate = req.FromDate ?? (req.CreatedOn != default ? req.CreatedOn : DateTime.Today);
@@ -947,7 +935,7 @@
                         ? req.CreatedOn.ToString("MMM dd, yyyy") 
                         : attDate.ToString("MMM dd, yyyy");
 
-                    list.Add(new CombinedRequestItem
+                    return new CombinedRequestItem
                     {
                         Id = req.Id,
                         RequestType = "Attendance Request",
@@ -957,8 +945,9 @@
                         StatusId = req.StatusId,
                         SortDate = req.CreatedOn != default ? req.CreatedOn : attDate,
                         LinkUrl = "/emp-attendance-management"
-                    });
-                }
+                    };
+                });
+                list.AddRange(mappedAtts);
             }
         }
         catch (Exception ex)

@@ -1,6 +1,7 @@
 using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
+using System.Text.RegularExpressions;
 using EmailAddressAttribute = System.ComponentModel.DataAnnotations.EmailAddressAttribute;
 using PhoneAttribute = System.ComponentModel.DataAnnotations.PhoneAttribute;
 
@@ -15,9 +16,6 @@ public class EmployeeValidator
         _repository = repository;
     }
 
-    // =====================================================
-    // CREATE
-    // =====================================================
     public async Task<ValidationResult> ValidateCreateAsync(EmployeeDto dto)
     {
         if (dto == null)
@@ -26,9 +24,6 @@ public class EmployeeValidator
         return await ValidateCommonFields(dto);
     }
 
-    // =====================================================
-    // UPDATE
-    // =====================================================
     public async Task<ValidationResult> ValidateUpdateAsync(EmployeeDto dto)
     {
         if (dto == null)
@@ -44,14 +39,22 @@ public class EmployeeValidator
         return await ValidateCommonFields(dto);
     }
 
-    // =====================================================
-    // COMMON FIELD VALIDATION (Used by Create + Update)
-    // =====================================================
     private async Task<ValidationResult> ValidateCommonFields(EmployeeDto instance)
     {
-        
         var errors = new List<string>();
 
+        ValidateNames(instance, errors);
+        ValidateEmailsAndPhone(instance, errors);
+        ValidateDatesAndRole(instance, errors);
+        await ValidateDuplicatesAsync(instance, errors);
+
+        return errors.Any()
+            ? ValidationResult.Fail(errors.ToArray())
+            : ValidationResult.Success();
+    }
+
+    private static void ValidateNames(EmployeeDto instance, List<string> errors)
+    {
         if (string.IsNullOrWhiteSpace(instance.FirstName))
             errors.Add("FirstName is required");
         else if (instance.FirstName.Length > 50)
@@ -61,7 +64,10 @@ public class EmployeeValidator
             errors.Add("LastName is required");
         else if (instance.LastName.Length > 50)
             errors.Add("LastName cannot exceed 50 characters");
+    }
 
+    private static void ValidateEmailsAndPhone(EmployeeDto instance, List<string> errors)
+    {
         if (string.IsNullOrWhiteSpace(instance.Email))
             errors.Add("Email is required");
         else if (!new EmailAddressAttribute().IsValid(instance.Email))
@@ -73,9 +79,12 @@ public class EmployeeValidator
             errors.Add("Phone number is required.");
         else if (!new PhoneAttribute().IsValid(instance.PhoneNumber))
             errors.Add("Invalid phone number.");
-        else if (System.Text.RegularExpressions.Regex.Replace(instance.PhoneNumber, @"\D", "").Length != 10)
+        else if (Regex.Replace(instance.PhoneNumber, @"\D", "").Length != 10)
             errors.Add("Phone number must be exactly 10 digits.");
+    }
 
+    private static void ValidateDatesAndRole(EmployeeDto instance, List<string> errors)
+    {
         if (instance.DateOfBirth == default)
             errors.Add("DateOfBirth is required");
         else if (instance.DateOfBirth > DateTime.Now)
@@ -98,14 +107,12 @@ public class EmployeeValidator
 
         if (instance.Salary <= 0)
             errors.Add("Salary must be greater than 0");
+    }
 
+    private async Task ValidateDuplicatesAsync(EmployeeDto instance, List<string> errors)
+    {
         var duplicate = await _repository.EmployeeExistsAsync(instance.Email, instance.PhoneNumber, instance.OfficeEmail, instance.Id);
-
         if (duplicate)
             errors.Add("Email or Phone Number already exists");
-
-        return errors.Any()
-            ? ValidationResult.Fail(errors.ToArray())
-            : ValidationResult.Success();
     }
 }

@@ -186,18 +186,11 @@ public sealed class HttpService
             if (userId <= 0 || string.IsNullOrWhiteSpace(refreshToken))
                 return false;
 
-            // ✅ FIX: Use the dedicated "RefreshClient" (no AuthHeaderHandler attached)
-            // instead of going through _apiClients which uses the same HttpService pipeline.
-            // Using _apiClients.Auth.RefreshTokenAsync() here caused an INFINITE LOOP:
-            //   SendAsync → 401 → TryRefreshTokenAsync → RefreshTokenAsync → SendAsync
-            //   → 401 (refresh endpoint also returns 401 with expired token) → infinite loop
-            // → eventually causes ObjectDisposedException / stack overflow on the server.
             var refreshHttpClient = _httpClientFactory.CreateClient("RefreshClient");
 
             var requestBody = JsonSerializer.Serialize(new
             {
                 UserId = userId,
-                // ✅ Also fixes: Frontend RefreshToken VM had "Token" property but backend expects "RefreshToken"
                 RefreshToken = refreshToken
             }, JsonOptions);
 
@@ -209,28 +202,7 @@ public sealed class HttpService
                 return false;
 
             var raw = await response.Content.ReadAsStringAsync();
-
-            if (string.IsNullOrWhiteSpace(raw))
-                return false;
-
-            var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
-
-            if (wrapper == null || !wrapper.IsSuccess)
-                return false;
-
-            if (wrapper.Data.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
-                return false;
-
-            var data = JsonSerializer.Deserialize<AuthResponse>(wrapper.Data.GetRawText(), JsonOptions);
-
-            if (data == null || string.IsNullOrWhiteSpace(data.AccessToken))
-                return false;
-
-            await _authProvider.UpdateTokensAsync(
-                data.AccessToken,
-                data.RefreshToken ?? refreshToken);
-
-            return true;
+            return await ParseAndApplyRefreshedTokensAsync(raw, refreshToken);
         }
         catch (HttpRequestException ex) when (IsConnectionRefused(ex))
         {
@@ -248,6 +220,23 @@ public sealed class HttpService
         {
             _refreshLock.Release();
         }
+    }
+
+    private async Task<bool> ParseAndApplyRefreshedTokensAsync(string raw, string existingRefreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return false;
+
+        var wrapper = JsonSerializer.Deserialize<ServiceResult<JsonElement>>(raw, JsonOptions);
+        if (wrapper == null || !wrapper.IsSuccess || wrapper.Data.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            return false;
+
+        var data = JsonSerializer.Deserialize<AuthResponse>(wrapper.Data.GetRawText(), JsonOptions);
+        if (data == null || string.IsNullOrWhiteSpace(data.AccessToken))
+            return false;
+
+        await _authProvider.UpdateTokensAsync(data.AccessToken, data.RefreshToken ?? existingRefreshToken);
+        return true;
     }
 
     private static bool IsConnectionRefused(HttpRequestException ex)

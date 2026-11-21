@@ -24,7 +24,10 @@ public class AttendanceRepository
 
     #region Basic Queries
 
-    public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId)
+    public Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId) =>
+        GetAttendanceByStatusAndEmployeeId(status, empId, null, null);
+
+    public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId, DateTime? fromDate, DateTime? toDate)
     {
         var query = _baseRepository.Query()
             .AsNoTracking()
@@ -36,6 +39,12 @@ public class AttendanceRepository
 
         if (empId.HasValue)
             query = query.Where(x => x.EmployeeId == empId.Value);
+
+        if (fromDate.HasValue)
+            query = query.Where(x => x.Date >= fromDate.Value.Date);
+
+        if (toDate.HasValue)
+            query = query.Where(x => x.Date <= toDate.Value.Date);
 
         return await query
             .OrderByDescending(x => x.Id)
@@ -253,7 +262,6 @@ public class AttendanceRepository
             .AnyAsync(x => x.EmployeeId == employeeId && !x.IsDeleted && x.Date.Date == targetDate);
     }
 
-    // Bug 3 FIX: Added a.Date.Date == today filter — previously returned stale data from any day
     public async Task<Attendance?> GetLastAttendanceTodayAsync(int employeeId)
     {
         var today = DateTime.Today;
@@ -306,13 +314,14 @@ public class AttendanceRepository
         if (!entities.Any())
             return false;
 
-        foreach (var entity in entities)
+        await entities.Aggregate(Task.CompletedTask, async (prev, entity) =>
         {
+            await prev;
             entity.IsActive = false;
             entity.IsDeleted = true;
             entity.UpdatedOn = DateTime.Now;
             await _baseRepository.UpdateAsync(entity);
-        }
+        });
 
         return true;
     }
@@ -344,8 +353,6 @@ public class AttendanceRepository
 
     #region Helpers
 
-    // Bug 7 FIX: Check actual attendance records BEFORE holiday/weeklyoff status
-    // so that employees who worked on a holiday show as "Present" not "Holiday"
     private static string CalculateStatus(
         IEnumerable<AttendanceStatus> statuses,
         bool isFestivalHoliday,

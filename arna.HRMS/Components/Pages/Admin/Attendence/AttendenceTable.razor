@@ -83,16 +83,11 @@
 
                 <!-- Status Filter Dropdown -->
                 <div class="filter-select-wrap">
-                    <select class="filter-dropdown-select" value="@_selectedStatus" @onchange="OnStatusFilterChange">
-                        <option value="All">All Statuses</option>
-                        <option value="Present">Present</option>
-                        <option value="WeeklyOff">Weekly Off</option>
-                        <option value="Holiday">Holiday</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Late">Late</option>
-                        <option value="HalfDay">Half Day</option>
-                        <option value="OnLeave">On Leave</option>
-                    </select>
+                    <AppSearchableSelect Value="@_selectedStatus"
+                                         ValueChanged="OnStatusFilterChanged"
+                                         Placeholder="All Statuses"
+                                         AllowClear="false"
+                                         Options="AttendanceStatusFilterOptions" />
                 </div>
 
                 <!-- Quick Search Input -->
@@ -565,6 +560,25 @@
         _currentPage = 1;
     }
 
+    private List<SelectOption> AttendanceStatusFilterOptions => new()
+    {
+        new() { Value = "All", Text = "All Statuses" },
+        new() { Value = "Present", Text = "Present" },
+        new() { Value = "WeeklyOff", Text = "Weekly Off" },
+        new() { Value = "Holiday", Text = "Holiday" },
+        new() { Value = "Absent", Text = "Absent" },
+        new() { Value = "Late", Text = "Late" },
+        new() { Value = "HalfDay", Text = "Half Day" },
+        new() { Value = "OnLeave", Text = "On Leave" }
+    };
+
+    private void OnStatusFilterChanged(string? val)
+    {
+        _selectedStatus = val ?? "All";
+        _currentPage = 1;
+        StateHasChanged();
+    }
+
     private void OnStatusFilterChange(ChangeEventArgs e)
     {
         _selectedStatus = e.Value?.ToString() ?? "All";
@@ -679,11 +693,13 @@
         {
             var result = await EmployeeService.GetEmployeesAsync();
             Employees = result?.IsSuccess == true && result.Data != null
-                ? result.Data.Select(e => new SelectOption
-                {
-                    Value = e.Id.ToString(),
-                    Text = $"{e.FullName} ({e.EmployeeNumber})"
-                }).ToList()
+                ? result.Data
+                    .Where(e => e.IsActive && !e.IsDeleted)
+                    .Select(e => new SelectOption
+                    {
+                        Value = e.Id.ToString(),
+                        Text = $"{e.FullName} ({e.EmployeeNumber})"
+                    }).ToList()
                 : new();
         }
         catch

@@ -196,7 +196,7 @@ public class ExcelExportService : IExcelExportService
                     statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#CFFAFE");
                     statusCell.Style.Font.FontColor = XLColor.FromHtml("#155E75");
                     break;
-                case AttendanceStatus.OnLeave:
+                case AttendanceStatus.Leave:
                     statusCell.Style.Fill.BackgroundColor = XLColor.FromHtml("#F3E8FF");
                     statusCell.Style.Font.FontColor = XLColor.FromHtml("#6B21A8");
                     break;

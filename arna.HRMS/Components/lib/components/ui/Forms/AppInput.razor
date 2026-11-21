@@ -1,5 +1,6 @@
 @using System.Linq.Expressions
 @using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
 
 @if (ShowWrapper)
 {
@@ -18,7 +19,7 @@
         @if (!string.IsNullOrWhiteSpace(Icon))
         {
             <div class="input-group">
-                <span class="input-group-text">
+                <span class="input-group-text @(IsInvalid ? "border-danger text-danger" : "")">
                     <i class="bi @Icon"></i>
                 </span>
                 <input type="@Type"
@@ -30,7 +31,7 @@
                        @onchange="OnChange"
                        @oninput="OnInput"
                        @onfocus="OnFocus"
-                       @onblur="OnBlur"
+                       @onblur="HandleBlur"
                        @attributes="AdditionalAttributes" />
             </div>
         }
@@ -45,7 +46,7 @@
                    @onchange="OnChange"
                    @oninput="OnInput"
                    @onfocus="OnFocus"
-                   @onblur="OnBlur"
+                   @onblur="HandleBlur"
                    @attributes="AdditionalAttributes" />
         }
 
@@ -54,10 +55,10 @@
             <small class="text-muted d-block mt-1">@HelpText</small>
         }
 
-        @if (ValidationExpression != null && ShowValidation)
+        @if (ShowValidation && IsInvalid && !string.IsNullOrEmpty(FirstErrorMessage))
         {
             <div class="text-danger small mt-1">
-                <ValidationMessage For="ValidationExpression" />
+                @FirstErrorMessage
             </div>
         }
 
@@ -69,7 +70,7 @@ else
     @if (!string.IsNullOrWhiteSpace(Icon))
     {
         <div class="input-group">
-            <span class="input-group-text">
+            <span class="input-group-text @(IsInvalid ? "border-danger text-danger" : "")">
                 <i class="bi @Icon"></i>
             </span>
             <input type="@Type"
@@ -81,7 +82,7 @@ else
                    @onchange="OnChange"
                    @oninput="OnInput"
                    @onfocus="OnFocus"
-                   @onblur="OnBlur"
+                   @onblur="HandleBlur"
                    @attributes="AdditionalAttributes" />
         </div>
     }
@@ -96,7 +97,7 @@ else
                @onchange="OnChange"
                @oninput="OnInput"
                @onfocus="OnFocus"
-               @onblur="OnBlur"
+               @onblur="HandleBlur"
                @attributes="AdditionalAttributes" />
     }
 }
@@ -136,13 +137,21 @@ else
     // ── Content & Events ──
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public EventCallback OnFocus { get; set; }
-    [Parameter] public EventCallback OnBlur { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
 
     // ── Unmatched ──
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private FieldIdentifier _fieldIdentifier;
+    private bool _isTouched;
+    private EditContext? _previousEditContext;
+
+    private bool HasError => EditContext != null && ValidationExpression != null && EditContext.GetValidationMessages(_fieldIdentifier).Any();
+
+    private bool IsInvalid => HasError && (_isTouched || (EditContext != null && EditContext.IsModified(_fieldIdentifier)));
+
+    private string? FirstErrorMessage => EditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault();
 
     private string InputCssClass
     {
@@ -156,14 +165,8 @@ else
             if (!string.IsNullOrWhiteSpace(CssClass))
                 baseClass += $" {CssClass}";
 
-            if (EditContext != null && ValidationExpression != null)
-            {
-                var isValid = !EditContext.GetValidationMessages(_fieldIdentifier).Any();
-                var isModified = EditContext.IsModified(_fieldIdentifier);
-
-                if (isModified && !isValid)
-                    baseClass += " is-invalid";
-            }
+            if (IsInvalid)
+                baseClass += " is-invalid";
 
             return baseClass;
         }
@@ -174,7 +177,22 @@ else
         if (EditContext != null && ValidationExpression != null)
         {
             _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+            if (EditContext != _previousEditContext)
+            {
+                if (_previousEditContext != null)
+                {
+                    _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+                }
+                _previousEditContext = EditContext;
+                _previousEditContext.OnValidationRequested += HandleValidationRequested;
+            }
         }
+    }
+
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
+    {
+        _isTouched = true;
+        StateHasChanged();
     }
 
     private async Task OnChange(ChangeEventArgs e)
@@ -189,12 +207,34 @@ else
     {
         if (ReadOnly || Disabled) return;
 
-        await ValueChanged.InvokeAsync(e.Value?.ToString());
+        var newVal = e.Value?.ToString();
+        await ValueChanged.InvokeAsync(newVal);
+
+        if (_isTouched || HasError)
+        {
+            NotifyFieldChanged();
+        }
+    }
+
+    private async Task HandleBlur(FocusEventArgs e)
+    {
+        _isTouched = true;
+        NotifyFieldChanged();
+        if (OnBlur.HasDelegate)
+            await OnBlur.InvokeAsync(e);
     }
 
     private void NotifyFieldChanged()
     {
-        if (ValidationExpression != null)
-            EditContext?.NotifyFieldChanged(_fieldIdentifier);
+        if (ValidationExpression != null && EditContext != null)
+            EditContext.NotifyFieldChanged(_fieldIdentifier);
+    }
+
+    public void Dispose()
+    {
+        if (_previousEditContext != null)
+        {
+            _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+        }
     }
 }

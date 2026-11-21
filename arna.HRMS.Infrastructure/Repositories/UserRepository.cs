@@ -35,6 +35,19 @@ public class UserRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<bool> UsernameExistsAsync(string username, int? excludeUserId = null)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return false;
+
+        username = username.Trim().ToLower();
+
+        return await _baseRepository.Query()
+            .AnyAsync(x => !x.IsDeleted &&
+                           (excludeUserId == null || x.Id != excludeUserId.Value) &&
+                           x.Username.Trim().ToLower() == username);
+    }
+
     public Task<User> CreateUserAsync(User user)
     {
         return _baseRepository.AddAsync(user);

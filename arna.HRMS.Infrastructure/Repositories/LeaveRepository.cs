@@ -50,9 +50,23 @@ public class LeaveRepository
             .AnyAsync(x => x.LeaveNameId == leaveName && x.Id != id);
     }
 
-    public Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType)
+    public async Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType)
     {
-        return _leaveTypeRepository.AddAsync(leaveType);
+        var existing = await _leaveTypeRepository.Query()
+            .FirstOrDefaultAsync(x => x.LeaveNameId == leaveType.LeaveNameId);
+
+        if (existing != null)
+        {
+            existing.IsDeleted = false;
+            existing.IsActive = leaveType.IsActive;
+            existing.MaxPerYear = leaveType.MaxPerYear;
+            existing.IsPaid = leaveType.IsPaid;
+            existing.Description = leaveType.Description;
+            existing.UpdatedOn = DateTime.Now;
+            return await _leaveTypeRepository.UpdateAsync(existing);
+        }
+
+        return await _leaveTypeRepository.AddAsync(leaveType);
     }
 
     public Task<LeaveType> UpdateLeaveTypeAsync(LeaveType leaveType)
@@ -262,7 +276,6 @@ public class LeaveRepository
         return true;
     }
 
-    // Bug 5 & Multi-case FIX: Soft-delete the previous leave and create new auto-approved segment(s)
     public async Task<bool> EmployeeWorkedOnDateAsync(int employeeId, DateTime date)
     {
         var targetDate = date.Date;
@@ -271,70 +284,51 @@ public class LeaveRepository
         if (!leaves.Any())
             return true;
 
-        foreach (var leave in leaves)
+        await leaves.Aggregate(Task.CompletedTask, async (prev, leave) =>
         {
-            // 1. Soft-delete the original leave request
-            await SoftDeleteLeaveRequestAsync(leave);
-
-            // 2. If there are dates before targetDate, create the left segment
-            if (targetDate > leave.StartDate.Date)
-            {
-                var leftStart = leave.StartDate.Date;
-                var leftEnd = targetDate.AddDays(-1);
-                var leftDays = (leftEnd - leftStart).Days + 1;
-
-                if (leftDays > 0)
-                {
-                    var leftLeave = new LeaveRequest
-                    {
-                        EmployeeId = leave.EmployeeId,
-                        LeaveTypeId = leave.LeaveTypeId,
-                        StartDate = leftStart,
-                        EndDate = leftEnd,
-                        LeaveDays = leftDays,
-                        Reason = leave.Reason,
-                        StatusId = Status.Approved,
-                        ApprovalNotes = "Auto Adjusted",
-                        ApprovedBy = leave.ApprovedBy,
-                        ApprovedDate = leave.ApprovedDate ?? DateTime.Now,
-                        IsActive = true,
-                        IsDeleted = false,
-                        CreatedOn = DateTime.Now
-                    };
-                    await _leaveRequestRepository.AddAsync(leftLeave);
-                }
-            }
-
-            // 3. If there are dates after targetDate, create the right segment
-            if (targetDate < leave.EndDate.Date)
-            {
-                var rightStart = targetDate.AddDays(1);
-                var rightEnd = leave.EndDate.Date;
-                var rightDays = (rightEnd - rightStart).Days + 1;
-
-                if (rightDays > 0)
-                {
-                    var rightLeave = new LeaveRequest
-                    {
-                        EmployeeId = leave.EmployeeId,
-                        LeaveTypeId = leave.LeaveTypeId,
-                        StartDate = rightStart,
-                        EndDate = rightEnd,
-                        LeaveDays = rightDays,
-                        Reason = leave.Reason,
-                        StatusId = Status.Approved,
-                        ApprovalNotes = "Auto Adjusted",
-                        ApprovedBy = leave.ApprovedBy,
-                        ApprovedDate = leave.ApprovedDate ?? DateTime.Now,
-                        IsActive = true,
-                        IsDeleted = false,
-                        CreatedOn = DateTime.Now
-                    };
-                    await _leaveRequestRepository.AddAsync(rightLeave);
-                }
-            }
-        }
+            await prev;
+            await ProcessWorkedDayLeaveAsync(leave, targetDate);
+        });
 
         return true;
+    }
+
+    private async Task ProcessWorkedDayLeaveAsync(LeaveRequest leave, DateTime targetDate)
+    {
+        await SoftDeleteLeaveRequestAsync(leave);
+
+        if (targetDate > leave.StartDate.Date)
+        {
+            await CreateLeaveSegmentAsync(leave, leave.StartDate.Date, targetDate.AddDays(-1));
+        }
+
+        if (targetDate < leave.EndDate.Date)
+        {
+            await CreateLeaveSegmentAsync(leave, targetDate.AddDays(1), leave.EndDate.Date);
+        }
+    }
+
+    private async Task CreateLeaveSegmentAsync(LeaveRequest source, DateTime start, DateTime end)
+    {
+        var days = (end - start).Days + 1;
+        if (days <= 0) return;
+
+        var segment = new LeaveRequest
+        {
+            EmployeeId = source.EmployeeId,
+            LeaveTypeId = source.LeaveTypeId,
+            StartDate = start,
+            EndDate = end,
+            LeaveDays = days,
+            Reason = source.Reason,
+            StatusId = Status.Approved,
+            ApprovalNotes = "Auto Adjusted",
+            ApprovedBy = source.ApprovedBy,
+            ApprovedDate = source.ApprovedDate ?? DateTime.Now,
+            IsActive = true,
+            IsDeleted = false,
+            CreatedOn = DateTime.Now
+        };
+        await _leaveRequestRepository.AddAsync(segment);
     }
 }

@@ -55,7 +55,7 @@
         if (result?.IsSuccess == true && result.Data != null)
         {
             leaveOptions = result.Data
-                .Where(x => x.IsActive)
+                .Where(x => x.IsActive && !x.IsDeleted)
                 .Select(x => new SelectOption
                 {
                     Value = x.Id.ToString(),

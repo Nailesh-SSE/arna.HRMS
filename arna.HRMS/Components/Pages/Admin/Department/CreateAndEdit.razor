@@ -128,7 +128,7 @@
 
         _departmentOptions = result is { IsSuccess: true, Data: not null }
             ? result.Data
-                .Where(d => (!Id.HasValue || d.Id != Id.Value) && (d.IsActive || d.Id == department.ParentDepartmentId))
+                .Where(d => (!Id.HasValue || d.Id != Id.Value) && d.IsActive && !d.IsDeleted)
                 .Select(d => new SelectOption { Value = d.Id.ToString(), Text = d.Name })
                 .ToList()
             : new();

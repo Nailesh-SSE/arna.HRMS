@@ -39,6 +39,7 @@
                             <div class="col-md-7">
                                 <AppDatePicker Label="Select Date *"
                                                Value="@model.Date"
+                                               ValueChanged="d => model.Date = d ?? default"
                                                ValidationExpression="() => model.Date" />
                             </div>
                             <div class="col-md-5">

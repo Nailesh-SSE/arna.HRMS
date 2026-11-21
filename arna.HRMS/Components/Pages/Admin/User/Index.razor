@@ -1,6 +1,8 @@
 @page "/user"
 
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
@@ -72,22 +74,20 @@
 
             <!-- Role Filter -->
             <div class="filter-select-wrap">
-                <select class="filter-dropdown-select" value="@_selectedRole" @onchange="OnRoleChange">
-                    <option value="">All Roles</option>
-                    @foreach (var role in _roles)
-                    {
-                        <option value="@role.Name">@role.Name</option>
-                    }
-                </select>
+                <AppSearchableSelect Value="@_selectedRole"
+                                     ValueChanged="OnRoleChanged"
+                                     Placeholder="All Roles"
+                                     AllowClear="false"
+                                     Options="RoleFilterOptions" />
             </div>
 
             <!-- Status Filter -->
             <div class="filter-select-wrap">
-                <select class="filter-dropdown-select" value="@_selectedStatus" @onchange="OnStatusChange">
-                    <option value="All">All Status</option>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
+                <AppSearchableSelect Value="@_selectedStatus"
+                                     ValueChanged="OnStatusChanged"
+                                     Placeholder="All Status"
+                                     AllowClear="false"
+                                     Options="StatusFilterOptions" />
             </div>
 
             <!-- Reset / Active Filter Trigger -->
@@ -155,7 +155,7 @@
                             <th style="min-width: 130px;">PHONE</th>
                             <th style="min-width: 220px;">EMAIL</th>
                             <th style="min-width: 140px;">ROLE</th>
-                            <th style="min-width: 180px;">LINKED EMPLOYEE</th>
+                            <th style="min-width: 180px;">EMPLOYEE</th>
                             <th style="width: 110px; text-align: center;">STATUS</th>
                             @if (IsAdmin() || IsSuperAdmin())
                             {
@@ -436,7 +436,7 @@
 
             if (roleResult.IsSuccess && roleResult.Data != null)
             {
-                _roles = roleResult.Data.Where(r => r.IsActive).OrderBy(r => r.Name).ToList();
+                _roles = roleResult.Data.Where(r => r.IsActive && !r.IsDeleted).OrderBy(r => r.Name).ToList();
             }
         }
         catch (Exception ex)
@@ -461,6 +461,30 @@
     private void ClearSearch()
     {
         _searchTerm = string.Empty;
+        _currentPage = 1;
+    }
+
+    private List<SelectOption> RoleFilterOptions =>
+        new List<SelectOption> { new() { Value = "", Text = "All Roles" } }
+        .Concat(_roles.Select(r => new SelectOption { Value = r.Name, Text = r.Name }))
+        .ToList();
+
+    private List<SelectOption> StatusFilterOptions => new()
+    {
+        new() { Value = "All", Text = "All Status" },
+        new() { Value = "Active", Text = "Active" },
+        new() { Value = "Inactive", Text = "Inactive" }
+    };
+
+    private void OnRoleChanged(string? value)
+    {
+        _selectedRole = value ?? "";
+        _currentPage = 1;
+    }
+
+    private void OnStatusChanged(string? value)
+    {
+        _selectedStatus = value ?? "All";
         _currentPage = 1;
     }
 

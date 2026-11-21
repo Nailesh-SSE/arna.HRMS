@@ -2,6 +2,7 @@
 @using System.Linq.Expressions
 @using Microsoft.AspNetCore.Components.Forms
 @using System.Globalization
+@implements IDisposable
 
 <div class="app-number-wrapper @WrapperClass">
     @if (!string.IsNullOrWhiteSpace(Label))
@@ -18,7 +19,7 @@
     <div class="input-group">
         @if (!string.IsNullOrWhiteSpace(Icon))
         {
-            <span class="input-group-text">
+            <span class="input-group-text @(IsInvalid ? "border-danger text-danger" : "")">
                 <i class="bi @Icon"></i>
             </span>
         }
@@ -32,6 +33,8 @@
                readonly="@ReadOnly"
                disabled="@Disabled"
                @onchange="OnChange"
+               @oninput="OnInput"
+               @onblur="HandleBlur"
                @attributes="AdditionalAttributes" />
     </div>
 
@@ -40,10 +43,10 @@
         <small class="text-muted d-block mt-1">@HelpText</small>
     }
 
-    @if (ValidationExpression != null)
+    @if (IsInvalid && !string.IsNullOrEmpty(FirstErrorMessage))
     {
         <div class="text-danger small mt-1">
-            <ValidationMessage For="ValidationExpression" />
+            @FirstErrorMessage
         </div>
     }
 </div>
@@ -67,10 +70,19 @@
 
     [Parameter] public bool ReadOnly { get; set; }
     [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private FieldIdentifier _fieldIdentifier;
+    private bool _isTouched;
+    private EditContext? _previousEditContext;
+
+    private bool HasError => EditContext != null && ValidationExpression != null && EditContext.GetValidationMessages(_fieldIdentifier).Any();
+
+    private bool IsInvalid => HasError && (_isTouched || (EditContext != null && EditContext.IsModified(_fieldIdentifier)));
+
+    private string? FirstErrorMessage => EditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault();
 
     private string? FormattedValue => Value switch
     {
@@ -81,17 +93,40 @@
         _ => Value.ToString()
     };
 
-    private bool IsInvalid =>
-        EditContext != null &&
-        ValidationExpression != null &&
-        EditContext.IsModified(_fieldIdentifier) &&
-        EditContext.GetValidationMessages(_fieldIdentifier).Any();
-
     protected override void OnParametersSet()
     {
         if (EditContext != null && ValidationExpression != null)
         {
             _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+            if (EditContext != _previousEditContext)
+            {
+                if (_previousEditContext != null)
+                {
+                    _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+                }
+                _previousEditContext = EditContext;
+                _previousEditContext.OnValidationRequested += HandleValidationRequested;
+            }
+        }
+    }
+
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
+    {
+        _isTouched = true;
+        StateHasChanged();
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        if (ReadOnly || Disabled) return;
+
+        if (BindConverter.TryConvertTo<TValue>(e.Value, CultureInfo.InvariantCulture, out var result))
+        {
+            await ValueChanged.InvokeAsync(result);
+            if (_isTouched || HasError)
+            {
+                NotifyFieldChanged();
+            }
         }
     }
 
@@ -102,9 +137,29 @@
         if (BindConverter.TryConvertTo<TValue>(e.Value, CultureInfo.InvariantCulture, out var result))
         {
             await ValueChanged.InvokeAsync(result);
+            NotifyFieldChanged();
+        }
+    }
 
-            if (ValidationExpression != null)
-                EditContext?.NotifyFieldChanged(_fieldIdentifier);
+    private async Task HandleBlur(FocusEventArgs e)
+    {
+        _isTouched = true;
+        NotifyFieldChanged();
+        if (OnBlur.HasDelegate)
+            await OnBlur.InvokeAsync(e);
+    }
+
+    private void NotifyFieldChanged()
+    {
+        if (ValidationExpression != null && EditContext != null)
+            EditContext.NotifyFieldChanged(_fieldIdentifier);
+    }
+
+    public void Dispose()
+    {
+        if (_previousEditContext != null)
+        {
+            _previousEditContext.OnValidationRequested -= HandleValidationRequested;
         }
     }
 }

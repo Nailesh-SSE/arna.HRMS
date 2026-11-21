@@ -1,6 +1,8 @@
-﻿@page "/department"
+@page "/department"
 
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
@@ -71,24 +73,22 @@
 
             <!-- Hierarchy Level Filter -->
             <div class="filter-select-wrap">
-                <select class="filter-dropdown-select" value="@_selectedLevel" @onchange="OnLevelChange">
-                    <option value="All">All Levels</option>
-                    <option value="Root">Primary Divisions (Root)</option>
-                    <option value="Sub">Sub-Departments</option>
-                </select>
+                <AppSearchableSelect Value="@_selectedLevel"
+                                     ValueChanged="OnLevelFilterChanged"
+                                     Placeholder="All Levels"
+                                     AllowClear="false"
+                                     Options="LevelFilterOptions" />
             </div>
 
             <!-- Parent Department Filter -->
             @if (ParentDepartmentOptions.Any())
             {
                 <div class="filter-select-wrap">
-                    <select class="filter-dropdown-select" value="@_selectedParentName" @onchange="OnParentChange">
-                        <option value="">All Parent Departments</option>
-                        @foreach (var parent in ParentDepartmentOptions)
-                        {
-                            <option value="@parent">@parent</option>
-                        }
-                    </select>
+                    <AppSearchableSelect Value="@_selectedParentName"
+                                         ValueChanged="OnParentFilterChanged"
+                                         Placeholder="All Parent Departments"
+                                         AllowClear="false"
+                                         Options="ParentFilterOptions" />
                 </div>
             }
 
@@ -320,7 +320,7 @@
 
     private List<string> ParentDepartmentOptions =>
         _departments
-            .Where(d => !string.IsNullOrWhiteSpace(d.ParentDepartMentName))
+            .Where(d => d.IsActive && !d.IsDeleted && !string.IsNullOrWhiteSpace(d.ParentDepartMentName))
             .Select(d => d.ParentDepartMentName!.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(n => n)
@@ -409,6 +409,30 @@
     private void ClearSearch()
     {
         _searchTerm = null;
+        _currentPage = 1;
+    }
+
+    private List<SelectOption> LevelFilterOptions => new()
+    {
+        new() { Value = "All", Text = "All Levels" },
+        new() { Value = "Root", Text = "Primary Divisions (Root)" },
+        new() { Value = "Sub", Text = "Sub-Departments" }
+    };
+
+    private List<SelectOption> ParentFilterOptions =>
+        new List<SelectOption> { new() { Value = "", Text = "All Parent Departments" } }
+        .Concat(ParentDepartmentOptions.Select(p => new SelectOption { Value = p, Text = p }))
+        .ToList();
+
+    private void OnLevelFilterChanged(string? val)
+    {
+        _selectedLevel = val ?? "All";
+        _currentPage = 1;
+    }
+
+    private void OnParentFilterChanged(string? val)
+    {
+        _selectedParentName = val ?? "";
         _currentPage = 1;
     }
 

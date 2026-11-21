@@ -512,11 +512,13 @@
         {
             var result = await EmployeeService.GetEmployeesAsync();
             _employeeOptions = result?.IsSuccess == true && result.Data != null
-                ? result.Data.Select(e => new SelectOption
-                {
-                    Value = e.Id.ToString(),
-                    Text = $"{e.FullName} ({e.EmployeeNumber})"
-                }).ToList()
+                ? result.Data
+                    .Where(e => e.IsActive && !e.IsDeleted)
+                    .Select(e => new SelectOption
+                    {
+                        Value = e.Id.ToString(),
+                        Text = $"{e.FullName} ({e.EmployeeNumber})"
+                    }).ToList()
                 : new();
         }
         catch

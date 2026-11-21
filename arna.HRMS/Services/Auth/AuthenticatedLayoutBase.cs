@@ -134,39 +134,13 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
     {
         User = user;
 
-        int.TryParse(
-            user.FindFirst(ClaimTypes.NameIdentifier)?.Value
-            ?? user.FindFirst("nameid")?.Value
-            ?? user.FindFirst("UserId")?.Value
-            ?? user.FindFirst("userId")?.Value
-            ?? user.FindFirst("id")?.Value,
-            out _userId);
+        int.TryParse(FindClaimValue(user, ClaimTypes.NameIdentifier, "nameid", "UserId", "userId", "id"), out _userId);
+        int.TryParse(FindClaimValue(user, "EmployeeId", "employeeId"), out _employeeId);
 
-        int.TryParse(
-            user.FindFirst("EmployeeId")?.Value 
-            ?? user.FindFirst("employeeId")?.Value,
-            out _employeeId);
-
-        _userName = user.FindFirst(ClaimTypes.Name)?.Value 
-            ?? user.FindFirst("unique_name")?.Value
-            ?? user.FindFirst("name")?.Value
-            ?? user.FindFirst("Username")?.Value
-            ?? string.Empty;
-
-        _userFullName = user.FindFirst("FullName")?.Value 
-            ?? user.FindFirst("fullName")?.Value 
-            ?? user.FindFirst("name")?.Value 
-            ?? string.Empty;
-
-        _role = user.FindFirst(ClaimTypes.Role)?.Value 
-            ?? user.FindFirst("role")?.Value 
-            ?? user.FindFirst("Role")?.Value 
-            ?? user.FindFirst("http://schemas.microsoft.com/ws/2008/06/identity/claims/role")?.Value 
-            ?? string.Empty;
-
-        _profileImage = user.FindFirst("ProfileImage")?.Value 
-            ?? user.FindFirst("profileImage")?.Value 
-            ?? string.Empty;
+        _userName = FindClaimValue(user, ClaimTypes.Name, "unique_name", "name", "Username");
+        _userFullName = FindClaimValue(user, "FullName", "fullName", "name");
+        _role = FindClaimValue(user, ClaimTypes.Role, "role", "Role", "http://schemas.microsoft.com/ws/2008/06/identity/claims/role");
+        _profileImage = FindClaimValue(user, "ProfileImage", "profileImage");
 
         _isAuthenticated = user.Identity?.IsAuthenticated ?? false;
 
@@ -182,6 +156,13 @@ public abstract class AuthenticatedLayoutBase : ComponentBase, IDisposable
         Logger.LogDebug(
             "User updated: Authenticated={Auth}, UserId={UserId}, Role={Role}",
             _isAuthenticated, _userId, _role);
+    }
+
+    private static string FindClaimValue(ClaimsPrincipal user, params string[] claimTypes)
+    {
+        return claimTypes
+            .Select(type => user.FindFirst(type)?.Value)
+            .FirstOrDefault(val => !string.IsNullOrEmpty(val)) ?? string.Empty;
     }
 
     private async Task PopulateEmployeeIdFromStorageAsync()

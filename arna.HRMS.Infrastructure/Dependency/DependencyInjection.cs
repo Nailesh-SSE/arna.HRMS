@@ -12,7 +12,6 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
-        // Issue 15 FIX: Only one AddAutoMapper call needed — scans entire assembly for all Profile classes
         services.AddAutoMapper(typeof(AttendanceProfile).Assembly);
 
         // Base repository

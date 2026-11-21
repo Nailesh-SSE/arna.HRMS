@@ -1,6 +1,8 @@
 @page "/leave-report"
 
 @using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Core.Enums
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels
@@ -64,14 +66,11 @@ else if (!showDetail)
 
                 <!-- Leave Type Filter -->
                 <div class="filter-select-wrap" style="min-width: 175px;">
-                    <select class="filter-dropdown-select" value="@_selectedLeaveTypeFilter" @onchange="OnLeaveTypeFilterChanged" title="Filter by leave type">
-                        <option value="combined">All Leaves (Summary)</option>
-                        <option value="itemized">All Leaves (Itemized)</option>
-                        @foreach (var lt in AvailableLeaveTypes)
-                        {
-                            <option value="@lt.Key">@lt.Value</option>
-                        }
-                    </select>
+                    <AppSearchableSelect Value="@_selectedLeaveTypeFilter"
+                                         ValueChanged="OnLeaveTypeFilterSelected"
+                                         Placeholder="All Leaves (Summary)"
+                                         AllowClear="false"
+                                         Options="LeaveTypeFilterOptions" />
                 </div>
 
                 <!-- Filter Mode (Yearly / Custom Range) -->
@@ -380,11 +379,26 @@ else
     private int UniqueEmployeesCount =>
         reportData.Select(r => r.EmployeeId).Distinct().Count();
 
+    private void OnLeaveTypeFilterSelected(string? v)
+    {
+        _selectedLeaveTypeFilter = v ?? "combined";
+        StateHasChanged();
+    }
+
     private Dictionary<int, string> AvailableLeaveTypes =>
         reportData
             .Select(r => r.LeaveNameId)
             .Distinct()
             .ToDictionary(id => id, id => FormatLeaveName(id));
+
+    private List<SelectOption> LeaveTypeFilterOptions =>
+        new List<SelectOption>
+        {
+            new() { Value = "combined", Text = "All Leaves (Summary)" },
+            new() { Value = "itemized", Text = "All Leaves (Itemized)" }
+        }
+        .Concat(AvailableLeaveTypes.Select(lt => new SelectOption { Value = lt.Key.ToString(), Text = lt.Value }))
+        .ToList();
 
     private List<LeaveRowDisplay> DisplayedRows
     {

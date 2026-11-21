@@ -396,7 +396,7 @@ public class TableSchemas
                     "<span class=\"badge bg-warning bg-opacity-10 text-warning-emphasis border border-warning border-opacity-25 rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1\"><i class=\"bi bi-clock-fill\"></i>Late</span>"),
                 AttendanceStatus.HalfDay => new MarkupString(
                     "<span class=\"badge bg-info bg-opacity-10 text-info-emphasis border border-info border-opacity-25 rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1\"><i class=\"bi bi-hourglass-split\"></i>Half Day</span>"),
-                AttendanceStatus.OnLeave => new MarkupString(
+                AttendanceStatus.Leave => new MarkupString(
                     "<span class=\"badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1\"><i class=\"bi bi-calendar2-x-fill\"></i>On Leave</span>"),
                 AttendanceStatus.Holiday => new MarkupString(
                     "<span class=\"badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2 py-1 d-inline-flex align-items-center gap-1\"><i class=\"bi bi-calendar-event-fill\"></i>Holiday</span>"),
@@ -408,35 +408,35 @@ public class TableSchemas
         new()
         {
             Header = "Clock In",
-            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.OnLeave || !u.ClockIn.HasValue)
+            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.Leave || !u.ClockIn.HasValue)
                 ? "--"
                 : DateTime.Today.Add(u.ClockIn.Value).ToString("hh:mm tt")
         },
         new()
         {
             Header = "Clock Out",
-            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.OnLeave || !u.ClockOut.HasValue)
+            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.Leave || !u.ClockOut.HasValue)
                 ? "--"
                 : DateTime.Today.Add(u.ClockOut.Value).ToString("hh:mm tt")
         },
         new()
         {
             Header = "Working Hours",
-            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.OnLeave || u.AttendanceStatus == AttendanceStatus.Holiday || !u.WorkingHours.HasValue || u.WorkingHours.Value == TimeSpan.Zero)
+            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.Leave || u.AttendanceStatus == AttendanceStatus.Holiday || !u.WorkingHours.HasValue || u.WorkingHours.Value == TimeSpan.Zero)
                 ? "--"
                 : u.WorkingHours.Value.ToString(@"hh\:mm")
         },
         new()
         {
             Header = "Break",
-            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.OnLeave || !u.BreakDuration.HasValue || u.BreakDuration.Value == TimeSpan.Zero)
+            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.Leave || !u.BreakDuration.HasValue || u.BreakDuration.Value == TimeSpan.Zero)
                 ? "--"
                 : u.BreakDuration.Value.ToString(@"hh\:mm")
         },
         new()
         {
             Header = "Total Hours",
-            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.OnLeave || !u.TotalHours.HasValue || u.TotalHours.Value == TimeSpan.Zero)
+            Value = u => (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.Leave || !u.TotalHours.HasValue || u.TotalHours.Value == TimeSpan.Zero)
                 ? "--"
                 : u.TotalHours.Value.ToString(@"hh\:mm")
         },
@@ -445,7 +445,7 @@ public class TableSchemas
             Header = "Location",
             Value = u =>
             {
-                if (u.AttendanceStatus != AttendanceStatus.Absent && u.AttendanceStatus != AttendanceStatus.OnLeave &&
+                if (u.AttendanceStatus != AttendanceStatus.Absent && u.AttendanceStatus != AttendanceStatus.Leave &&
                     u.Latitude.HasValue && u.Longitude.HasValue &&
                     (Math.Abs(u.Latitude.Value) > 0.0001 || Math.Abs(u.Longitude.Value) > 0.0001))
                 {
@@ -466,7 +466,7 @@ public class TableSchemas
             Header = "Device",
             Value = u =>
             {
-                if (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.OnLeave || u.Devices == null || !u.Devices.Any())
+                if (u.AttendanceStatus == AttendanceStatus.Absent || u.AttendanceStatus == AttendanceStatus.Leave || u.Devices == null || !u.Devices.Any())
                     return new MarkupString("<span class=\"text-muted small\">--</span>");
                 var badges = u.Devices.Select(d => d switch
                 {

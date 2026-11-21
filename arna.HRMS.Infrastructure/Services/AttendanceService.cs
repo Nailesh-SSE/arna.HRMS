@@ -18,7 +18,6 @@ public class AttendanceService : IAttendanceService
     private readonly ILeaveService _leaveService;
     private readonly AttendanceValidator _validator;
 
-    // Bug 2 FIX: Use a fixed business start date instead of DateTime.UtcNow which changes on every restart
     private static readonly DateTime SystemStartDate = new DateTime(2025, 1, 1);
 
     public AttendanceService(
@@ -37,43 +36,64 @@ public class AttendanceService : IAttendanceService
         _validator = validator;
     }
 
-    public async Task<ServiceResult<List<AttendanceDto>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId)
-    {
-        var data = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(status, employeeId);
+    public Task<ServiceResult<List<AttendanceDto>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId) =>
+        GetAttendanceByStatusAndEmployeeIdAsync(status, employeeId, null, null);
 
-        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(data));  
+    public async Task<ServiceResult<List<AttendanceDto>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId, DateTime? fromDate, DateTime? toDate)
+    {
+        var data = await _attendanceRepository.GetAttendanceByStatusAndEmployeeId(status, employeeId, fromDate, toDate);
+        var mapped = _mapper.Map<List<AttendanceDto>>(data);
+        var response = ServiceResult<List<AttendanceDto>>.Success(mapped);
+        return response;
     }
 
     public async Task<ServiceResult<AttendanceDto?>> GetAttendanceByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<AttendanceDto?>.Fail("Invalid Attendance ID");
+        {
+            var failId = ServiceResult<AttendanceDto?>.Fail("Invalid Attendance ID");
+            return failId;
+        }
 
         var attendance = await _attendanceRepository.GetAttendanceByIdAsync(id);
-
         if (attendance == null)
-            return ServiceResult<AttendanceDto?>.Fail("Attendance not found");
+        {
+            var failNotFound = ServiceResult<AttendanceDto?>.Fail("Attendance not found");
+            return failNotFound;
+        }
 
         var mapped = _mapper.Map<AttendanceDto>(attendance);
         if (mapped == null)
-            return ServiceResult<AttendanceDto?>.Fail("Fail to find Attendance");
+        {
+            var failMap = ServiceResult<AttendanceDto?>.Fail("Fail to find Attendance");
+            return failMap;
+        }
 
-        return ServiceResult<AttendanceDto?>.Success(mapped);
+        var response = ServiceResult<AttendanceDto?>.Success(mapped);
+        return response;
     }
 
     public async Task<ServiceResult<AttendanceDto>> CreateAttendanceAsync(AttendanceDto attendanceDto)
     {
         if (attendanceDto == null)
-            return ServiceResult<AttendanceDto>.Fail("Invalid request");
+        {
+            var failReq = ServiceResult<AttendanceDto>.Fail("Invalid request");
+            return failReq;
+        }
 
         var validation = await _validator.ValidateCreateAsync(attendanceDto);
         if (!validation.IsValid)
-            return ServiceResult<AttendanceDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+        {
+            var failVal = ServiceResult<AttendanceDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+            return failVal;
+        }
 
         var employeeResult = await _employeeService.GetEmployeeByIdAsync(attendanceDto.EmployeeId);
-
         if (employeeResult == null || !employeeResult.IsSuccess || employeeResult.Data == null)
-            return ServiceResult<AttendanceDto>.Fail("Employee not found");
+        {
+            var failEmp = ServiceResult<AttendanceDto>.Fail("Employee not found");
+            return failEmp;
+        }
 
         var entity = _mapper.Map<Attendance>(attendanceDto);
         if (entity.DeviceId == null || entity.DeviceId == 0)
@@ -83,65 +103,116 @@ public class AttendanceService : IAttendanceService
 
         await CreateAbsentAndHolidayAsync(entity.EmployeeId, entity.Date, employeeResult.Data.HireDate);
 
-        // Use Case 4: If employee clocks in on a date covered by an approved leave (pre-applied or auto-marked),
-        // automatically revoke the leave for that date, soft-delete the leave attendance entry, and refund leave balance
         if (entity.StatusId == AttendanceStatus.Present || entity.ClockIn != null)
         {
             await _leaveService.RevokeLeaveRequestAsync(entity.EmployeeId, entity.Date, entity.Date);
         }
 
         var created = await _attendanceRepository.CreateAttendanceAsync(entity);
-
         var mapped = _mapper.Map<AttendanceDto>(created);
         if (mapped == null)
-            return ServiceResult<AttendanceDto>.Fail("Fail to Create Attendance");
+        {
+            var failCreate = ServiceResult<AttendanceDto>.Fail("Fail to Create Attendance");
+            return failCreate;
+        }
 
-        return ServiceResult<AttendanceDto>.Success(mapped, "Attendance created successfully.");
+        var response = ServiceResult<AttendanceDto>.Success(mapped, "Attendance created successfully.");
+        return response;
     }
 
     public async Task<ServiceResult<List<MonthlyAttendanceDto>>> GetAttendanceByMonthAsync(int year, int month, int? employeeId, DateTime? date, AttendanceStatus? statusId)
     {
         if (year <= 0)
-            return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid year");
+        {
+            var failYear = ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid year");
+            return failYear;
+        }
 
         if (month < 1 || month > 12)
-            return ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid month");
+        {
+            var failMonth = ServiceResult<List<MonthlyAttendanceDto>>.Fail("Invalid month");
+            return failMonth;
+        }
 
         if (employeeId.HasValue && employeeId > 0)
         {
             var exist = await _employeeService.GetEmployeeByIdAsync(employeeId.Value);
-
             if (exist == null || !exist.IsSuccess || exist.Data == null)
-                return ServiceResult<List<MonthlyAttendanceDto>>.Fail("No such Employee Found");
+            {
+                var failEmp = ServiceResult<List<MonthlyAttendanceDto>>.Fail("No such Employee Found");
+                return failEmp;
+            }
         }
 
         var result = await _attendanceRepository.GetAttendanceByMonthAsync(year, month, employeeId, date, statusId);
+        if (result.Any())
+        {
+            var success = ServiceResult<List<MonthlyAttendanceDto>>.Success(result);
+            return success;
+        }
 
-        return result.Any()
-            ? ServiceResult<List<MonthlyAttendanceDto>>.Success(result)
-            : ServiceResult<List<MonthlyAttendanceDto>>.Fail("Data not found");
+        var failNotFound = ServiceResult<List<MonthlyAttendanceDto>>.Fail("Data not found");
+        return failNotFound;
     }
 
     public async Task<ServiceResult<AttendanceDto?>> GetTodayLastEntryAsync(int employeeId)
     {
         if (employeeId <= 0)
-            return ServiceResult<AttendanceDto?>.Fail("Invalid Employee ID");
+        {
+            var failId = ServiceResult<AttendanceDto?>.Fail("Invalid Employee ID");
+            return failId;
+        }
 
         var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
-
         if (exist == null || !exist.IsSuccess || exist.Data == null)
-            return ServiceResult<AttendanceDto?>.Fail("No such Employee Found");
+        {
+            var failEmp = ServiceResult<AttendanceDto?>.Fail("No such Employee Found");
+            return failEmp;
+        }
 
         var last = await _attendanceRepository.GetLastAttendanceTodayAsync(employeeId);
-
         if (last == null)
-            return ServiceResult<AttendanceDto?>.Fail("Attendance not found");
+        {
+            var failAtt = ServiceResult<AttendanceDto?>.Fail("Attendance not found");
+            return failAtt;
+        }
 
         var mapped = _mapper.Map<AttendanceDto>(last);
         if (mapped == null)
-            return ServiceResult<AttendanceDto?>.Fail("No data found");
+        {
+            var failMap = ServiceResult<AttendanceDto?>.Fail("No data found");
+            return failMap;
+        }
 
-        return ServiceResult<AttendanceDto?>.Success(mapped);
+        var response = ServiceResult<AttendanceDto?>.Success(mapped);
+        return response;
+    }
+
+    public async Task<ServiceResult<List<AttendanceDto>>> GetEmployeeTodayFirstClockInAsync(int employeeId)
+    {
+        if (employeeId <= 0)
+        {
+            var failId = ServiceResult<List<AttendanceDto>>.Fail("Invalid Employee ID");
+            return failId;
+        }
+
+        var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
+        if (exist == null || !exist.IsSuccess || exist.Data == null)
+        {
+            var failEmp = ServiceResult<List<AttendanceDto>>.Fail("Employee not found");
+            return failEmp;
+        }
+
+        var firstClockIn = await _attendanceRepository.GetTodayFirstClockInAsync(employeeId);
+        if (firstClockIn == null)
+        {
+            var failAtt = ServiceResult<List<AttendanceDto>>.Fail("Attendance not found");
+            return failAtt;
+        }
+
+        var mapped = _mapper.Map<List<AttendanceDto>>(firstClockIn);
+        var response = ServiceResult<List<AttendanceDto>>.Success(mapped);
+        return response;
     }
 
     private async Task CreateAbsentAndHolidayAsync(int employeeId, DateTime newAttendanceDate, DateTime hireDate)
@@ -157,35 +228,65 @@ public class AttendanceService : IAttendanceService
         if (effectiveStartDate >= newAttendanceDate.Date)
             return;
 
-        // Filter festival holidays in the missing date range
+        var festivalDates = await GetFestivalDatesInRangeAsync(effectiveStartDate, newAttendanceDate.Date);
+        var leaveDates = await GetEmployeeExistingLeaveDatesInRangeAsync(employeeId, effectiveStartDate, newAttendanceDate.Date);
+        var (paidLeaveType, unpaidLeaveType, fallbackLeaveType) = await ResolveAutoLeaveTypesAsync();
+
+        var missingDates = Enumerable
+            .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
+            .Select(i => effectiveStartDate.AddDays(i))
+            .Where(date => !IsWeekend(date) && !festivalDates.Contains(date) && !leaveDates.Contains(date))
+            .ToList();
+
+        var datesToMarkAsLeave = await MarkMissingAttendancesAsync(employeeId, missingDates);
+
+        if (datesToMarkAsLeave.Any())
+        {
+            var leaveRequestsResult = await _leaveService.GetLeaveRequestsByFilterAsync(null, employeeId);
+            var (paidDates, unpaidDates, fallbackDates) = PartitionLeaveDates(
+                datesToMarkAsLeave,
+                paidLeaveType,
+                unpaidLeaveType,
+                fallbackLeaveType,
+                leaveRequestsResult?.Data
+            );
+
+            await CreateAutoLeaveRequestsAsync(employeeId, paidLeaveType?.Id ?? 0, paidDates, festivalDates);
+            await CreateAutoLeaveRequestsAsync(employeeId, unpaidLeaveType?.Id ?? 0, unpaidDates, festivalDates);
+            await CreateAutoLeaveRequestsAsync(employeeId, fallbackLeaveType?.Id ?? 0, fallbackDates, festivalDates);
+        }
+    }
+
+    private async Task<HashSet<DateTime>> GetFestivalDatesInRangeAsync(DateTime startDate, DateTime endDate)
+    {
         var festivalHolidaysResult = await _festivalHolidayService.GetFestivalHolidaysAsync();
-        var festivalDates = festivalHolidaysResult?.Data?
-            .Where(f => f.Date.Date > effectiveStartDate && f.Date.Date < newAttendanceDate.Date)
+        return festivalHolidaysResult?.Data?
+            .Where(f => f.Date.Date > startDate && f.Date.Date < endDate)
             .Select(f => f.Date.Date)
             .ToHashSet() ?? new HashSet<DateTime>();
+    }
 
-        // Query both Approved AND Pending leave requests for this employee so applied leaves are not duplicated
+    private async Task<HashSet<DateTime>> GetEmployeeExistingLeaveDatesInRangeAsync(int employeeId, DateTime startDate, DateTime endDate)
+    {
         var leaveRequestsResult = await _leaveService.GetLeaveRequestsByFilterAsync(null, employeeId);
-        var leaveDates = leaveRequestsResult?.Data?
+        return leaveRequestsResult?.Data?
             .Where(l => (l.StatusId == Status.Approved || l.StatusId == Status.Pending) &&
-                        l.EndDate.Date > effectiveStartDate &&
-                        l.StartDate.Date < newAttendanceDate.Date)
-            .SelectMany(l => Enumerable.Range(
-                0,
-                (l.EndDate.Date - l.StartDate.Date).Days + 1)
+                        l.EndDate.Date > startDate &&
+                        l.StartDate.Date < endDate)
+            .SelectMany(l => Enumerable.Range(0, (l.EndDate.Date - l.StartDate.Date).Days + 1)
                 .Select(offset => l.StartDate.Date.AddDays(offset)))
             .ToHashSet() ?? new HashSet<DateTime>();
+    }
 
-        // Retrieve leave types to determine admin-allowed Paid and Unpaid leave types
+    private async Task<(LeaveTypeDto? paid, LeaveTypeDto? unpaid, LeaveTypeDto? fallback)> ResolveAutoLeaveTypesAsync()
+    {
         var leaveTypesResult = await _leaveService.GetLeaveTypesAsync();
         var allLeaveTypes = leaveTypesResult?.Data ?? new List<LeaveTypeDto>();
         var activeLeaveTypes = allLeaveTypes.Where(x => x.IsActive).ToList();
 
-        // 1. Paid Leave: configured as LeaveName.PaidLeave, or active leave type with IsPaid == true
         var paidLeaveType = activeLeaveTypes.FirstOrDefault(x => x.LeaveNameId == LeaveName.PaidLeave)
             ?? activeLeaveTypes.FirstOrDefault(x => x.IsPaid);
 
-        // 2. Unpaid Leave: configured as LeaveName.UnpaidLeave, or active leave type with IsPaid == false
         var unpaidLeaveType = activeLeaveTypes.FirstOrDefault(x => x.LeaveNameId == LeaveName.UnpaidLeave)
             ?? activeLeaveTypes.FirstOrDefault(x => !x.IsPaid);
 
@@ -194,21 +295,19 @@ public class AttendanceService : IAttendanceService
             unpaidLeaveType = null;
         }
 
-        // Fallback if neither specific Paid nor Unpaid leave type is active
         var fallbackLeaveType = activeLeaveTypes.FirstOrDefault(x => x.LeaveNameId == LeaveName.CasualLeave)
             ?? activeLeaveTypes.FirstOrDefault()
             ?? allLeaveTypes.FirstOrDefault();
 
-        var missingDates = Enumerable
-            .Range(1, (newAttendanceDate.Date - effectiveStartDate).Days - 1)
-            .Select(i => effectiveStartDate.AddDays(i))
-            .Where(date => !IsWeekend(date) && !festivalDates.Contains(date) && !leaveDates.Contains(date))
-            .ToList();
+        return (paidLeaveType, unpaidLeaveType, fallbackLeaveType);
+    }
 
-        var datesToMarkAsLeave = new List<DateTime>();
-
-        foreach (var date in missingDates)
+    private async Task<List<DateTime>> MarkMissingAttendancesAsync(int employeeId, List<DateTime> missingDates)
+    {
+        var markedDates = new List<DateTime>();
+        await missingDates.Aggregate(Task.CompletedTask, async (prev, date) =>
         {
+            await prev;
             if (!await _attendanceRepository.HasAttendanceOnDateAsync(employeeId, date))
             {
                 await _attendanceRepository.CreateAttendanceAsync(new Attendance
@@ -225,113 +324,79 @@ public class AttendanceService : IAttendanceService
                     DeviceId = DeviceType.LaptopDesktop
                 });
 
-                datesToMarkAsLeave.Add(date.Date);
+                markedDates.Add(date.Date);
             }
-        }
+        });
+        return markedDates;
+    }
 
-        // Group and create unified LeaveRequest records under Paid Leave and/or Unpaid Leave
-        if (datesToMarkAsLeave.Any())
+    private static (List<DateTime> paid, List<DateTime> unpaid, List<DateTime> fallback) PartitionLeaveDates(
+        List<DateTime> dates,
+        LeaveTypeDto? paidType,
+        LeaveTypeDto? unpaidType,
+        LeaveTypeDto? fallbackType,
+        List<LeaveRequestDto>? existingRequests)
+    {
+        var paidDates = new List<DateTime>();
+        var unpaidDates = new List<DateTime>();
+        var fallbackDates = new List<DateTime>();
+
+        if (paidType != null && unpaidType != null)
         {
-            var paidDates = new List<DateTime>();
-            var unpaidDates = new List<DateTime>();
-            var fallbackDates = new List<DateTime>();
+            var today = DateTime.Today;
+            int fyYear = today.Month >= 4 ? today.Year : today.Year - 1;
+            var fyStart = new DateTime(fyYear, 4, 1);
+            var fyEnd = new DateTime(fyYear + 1, 3, 31);
 
-            if (paidLeaveType != null && unpaidLeaveType != null)
-            {
-                // Case 1: Admin allows BOTH Paid Leave and Unpaid Leave
-                // First deduct from Paid Leave until paid quota (MaxPerYear) is completed, then deduct from Unpaid Leave.
-                var today = DateTime.Today;
-                int fyYear = today.Month >= 4 ? today.Year : today.Year - 1;
-                var fyStart = new DateTime(fyYear, 4, 1);
-                var fyEnd = new DateTime(fyYear + 1, 3, 31);
+            int usedPaidDays = existingRequests?
+                .Where(l => l.StatusId == Status.Approved &&
+                            l.LeaveTypeId == paidType.Id &&
+                            l.StartDate >= fyStart &&
+                            l.StartDate <= fyEnd)
+                .Sum(l => l.LeaveDays) ?? 0;
 
-                int usedPaidDays = leaveRequestsResult?.Data?
-                    .Where(l => l.StatusId == Status.Approved &&
-                                l.LeaveTypeId == paidLeaveType.Id &&
-                                l.StartDate >= fyStart &&
-                                l.StartDate <= fyEnd)
-                    .Sum(l => l.LeaveDays) ?? 0;
+            int paidQuota = paidType.MaxPerYear;
+            int remainingPaidDays = Math.Max(0, paidQuota - usedPaidDays);
 
-                int paidQuota = paidLeaveType.MaxPerYear;
-                int remainingPaidDays = Math.Max(0, paidQuota - usedPaidDays);
-
-                paidDates = datesToMarkAsLeave.Take(remainingPaidDays).ToList();
-                unpaidDates = datesToMarkAsLeave.Skip(remainingPaidDays).ToList();
-            }
-            else if (paidLeaveType != null)
-            {
-                // Case 2: Admin ONLY allows Paid Leave
-                // All leave is deducted from Paid Leave (not mandatory to check if completed; balance can go negative).
-                paidDates.AddRange(datesToMarkAsLeave);
-            }
-            else if (unpaidLeaveType != null)
-            {
-                // Case 3: Admin ONLY allows Unpaid Leave
-                // All leave is deducted from Unpaid Leave.
-                unpaidDates.AddRange(datesToMarkAsLeave);
-            }
-            else if (fallbackLeaveType != null)
-            {
-                fallbackDates.AddRange(datesToMarkAsLeave);
-            }
-
-            if (paidDates.Any() && paidLeaveType != null)
-            {
-                var paidRanges = GroupDatesIntoRanges(paidDates, festivalDates);
-                foreach (var range in paidRanges)
-                {
-                    await _leaveService.CreateLeaveRequestAsync(new LeaveRequestDto
-                    {
-                        EmployeeId = employeeId,
-                        LeaveTypeId = paidLeaveType.Id,
-                        StartDate = range.Start,
-                        EndDate = range.End,
-                        Reason = "Auto Leave Marked",
-                        StatusId = Status.Approved,
-                        ApprovalNotes = "Auto Approved",
-                        ApprovedDate = DateTime.Now.Date
-                    });
-                }
-            }
-
-            if (unpaidDates.Any() && unpaidLeaveType != null)
-            {
-                var unpaidRanges = GroupDatesIntoRanges(unpaidDates, festivalDates);
-                foreach (var range in unpaidRanges)
-                {
-                    await _leaveService.CreateLeaveRequestAsync(new LeaveRequestDto
-                    {
-                        EmployeeId = employeeId,
-                        LeaveTypeId = unpaidLeaveType.Id,
-                        StartDate = range.Start,
-                        EndDate = range.End,
-                        Reason = "Auto Leave Marked",
-                        StatusId = Status.Approved,
-                        ApprovalNotes = "Auto Approved",
-                        ApprovedDate = DateTime.Now.Date
-                    });
-                }
-            }
-
-            if (fallbackDates.Any() && fallbackLeaveType != null)
-            {
-                var fallbackRanges = GroupDatesIntoRanges(fallbackDates, festivalDates);
-                foreach (var range in fallbackRanges)
-                {
-                    await _leaveService.CreateLeaveRequestAsync(new LeaveRequestDto
-                    {
-                        EmployeeId = employeeId,
-                        LeaveTypeId = fallbackLeaveType.Id,
-                        StartDate = range.Start,
-                        EndDate = range.End,
-                        Reason = "Auto Leave Marked",
-                        StatusId = Status.Approved,
-                        ApprovalNotes = "Auto Approved",
-                        ApprovedDate = DateTime.Now.Date
-                    });
-                }
-            }
+            paidDates = dates.Take(remainingPaidDays).ToList();
+            unpaidDates = dates.Skip(remainingPaidDays).ToList();
         }
+        else if (paidType != null)
+        {
+            paidDates.AddRange(dates);
+        }
+        else if (unpaidType != null)
+        {
+            unpaidDates.AddRange(dates);
+        }
+        else if (fallbackType != null)
+        {
+            fallbackDates.AddRange(dates);
+        }
+
+        return (paidDates, unpaidDates, fallbackDates);
+    }
+
+    private async Task CreateAutoLeaveRequestsAsync(int employeeId, int leaveTypeId, List<DateTime> dates, HashSet<DateTime> festivalDates)
+    {
+        if (!dates.Any() || leaveTypeId <= 0) return;
+
+        var ranges = GroupDatesIntoRanges(dates, festivalDates);
+        await ranges.Aggregate(Task.CompletedTask, async (prev, range) =>
+        {
+            await prev;
+            await _leaveService.CreateLeaveRequestAsync(new LeaveRequestDto
+            {
+                EmployeeId = employeeId,
+                LeaveTypeId = leaveTypeId,
+                StartDate = range.Start,
+                EndDate = range.End,
+                Reason = "Auto Leave Marked",
+                StatusId = Status.Approved,
+                ApprovalNotes = "Auto Approved",
+                ApprovedDate = DateTime.Now.Date
+            });
+        });
     }
 
     private static List<(DateTime Start, DateTime End)> GroupDatesIntoRanges(List<DateTime> dates, HashSet<DateTime> festivalDates)
@@ -363,24 +428,6 @@ public class AttendanceService : IAttendanceService
         }
         ranges.Add((currentStart, currentEnd));
         return ranges;
-    }
-
-    public async Task<ServiceResult<List<AttendanceDto>>> GetEmployeeTodayFirstClockInAsync(int employeeId)
-    {
-        if (employeeId <= 0)
-            return ServiceResult<List<AttendanceDto>>.Fail("Invalid Employee ID");
-
-        var exist = await _employeeService.GetEmployeeByIdAsync(employeeId);
-        if (exist == null || !exist.IsSuccess || exist.Data == null)
-            return ServiceResult<List<AttendanceDto>>.Fail("Employee not found");
-
-        var firstClockIn = await _attendanceRepository.GetTodayFirstClockInAsync(employeeId);
-
-        if (firstClockIn == null)
-            return ServiceResult<List<AttendanceDto>>.Fail("Attendance not found");
-
-        return ServiceResult<List<AttendanceDto>>.Success(_mapper.Map<List<AttendanceDto>>(firstClockIn));
-
     }
 
     private static bool IsWeekend(DateTime date) =>

@@ -72,20 +72,45 @@ public class UserValidator
         else if (newPassword.Length < 6 || newPassword.Length > 100)
             return ValidationResult.Fail("Password must be between 6 and 100 characters");
 
-        return ValidationResult.Success(); 
+        return ValidationResult.Success();
     }
 
     private async Task<ValidationResult> ValidateCommonAsync(UserDto instance)
     {
         var errors = new List<string>();
 
-        // Username
+        ValidateUserIdentity(instance, errors);
+        ValidateUserContact(instance, errors);
+        await ValidateUserDuplicatesAsync(instance, errors);
+
+        return errors.Any()
+                ? ValidationResult.Fail(errors.ToArray())
+                : ValidationResult.Success();
+    }
+
+    private static void ValidateUserIdentity(UserDto instance, List<string> errors)
+    {
         if (string.IsNullOrWhiteSpace(instance.Username))
             errors.Add("Username is required");
         else if (instance.Username.Length < 3 || instance.Username.Length > 100)
             errors.Add("Username must be between 3 and 100 characters");
 
-        // Email
+        if (string.IsNullOrWhiteSpace(instance.FirstName))
+            errors.Add("First name is required");
+        else if (instance.FirstName.Length > 50)
+            errors.Add("First name must be at most 50 characters");
+
+        if (string.IsNullOrWhiteSpace(instance.LastName))
+            errors.Add("Last name is required");
+        else if (instance.LastName.Length > 50)
+            errors.Add("Last name must be at most 50 characters");
+
+        if (instance.RoleId <= 0)
+            errors.Add("Role is required");
+    }
+
+    private static void ValidateUserContact(UserDto instance, List<string> errors)
+    {
         if (string.IsNullOrWhiteSpace(instance.Email))
             errors.Add("Email is required");
         else if (instance.Email.Length > 100)
@@ -93,46 +118,17 @@ public class UserValidator
         else if (!new EmailAddressAttribute().IsValid(instance.Email))
             errors.Add("Invalid email format");
 
-        // First Name
-        if (string.IsNullOrWhiteSpace(instance.FirstName))
-            errors.Add("First name is required");
-        else if (instance.FirstName.Length > 50)
-            errors.Add("First name must be at most 50 characters");
-
-        // Last Name
-        if (string.IsNullOrWhiteSpace(instance.LastName))
-            errors.Add("Last name is required");
-        else if (instance.LastName.Length > 50)
-            errors.Add("Last name must be at most 50 characters");
-
-        // Role
-        if (instance.RoleId <= 0)
-            errors.Add("Role is required");
-
-        // Phone
         if (string.IsNullOrWhiteSpace(instance.PhoneNumber))
             errors.Add("Phone number is required");
         else if (!new PhoneAttribute().IsValid(instance.PhoneNumber))
             errors.Add("Invalid phone number format");
         else if (Regex.Replace(instance.PhoneNumber, @"\D", "").Length != 10)
             errors.Add("Phone number must be exactly 10 digits");
+    }
 
-        // Duplicate 
+    private async Task ValidateUserDuplicatesAsync(UserDto instance, List<string> errors)
+    {
         if (await _repository.UserExistsAsync(instance.Email, instance.PhoneNumber ?? string.Empty, instance.Id))
             errors.Add("Email or Phone Number already exists");
-
-        // Duplicate Employee Linkage: Ensure an employee cannot be linked to multiple user accounts
-        if (instance.EmployeeId.HasValue && instance.EmployeeId.Value > 0)
-        {
-            var existingUserWithEmp = await _repository.GetUserByEmployeeIdAsync(instance.EmployeeId.Value);
-            if (existingUserWithEmp != null && existingUserWithEmp.Id != instance.Id)
-            {
-                errors.Add("This employee is already linked to another user account.");
-            }
-        }
-
-        return errors.Any()
-                ? ValidationResult.Fail(errors.ToArray())
-                : ValidationResult.Success();
     }
 }

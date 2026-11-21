@@ -282,8 +282,6 @@ public class LeaveService : ILeaveService
             : ServiceResult<bool>.Fail("Failed to cancel leave.");
     }
 
-    // Bug 9 & Use Cases 1-4 FIX: Process entire date range, soft-delete previous leave,
-    // recalculate actual working days for remaining segments, and soft-delete Leave attendance
     public async Task<ServiceResult<bool>> RevokeLeaveRequestAsync(int employeeId, DateTime FromDate, DateTime ToDate)
     {
         var targetStart = FromDate.Date;
@@ -291,114 +289,89 @@ public class LeaveService : ILeaveService
 
         var overlappingLeaves = await _leaveRepository.GetApprovedLeavesOverlappingRangeAsync(employeeId, targetStart, targetEnd);
 
-        if (overlappingLeaves != null && overlappingLeaves.Any())
+        if (overlappingLeaves != null)
         {
-            foreach (var leave in overlappingLeaves)
+            await overlappingLeaves.Aggregate(Task.CompletedTask, async (prev, leave) =>
             {
-                // 1. Soft-delete the original leave request
+                await prev;
                 await _leaveRepository.SoftDeleteLeaveRequestAsync(leave);
 
-                // 2. Left segment (before targetStart)
                 if (targetStart > leave.StartDate.Date)
                 {
-                    var leftStart = leave.StartDate.Date;
-                    var leftEnd = targetStart.AddDays(-1);
-                    var leftDays = await CalculateActualLeaveDaysAsync(leftStart, leftEnd);
-
-                    if (leftDays > 0)
-                    {
-                        await _leaveRepository.CreateLeaveRequestAsync(new LeaveRequest
-                        {
-                            EmployeeId = leave.EmployeeId,
-                            LeaveTypeId = leave.LeaveTypeId,
-                            StartDate = leftStart,
-                            EndDate = leftEnd,
-                            LeaveDays = leftDays,
-                            Reason = leave.Reason,
-                            StatusId = Status.Approved,
-                            ApprovalNotes = "Auto Adjusted",
-                            ApprovedBy = leave.ApprovedBy,
-                            ApprovedDate = leave.ApprovedDate ?? DateTime.Now,
-                            IsActive = true,
-                            IsDeleted = false,
-                            CreatedOn = DateTime.Now
-                        });
-
-                        var leftDates = Enumerable.Range(0, (leftEnd.Date - leftStart.Date).Days + 1)
-                            .Select(offset => leftStart.Date.AddDays(offset))
-                            .Where(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
-
-                        foreach (var d in leftDates)
-                        {
-                            await _attendanceRepository.EnsureLeaveAttendanceAsync(leave.EmployeeId, d, leave.Reason);
-                        }
-                    }
+                    await CreateAdjustedLeaveSegmentAsync(leave, leave.StartDate.Date, targetStart.AddDays(-1), ensureAttendance: true);
                 }
 
-                // 3. Right segment (after targetEnd)
                 if (targetEnd < leave.EndDate.Date)
                 {
-                    var rightStart = targetEnd.AddDays(1);
-                    var rightEnd = leave.EndDate.Date;
-                    var rightDays = await CalculateActualLeaveDaysAsync(rightStart, rightEnd);
-
-                    if (rightDays > 0)
-                    {
-                        await _leaveRepository.CreateLeaveRequestAsync(new LeaveRequest
-                        {
-                            EmployeeId = leave.EmployeeId,
-                            LeaveTypeId = leave.LeaveTypeId,
-                            StartDate = rightStart,
-                            EndDate = rightEnd,
-                            LeaveDays = rightDays,
-                            Reason = leave.Reason,
-                            StatusId = Status.Approved,
-                            ApprovalNotes = "Auto Adjusted",
-                            ApprovedBy = leave.ApprovedBy,
-                            ApprovedDate = leave.ApprovedDate ?? DateTime.Now,
-                            IsActive = true,
-                            IsDeleted = false,
-                            CreatedOn = DateTime.Now
-                        });
-
-                        var rightDates = Enumerable.Range(0, (rightEnd.Date - rightStart.Date).Days + 1)
-                            .Select(offset => rightStart.Date.AddDays(offset))
-                            .Where(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
-
-                        foreach (var d in rightDates)
-                        {
-                            await _attendanceRepository.EnsureLeaveAttendanceAsync(leave.EmployeeId, d, leave.Reason);
-                        }
-                    }
+                    await CreateAdjustedLeaveSegmentAsync(leave, targetEnd.AddDays(1), leave.EndDate.Date, ensureAttendance: true);
                 }
-            }
+            });
         }
 
-        // 4. Soft-delete conflicting Attendance records with StatusId == Leave across the range
         var revokeDates = Enumerable.Range(0, (targetEnd - targetStart).Days + 1)
             .Select(offset => targetStart.AddDays(offset));
 
-        foreach (var date in revokeDates)
+        await revokeDates.Aggregate(Task.CompletedTask, async (prev, date) =>
         {
+            await prev;
             await _attendanceRepository.DeleteAttendanceAsync(date, employeeId, AttendanceStatus.Leave);
-        }
+        });
 
-        return ServiceResult<bool>.Success(true, "Leave revoked successfully.");
+        var response = ServiceResult<bool>.Success(true, "Leave revoked successfully.");
+        return response;
     }
 
-    // =========================================================
-    // PRIVATE HELPERS
-    // =========================================================
+    private async Task CreateAdjustedLeaveSegmentAsync(LeaveRequest source, DateTime start, DateTime end, bool ensureAttendance = false)
+    {
+        var days = await CalculateActualLeaveDaysAsync(start, end);
+        if (days <= 0) return;
+
+        var segment = new LeaveRequest
+        {
+            EmployeeId = source.EmployeeId,
+            LeaveTypeId = source.LeaveTypeId,
+            StartDate = start,
+            EndDate = end,
+            LeaveDays = days,
+            Reason = source.Reason ?? "Auto Leave Marked",
+            StatusId = Status.Approved,
+            ApprovalNotes = "Auto Adjusted",
+            ApprovedBy = source.ApprovedBy,
+            ApprovedDate = source.ApprovedDate ?? DateTime.Now,
+            IsActive = true,
+            IsDeleted = false,
+            CreatedOn = DateTime.Now
+        };
+
+        await _leaveRepository.CreateLeaveRequestAsync(segment);
+
+        if (ensureAttendance)
+        {
+            var segmentDates = Enumerable.Range(0, (end.Date - start.Date).Days + 1)
+                .Select(offset => start.Date.AddDays(offset))
+                .Where(d => d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday));
+
+            await segmentDates.Aggregate(Task.CompletedTask, async (prev, d) =>
+            {
+                await prev;
+                await _attendanceRepository.EnsureLeaveAttendanceAsync(source.EmployeeId, d, source.Reason);
+            });
+        }
+    }
 
     private async Task HandleApprovedLeaveAsync(int leaveRequestId)
     {
         var leaveRequest = await _leaveRepository.GetLeaveRequestByIdAsync(leaveRequestId);
         if (leaveRequest == null) return;
 
-        // Auto-leave duplicate prevention:
-        // If an auto-marked leave already exists that overlaps with this newly approved leave request,
-        // soft-delete the auto-leave (or split any remaining non-overlapping segments) to prevent
-        // duplicate leave records and duplicate leave balance deductions.
+        await ReconcileOverlappingAutoLeavesAsync(leaveRequest);
+
+        var festivalDates = await GetFestivalDatesAsync();
+        await SynchronizeLeaveAttendancesAsync(leaveRequest, festivalDates);
+    }
+
+    private async Task ReconcileOverlappingAutoLeavesAsync(LeaveRequest leaveRequest)
+    {
         var overlappingLeaves = await _leaveRepository.GetApprovedLeavesOverlappingRangeAsync(
             leaveRequest.EmployeeId,
             leaveRequest.StartDate.Date,
@@ -411,69 +384,25 @@ public class LeaveService : ILeaveService
                           lr.ApprovalNotes == "Auto Adjusted"))
             .ToList();
 
-        foreach (var autoLeave in autoLeaves)
+        await autoLeaves.Aggregate(Task.CompletedTask, async (prev, autoLeave) =>
         {
+            await prev;
             await _leaveRepository.SoftDeleteLeaveRequestAsync(autoLeave);
 
-            // Left segment (dates before leaveRequest.StartDate)
             if (autoLeave.StartDate.Date < leaveRequest.StartDate.Date)
             {
-                var leftStart = autoLeave.StartDate.Date;
-                var leftEnd = leaveRequest.StartDate.Date.AddDays(-1);
-                var leftDays = await CalculateActualLeaveDaysAsync(leftStart, leftEnd);
-
-                if (leftDays > 0)
-                {
-                    await _leaveRepository.CreateLeaveRequestAsync(new LeaveRequest
-                    {
-                        EmployeeId = autoLeave.EmployeeId,
-                        LeaveTypeId = autoLeave.LeaveTypeId,
-                        StartDate = leftStart,
-                        EndDate = leftEnd,
-                        LeaveDays = leftDays,
-                        Reason = "Auto Leave Marked",
-                        StatusId = Status.Approved,
-                        ApprovalNotes = "Auto Adjusted",
-                        ApprovedBy = autoLeave.ApprovedBy,
-                        ApprovedDate = autoLeave.ApprovedDate ?? DateTime.Now,
-                        IsActive = true,
-                        IsDeleted = false,
-                        CreatedOn = DateTime.Now
-                    });
-                }
+                await CreateAdjustedLeaveSegmentAsync(autoLeave, autoLeave.StartDate.Date, leaveRequest.StartDate.Date.AddDays(-1));
             }
 
-            // Right segment (dates after leaveRequest.EndDate)
             if (autoLeave.EndDate.Date > leaveRequest.EndDate.Date)
             {
-                var rightStart = leaveRequest.EndDate.Date.AddDays(1);
-                var rightEnd = autoLeave.EndDate.Date;
-                var rightDays = await CalculateActualLeaveDaysAsync(rightStart, rightEnd);
-
-                if (rightDays > 0)
-                {
-                    await _leaveRepository.CreateLeaveRequestAsync(new LeaveRequest
-                    {
-                        EmployeeId = autoLeave.EmployeeId,
-                        LeaveTypeId = autoLeave.LeaveTypeId,
-                        StartDate = rightStart,
-                        EndDate = rightEnd,
-                        LeaveDays = rightDays,
-                        Reason = "Auto Leave Marked",
-                        StatusId = Status.Approved,
-                        ApprovalNotes = "Auto Adjusted",
-                        ApprovedBy = autoLeave.ApprovedBy,
-                        ApprovedDate = autoLeave.ApprovedDate ?? DateTime.Now,
-                        IsActive = true,
-                        IsDeleted = false,
-                        CreatedOn = DateTime.Now
-                    });
-                }
+                await CreateAdjustedLeaveSegmentAsync(autoLeave, leaveRequest.EndDate.Date.AddDays(1), autoLeave.EndDate.Date);
             }
-        }
+        });
+    }
 
-        var festivalDates = await GetFestivalDatesAsync();
-
+    private async Task SynchronizeLeaveAttendancesAsync(LeaveRequest leaveRequest, HashSet<DateTime> festivalDates)
+    {
         var leaveDates = Enumerable
             .Range(0, (leaveRequest.EndDate.Date - leaveRequest.StartDate.Date).Days + 1)
             .Select(offset => leaveRequest.StartDate.Date.AddDays(offset))
@@ -481,8 +410,9 @@ public class LeaveService : ILeaveService
                 date.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) &&
                 !festivalDates.Contains(date));
 
-        foreach (var date in leaveDates)
+        await leaveDates.Aggregate(Task.CompletedTask, async (prev, date) =>
         {
+            await prev;
             if (date <= DateTime.Now)
             {
                 await _attendanceRepository.DeleteAttendanceAsync(date, leaveRequest.EmployeeId);
@@ -495,7 +425,7 @@ public class LeaveService : ILeaveService
                 TotalHours = TimeSpan.Zero,
                 Notes = leaveRequest.Reason
             });
-        }
+        });
     }
 
     private async Task<HashSet<DateTime>> GetFestivalDatesAsync()

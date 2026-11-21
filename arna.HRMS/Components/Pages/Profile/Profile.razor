@@ -661,22 +661,7 @@
 
             if (employeeId > 0)
             {
-                var result = await EmployeeService.GetEmployeeByIdAsync(employeeId);
-                if (result.IsSuccess && result.Data != null)
-                {
-                    employee = result.Data;
-                    profile = new ProfileViewModel(result.Data);
-
-                    if (result.Data.DepartmentId.HasValue && result.Data.DepartmentId > 0)
-                    {
-                        var dept = await DepartmentService.GetDepartmentByIdAsync(result.Data.DepartmentId.Value);
-                        if (dept?.Data != null)
-                        {
-                            profile.DepartmentName = dept.Data.Name;
-                            profile.DepartmentCode = dept.Data.Code;
-                        }
-                    }
-                }
+                await TryLoadEmployeeProfileAsync(employeeId);
             }
             else if (userId > 0)
             {
@@ -687,22 +672,7 @@
 
                     if (userRes.Data.EmployeeId.HasValue && userRes.Data.EmployeeId.Value > 0)
                     {
-                        var empResult = await EmployeeService.GetEmployeeByIdAsync(userRes.Data.EmployeeId.Value);
-                        if (empResult.IsSuccess && empResult.Data != null)
-                        {
-                            employee = empResult.Data;
-                            profile = new ProfileViewModel(empResult.Data);
-
-                            if (empResult.Data.DepartmentId.HasValue && empResult.Data.DepartmentId > 0)
-                            {
-                                var dept = await DepartmentService.GetDepartmentByIdAsync(empResult.Data.DepartmentId.Value);
-                                if (dept?.Data != null)
-                                {
-                                    profile.DepartmentName = dept.Data.Name;
-                                    profile.DepartmentCode = dept.Data.Code;
-                                }
-                            }
-                        }
+                        await TryLoadEmployeeProfileAsync(userRes.Data.EmployeeId.Value);
                     }
 
                     if (profile == null)
@@ -721,6 +691,28 @@
             isLoading = false;
             StateHasChanged();
         }
+    }
+
+    private async Task<bool> TryLoadEmployeeProfileAsync(int empId)
+    {
+        var result = await EmployeeService.GetEmployeeByIdAsync(empId);
+        if (result.IsSuccess && result.Data != null)
+        {
+            employee = result.Data;
+            profile = new ProfileViewModel(result.Data);
+
+            if (result.Data.DepartmentId.HasValue && result.Data.DepartmentId > 0)
+            {
+                var dept = await DepartmentService.GetDepartmentByIdAsync(result.Data.DepartmentId.Value);
+                if (dept?.Data != null)
+                {
+                    profile.DepartmentName = dept.Data.Name;
+                    profile.DepartmentCode = dept.Data.Code;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     private void EnterEditMode()
@@ -1019,26 +1011,6 @@
                 var relativePath = uploadResult.Data;
                 if (profile != null) profile.ProfileImage = relativePath;
                 if (employee != null) employee.ProfileImage = relativePath;
-
-                // Sync file locally to Blazor wwwroot/profile-images so it is accessible immediately
-                try
-                {
-                    var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-                    var localFolder = Path.Combine(webRoot, "profile-images");
-                    if (!Directory.Exists(localFolder)) Directory.CreateDirectory(localFolder);
-
-                    var fileName = Path.GetFileName(relativePath);
-                    var localDest = Path.Combine(localFolder, fileName);
-
-                    // If file is in API folder, copy to Blazor folder
-                    var apiFolder = Path.Combine(Directory.GetCurrentDirectory(), "..", "arna.HRMS.API", "wwwroot", "profile-images");
-                    var apiSource = Path.Combine(apiFolder, fileName);
-                    if (File.Exists(apiSource) && !File.Exists(localDest))
-                    {
-                        File.Copy(apiSource, localDest, true);
-                    }
-                }
-                catch { }
 
                 await NotificationService.Success("Profile picture updated successfully.");
             }

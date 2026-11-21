@@ -27,94 +27,129 @@ public class RoleService : IRoleService
     public async Task<ServiceResult<List<RoleDto>>> GetRolesAsync()
     {
         var roles = await _repository.GetRolesAsync();
-
         var dtos = _mapper.Map<List<RoleDto>>(roles);
-
-        return ServiceResult<List<RoleDto>>.Success(dtos);
+        var response = ServiceResult<List<RoleDto>>.Success(dtos);
+        return response;
     }
 
     public async Task<ServiceResult<RoleDto?>> GetRoleByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<RoleDto?>.Fail("Invalid Role ID");
+        {
+            var failId = ServiceResult<RoleDto?>.Fail("Invalid Role ID");
+            return failId;
+        }
 
         var role = await _repository.GetRoleByIdAsync(id);
-
         if (role == null)
-            return ServiceResult<RoleDto?>.Fail("Role not found");
+        {
+            var failNotFound = ServiceResult<RoleDto?>.Fail("Role not found");
+            return failNotFound;
+        }
 
         var dto = _mapper.Map<RoleDto>(role);
         if (dto == null)
-            return ServiceResult<RoleDto?>.Fail("No Data Found");
+        {
+            var failMap = ServiceResult<RoleDto?>.Fail("No Data Found");
+            return failMap;
+        }
 
-        return ServiceResult<RoleDto?>.Success(dto);
+        var response = ServiceResult<RoleDto?>.Success(dto);
+        return response;
     }
 
     public async Task<ServiceResult<RoleDto?>> GetRoleByNameAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            return ServiceResult<RoleDto?>.Fail("Role name is required");
+        {
+            var failName = ServiceResult<RoleDto?>.Fail("Role name is required");
+            return failName;
+        }
 
         var role = await _repository.GetRoleByNameAsync(name.Trim());
-
         if (role == null)
-            return ServiceResult<RoleDto?>.Fail("Role not found");
+        {
+            var failNotFound = ServiceResult<RoleDto?>.Fail("Role not found");
+            return failNotFound;
+        }
 
         var dto = _mapper.Map<RoleDto>(role);
         if (dto == null)
-            return ServiceResult<RoleDto?>.Fail("No Data Found");
+        {
+            var failMap = ServiceResult<RoleDto?>.Fail("No Data Found");
+            return failMap;
+        }
 
-        return ServiceResult<RoleDto?>.Success(dto);
+        var response = ServiceResult<RoleDto?>.Success(dto);
+        return response;
     }
 
     public async Task<ServiceResult<RoleDto>> CreateRoleAsync(RoleDto dto)
     {
         var validation = await _validator.ValidateCreateAsync(dto);
-
         if (!validation.IsValid)
-            return ServiceResult<RoleDto>.Fail(
-                string.Join(Environment.NewLine, validation.Errors));
+        {
+            var failVal = ServiceResult<RoleDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+            return failVal;
+        }
 
         var entity = _mapper.Map<Role>(dto);
-
         var created = await _repository.CreateRoleAsync(entity);
         var mapped = _mapper.Map<RoleDto>(created);
         if (mapped == null)
-            return ServiceResult<RoleDto>.Fail("Fail to create Role");
+        {
+            var failMap = ServiceResult<RoleDto>.Fail("Fail to create Role");
+            return failMap;
+        }
 
-        return ServiceResult<RoleDto>.Success(mapped, "Role created successfully");
+        var response = ServiceResult<RoleDto>.Success(mapped, "Role created successfully");
+        return response;
     }
 
     public async Task<ServiceResult<RoleDto>> UpdateRoleAsync(RoleDto dto)
     {
         var validation = await _validator.ValidateUpdateAsync(dto);
-
         if (!validation.IsValid)
-            return ServiceResult<RoleDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+        {
+            var failVal = ServiceResult<RoleDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+            return failVal;
+        }
 
         var entity = _mapper.Map<Role>(dto);
-
         var updated = await _repository.UpdateRoleAsync(entity);
-
         if (updated == null)
-            return ServiceResult<RoleDto>.Fail("No Data Found");
+        {
+            var failNull = ServiceResult<RoleDto>.Fail("No Data Found");
+            return failNull;
+        }
 
         var mapped = _mapper.Map<RoleDto>(updated);
         if (mapped == null)
-            return ServiceResult<RoleDto>.Fail("Fail to Update Role");
+        {
+            var failMap = ServiceResult<RoleDto>.Fail("Fail to Update Role");
+            return failMap;
+        }
 
-        return ServiceResult<RoleDto>.Success(mapped, "Role updated successfully");
+        var response = ServiceResult<RoleDto>.Success(mapped, "Role updated successfully");
+        return response;
     }
 
     public async Task<ServiceResult<bool>> DeleteRoleAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Role not found");
+        {
+            var failId = ServiceResult<bool>.Fail("Role not found");
+            return failId;
+        }
 
         var deleted = await _repository.DeleteRoleAsync(id);
+        if (deleted)
+        {
+            var success = ServiceResult<bool>.Success(true, "Role deleted successfully");
+            return success;
+        }
 
-        return deleted
-            ? ServiceResult<bool>.Success(true, "Role deleted successfully")
-            : ServiceResult<bool>.Fail("Role not found");
+        var failNotFound = ServiceResult<bool>.Fail("Role not found");
+        return failNotFound;
     }
 }

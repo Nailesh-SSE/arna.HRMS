@@ -243,7 +243,7 @@ public sealed class ApiClients
             return await Http.GetAsync<AttendanceViewModel>($"{Url}/clockStatus/{employeeId}");
         }
 
-        public async Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId)
+        public async Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByStatusAndEmployeeIdAsync(AttendanceStatus? status, int? employeeId, DateTime? fromDate = null, DateTime? toDate = null)
         {
             var query = new List<string>();
             if (status.HasValue)
@@ -251,6 +251,12 @@ public sealed class ApiClients
 
             if (employeeId.HasValue)
                 query.Add($"employeeId={employeeId}");
+
+            if (fromDate.HasValue)
+                query.Add($"fromDate={fromDate.Value:yyyy-MM-dd}");
+
+            if (toDate.HasValue)
+                query.Add($"toDate={toDate.Value:yyyy-MM-dd}");
 
             var qs = query.Any() ? "?" + string.Join("&", query) : "";
 
