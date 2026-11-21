@@ -1,6 +1,7 @@
 @page "/profile"
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Components.Pages.Profile.Components
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Common
@@ -26,179 +27,19 @@
             <!-- 1. LEFT COLUMN: PROFILE IDENTITY & OVERVIEW CARD                  -->
             <!-- ═════════════════════════════════════════════════════════════════ -->
             <div class="col-12 col-md-5 col-xl-4">
-                <div class="card border-0 shadow-sm rounded-3 h-100 profile-side-card">
-                    <div class="card-body p-4 text-center d-flex flex-column">
-                        
-                        <!-- Avatar & Upload -->
-                        <div class="profile-avatar-wrapper position-relative mx-auto mb-3">
-                            @if (!string.IsNullOrWhiteSpace(profile.ProfileImage))
-                            {
-                                <img src="@profile.ProfileImage" alt="@DisplayName" class="profile-avatar-circle profile-avatar-img" />
-                            }
-                            else
-                            {
-                                <div class="profile-avatar-circle">
-                                    @Initials
-                                </div>
-                            }
-
-                            @if (profile.IsEmployee)
-                            {
-                                <label for="profileImageInput" class="avatar-upload-btn" title="Upload or change profile picture">
-                                    <i class="bi bi-camera-fill"></i>
-                                    <InputFile id="profileImageInput" OnChange="HandleProfileImageUpload" accept=".jpg,.jpeg,.png,.webp" class="d-none" />
-                                </label>
-                            }
-                        </div>
-
-                        @if (isUploadingImage)
-                        {
-                            <div class="small text-primary mb-2 d-flex align-items-center justify-content-center gap-1.5">
-                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                <span>Uploading photo...</span>
-                            </div>
-                        }
-
-                        @if (profile.IsEmployee && !string.IsNullOrWhiteSpace(profile.ProfileImage))
-                        {
-                            <button type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0 mb-2 small"
-                                    @onclick="RemoveProfileImageAsync" disabled="@isUploadingImage" title="Remove profile picture">
-                                <i class="bi bi-trash3 me-1"></i>Remove Photo
-                            </button>
-                        }
-
-                        <!-- Full Name & Badges -->
-                        <h4 class="fw-bold text-dark mb-1 fs-5">@DisplayName</h4>
-                        
-                        @if (profile.IsEmployee)
-                        {
-                            <div class="text-muted small mb-2">
-                                @if (!string.IsNullOrEmpty(profile.Position))
-                                {
-                                    <span class="text-dark fw-medium">@FormatText(profile.Position)</span>
-                                }
-                                @if (!string.IsNullOrEmpty(profile.DepartmentName))
-                                {
-                                    <span> &bull; @profile.DepartmentName</span>
-                                }
-                            </div>
-
-                            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                                @if (!string.IsNullOrEmpty(profile.EmployeeNumber))
-                                {
-                                    <span class="badge bg-light text-secondary border font-monospace px-2 py-1 small">
-                                        @profile.EmployeeNumber
-                                    </span>
-                                }
-                                <span class="badge @(profile.IsActive ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" : "bg-danger bg-opacity-10 text-danger") rounded-pill px-2.5 py-1 small">
-                                    <i class="bi @(profile.IsActive ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1"></i>
-                                    @(profile.IsActive ? "Active" : "Inactive")
-                                </span>
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small">
-                                    @RoleDisplay
-                                </span>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="text-muted small mb-2">
-                                @if (!string.IsNullOrEmpty(profile.Username))
-                                {
-                                    <span class="font-monospace">@@@profile.Username</span>
-                                }
-                            </div>
-
-                            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small">
-                                    @RoleDisplay
-                                </span>
-                                <span class="badge @(profile.IsActive ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" : "bg-danger bg-opacity-10 text-danger") rounded-pill px-2.5 py-1 small">
-                                    <i class="bi @(profile.IsActive ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1"></i>
-                                    @(profile.IsActive ? "Active & Verified" : "Inactive")
-                                </span>
-                            </div>
-                        }
-
-                        <!-- Quick Summary List -->
-                        <div class="border-top pt-3 mt-1 text-start profile-quick-list flex-grow-1">
-                            <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
-                                <span class="text-muted small">Work Email</span>
-                                <span class="text-dark small fw-medium text-truncate ms-2" style="max-width: 170px;" title="@(!string.IsNullOrEmpty(profile.OfficeEmail) ? profile.OfficeEmail : profile.Email)">
-                                    @(!string.IsNullOrEmpty(profile.OfficeEmail) ? profile.OfficeEmail : profile.Email)
-                                </span>
-                            </div>
-
-                            <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
-                                <span class="text-muted small">Phone</span>
-                                <span class="text-dark small fw-medium">
-                                    @(string.IsNullOrEmpty(profile.PhoneNumber) ? "—" : profile.PhoneNumber)
-                                </span>
-                            </div>
-
-                            @if (profile.IsEmployee)
-                            {
-                                <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
-                                    <span class="text-muted small">Department</span>
-                                    <span class="text-dark small fw-medium text-truncate ms-2" style="max-width: 170px;">
-                                        @(string.IsNullOrEmpty(profile.DepartmentName) ? "—" : profile.DepartmentName)
-                                    </span>
-                                </div>
-
-                                <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
-                                    <span class="text-muted small">Joining Date</span>
-                                    <span class="text-dark small fw-medium">
-                                        @(profile.HireDate?.ToString("MMM dd, yyyy") ?? "—")
-                                    </span>
-                                </div>
-
-                                <div class="quick-item d-flex align-items-center justify-content-between py-2">
-                                    <span class="text-muted small">Tenure</span>
-                                    <span class="text-dark small fw-medium">
-                                        @ExperienceString
-                                    </span>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
-                                    <span class="text-muted small">System Access</span>
-                                    <span class="text-dark small fw-medium">Full Administrator</span>
-                                </div>
-
-                                <div class="quick-item d-flex align-items-center justify-content-between py-2">
-                                    <span class="text-muted small">Registered On</span>
-                                    <span class="text-dark small fw-medium">
-                                        @profile.CreatedOn.ToString("MMM dd, yyyy")
-                                    </span>
-                                </div>
-                            }
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2 pt-3 border-top mt-3">
-                            @if (!isEditMode)
-                            {
-                                <button class="btn btn-primary btn-sm rounded-pill shadow-sm"
-                                        @onclick="EnterEditMode">
-                                    <i class="bi bi-pencil me-1.5"></i>Edit Personal Details
-                                </button>
-                                <button class="btn btn-outline-secondary btn-sm rounded-pill"
-                                        @onclick="@(() => NavigationManager.NavigateTo("/change-password"))">
-                                    <i class="bi bi-key me-1.5"></i>Change Password
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-outline-secondary btn-sm rounded-pill"
-                                        @onclick="CancelEdit"
-                                        disabled="@isSaving">
-                                    <i class="bi bi-x-lg me-1.5"></i>Cancel Edit
-                                </button>
-                            }
-                        </div>
-
-                    </div>
-                </div>
+                <ProfileSidebar Profile="@profile"
+                                DisplayName="@DisplayName"
+                                Initials="@Initials"
+                                RoleDisplay="@RoleDisplay"
+                                ExperienceString="@ExperienceString"
+                                IsEditMode="@isEditMode"
+                                IsUploadingImage="@isUploadingImage"
+                                IsSaving="@isSaving"
+                                OnImageUpload="HandleProfileImageUpload"
+                                OnRemoveImage="RemoveProfileImageAsync"
+                                OnEnterEditMode="EnterEditMode"
+                                OnCancelEdit="CancelEdit"
+                                OnChangePassword="@(() => NavigationManager.NavigateTo("/change-password"))" />
             </div>
 
             <!-- ═════════════════════════════════════════════════════════════════ -->
@@ -246,385 +87,31 @@
                         <!-- ══════════════════ TAB 1: PERSONAL DETAILS ══════════════════ -->
                         @if (activeTab == ProfileTab.Personal)
                         {
-                            <div class="tab-pane-fade flex-grow-1">
-                                
-                                <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-                                    <div>
-                                        <h6 class="fw-semibold mb-0 text-dark">Personal Information</h6>
-                                        <small class="text-muted">Primary identity, personal email, phone number, and birth date.</small>
-                                    </div>
-                                    @if (!isEditMode)
-                                    {
-                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1"
-                                                @onclick="EnterEditMode">
-                                            <i class="bi bi-pencil me-1"></i>Edit
-                                        </button>
-                                    }
-                                </div>
-
-                                @if (isEditMode)
-                                {
-                                    <!-- EDIT FORM -->
-                                    <div class="row g-3">
-                                        
-                                        <!-- First Name -->
-                                        <div class="col-12 col-sm-6">
-                                            <label class="form-label form-lbl">
-                                                First Name <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="text"
-                                                   class="form-control @GetValidationClass(nameof(profile.FirstName))"
-                                                   placeholder="Enter first name"
-                                                   maxlength="50"
-                                                   @bind="profile.FirstName"
-                                                   @bind:event="oninput" />
-                                            @if (validationErrors.TryGetValue(nameof(profile.FirstName), out var fnErr))
-                                            {
-                                                <div class="err-msg">@fnErr</div>
-                                            }
-                                        </div>
-
-                                        <!-- Last Name -->
-                                        <div class="col-12 col-sm-6">
-                                            <label class="form-label form-lbl">
-                                                Last Name <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="text"
-                                                   class="form-control @GetValidationClass(nameof(profile.LastName))"
-                                                   placeholder="Enter last name"
-                                                   maxlength="50"
-                                                   @bind="profile.LastName"
-                                                   @bind:event="oninput" />
-                                            @if (validationErrors.TryGetValue(nameof(profile.LastName), out var lnErr))
-                                            {
-                                                <div class="err-msg">@lnErr</div>
-                                            }
-                                        </div>
-
-                                        <!-- Personal Email -->
-                                        <div class="col-12 col-sm-6">
-                                            <label class="form-label form-lbl">
-                                                Personal Email <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="email"
-                                                   class="form-control @GetValidationClass(nameof(profile.Email))"
-                                                   placeholder="e.g. user@gmail.com"
-                                                   maxlength="100"
-                                                   @bind="profile.Email"
-                                                   @bind:event="oninput" />
-                                            @if (validationErrors.TryGetValue(nameof(profile.Email), out var emErr))
-                                            {
-                                                <div class="err-msg">@emErr</div>
-                                            }
-                                        </div>
-
-                                        <!-- Phone Number -->
-                                        <div class="col-12 col-sm-6">
-                                            <label class="form-label form-lbl">
-                                                Phone Number <span class="text-danger">*</span>
-                                            </label>
-                                            <input type="tel"
-                                                   class="form-control @GetValidationClass(nameof(profile.PhoneNumber))"
-                                                   placeholder="10 digit phone number"
-                                                   maxlength="10"
-                                                   @bind="profile.PhoneNumber"
-                                                   @bind:event="oninput" />
-                                            @if (validationErrors.TryGetValue(nameof(profile.PhoneNumber), out var phErr))
-                                            {
-                                                <div class="err-msg">@phErr</div>
-                                            }
-                                        </div>
-
-                                        <!-- Date of Birth -->
-                                        @if (profile.IsEmployee)
-                                        {
-                                            <div class="col-12 col-sm-6">
-                                                <label class="form-label form-lbl">
-                                                    Date of Birth <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="date"
-                                                       class="form-control @GetValidationClass(nameof(profile.DateOfBirth))"
-                                                       max="@DateTime.Today.ToString("yyyy-MM-dd")"
-                                                       value="@(profile.DateOfBirth?.ToString("yyyy-MM-dd"))"
-                                                       @onchange="OnDobChanged" />
-                                                @if (validationErrors.TryGetValue(nameof(profile.DateOfBirth), out var dobErr))
-                                                {
-                                                    <div class="err-msg">@dobErr</div>
-                                                }
-                                            </div>
-                                        }
-
-                                        <!-- Action Bar -->
-                                        <div class="col-12 pt-3 border-top mt-3 d-flex align-items-center justify-content-end gap-2">
-                                            <button type="button"
-                                                    class="btn btn-outline-secondary btn-sm px-3.5 rounded-pill"
-                                                    @onclick="CancelEdit"
-                                                    disabled="@isSaving">
-                                                Cancel
-                                            </button>
-                                            <button type="button"
-                                                    class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm d-inline-flex align-items-center gap-1.5"
-                                                    @onclick="SaveProfile"
-                                                    disabled="@isSaving">
-                                                @if (isSaving)
-                                                {
-                                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                                                    <span>Saving...</span>
-                                                }
-                                                else
-                                                {
-                                                    <i class="bi bi-check2"></i>
-                                                    <span>Save Changes</span>
-                                                }
-                                            </button>
-                                        </div>
-
-                                    </div>
-                                }
-                                else
-                                {
-                                    <!-- 2-COLUMN VIEW TILES -->
-                                    <div class="row g-3">
-                                        
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">First Name</div>
-                                                <div class="field-value">@profile.FirstName</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Last Name</div>
-                                                <div class="field-value">@profile.LastName</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Personal Email</div>
-                                                <div class="field-value text-break">@(string.IsNullOrEmpty(profile.Email) ? "—" : profile.Email)</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Phone Number</div>
-                                                <div class="field-value">@(string.IsNullOrEmpty(profile.PhoneNumber) ? "—" : profile.PhoneNumber)</div>
-                                            </div>
-                                        </div>
-
-                                        @if (profile.IsEmployee)
-                                        {
-                                            <div class="col-12 col-sm-6">
-                                                <div class="clean-field-tile">
-                                                    <div class="field-label">Date of Birth</div>
-                                                    <div class="field-value">@(profile.DateOfBirth?.ToString("MMMM dd, yyyy") ?? "Not Specified")</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-12 col-sm-6">
-                                                <div class="clean-field-tile">
-                                                    <div class="field-label">Full Legal Name</div>
-                                                    <div class="field-value">@profile.FullName</div>
-                                                </div>
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <div class="col-12 col-sm-6">
-                                                <div class="clean-field-tile">
-                                                    <div class="field-label">System Username</div>
-                                                    <div class="field-value font-monospace">@profile.Username</div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-12 col-sm-6">
-                                                <div class="clean-field-tile">
-                                                    <div class="field-label">Display Name</div>
-                                                    <div class="field-value">@DisplayName</div>
-                                                </div>
-                                            </div>
-                                        }
-
-                                    </div>
-                                }
-
-                            </div>
+                            <ProfilePersonalTab Profile="@profile"
+                                                DisplayName="@DisplayName"
+                                                IsEditMode="@isEditMode"
+                                                IsSaving="@isSaving"
+                                                ValidationErrors="@validationErrors"
+                                                OnEnterEditMode="EnterEditMode"
+                                                OnCancelEdit="CancelEdit"
+                                                OnSaveProfile="SaveProfile"
+                                                OnDobChanged="OnDobChanged"
+                                                OnFieldBlur="ValidateFieldOnBlur" />
                         }
 
                         <!-- ══════════════════ TAB 2: PLACEMENT & ORG ══════════════════ -->
                         @if (activeTab == ProfileTab.Placement)
                         {
-                            <div class="tab-pane-fade flex-grow-1">
-                                
-                                @if (profile.IsEmployee)
-                                {
-                                    <div class="mb-3 pb-2 border-bottom">
-                                        <h6 class="fw-semibold mb-0 text-dark">Employment & Placement</h6>
-                                        <small class="text-muted">Official organizational placement and corporate hierarchy.</small>
-                                    </div>
-
-                                    <div class="row g-3">
-                                        
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Employee ID</div>
-                                                <div class="field-value font-monospace fw-bold text-primary">@(string.IsNullOrEmpty(profile.EmployeeNumber) ? "—" : profile.EmployeeNumber)</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Official Work Email</div>
-                                                <div class="field-value text-break">@(string.IsNullOrEmpty(profile.OfficeEmail) ? "—" : profile.OfficeEmail)</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Department</div>
-                                                <div class="field-value">@(string.IsNullOrEmpty(profile.DepartmentName) ? "—" : profile.DepartmentName) @(!string.IsNullOrEmpty(profile.DepartmentCode) ? $"({profile.DepartmentCode})" : "")</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Designation / Position</div>
-                                                <div class="field-value">@(string.IsNullOrEmpty(profile.Position) ? "—" : FormatText(profile.Position))</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Reporting Manager</div>
-                                                <div class="field-value">@(string.IsNullOrEmpty(profile.ManagerFullName) ? "Directly to Management" : profile.ManagerFullName)</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Date of Joining</div>
-                                                <div class="field-value">@(profile.HireDate?.ToString("MMMM dd, yyyy") ?? "—")</div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="mb-3 pb-2 border-bottom">
-                                        <h6 class="fw-semibold mb-0 text-dark">Administrative Privileges</h6>
-                                        <small class="text-muted">System authorization, role clearance, and administrative hierarchy.</small>
-                                    </div>
-
-                                    <div class="row g-3">
-                                        
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">System Role</div>
-                                                <div class="field-value">
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary px-2.5 py-1 rounded-pill">
-                                                        @RoleDisplay
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Authority Level</div>
-                                                <div class="field-value">Full Administrative Access</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Portal Scope</div>
-                                                <div class="field-value">All Modules & Reports</div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12 col-sm-6">
-                                            <div class="clean-field-tile">
-                                                <div class="field-label">Access Status</div>
-                                                <div class="field-value">
-                                                    <span class="badge @(profile.IsActive ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" : "bg-danger bg-opacity-10 text-danger") rounded-pill px-2.5 py-0.5">
-                                                        @(profile.IsActive ? "Authorized & Active" : "Disabled")
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                }
-
-                            </div>
+                            <ProfileEmploymentTab Profile="@profile"
+                                                  RoleDisplay="@RoleDisplay" />
                         }
 
                         <!-- ══════════════════ TAB 3: ACCOUNT & SECURITY ══════════════════ -->
                         @if (activeTab == ProfileTab.Security)
                         {
-                            <div class="tab-pane-fade flex-grow-1">
-                                
-                                <div class="mb-3 pb-2 border-bottom">
-                                    <h6 class="fw-semibold mb-0 text-dark">Account & Security</h6>
-                                    <small class="text-muted">Security privileges, credentials, and password settings.</small>
-                                </div>
-
-                                <div class="row g-3 mb-4">
-                                    
-                                    <div class="col-12 col-sm-6">
-                                        <div class="clean-field-tile">
-                                            <div class="field-label">System Role</div>
-                                            <div class="field-value">
-                                                <span class="badge bg-primary bg-opacity-10 text-primary px-2.5 py-1 rounded-pill">
-                                                    @RoleDisplay
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-sm-6">
-                                        <div class="clean-field-tile">
-                                            <div class="field-label">Account Verification</div>
-                                            <div class="field-value">
-                                                <span class="badge @(profile.IsActive ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" : "bg-danger bg-opacity-10 text-danger") px-2.5 py-1 rounded-pill">
-                                                    @(profile.IsActive ? "Verified" : "Unverified")
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-sm-6">
-                                        <div class="clean-field-tile">
-                                            <div class="field-label">Account Created On</div>
-                                            <div class="field-value">@profile.CreatedOn.ToString("MMMM dd, yyyy")</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-12 col-sm-6">
-                                        <div class="clean-field-tile">
-                                            <div class="field-label">Primary Login Email</div>
-                                            <div class="field-value text-break">@(!string.IsNullOrEmpty(profile.OfficeEmail) ? profile.OfficeEmail : profile.Email)</div>
-                                        </div>
-                                    </div>
-
-                                </div>
-
-                                <!-- Password Management Action Card -->
-                                <div class="p-3 rounded-2 border bg-light bg-opacity-50 d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-3">
-                                    <div>
-                                        <div class="fw-semibold text-dark small">Password Management</div>
-                                        <div class="text-muted small">Update your account password periodically to maintain security.</div>
-                                    </div>
-                                    <button class="btn btn-outline-primary btn-sm px-3 rounded-pill text-nowrap"
-                                            @onclick="@(() => NavigationManager.NavigateTo("/change-password"))">
-                                        <i class="bi bi-key me-1"></i> Change Password
-                                    </button>
-                                </div>
-
-                            </div>
+                            <ProfileSecurityTab Profile="@profile"
+                                                RoleDisplay="@RoleDisplay"
+                                                OnChangePassword="@(() => NavigationManager.NavigateTo("/change-password"))" />
                         }
 
                     </div>
@@ -793,6 +280,53 @@
         }
 
         return validationErrors.Count == 0;
+    }
+
+    private void ValidateFieldOnBlur(string fieldName)
+    {
+        if (profile == null) return;
+        validationErrors.Remove(fieldName);
+
+        switch (fieldName)
+        {
+            case nameof(profile.FirstName):
+                if (string.IsNullOrWhiteSpace(profile.FirstName))
+                    validationErrors[nameof(profile.FirstName)] = "First name is required.";
+                else if (profile.FirstName.Trim().Length > 50)
+                    validationErrors[nameof(profile.FirstName)] = "First name cannot exceed 50 characters.";
+                break;
+
+            case nameof(profile.LastName):
+                if (string.IsNullOrWhiteSpace(profile.LastName))
+                    validationErrors[nameof(profile.LastName)] = "Last name is required.";
+                else if (profile.LastName.Trim().Length > 50)
+                    validationErrors[nameof(profile.LastName)] = "Last name cannot exceed 50 characters.";
+                break;
+
+            case nameof(profile.Email):
+                if (string.IsNullOrWhiteSpace(profile.Email))
+                    validationErrors[nameof(profile.Email)] = "Personal email is required.";
+                else if (!new EmailAddressAttribute().IsValid(profile.Email.Trim()))
+                    validationErrors[nameof(profile.Email)] = "Invalid email format.";
+                break;
+
+            case nameof(profile.PhoneNumber):
+                if (string.IsNullOrWhiteSpace(profile.PhoneNumber))
+                    validationErrors[nameof(profile.PhoneNumber)] = "Phone number is required.";
+                else if (profile.PhoneNumber.Trim().Length != 10 || !profile.PhoneNumber.Trim().All(char.IsDigit))
+                    validationErrors[nameof(profile.PhoneNumber)] = "Phone number must be exactly 10 digits.";
+                break;
+
+            case nameof(profile.DateOfBirth):
+                if (profile.IsEmployee)
+                {
+                    if (!profile.DateOfBirth.HasValue || profile.DateOfBirth.Value == default)
+                        validationErrors[nameof(profile.DateOfBirth)] = "Date of birth is required.";
+                    else if (profile.DateOfBirth.Value.Date > DateTime.Today)
+                        validationErrors[nameof(profile.DateOfBirth)] = "Date of birth cannot be in the future.";
+                }
+                break;
+        }
     }
 
     private string GetValidationClass(string fieldName)

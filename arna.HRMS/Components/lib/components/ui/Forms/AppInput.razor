@@ -120,6 +120,7 @@ else
     // ── Value Binding ──
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public Expression<Func<string?>>? ValueExpression { get; set; }
 
     // ── Validation ──
     [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
@@ -147,7 +148,9 @@ else
     private bool _isTouched;
     private EditContext? _previousEditContext;
 
-    private bool HasError => EditContext != null && ValidationExpression != null && EditContext.GetValidationMessages(_fieldIdentifier).Any();
+    private bool HasFieldBinding => ValidationExpression != null || ValueExpression != null;
+
+    private bool HasError => EditContext != null && HasFieldBinding && EditContext.GetValidationMessages(_fieldIdentifier).Any();
 
     private bool IsInvalid => HasError && (_isTouched || (EditContext != null && EditContext.IsModified(_fieldIdentifier)));
 
@@ -174,17 +177,27 @@ else
 
     protected override void OnParametersSet()
     {
-        if (EditContext != null && ValidationExpression != null)
+        if (EditContext != null)
         {
-            _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
-            if (EditContext != _previousEditContext)
+            if (ValidationExpression != null)
+            {
+                _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+            }
+            else if (ValueExpression != null)
+            {
+                _fieldIdentifier = FieldIdentifier.Create(ValueExpression);
+            }
+
+            if (HasFieldBinding && EditContext != _previousEditContext)
             {
                 if (_previousEditContext != null)
                 {
                     _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+                    _previousEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
                 }
                 _previousEditContext = EditContext;
                 _previousEditContext.OnValidationRequested += HandleValidationRequested;
+                _previousEditContext.OnValidationStateChanged += HandleValidationStateChanged;
             }
         }
     }
@@ -192,6 +205,11 @@ else
     private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
     {
         _isTouched = true;
+        StateHasChanged();
+    }
+
+    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
         StateHasChanged();
     }
 
@@ -226,7 +244,7 @@ else
 
     private void NotifyFieldChanged()
     {
-        if (ValidationExpression != null && EditContext != null)
+        if (HasFieldBinding && EditContext != null)
             EditContext.NotifyFieldChanged(_fieldIdentifier);
     }
 
@@ -235,6 +253,7 @@ else
         if (_previousEditContext != null)
         {
             _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+            _previousEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
         }
     }
 }

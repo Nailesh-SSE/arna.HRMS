@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +26,7 @@ public class EmployeeRepositoryTests
     }
 
     [Test]
-    public async Task GetEmployeesAsync_ShouldReturnOnlyActiveAndNotDeletedEmployees()
+    public async Task GetEmployeesAsync_ShouldReturnAllNotDeletedEmployeesIncludingInactive()
     {
         // Given
         _dbContext.Departments.Add(new Department
@@ -85,8 +85,10 @@ public class EmployeeRepositoryTests
         var result = await _employeeRepository.GetEmployeesAsync();
 
         // Then
-        Assert.That(result.Count, Is.EqualTo(1));
-        Assert.That(result[0].FirstName, Is.EqualTo("Valid"));
+        Assert.That(result.Count, Is.EqualTo(2));
+        Assert.That(result.Any(e => e.FirstName == "Inactive"), Is.True);
+        Assert.That(result.Any(e => e.FirstName == "Valid"), Is.True);
+        Assert.That(result.Any(e => e.FirstName == "Deleted"), Is.False);
     }
 
     [Test]

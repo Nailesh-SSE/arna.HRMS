@@ -101,14 +101,10 @@ public class UserRepositoryTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<List<User>>());
-        Assert.That(result.Count, Is.EqualTo(1));
-
-        var user = result.First();
-
-        Assert.That(user.IsActive, Is.True);
-        Assert.That(user.IsDeleted, Is.False);
-        Assert.That(user.Username, Is.EqualTo("user1"));
-        Assert.That(user.Email, Is.EqualTo("user1@test.com"));
+        Assert.That(result.Count, Is.EqualTo(2));
+        Assert.That(result.Any(u => u.Username == "user1"), Is.True);
+        Assert.That(result.Any(u => u.Username == "user2"), Is.True);
+        Assert.That(result.Any(u => u.Username == "user3"), Is.False);
     }
 
     [Test]
@@ -218,9 +214,11 @@ public class UserRepositoryTests
 
 
     [Test]
-    public async Task GetUserAsync_ShouldReturn_EmptyList_WhenNoActiveUsers()
+    public async Task GetUserAsync_ShouldReturn_Users_WhenInactiveUsersExist()
     {
         // Arrange
+        var role = new Role { Id = 1, Name = "Admin" };
+        _dbContext.Roles.Add(role);
         _dbContext.Users.Add(CreateUser(1, false, false, null));
         await _dbContext.SaveChangesAsync();
 
@@ -229,8 +227,8 @@ public class UserRepositoryTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.Empty);
-        Assert.That(result.Count, Is.EqualTo(0));
+        Assert.That(result.Count, Is.EqualTo(1));
+        Assert.That(result[0].IsActive, Is.False);
     }
 
     private User CreateUser(int id, bool isActive, bool isDeleted, int? empId)
@@ -304,7 +302,7 @@ public class UserRepositoryTests
     }
 
     [Test]
-    public async Task GetUserByIdAsync_ShouldReturnNull_WhenUserIsInactive()
+    public async Task GetUserByIdAsync_ShouldReturnUser_WhenUserIsInactive()
     {
         // Arrange
         var role = new Role { Id = 1, Name = "Admin" };
@@ -319,7 +317,9 @@ public class UserRepositoryTests
         var result = await _userRepository.GetUserByIdAsync(1);
 
         // Assert
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.IsActive, Is.False);
+        Assert.That(result.Username, Is.EqualTo("user1"));
     }
 
     [Test]

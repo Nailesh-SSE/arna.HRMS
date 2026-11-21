@@ -1,0 +1,59 @@
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@inject NavigationManager Nav
+
+<div class="row g-3 g-xl-4 mb-4">
+
+    <!-- Card 1: Total Workforce Headcount -->
+    <AppStatCard Icon="bi-people-fill"
+                 BgClass="bg-primary bg-opacity-10"
+                 TextClass="text-primary"
+                 Label="Total Workforce"
+                 Count="@TotalStaff"
+                 Subtext="@(DepartmentCount > 0 ? $"• {DepartmentCount} depts" : "")"
+                 TrendText="Active Directory"
+                 TrendClass="trend-green"
+                 OnClick='() => Nav.NavigateTo("/employee")'
+                 CardClass="cursor-pointer" />
+
+    <!-- Card 2: Period / Monthly Attendance Average -->
+    <AppStatCard Icon="bi-graph-up-arrow"
+                 BgClass="bg-success bg-opacity-10"
+                 TextClass="text-success"
+                 Label="Monthly Attendance Rate"
+                 Count="@((int)Math.Round(MonthlyRate))"
+                 CustomValue="@($"{MonthlyRate}%")"
+                 Subtext="• Period avg"
+                 TrendText="@(MonthlyRate >= 90 ? "Optimal stability" : "Moderate stability")"
+                 TrendClass="@(MonthlyRate >= 90 ? "trend-green" : "trend-amber")"
+                 OnClick='() => Nav.NavigateTo("/admin-report-management")'
+                 CardClass="cursor-pointer" />
+
+    <!-- Card 3: Pending Leave Requests -->
+    <AppStatCard Icon="bi-hourglass-split"
+                 BgClass="bg-warning bg-opacity-25"
+                 TextClass="text-warning"
+                 Label="Leave Pending Requests"
+                 Count="@PendingLeavesCount"
+                 Subtext="@(PendingLeavesCount > 0 ? "• Needs review" : "")"
+                 TrendText="@(PendingLeavesCount > 0 ? $"{PendingLeavesCount} awaiting" : "All clear")"
+                 TrendClass="@(PendingLeavesCount > 0 ? "trend-amber" : "trend-green")" />
+
+    <!-- Card 4: Attendance Pending Requests -->
+    <AppStatCard Icon="bi-clock-history"
+                 BgClass="bg-info bg-opacity-25"
+                 TextClass="text-info"
+                 Label="Attendance Pending Requests"
+                 Count="@PendingAttendanceCount"
+                 Subtext="@(PendingAttendanceCount > 0 ? "• Regularize" : "")"
+                 TrendText="@(PendingAttendanceCount > 0 ? $"{PendingAttendanceCount} awaiting" : "All clear")"
+                 TrendClass="@(PendingAttendanceCount > 0 ? "trend-amber" : "trend-green")" />
+
+</div>
+
+@code {
+    [Parameter] public int TotalStaff { get; set; }
+    [Parameter] public int DepartmentCount { get; set; }
+    [Parameter] public double MonthlyRate { get; set; }
+    [Parameter] public int PendingLeavesCount { get; set; }
+    [Parameter] public int PendingAttendanceCount { get; set; }
+}

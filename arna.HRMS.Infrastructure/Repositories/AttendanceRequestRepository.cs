@@ -76,7 +76,7 @@ public class AttendanceRequestRepository
                 ar.IsActive &&
                 !ar.IsDeleted);
 
-        if (entity == null)
+        if (entity == null || entity.StatusId == Status.Approved || entity.StatusId == Status.Rejected)
             return false;
 
         entity.IsActive = false;
@@ -95,7 +95,7 @@ public class AttendanceRequestRepository
                 ar.IsActive &&
                 !ar.IsDeleted);
 
-        if (entity == null)
+        if (entity == null || entity.StatusId == Status.Approved || entity.StatusId == Status.Rejected)
             return false;
 
         entity.StatusId = status;

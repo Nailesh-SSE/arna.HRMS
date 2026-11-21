@@ -11,10 +11,12 @@ public class EmployeeViewModel : CommonViewModel
 
     [Required(ErrorMessage = "First name is required.")]
     [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters.")]
+    [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "First name can only contain letters.")]
     public string FirstName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Last name is required.")]
     [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters.")]
+    [RegularExpression(@"^[a-zA-Z\s]+$", ErrorMessage = "Last name can only contain letters.")]
     public string LastName { get; set; } = string.Empty;
 
     [Display(Name = "Full Name")]
@@ -22,14 +24,16 @@ public class EmployeeViewModel : CommonViewModel
 
     [Required(ErrorMessage = "Personal email is required.")]
     [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Please enter a valid email address.")]
+    [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters.")]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Office email is required.")]
     [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Please enter a valid office email address.")]
+    [StringLength(100, ErrorMessage = "Office email cannot exceed 100 characters.")]
     public string OfficeEmail { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Phone number is required.")]
-    [RegularExpression(@"^\+?[0-9\s\-]{7,15}$", ErrorMessage = "Please enter a valid phone number (7-15 digits).")]
+    [RegularExpression(@"^\+?[0-9]{10}$", ErrorMessage = "Phone number must be exactly 10 digits.")]
     public string PhoneNumber { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Date of Birth is required.")]

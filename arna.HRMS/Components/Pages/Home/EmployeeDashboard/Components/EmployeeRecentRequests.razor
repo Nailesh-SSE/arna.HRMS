@@ -1,0 +1,85 @@
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Dashboard
+@inject NavigationManager Nav
+
+<div class="card border-0 shadow-sm rounded-3 h-100 content-card">
+    <div class="card-header bg-transparent border-0 pt-3 px-3 px-lg-4 pb-2 d-flex align-items-center justify-content-between">
+        <div>
+            <h6 class="fw-semibold mb-0 d-flex align-items-center text-dark">
+                <i class="bi bi-inboxes-fill text-primary me-2"></i> Recent Requests
+            </h6>
+            <small class="text-muted">Track status of your submitted requests</small>
+        </div>
+        <a href="/emp-leave-management" class="text-primary text-decoration-none small fw-semibold d-inline-flex align-items-center">
+            View All <i class="bi bi-chevron-right ms-1"></i>
+        </a>
+    </div>
+
+    <div class="card-body px-3 px-lg-4 py-2 d-flex flex-column justify-content-between">
+        @if (CombinedRecentRequests.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 recent-requests-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">Type</th>
+                            <th style="width: 27%;">Date</th>
+                            <th style="width: 22%;">Created On</th>
+                            <th class="text-end" style="width: 16%;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in CombinedRecentRequests.Take(5))
+                        {
+                            <tr role="button" @onclick="@(() => Nav.NavigateTo(req.LinkUrl))">
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-semibold text-dark small">@req.RequestName</span>
+                                        <span class="text-muted" style="font-size: 0.72rem;">@req.RequestType</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="text-dark small fw-medium">@req.DateRangeDisplay</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted small">@req.CreatedOnDisplay</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge-status-dot @GetStatusDotClass(req.StatusId)">
+                                        <span class="dot me-1"></span> @req.StatusId
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                <p class="small mb-0">No recent requests found</p>
+            </div>
+        }
+
+        <!-- Footer Link -->
+        <div class="pt-3 border-top mt-2 d-flex align-items-center justify-content-between text-muted small">
+            <span><i class="bi bi-clock-history me-1.5 text-primary"></i> Showing latest @Math.Min(5, CombinedRecentRequests.Count) submissions</span>
+            <a href="/emp-leave-management" class="text-muted text-decoration-none fw-medium">View History</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<CombinedRequestItem> CombinedRecentRequests { get; set; } = new();
+
+    private static string GetStatusDotClass(Status status) => status switch
+    {
+        Status.Approved => "badge-dot-approved",
+        Status.Pending => "badge-dot-pending",
+        Status.Rejected => "badge-dot-rejected",
+        Status.Cancelled => "badge-dot-cancelled",
+        _ => "badge-dot-pending"
+    };
+}

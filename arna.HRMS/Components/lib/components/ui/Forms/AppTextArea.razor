@@ -101,9 +101,11 @@
                 if (_previousEditContext != null)
                 {
                     _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+                    _previousEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
                 }
                 _previousEditContext = EditContext;
                 _previousEditContext.OnValidationRequested += HandleValidationRequested;
+                _previousEditContext.OnValidationStateChanged += HandleValidationStateChanged;
             }
         }
     }
@@ -111,6 +113,11 @@
     private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
     {
         _isTouched = true;
+        StateHasChanged();
+    }
+
+    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
         StateHasChanged();
     }
 
@@ -154,6 +161,7 @@
         if (_previousEditContext != null)
         {
             _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+            _previousEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
         }
     }
 }

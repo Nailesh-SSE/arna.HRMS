@@ -17,7 +17,7 @@ public class EmployeeRepository
     {
         return await _baseRepository.Query()
             .AsNoTracking()
-            .Where(e => e.IsActive && !e.IsDeleted)
+            .Where(e => !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
             .OrderByDescending(e => e.Id)

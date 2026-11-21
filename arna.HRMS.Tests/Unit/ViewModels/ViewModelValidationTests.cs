@@ -89,6 +89,7 @@ public class ViewModelValidationTests
     [TestCase("abc")]
     [TestCase("1234")]
     [TestCase("phone12345")]
+    [TestCase("10293847")]
     public void EmployeeViewModel_WhenPhoneInvalid_FailsWithInvalidPhoneMessage(string invalidPhone)
     {
         var model = new EmployeeViewModel
@@ -107,7 +108,7 @@ public class ViewModelValidationTests
 
         var errors = ValidateModel(model);
 
-        Assert.That(errors.Any(e => e.ErrorMessage == "Please enter a valid phone number (7-15 digits)."), Is.True);
+        Assert.That(errors.Any(e => e.ErrorMessage == "Phone number must be exactly 10 digits."), Is.True);
     }
 
     [TestCase(0)]
@@ -195,6 +196,7 @@ public class ViewModelValidationTests
 
     [TestCase("123")]
     [TestCase("not-a-phone")]
+    [TestCase("10293847")]
     public void UserViewModel_WhenPhoneInvalid_FailsValidation(string invalidPhone)
     {
         var model = new UserViewModel
@@ -209,7 +211,7 @@ public class ViewModelValidationTests
 
         var errors = ValidateModel(model);
 
-        Assert.That(errors.Any(e => e.ErrorMessage == "Please enter a valid phone number (7-15 digits)."), Is.True);
+        Assert.That(errors.Any(e => e.ErrorMessage == "Phone number must be exactly 10 digits."), Is.True);
     }
 
     #endregion

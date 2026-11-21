@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.CommonComponent
+@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
@@ -94,15 +94,6 @@
                                     <i class="bi bi-x-circle"></i>
                                 </button>
 
-                                <button type="button"
-                                        class="btn-action-icon-delete"
-                                        title="Delete Request"
-                                        @onclick="() => DeleteRequest(req)">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            }
-                            else if (req.StatusId == Status.Cancelled || req.StatusId == Status.Rejected)
-                            {
                                 <button type="button"
                                         class="btn-action-icon-delete"
                                         title="Delete Request"

@@ -166,6 +166,8 @@
                                               ShowWrapper="false"
                                               CssClass="auth-field-input"
                                               placeholder="Enter your username"
+                                              name="username"
+                                              autocomplete="username"
                                               autofocus="true" />
                                 </div>
                                 <ValidationMessage For="@(() => loginModel.UserName)"
@@ -185,7 +187,9 @@
                                               Type="@passwordInputType"
                                               ShowWrapper="false"
                                               CssClass="auth-field-input"
-                                              placeholder="Enter your password" />
+                                              placeholder="Enter your password"
+                                              name="password"
+                                              autocomplete="current-password" />
                                     <button type="button"
                                             class="auth-eye-btn"
                                             @onclick="TogglePasswordVisibility"

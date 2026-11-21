@@ -32,7 +32,7 @@ public class AttendanceRepository
         var query = _baseRepository.Query()
             .AsNoTracking()
             .Include(x => x.Employee)
-            .Where(x => x.IsActive && !x.IsDeleted);
+            .Where(x => !x.IsDeleted);
 
         if (status.HasValue)
             query = query.Where(x => x.StatusId == status.Value); 
@@ -55,7 +55,7 @@ public class AttendanceRepository
     {
         return await _baseRepository.Query()
             .AsNoTracking()
-            .Where(x => x.IsActive && !x.IsDeleted && x.Id == id)
+            .Where(x => !x.IsDeleted && x.Id == id)
             .FirstOrDefaultAsync();
     }
 

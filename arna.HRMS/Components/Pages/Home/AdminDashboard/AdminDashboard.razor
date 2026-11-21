@@ -1,10 +1,12 @@
-@using arna.HRMS.Components.lib.components.ui.CommonComponent
+﻿@using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.Enums
 @using arna.HRMS.Models.ViewModels.Attendance
 @using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Models.ViewModels.Dashboard
+@using arna.HRMS.Components.Pages.Home.AdminDashboard.Components
 @using arna.HRMS.Services
 @using arna.HRMS.Services.Auth
 @using arna.HRMS.Services.Dashboard
@@ -22,708 +24,75 @@
 
 <div class="container-fluid p-0 dash-fade-in">
 
-    <!-- ══════════ 1. DASHBOARD GREETING & EXECUTIVE ACTION BAR ══════════ -->
-    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
-        <div>
-            <h3 class="dash-greeting-title mb-1">
-                @greeting, @DisplayAdminName
-            </h3>
-            <p class="dash-greeting-subtitle mb-0">
-                Here's an overview of your organization's HR activities and workforce attendance.
-            </p>
-        </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 bg-white border rounded-3 shadow-xs text-muted small fw-medium">
-                <i class="bi bi-calendar3 text-primary"></i>
-                <span>@TodayDisplayDate</span>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs fw-medium"
-                    @onclick="RefreshDashboard" disabled="@isRefreshing" title="Refresh dashboard data">
-                <i class="bi bi-arrow-clockwise @(isRefreshing ? "spin-animation" : "")"></i>
-                <span>@(isRefreshing ? "Refreshing..." : "Refresh")</span>
-            </button>
-        </div>
-    </div>
+    <!-- ======================================================================================================================================================================================================== 1. DASHBOARD GREETING & EXECUTIVE ACTION BAR ======================================================================================================================================================================================================== -->
+    <AdminDashboardHeader Greeting="@greeting"
+                          AdminName="@DisplayAdminName"
+                          DisplayDate="@TodayDisplayDate"
+                          IsRefreshing="@isRefreshing"
+                          OnRefresh="RefreshDashboard" />
 
-    <!-- ══════════ 2. TOP 4 KPI METRIC CARDS (ORGANIZATION PULSE & ACTION QUEUES) ══════════ -->
-    <div class="row g-3 g-xl-4 mb-4">
+    <!-- ======================================================================================================================================================================================================== 2. TOP 4 KPI METRIC CARDS (ORGANIZATION PULSE & ACTION QUEUES) ======================================================================================================================================================================================================== -->
+    <AdminDashboardKpis TotalStaff="@TodayTotalStaff"
+                        DepartmentCount="@departmentSummaries.Count"
+                        MonthlyRate="@TrajectoryAvgAttendanceRate"
+                        PendingLeavesCount="@pendingCount"
+                        PendingAttendanceCount="@AttendancePendingCount" />
 
-        <!-- Card 1: Total Workforce Headcount -->
-        <AppStatCard Icon="bi-people-fill"
-                     BgClass="bg-primary bg-opacity-10"
-                     TextClass="text-primary"
-                     Label="Total Workforce"
-                     Count="@TodayTotalStaff"
-                     Subtext="@(departmentSummaries.Count > 0 ? $"• {departmentSummaries.Count} depts" : "")"
-                     TrendText="Active Directory"
-                     TrendClass="trend-green"
-                     OnClick='() => Nav.NavigateTo("/employee")'
-                     CardClass="cursor-pointer" />
-
-        <!-- Card 2: Period / Monthly Attendance Average -->
-        <AppStatCard Icon="bi-graph-up-arrow"
-                     BgClass="bg-success bg-opacity-10"
-                     TextClass="text-success"
-                     Label="Monthly Attendance Rate"
-                     Count="@((int)Math.Round(TrajectoryAvgAttendanceRate))"
-                     CustomValue="@($"{TrajectoryAvgAttendanceRate}%")"
-                     Subtext="• Period avg"
-                     TrendText="@(TrajectoryAvgAttendanceRate >= 90 ? "Optimal stability" : "Moderate stability")"
-                     TrendClass="@(TrajectoryAvgAttendanceRate >= 90 ? "trend-green" : "trend-amber")"
-                     OnClick='() => Nav.NavigateTo("/admin-report-management")'
-                     CardClass="cursor-pointer" />
-
-        <!-- Card 3: Pending Leave Requests -->
-        <AppStatCard Icon="bi-hourglass-split"
-                     BgClass="bg-warning bg-opacity-25"
-                     TextClass="text-warning"
-                     Label="Leave Pending Requests"
-                     Count="@pendingCount"
-                     Subtext="@(pendingCount > 0 ? "• Needs review" : "")"
-                     TrendText="@(pendingCount > 0 ? $"{pendingCount} awaiting" : "All clear")"
-                     TrendClass="@(pendingCount > 0 ? "trend-amber" : "trend-green")" />
-
-        <!-- Card 4: Attendance Pending Requests -->
-        <AppStatCard Icon="bi-clock-history"
-                     BgClass="bg-info bg-opacity-25"
-                     TextClass="text-info"
-                     Label="Attendance Pending Requests"
-                     Count="@AttendancePendingCount"
-                     Subtext="@(AttendancePendingCount > 0 ? "• Regularize" : "")"
-                     TrendText="@(AttendancePendingCount > 0 ? $"{AttendancePendingCount} awaiting" : "All clear")"
-                     TrendClass="@(AttendancePendingCount > 0 ? "trend-amber" : "trend-green")" />
-
-    </div>
-
-    <!-- ══════════ 3. EXECUTIVE ATTENDANCE PULSE & SILK WAVE TRAJECTORY ══════════ -->
+    <!-- ======================================================================================================================================================================================================== 3. EXECUTIVE ATTENDANCE PULSE & SILK WAVE TRAJECTORY ======================================================================================================================================================================================================== -->
     <div class="row g-3 g-xl-4 mb-4">
 
         <!-- 3A. Today's Workforce Health (Executive Donut Gauge & Department Breakdown) -->
-        <div class="col-12 col-xl-5">
-            <div class="dash-card h-100 d-flex flex-column">
-                
-                <!-- Card Header -->
-                <div class="dash-card-header">
-                    <div class="d-flex align-items-center gap-2.5">
-                        <div class="dash-card-icon-box" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
-                            <i class="bi bi-shield-check"></i>
-                        </div>
-                        <div>
-                            <h6 class="dash-card-title mb-0 d-flex align-items-center gap-2">
-                                <span>Today's Workforce Health</span>
-                            </h6>
-                            <p class="dash-card-subtitle mt-0.5">
-                                Real-time presence across @TodayTotalStaff employees
-                            </p>
-                        </div>
-                    </div>
-
-                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 small d-inline-flex align-items-center gap-1.5" style="font-size: 0.72rem;">
-                        <span class="dash-pulse-dot"></span>
-                        Live Status
-                    </span>
-                </div>
-
-                <!-- Card Body -->
-                <div class="card-body p-3 p-md-4 flex-grow-1 d-flex flex-column justify-content-between">
-                    
-                    <!-- Gauge + Metrics Row -->
-                    <div class="d-flex align-items-center justify-content-around py-2 gap-3 flex-wrap">
-                        
-                        <!-- Donut Gauge -->
-                        <div class="dash-gauge-container" title="Today's Attendance Rate: @TodayAttendanceRate%">
-                            <svg class="dash-gauge-svg" viewBox="0 0 140 140">
-                                <defs>
-                                    <linearGradient id="dashEmeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stop-color="#10b981" />
-                                        <stop offset="100%" stop-color="#059669" />
-                                    </linearGradient>
-                                </defs>
-                                <circle class="dash-gauge-bg" cx="70" cy="70" r="54"></circle>
-                                <circle class="dash-gauge-val" cx="70" cy="70" r="54"
-                                        stroke="url(#dashEmeraldGrad)"
-                                        stroke-dasharray="339.29"
-                                        stroke-dashoffset="@GaugeDashOffset"></circle>
-                            </svg>
-                            <div class="position-absolute text-center" style="pointer-events: none;">
-                                <div class="fw-bold text-dark mb-0" style="font-size: 1.85rem; line-height: 1; letter-spacing: -0.03em;">
-                                    @TodayAttendanceRate%
-                                </div>
-                                <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.05em;">
-                                    Present
-                                </small>
-                            </div>
-                        </div>
-
-                        <!-- Micro Metrics Legend -->
-                        <div class="d-flex flex-column gap-2 flex-grow-1" style="min-width: 170px;">
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light border cursor-pointer"
-                                 @onclick="() => showPresentModal = true" title="Click to view clocked-in employees">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="d-inline-block rounded-circle" style="width: 10px; height: 10px; background-color: #10b981;"></span>
-                                    <span class="small fw-semibold text-dark">Present</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold text-success small">@PresentEmployees</span>
-                                    <span class="text-muted small ms-1" style="font-size: 0.72rem;">(@TodayAttendanceRate%)</span>
-                                </div>
-                            </div>
-
-                            <div class="d-flex align-items-center justify-content-between p-2 rounded-3 bg-light border cursor-pointer"
-                                 @onclick="() => showLeaveModal = true" title="Click to view employees on leave">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="d-inline-block rounded-circle" style="width: 10px; height: 10px; background-color: #f59e0b;"></span>
-                                    <span class="small fw-semibold text-dark">On Leave</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="fw-bold text-warning small">@onLeaveToday</span>
-                                    <span class="text-muted small ms-1" style="font-size: 0.72rem;">(@TodayLeaveRate%)</span>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- Department Attendance Breakdown -->
-                    <div class="pt-3 border-top mt-2">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.05em;">
-                                Attendance By Department
-                            </span>
-                            <span class="text-muted small" style="font-size: 0.7rem;">
-                                @departmentSummaries.Count Departments
-                            </span>
-                        </div>
-
-                        <div class="d-flex flex-column gap-2.5">
-                            @if (departmentSummaries.Any())
-                            {
-                                @foreach (var dept in departmentSummaries)
-                                {
-                                    <div>
-                                        <div class="d-flex justify-content-between small fw-medium mb-1">
-                                            <span class="text-dark">@dept.DepartmentName</span>
-                                            <span class="fw-semibold @(dept.AttendanceRate >= 90 ? "text-success" : (dept.AttendanceRate >= 75 ? "text-primary" : "text-warning"))">
-                                                @dept.AttendanceRate% (@dept.PresentCount/@dept.TotalStaff)
-                                            </span>
-                                        </div>
-                                        <div class="dash-dept-prog-track">
-                                            <div class="dash-dept-prog-bar @dept.ProgressColorClass" style="width: @dept.AttendanceRate%;"></div>
-                                        </div>
-                                    </div>
-                                }
-                            }
-                            else
-                            {
-                                <div class="text-muted small text-center py-2">
-                                    No departmental data recorded yet.
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-        </div>
+        <AdminDashboardWorkforceHealth TotalStaff="@TodayTotalStaff"
+                                       AttendanceRate="@TodayAttendanceRate"
+                                       PresentEmployees="@PresentEmployees"
+                                       OnLeaveToday="@onLeaveToday"
+                                       LeaveRate="@TodayLeaveRate"
+                                       GaugeDashOffset="@GaugeDashOffset"
+                                       DepartmentSummaries="@departmentSummaries"
+                                       OnShowPresent="() => showPresentModal = true"
+                                       OnShowLeave="() => showLeaveModal = true" />
 
         <!-- 3B. Workforce Attendance Trend (Daily & Monthly Views) -->
-        <div class="col-12 col-xl-7">
-            <div class="dash-card h-100 d-flex flex-column">
-
-                <!-- Card Header -->
-                <div class="dash-card-header flex-wrap gap-2 justify-content-between">
-                    <div class="d-flex align-items-center gap-2.5">
-                        <div class="dash-card-icon-box" style="background: rgba(37, 99, 235, 0.12); color: #2563eb;">
-                            <i class="bi bi-graph-up-arrow"></i>
-                        </div>
-                        <div>
-                            <h6 class="dash-card-title mb-0 d-flex align-items-center gap-2">
-                                <span>Attendance Trend</span>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small fw-normal" style="font-size: 0.72rem;">
-                                    @(selectedTrendGranularity == "daily" ? "Daily View" : "Monthly View")
-                                </span>
-                            </h6>
-                            <p class="dash-card-subtitle mt-0.5">
-                                @(selectedTrendGranularity == "daily" ? "Daily attendance rate across workdays" : $"Month-by-month attendance rate for {DateTime.Today.Year}")
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Granularity & Range Selector Buttons -->
-                    <div class="d-flex flex-wrap align-items-center gap-2">
-                        <!-- Daily / Monthly Granularity Toggle -->
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn @(selectedTrendGranularity == "daily" ? "btn-primary shadow-xs" : "btn-light border")"
-                                    @onclick='() => SetTrendGranularity("daily")'>
-                                <i class="bi bi-calendar-day me-1"></i> Daily
-                            </button>
-                            <button type="button" class="btn @(selectedTrendGranularity == "monthly" ? "btn-primary shadow-xs" : "btn-light border")"
-                                    @onclick='() => SetTrendGranularity("monthly")'>
-                                <i class="bi bi-calendar-month me-1"></i> Monthly
-                            </button>
-                        </div>
-
-                        <!-- Daily Range Sub-Pills (Visible only in Daily Mode) -->
-                        @if (selectedTrendGranularity == "daily")
-                        {
-                            <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" class="btn @(selectedTrajectoryRange == "this_month" ? "btn-secondary text-white" : "btn-light border text-secondary")"
-                                        @onclick='() => SetTrajectoryRange("this_month")'>
-                                    This Month
-                                </button>
-                                <button type="button" class="btn @(selectedTrajectoryRange == "last_30_days" ? "btn-secondary text-white" : "btn-light border text-secondary")"
-                                        @onclick='() => SetTrajectoryRange("last_30_days")'>
-                                    30 Days
-                                </button>
-                                <button type="button" class="btn @(selectedTrajectoryRange == "last_14_days" ? "btn-secondary text-white" : "btn-light border text-secondary")"
-                                        @onclick='() => SetTrajectoryRange("last_14_days")'>
-                                    14 Days
-                                </button>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Card Body -->
-                <div class="card-body p-3 p-md-4 flex-grow-1 d-flex flex-column justify-content-between">
-                    
-                    <!-- Top Summary Metric Tiles -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-4">
-                            <div class="p-2.5 bg-light rounded-3 text-center border h-100 d-flex flex-column justify-content-center">
-                                <span class="text-muted d-block small" style="font-size: 0.72rem;">Period Avg Rate</span>
-                                <span class="fw-bold text-success fs-5 my-0.5">@TrajectoryAvgAttendanceRate%</span>
-                                <span class="text-muted small" style="font-size: 0.7rem;">@(selectedTrendGranularity == "daily" ? "Active workdays" : "Year-to-date average")</span>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="p-2.5 bg-light rounded-3 text-center border h-100 d-flex flex-column justify-content-center">
-                                <span class="text-muted d-block small" style="font-size: 0.72rem;">@(selectedTrendGranularity == "daily" ? "Peak Day" : "Peak Month")</span>
-                                <span class="fw-bold text-primary fs-5 my-0.5">@TrajectoryPeakPercent%</span>
-                                <span class="text-muted small text-truncate d-block" style="font-size: 0.7rem;" title="@TrajectoryPeakDay">@TrajectoryPeakDay</span>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="p-2.5 bg-light rounded-3 text-center border h-100 d-flex flex-column justify-content-center">
-                                <span class="text-muted d-block small" style="font-size: 0.72rem;">Approved Leaves</span>
-                                <span class="fw-bold text-warning fs-5 my-0.5">@TrajectoryTotalApprovedLeaves Days</span>
-                                <span class="text-muted small" style="font-size: 0.7rem;">In selected period</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Trend Wave Chart Graphic with Y-Axis Scale -->
-                    <div class="position-relative pt-1 px-1">
-                        <svg class="dash-trend-wave-svg" viewBox="0 0 600 140" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="dashWaveGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stop-color="#2563eb" stop-opacity="0.25" />
-                                    <stop offset="70%" stop-color="#2563eb" stop-opacity="0.06" />
-                                    <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0" />
-                                </linearGradient>
-                            </defs>
-                            
-                            <!-- Horizontal Reference Grid Lines -->
-                            <line x1="45" y1="22" x2="585" y2="22" stroke="#e2e8f0" stroke-width="1.2" stroke-dasharray="3,3" />
-                            <line x1="45" y1="70" x2="585" y2="70" stroke="#e2e8f0" stroke-width="1.2" stroke-dasharray="3,3" />
-                            <line x1="45" y1="118" x2="585" y2="118" stroke="#cbd5e1" stroke-width="1.5" />
-
-                            <!-- Y-Axis Scale Percentage Text -->
-                            <text x="38" y="26" text-anchor="end" fill="#94a3b8" font-size="11" font-weight="600">100%</text>
-                            <text x="38" y="74" text-anchor="end" fill="#94a3b8" font-size="11" font-weight="600">50%</text>
-                            <text x="38" y="122" text-anchor="end" fill="#94a3b8" font-size="11" font-weight="600">0%</text>
-
-                            @if (!string.IsNullOrEmpty(SvgAreaPath))
-                            {
-                                <!-- Gradient Fill Area -->
-                                <path d="@SvgAreaPath" fill="url(#dashWaveGradient)" />
-                                
-                                <!-- Smooth Curve Stroke -->
-                                <path d="@SvgStrokePath" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-
-                                <!-- Interactive Data Point Circles with Tooltips -->
-                                @foreach (var pt in trajectoryPoints)
-                                {
-                                    var isPeak = pt == TrajectoryPeakPoint;
-                                    var isToday = pt == TrajectoryTodayPoint;
-                                    var radius = isPeak || isToday ? 5.5 : 3.5;
-                                    var fill = isToday ? "#10b981" : (isPeak ? "#2563eb" : "#3b82f6");
-
-                                    <circle cx="@pt.SvgX.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
-                                            cy="@pt.SvgY.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
-                                            r="@radius.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
-                                            fill="@fill"
-                                            stroke="#ffffff"
-                                            stroke-width="@(isPeak || isToday ? "2.5" : "1.5")"
-                                            style="cursor: pointer;">
-                                        <title>@pt.FullTooltip</title>
-                                    </circle>
-                                }
-                            }
-                            else
-                            {
-                                <line x1="45" y1="70" x2="585" y2="70" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4,4" />
-                            }
-                        </svg>
-
-                        <!-- Milestone Date / Month Labels (Aligned under plot area) -->
-                        <div class="d-flex justify-content-between text-muted small pt-1.5" style="font-size: 0.74rem; padding-left: 42px; padding-right: 18px;">
-                            @foreach (var milestone in MilestoneDateLabels)
-                            {
-                                <span>@milestone</span>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- Footer Insight Note -->
-                    <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-3 small text-muted">
-                        <span>
-                            <i class="bi bi-shield-check text-success me-1"></i>
-                            Workforce attendance stability remains @(TrajectoryAvgAttendanceRate >= 90 ? "optimal" : "moderate") across @(selectedTrendGranularity == "daily" ? "active workdays" : "months")
-                        </span>
-                        <a href="/report" class="text-primary text-decoration-none fw-semibold d-inline-flex align-items-center gap-1">
-                            <span>Detailed Log</span>
-                            <i class="bi bi-arrow-right"></i>
-                        </a>
-                    </div>
-
-                </div>
-
-            </div>
-        </div>
+        <AdminDashboardAttendanceTrend SelectedGranularity="@selectedTrendGranularity"
+                                       SelectedRange="@selectedTrajectoryRange"
+                                       AvgRate="@TrajectoryAvgAttendanceRate"
+                                       PeakPercent="@TrajectoryPeakPercent"
+                                       PeakDay="@TrajectoryPeakDay"
+                                       ApprovedLeaves="@TrajectoryTotalApprovedLeaves"
+                                       SvgAreaPath="@SvgAreaPath"
+                                       SvgStrokePath="@SvgStrokePath"
+                                       TrajectoryPoints="@trajectoryPoints"
+                                       PeakPoint="@TrajectoryPeakPoint"
+                                       TodayPoint="@TrajectoryTodayPoint"
+                                       MilestoneLabels="@MilestoneDateLabels"
+                                       OnGranularityChanged="SetTrendGranularity"
+                                       OnRangeChanged="SetTrajectoryRange" />
 
     </div>
 
-    <!-- ══════════ 4. PENDING REQUESTS TABLES ══════════ -->
+    <!-- ======================================================================================================================================================================================================== 4. PENDING REQUESTS TABLES ======================================================================================================================================================================================================== -->
     <div class="row g-3 g-xl-4 mb-4">
-
         <!-- 1. Pending Leave Requests -->
-        <div class="col-12 col-xl-6">
-            <div class="dash-card h-100 d-flex flex-column">
-
-                <div class="dash-card-header">
-                    <div class="d-flex align-items-center gap-2.5">
-                        <div class="dash-card-icon-box">
-                            <i class="bi bi-file-earmark-text"></i>
-                        </div>
-                        <h6 class="dash-card-title mb-0 d-flex align-items-center gap-2">
-                            <span>Pending Leave Requests</span>
-                            @if (DisplayLeaveRequests.Any())
-                            {
-                                <span class="badge bg-warning bg-opacity-25 text-warning fw-bold rounded-pill px-2" style="font-size: 0.72rem;">@DisplayLeaveRequests.Count</span>
-                            }
-                        </h6>
-                    </div>
-
-                    <a href="/admin-leave-requests" class="dash-view-all-link">
-                        View All
-                    </a>
-                </div>
-
-                <div class="card-body p-0 flex-grow-1">
-                    <div class="dash-table-wrapper">
-                        <table class="dash-table">
-                            <thead>
-                                <tr>
-                                    <th>EMP ID</th>
-                                    <th>EMPLOYEE</th>
-                                    <th>LEAVE TYPE</th>
-                                    <th>DURATION</th>
-                                    <th>STATUS</th>
-                                    <th class="text-center">ACTION</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (DisplayLeaveRequests.Any())
-                                {
-                                    @foreach (var req in DisplayLeaveRequests)
-                                    {
-                                        <tr>
-                                            <td class="font-monospace text-secondary small">@(string.IsNullOrWhiteSpace(req.EmployeeNumber) ? $"EMP{req.EmployeeId:D3}" : req.EmployeeNumber)</td>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    @if (!string.IsNullOrWhiteSpace(req.ProfileImage))
-                                                    {
-                                                        <img src="@req.ProfileImage" alt="@req.EmployeeName" class="avatar-circle avatar-sm avatar-img" />
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="avatar-circle avatar-sm">
-                                                            @GetInitials(req.EmployeeName)
-                                                        </div>
-                                                    }
-                                                    <span class="fw-medium text-dark text-truncate">@(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Employee" : req.EmployeeName)</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="@GetLeaveTypeBadgeClass(req.LeaveTypeName)">
-                                                    @(string.IsNullOrWhiteSpace(req.LeaveTypeName) ? "Leave" : FormatLeaveName(req.LeaveTypeName))
-                                                </span>
-                                            </td>
-                                            <td class="text-secondary small">@FormatDuration(req.StartDate, req.EndDate)</td>
-                                            <td>
-                                                <span class="@GetStatusBadgeClass(req.StatusId)">
-                                                    @req.StatusId
-                                                </span>
-                                            </td>
-                                            <td class="text-center">
-                                                @if (req.StatusId == Status.Pending)
-                                                {
-                                                    <div class="d-inline-flex align-items-center gap-1.5">
-                                                        <button type="button" class="dash-action-btn dash-action-approve"
-                                                                title="Approve"
-                                                                @onclick="() => ApproveLeave(req)">
-                                                            <i class="bi bi-check-lg"></i>
-                                                        </button>
-                                                        <button type="button" class="dash-action-btn dash-action-reject"
-                                                                title="Reject"
-                                                                @onclick="() => RejectLeave(req)">
-                                                            <i class="bi bi-x-lg"></i>
-                                                        </button>
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted small">&mdash;</span>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted small">
-                                            <i class="bi bi-check2-circle text-success me-1"></i> No pending leave requests
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </div>
+        <AdminDashboardPendingLeaves Requests="@DisplayLeaveRequests"
+                                     OnApprove="ApproveLeave"
+                                     OnReject="RejectLeave" />
 
         <!-- 2. Pending Attendance Requests -->
-        <div class="col-12 col-xl-6">
-            <div class="dash-card h-100 d-flex flex-column">
-
-                <div class="dash-card-header">
-                    <div class="d-flex align-items-center gap-2.5">
-                        <div class="dash-card-icon-box">
-                            <i class="bi bi-file-earmark-text"></i>
-                        </div>
-                        <h6 class="dash-card-title mb-0 d-flex align-items-center gap-2">
-                            <span>Pending Attendance Requests</span>
-                            @if (DisplayAttendanceRequests.Any())
-                            {
-                                <span class="badge bg-warning bg-opacity-25 text-warning fw-bold rounded-pill px-2" style="font-size: 0.72rem;">@DisplayAttendanceRequests.Count</span>
-                            }
-                        </h6>
-                    </div>
-
-                    <a href="/admin-attendance-requests" class="dash-view-all-link">
-                        View All
-                    </a>
-                </div>
-
-                <div class="card-body p-0 flex-grow-1">
-                    <div class="dash-table-wrapper">
-                        <table class="dash-table">
-                            <thead>
-                                <tr>
-                                    <th>EMP ID</th>
-                                    <th>EMPLOYEE</th>
-                                    <th>DATE</th>
-                                    <th>REQUEST TYPE</th>
-                                    <th>STATUS</th>
-                                    <th class="text-center">ACTION</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (DisplayAttendanceRequests.Any())
-                                {
-                                    @foreach (var req in DisplayAttendanceRequests)
-                                    {
-                                        <tr>
-                                            <td class="font-monospace text-secondary small">@GetAttendanceEmpId(req)</td>
-                                            <td>
-                                                <div class="d-flex align-items-center gap-2">
-                                                    @if (!string.IsNullOrWhiteSpace(req.ProfileImage))
-                                                    {
-                                                        <img src="@req.ProfileImage" alt="@req.EmployeeName" class="avatar-circle avatar-sm avatar-img" />
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="avatar-circle avatar-sm">
-                                                            @GetInitials(req.EmployeeName)
-                                                        </div>
-                                                    }
-                                                    <span class="fw-medium text-dark text-truncate">@(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Employee" : req.EmployeeName)</span>
-                                                </div>
-                                            </td>
-                                            <td class="text-secondary small">@(req.FromDate?.ToString("MMM dd, yyyy") ?? "-")</td>
-                                            <td>
-                                                <span class="dash-badge-req-type">
-                                                    @FormatReasonType(req.ReasonTypeId)
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="@GetStatusBadgeClass(req.StatusId)">
-                                                    @req.StatusId
-                                                </span>
-                                            </td>
-                                            <td class="text-center">
-                                                @if (req.StatusId == Status.Pending)
-                                                {
-                                                    <div class="d-inline-flex align-items-center gap-1.5">
-                                                        <button type="button" class="dash-action-btn dash-action-approve"
-                                                                title="Approve"
-                                                                @onclick="() => ApproveAttendance(req)">
-                                                            <i class="bi bi-check-lg"></i>
-                                                        </button>
-                                                        <button type="button" class="dash-action-btn dash-action-reject"
-                                                                title="Reject"
-                                                                @onclick="() => RejectAttendance(req)">
-                                                            <i class="bi bi-x-lg"></i>
-                                                        </button>
-                                                    </div>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted small">&mdash;</span>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted small">
-                                            <i class="bi bi-check2-circle text-success me-1"></i> No pending attendance requests
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
+        <AdminDashboardPendingAttendance Requests="@DisplayAttendanceRequests"
+                                         OnApprove="ApproveAttendance"
+                                         OnReject="RejectAttendance" />
     </div>
 
 </div>
 
-<!-- ══════════ MODALS (Present & Leave) ══════════ -->
-@if (showPresentModal)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);"
-         @onclick="() => showPresentModal = false">
-        <div class="modal-dialog modal-xl modal-dialog-centered" @onclick:stopPropagation="true">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+<!-- ======================================================================================================================================================================================================== MODALS (Present & Leave) ======================================================================================================================================================================================================== -->
+<AdminDashboardPresentModal IsVisible="@showPresentModal"
+                            Employees="@EmployeePresent"
+                            OnClose="() => showPresentModal = false" />
 
-                <div class="modal-header border-bottom py-3 px-4 bg-white">
-                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">
-                        <span class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle me-2.5" style="width: 32px; height: 32px;">
-                            <i class="bi bi-people-fill"></i>
-                        </span>
-                        Present Employees Today
-                        <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill ms-2 px-2.5 py-1">@PresentEmployees</span>
-                    </h6>
-                    <button type="button" class="btn-close"
-                            @onclick="() => showPresentModal = false" />
-                </div>
-
-                <div class="modal-body p-0">
-                    @if (EmployeePresent != null && EmployeePresent.Any())
-                    {
-                        <div class="p-3">
-                            <AppTable TItem="EmployeeDailyAttendanceViewModel"
-                                      Items="EmployeePresent"
-                                      Columns="TableSchemas.PresentEmployee"
-                                      ShowActions="false" />
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-5">
-                            <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle mb-3" style="width: 64px; height: 64px;">
-                                <i class="bi bi-people fs-2 text-muted"></i>
-                            </div>
-                            <div class="fw-semibold text-dark fs-6">No Clock-In Records Yet</div>
-                            <small class="text-muted">No employees have clocked in today</small>
-                        </div>
-                    }
-                </div>
-
-                <div class="modal-footer border-top py-2.5 px-4 bg-light">
-                    <button type="button" class="btn btn-sm btn-secondary px-3" @onclick="() => showPresentModal = false">
-                        Close
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-}
-
-@if (showLeaveModal)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);"
-         @onclick="() => showLeaveModal = false">
-        <div class="modal-dialog modal-xl modal-dialog-centered" @onclick:stopPropagation="true">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
-
-                <div class="modal-header border-bottom py-3 px-4 bg-white">
-                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">
-                        <span class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle me-2.5" style="width: 32px; height: 32px;">
-                            <i class="bi bi-calendar-check-fill"></i>
-                        </span>
-                        Employees On Leave Today
-                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill ms-2 px-2.5 py-1">@onLeaveToday</span>
-                    </h6>
-                    <button type="button" class="btn-close"
-                            @onclick="() => showLeaveModal = false" />
-                </div>
-
-                <div class="modal-body p-0">
-                    @if (EmployeeLeave != null && EmployeeLeave.Any())
-                    {
-                        <div class="p-3">
-                            <AppTable TItem="EmployeeDailyAttendanceViewModel"
-                                      Items="EmployeeLeave"
-                                      Columns="TableSchemas.PresentEmployee"
-                                      ShowActions="false" />
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center py-5">
-                            <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle mb-3" style="width: 64px; height: 64px;">
-                                <i class="bi bi-calendar2-check fs-2 text-muted"></i>
-                            </div>
-                            <div class="fw-semibold text-dark fs-6">No Leaves Recorded Today</div>
-                            <small class="text-muted">All active staff are scheduled to work</small>
-                        </div>
-                    }
-                </div>
-
-                <div class="modal-footer border-top py-2.5 px-4 bg-light">
-                    <button type="button" class="btn btn-sm btn-secondary px-3" @onclick="() => showLeaveModal = false">
-                        Close
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </div>
-}
+<AdminDashboardLeaveModal IsVisible="@showLeaveModal"
+                          Employees="@EmployeeLeave"
+                          OnClose="() => showLeaveModal = false" />
 
 @code {
 
@@ -733,7 +102,7 @@
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    // ── Super Admin Display Greeting ──
+    // ---------------------------------------- Super Admin Display Greeting ----------------------------------------
     private string greeting = "Welcome";
     private string DisplayAdminName
     {
@@ -766,14 +135,14 @@
     private static string TodayDisplayDate => DateTime.Today.ToString("dddd, MMM dd, yyyy");
     private bool isRefreshing = false;
 
-    // ── Metric Counts ──
+    // ---------------------------------------- Metric Counts ----------------------------------------
     private int TotalEmployees = 0;
     private int PresentEmployees = 0;
     private int onLeaveToday = 0;
     private int pendingCount = 0;
     private int AttendancePendingCount = 0;
 
-    // ── Raw Collections ──
+    // ---------------------------------------- Raw Collections ----------------------------------------
     private DashboardViewModel? _dashboard = new();
     private List<EmployeeDailyAttendanceViewModel> EmployeePresent = new();
     private List<EmployeeDailyAttendanceViewModel> EmployeeLeave = new();
@@ -785,11 +154,11 @@
     private List<LeaveRequestViewModel> pendingLeaveRequests = new();
     private List<AttendanceRequestViewModel> pendingAttendanceRequests = new();
 
-    // ═══════════════════════════════════════════════════════════════
-    // ── OPTION 1: EXECUTIVE ATTENDANCE PULSE & SILK WAVE TRAJECTORY ──
-    // ═══════════════════════════════════════════════════════════════
+    // ============================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+    // ---------------------------------------- OPTION 1: EXECUTIVE ATTENDANCE PULSE & SILK WAVE TRAJECTORY ----------------------------------------
+    // ============================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
 
-    // ── 1. Today's Workforce Health (Radial Gauge & Metrics) ──
+    // ---------------------------------------- 1. Today's Workforce Health (Radial Gauge & Metrics) ----------------------------------------
     private int TodayTotalStaff => TotalEmployees > 0 ? TotalEmployees : (_dashboard?.Employees?.Count > 0 ? _dashboard.Employees.Count : 8);
     private double TodayAttendanceRate => TodayTotalStaff > 0 ? Math.Round((double)PresentEmployees / TodayTotalStaff * 100.0, 1) : 0;
     private double TodayLeaveRate => TodayTotalStaff > 0 ? Math.Round((double)onLeaveToday / TodayTotalStaff * 100.0, 1) : 0;
@@ -806,16 +175,7 @@
         }
     }
 
-    // ── 2. Department Attendance Health Breakdown ──
-    public class DepartmentAttendanceSummary
-    {
-        public string DepartmentName { get; set; } = string.Empty;
-        public int TotalStaff { get; set; }
-        public int PresentCount { get; set; }
-        public double AttendanceRate => TotalStaff > 0 ? Math.Round((double)PresentCount / TotalStaff * 100.0, 1) : 0;
-        public string ProgressColorClass => AttendanceRate >= 90 ? "bg-success" : (AttendanceRate >= 75 ? "bg-primary" : "bg-warning");
-    }
-
+    // ---------------------------------------- 2. Department Attendance Health Breakdown ----------------------------------------
     private List<DepartmentAttendanceSummary> departmentSummaries = new();
 
     private void BuildDepartmentSummaries()
@@ -858,25 +218,7 @@
         }
     }
 
-    // ── 3. Workforce Attendance Trajectory (Daily & Monthly Silk Wave) ──
-    public class DailyAttendanceTrendPoint
-    {
-        public DateTime Date { get; set; }
-        public string DayLabel { get; set; } = string.Empty;
-        public double AttendancePercent { get; set; }
-        public int PresentCount { get; set; }
-        public int TotalStaff { get; set; }
-        public bool IsWeekend { get; set; }
-        public bool IsFuture { get; set; }
-        public double SvgX { get; set; }
-        public double SvgY { get; set; }
-        public string CustomTooltip { get; set; } = string.Empty;
-
-        public string FullTooltip => !string.IsNullOrWhiteSpace(CustomTooltip)
-            ? CustomTooltip
-            : $"{DayLabel} ({Date:MMM dd, yyyy}): {AttendancePercent:F1}% rate ({PresentCount} of {TotalStaff} Present)";
-    }
-
+    // ---------------------------------------- 3. Workforce Attendance Trajectory (Daily & Monthly Silk Wave) ----------------------------------------
     private string selectedTrendGranularity = "daily";
     private string selectedTrajectoryRange = "this_month";
     private List<DailyAttendanceTrendPoint> trajectoryPoints = new();
@@ -1183,11 +525,11 @@
         SvgAreaPath = $"M {x0},{y0}{bezierCurves} L {xLast},118.0 L {x0},118.0 Z";
     }
 
-    // ── Modals State ──
+    // ---------------------------------------- Modals State ----------------------------------------
     private bool showPresentModal = false;
     private bool showLeaveModal = false;
 
-    // ── Date Range Filtering State ──
+    // ---------------------------------------- Date Range Filtering State ----------------------------------------
     private DateTime selectedStartDate;
     private DateTime selectedEndDate;
     private DateTime customStartDate;
@@ -1196,13 +538,13 @@
     private string SelectedDateRangeLabel = string.Empty;
     private bool showDateRangeDropdown = false;
 
-    // ── Searchable Employee Filter ──
+    // ---------------------------------------- Searchable Employee Filter ----------------------------------------
     private int selectedEmployeeId = 0; // 0 = All Employees
     private string employeeSearchText = string.Empty;
     private bool showEmployeeDropdown = false;
     private string chartHoursMode = "avg"; // "avg" or "total"
 
-    // ── Focus View Toggle (Focus on active recorded days vs All days) ──
+    // ---------------------------------------- Focus View Toggle (Focus on active recorded days vs All days) ----------------------------------------
     private string chartViewFilter = "focus"; // "focus" or "all"
     private int ActiveRecordedDaysCount => chartDataPoints.Count(p => p.WorkingHours > 0 || p.BreakHours > 0 || p.IsLeave);
 
@@ -1226,7 +568,7 @@
         StateHasChanged();
     }
 
-    // ── Unified Attendance & Break Hours Chart Model ──
+    // ---------------------------------------- Unified Attendance & Break Hours Chart Model ----------------------------------------
     public class AttendanceChartDataPoint
     {
         public DateTime Date { get; set; }
@@ -1446,7 +788,7 @@
         return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(name);
     }
 
-    // ── Displayed Requests (Real DB data: All Pending Requests Only) ──
+    // ---------------------------------------- Displayed Requests (Real DB data: All Pending Requests Only) ----------------------------------------
     private List<LeaveRequestViewModel> DisplayLeaveRequests =>
         allLeaveRequests
             .Where(r => r.StatusId == Status.Pending)
@@ -2151,3 +1493,4 @@
         _ => "Regularization"
     };
 }
+

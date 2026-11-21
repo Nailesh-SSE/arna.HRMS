@@ -24,18 +24,18 @@
                             @Count
                         }
                     </span>
-                    <div class="stat-trend d-flex align-items-center gap-1 text-truncate" title="@(string.IsNullOrEmpty(Subtext) ? TrendText : $"{TrendText} {Subtext}")">
+                    <div class="stat-trend d-flex align-items-center gap-1 text-truncate" style="min-width: 0; max-width: 100%; overflow: hidden;" title="@(string.IsNullOrEmpty(Subtext) ? TrendText : $"{TrendText} {Subtext}")">
                         @if (!string.IsNullOrEmpty(TrendText) || !string.IsNullOrEmpty(Subtext))
                         {
                             @if (!string.IsNullOrEmpty(TrendText))
                             {
-                                <span class="@(string.IsNullOrEmpty(TrendClass) ? "trend-green" : TrendClass) flex-shrink-0">
+                                <span class="@(string.IsNullOrEmpty(TrendClass) ? "trend-green" : TrendClass) text-nowrap flex-shrink-0">
                                     @TrendText
                                 </span>
                             }
                             @if (!string.IsNullOrEmpty(Subtext))
                             {
-                                <span class="trend-muted text-truncate">@Subtext</span>
+                                <span class="trend-muted text-truncate" style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">@Subtext</span>
                             }
                         }
                         else if (!string.IsNullOrEmpty(DefaultTrend))

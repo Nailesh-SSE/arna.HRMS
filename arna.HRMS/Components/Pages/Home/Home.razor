@@ -1,4 +1,4 @@
-@page "/"
+﻿@page "/"
 
 @using arna.HRMS.Components.Loader
 @using arna.HRMS.Components.lib.components.ui.Forms
@@ -38,7 +38,7 @@
                 return;
             }
 
-            // ── Set role-based loading message ──
+            // ---------------------------------------- Set role-based loading message ----------------------------------------
             if (IsAdmin() || IsSuperAdmin())
             {
                 loadingMessage = "Admin Dashboard is loading...";

@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.CommonComponent
 @using arna.HRMS.Models.Common.Table
 @using arna.HRMS.Models.ViewModels.Leave
@@ -43,6 +43,10 @@
                         <button type="button" class="btn btn-sm @(_filterType == "active" ? "btn-info text-white" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
                                 @onclick="@(() => _filterType = "active")">
                             Active (@leaveTypes.Count(x => x.IsActive))
+                        </button>
+                        <button type="button" class="btn btn-sm @(_filterType == "inactive" ? "btn-warning text-dark" : "btn-light text-secondary") rounded-pill px-2.5 py-1"
+                                @onclick="@(() => _filterType = "inactive")">
+                            Inactive (@leaveTypes.Count(x => !x.IsActive))
                         </button>
                     </div>
                 </div>
@@ -334,6 +338,7 @@
                 "paid" => lt.IsPaid,
                 "unpaid" => !lt.IsPaid,
                 "active" => lt.IsActive,
+                "inactive" => !lt.IsActive,
                 _ => true
             };
         });

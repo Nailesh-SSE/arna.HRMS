@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
@@ -821,6 +821,25 @@ public class AttendanceRequestRepositoryTests
 
         Assert.That(first, Is.True);
         Assert.That(second, Is.False);
+    }
+
+    [Test]
+    public async Task DeleteAttendanceRequestAsync_WhenApprovedOrRejected_ReturnsFalse()
+    {
+        var emp = CreateValidEmployee(99);
+        _dbContext.Employees.Add(emp);
+
+        var approvedReq = CreateValidRequest(991, 99, Status.Approved);
+        var rejectedReq = CreateValidRequest(992, 99, Status.Rejected);
+
+        _dbContext.AttendanceRequest.AddRange(approvedReq, rejectedReq);
+        await _dbContext.SaveChangesAsync();
+
+        var deleteApproved = await _repository.DeleteAttendanceRequestAsync(991);
+        var deleteRejected = await _repository.DeleteAttendanceRequestAsync(992);
+
+        Assert.That(deleteApproved, Is.False);
+        Assert.That(deleteRejected, Is.False);
     }
 
     [Test]

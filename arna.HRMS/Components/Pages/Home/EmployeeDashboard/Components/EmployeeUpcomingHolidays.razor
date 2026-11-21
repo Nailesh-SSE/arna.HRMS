@@ -1,0 +1,70 @@
+@using arna.HRMS.Models.ViewModels
+
+<div class="card border-0 shadow-sm rounded-3 h-100 content-card">
+    <div class="card-header bg-transparent border-0 pt-3 px-3 px-lg-4 pb-2 d-flex align-items-center justify-content-between">
+        <div>
+            <h6 class="fw-semibold mb-0 d-flex align-items-center text-dark">
+                <i class="bi bi-stars text-warning me-2"></i> Upcoming Holidays
+            </h6>
+            <small class="text-muted">Official company holiday calendar & time-off</small>
+        </div>
+        <span class="badge bg-light text-secondary border rounded-pill px-2.5 py-1 small">
+            @DateTime.Today.Year Calendar
+        </span>
+    </div>
+
+    <div class="card-body px-3 px-lg-4 py-3 d-flex flex-column justify-content-between">
+        @if (UpcomingHolidays.Any())
+        {
+            <div class="d-flex flex-column gap-2">
+                @foreach (var hol in UpcomingHolidays.Take(3))
+                {
+                    <div class="holiday-row-card p-2.5 rounded-3 d-flex align-items-center justify-content-between gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="holiday-date-badge text-center">
+                                <span class="holiday-month">@hol.Date.ToString("MMM").ToUpper()</span>
+                                <span class="holiday-day">@hol.Date.ToString("dd")</span>
+                            </div>
+                            <div>
+                                <div class="fw-semibold text-dark small">@hol.FestivalName</div>
+                                <small class="text-muted" style="font-size: 0.74rem;">
+                                    @hol.Date.DayOfWeek &bull; @(string.IsNullOrEmpty(hol.Description) ? "Holiday" : hol.Description)
+                                </small>
+                            </div>
+                        </div>
+                        <span class="badge holiday-countdown-badge rounded-pill px-2.5 py-1 small">
+                            @GetHolidayCountdown(hol.Date)
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-calendar-x fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                <p class="small mb-0">No upcoming holidays scheduled</p>
+            </div>
+        }
+
+        <div class="pt-3 border-top mt-3 text-center">
+            <a href="/emp-leave-management" class="text-primary text-decoration-none small fw-semibold d-inline-flex align-items-center">
+                Explore Full Annual Holiday Schedule <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<FestivalHolidayViewModel> UpcomingHolidays { get; set; } = new();
+
+    private static string GetHolidayCountdown(DateTime date)
+    {
+        var days = (date.Date - DateTime.Today).Days;
+        if (days == 0) return "Today";
+        if (days == 1) return "Tomorrow";
+        if (days < 7) return $"In {days} days";
+        if (days < 30) return $"In {days / 7} {(days / 7 == 1 ? "week" : "weeks")}";
+        return $"In {days / 30} {(days / 30 == 1 ? "month" : "months")}";
+    }
+}
