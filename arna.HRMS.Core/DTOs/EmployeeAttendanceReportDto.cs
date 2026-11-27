@@ -1,4 +1,6 @@
-﻿namespace arna.HRMS.Core.DTOs;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace arna.HRMS.Core.DTOs;
 public class EmployeeAttendanceReportDto
 {
     public int EmployeeId { get; set; }
@@ -6,6 +8,9 @@ public class EmployeeAttendanceReportDto
     public string EmployeeNumber { get; set; }
 
     public string EmployeeName { get; set; }
+
+    [NotMapped]
+    public string? ProfileImage { get; set; }
 
     public int? TotalWorkDays { get; set; }
 

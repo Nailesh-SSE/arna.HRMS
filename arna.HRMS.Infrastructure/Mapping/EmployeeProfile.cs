@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using AutoMapper;
 
@@ -9,6 +9,8 @@ public class EmployeeProfile : Profile
     public EmployeeProfile()
     {
         CreateMap<EmployeeDto, Employee>().ReverseMap()
+            .ForMember(dest => dest.DepartmentName,
+                opt => opt.MapFrom(src => src.Department != null ? src.Department.Name : ""))
             .ForMember(dest => dest.DepartmentCode,
                 opt => opt.MapFrom(src => src.Department != null ? src.Department.Code : ""))
             .ForMember(dest => dest.ManagerFullName,

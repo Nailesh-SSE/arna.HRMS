@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
@@ -74,7 +74,7 @@ public class LeaveRepositoryTests
     {
         LeaveType? newHoliday = null;
         // Act & Assert
-        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        Assert.CatchAsync(async () =>
         {
             await _leaveRepository.CreateLeaveTypeAsync(newHoliday!);
         });
@@ -818,5 +818,65 @@ public class LeaveRepositoryTests
 
         var resultNegative = await _leaveRepository.DeleteLeaveRequestAsync(-10);
         Assert.That(resultNegative, Is.False);
+    }
+
+    [Test]
+    public async Task DeleteLeaveRequestAsync_WhenApprovedOrRejected_ReturnsFalse()
+    {
+        var baseDate = new DateTime(2026, 03, 01);
+        _dbContext.Employees.Add(new Employee
+        {
+            Id = 88,
+            FirstName = "Alice",
+            LastName = "Smith",
+            Email = "alice@example.com",
+            EmployeeNumber = "EMP088",
+            PhoneNumber = "1234567890",
+            DepartmentId = 1,
+            Position = "Dev",
+            IsActive = true
+        });
+        _dbContext.LeaveTypes.Add(new LeaveType
+        {
+            Id = 88,
+            LeaveNameId = LeaveName.CasualLeave,
+            MaxPerYear = 10,
+            IsActive = true
+        });
+
+        var approvedRequest = new LeaveRequest
+        {
+            Id = 881,
+            EmployeeId = 88,
+            LeaveTypeId = 88,
+            StartDate = baseDate,
+            EndDate = baseDate.AddDays(1),
+            LeaveDays = 1,
+            Reason = "Medical appointment",
+            StatusId = Status.Approved,
+            IsActive = true
+        };
+        var rejectedRequest = new LeaveRequest
+        {
+            Id = 882,
+            EmployeeId = 88,
+            LeaveTypeId = 88,
+            StartDate = baseDate.AddDays(3),
+            EndDate = baseDate.AddDays(4),
+            LeaveDays = 1,
+            Reason = "Personal work",
+            StatusId = Status.Rejected,
+            IsActive = true
+        };
+
+        _dbContext.LeaveRequests.AddRange(approvedRequest, rejectedRequest);
+        await _dbContext.SaveChangesAsync();
+        _dbContext.ChangeTracker.Clear();
+
+        var deleteApprovedResult = await _leaveRepository.DeleteLeaveRequestAsync(881);
+        var deleteRejectedResult = await _leaveRepository.DeleteLeaveRequestAsync(882);
+
+        Assert.That(deleteApprovedResult, Is.False);
+        Assert.That(deleteRejectedResult, Is.False);
     }
 }

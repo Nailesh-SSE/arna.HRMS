@@ -1,4 +1,4 @@
-﻿namespace arna.HRMS.Models.Enums;
+namespace arna.HRMS.Models.Enums;
 
 public enum LeaveName
 {
@@ -9,5 +9,5 @@ public enum LeaveName
     UnpaidLeave = 5,
     AnnualLeave = 6,
     MarriageLeave = 7,
-    paidLeave = 8
+    PaidLeave = 8
 }

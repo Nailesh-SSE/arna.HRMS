@@ -1,0 +1,103 @@
+<div class="row g-3 mb-4">
+    <!-- 1. Attendance Rate -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 kpi-card h-100">
+            <div class="card-body p-3 p-xl-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="kpi-label">Attendance Rate</span>
+                    <div class="kpi-icon-wrap kpi-icon-primary">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="kpi-val text-dark">@AttendancePercentage%</div>
+                <div class="d-flex align-items-center justify-content-between mt-2 pt-1">
+                    <small class="text-muted">This Month</small>
+                    <span class="badge-trend badge-trend-success">
+                        <i class="bi bi-person-check me-1"></i> @PresentDaysCount Present
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Leave Balance -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 kpi-card h-100">
+            <div class="card-body p-3 p-xl-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="kpi-label">Leave Balance</span>
+                    <div class="kpi-icon-wrap @(TotalBalance < 0 ? "kpi-icon-danger text-danger bg-danger bg-opacity-10" : "kpi-icon-success")">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                </div>
+                <div class="kpi-val @(TotalBalance < 0 ? "text-danger" : "text-dark")">@TotalBalance <span class="fs-6 fw-normal text-muted">Days</span></div>
+                <div class="d-flex align-items-center justify-content-between mt-2 pt-1">
+                    <small class="text-muted">@(TotalBalance < 0 ? "Quota Exceeded" : "Available Balance")</small>
+                    @if (TotalBalance < 0)
+                    {
+                        <span class="badge-trend badge-trend-rose">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Exceeded
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge-trend badge-trend-emerald">
+                            <i class="bi bi-shield-check me-1"></i> Available
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Pending Requests -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 kpi-card h-100">
+            <div class="card-body p-3 p-xl-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="kpi-label">Pending Requests</span>
+                    <div class="kpi-icon-wrap kpi-icon-warning">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+                <div class="kpi-val text-dark">@PendingCount <span class="fs-6 fw-normal text-muted">@(PendingCount == 1 ? "Request" : "Requests")</span></div>
+                <div class="d-flex align-items-center justify-content-between mt-2 pt-1">
+                    <small class="text-muted">Leave & Attendance</small>
+                    <span class="badge-trend @(PendingCount > 0 ? "badge-trend-amber" : "badge-trend-neutral")">
+                        <i class="bi @(PendingCount > 0 ? "bi-clock" : "bi-check2") me-1"></i> @(PendingCount > 0 ? "Awaiting Action" : "All Clear")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Timesheet Hours -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm rounded-3 kpi-card h-100">
+            <div class="card-body p-3 p-xl-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="kpi-label">Timesheet Hours</span>
+                    <div class="kpi-icon-wrap kpi-icon-info">
+                        <i class="bi bi-clock-history"></i>
+                    </div>
+                </div>
+                <div class="kpi-val text-dark">@MonthlyHoursDisplay</div>
+                <div class="d-flex align-items-center justify-content-between mt-2 pt-1">
+                    <small class="text-muted">Monthly Logged</small>
+                    <span class="badge-trend badge-trend-neutral">
+                        <i class="bi bi-check2-circle me-1"></i> @MonthlyProgressPercent% of Target
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int AttendancePercentage { get; set; }
+    [Parameter] public int PresentDaysCount { get; set; }
+    [Parameter] public int TotalBalance { get; set; }
+    [Parameter] public int PendingCount { get; set; }
+    [Parameter] public string MonthlyHoursDisplay { get; set; } = "00h 00m";
+    [Parameter] public int MonthlyProgressPercent { get; set; }
+}

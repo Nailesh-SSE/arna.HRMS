@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +16,7 @@ public class EmployeeRepository
     public async Task<List<Employee>> GetEmployeesAsync()
     {
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(e => !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
@@ -26,6 +27,7 @@ public class EmployeeRepository
     public async Task<Employee?> GetEmployeeByIdAsync(int id)
     {
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(e => e.Id == id && !e.IsDeleted)
             .Include(e => e.Department)
             .Include(e => e.Manager)
@@ -62,8 +64,8 @@ public class EmployeeRepository
 
     public async Task<bool> EmployeeExistsAsync(string? email, string? phoneNumber, string? officeEmail , int? employeeId = 0)
     {
-        if (string.IsNullOrWhiteSpace(email) ||
-            string.IsNullOrWhiteSpace(phoneNumber) ||
+        if (string.IsNullOrWhiteSpace(email) &&
+            string.IsNullOrWhiteSpace(phoneNumber) &&
             string.IsNullOrWhiteSpace(officeEmail))
             return false;
 
@@ -72,7 +74,8 @@ public class EmployeeRepository
         officeEmail = officeEmail?.Trim().ToLower();
 
         return await _baseRepository.Query()
-            .Where(e => !e.IsDeleted)
+            .AsNoTracking()
+            .Where(e => e.IsActive && !e.IsDeleted)
             .AnyAsync(e =>
                e.Id != employeeId &&
                 (
@@ -85,10 +88,33 @@ public class EmployeeRepository
 
     public async Task<string?> GetLastEmployeeNumberAsync()
     {
-        return await _baseRepository.Query()
-            .Where(e => e.EmployeeNumber != null)
-            .OrderByDescending(e => e.EmployeeNumber)
+        var numbers = await _baseRepository.Query()
+            .AsNoTracking()
+            .Where(e => !string.IsNullOrEmpty(e.EmployeeNumber))
             .Select(e => e.EmployeeNumber)
-            .FirstOrDefaultAsync();
+            .ToListAsync();
+
+        if (!numbers.Any())
+            return null;
+
+        return numbers
+            .Select(num =>
+            {
+                var digits = new string(num.Where(char.IsDigit).ToArray());
+                return int.TryParse(digits, out int val) ? (Num: val, Raw: num) : (Num: -1, Raw: num);
+            })
+            .OrderByDescending(x => x.Num)
+            .Select(x => x.Raw)
+            .FirstOrDefault();
+    }
+
+    public async Task<bool> EmployeeNumberExistsAsync(string employeeNumber)
+    {
+        if (string.IsNullOrWhiteSpace(employeeNumber))
+            return false;
+
+        return await _baseRepository.Query()
+            .AsNoTracking()
+            .AnyAsync(e => e.EmployeeNumber == employeeNumber);
     }
 }

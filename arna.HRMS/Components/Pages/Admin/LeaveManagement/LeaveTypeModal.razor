@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.ViewModels.Leave
 @using arna.HRMS.Models.Enums
@@ -39,9 +39,9 @@
 
                         <div class="row g-3 align-items-end">
                             <div class="col-md-6">
-                                <AppNumberInput Label="Max Days *"
-                                                Value="@leaveType.MaxPerYear"
-                                                ValueChanged="v => leaveType.MaxPerYear = v"
+                                <AppNumberInput TValue="int"
+                                                Label="Max Days *"
+                                                @bind-Value="leaveType.MaxPerYear"
                                                 ValidationExpression="() => leaveType.MaxPerYear" />
                             </div>
                             <div class="col-md-6 d-flex align-items-center pt-4">
@@ -59,6 +59,16 @@
                                          ValidationExpression="() => leaveType.Description"
                                          Placeholder="Brief description of this leave type..." />
                         </div>
+
+                        @if (IsEditMode)
+                        {
+                            <div class="mt-3 p-3 bg-light rounded-3 border">
+                                <AppSwitch Label="Leave Type Status"
+                                           Value="@leaveType.IsActive"
+                                           ValueChanged="v => leaveType.IsActive = v"
+                                           HelpText="Inactive leave types cannot be selected by employees." />
+                            </div>
+                        }
 
                     </div>
 

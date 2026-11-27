@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Base;
+using arna.HRMS.Core.Common.Base;
 
 namespace arna.HRMS.Core.DTOs;
 
@@ -16,4 +16,5 @@ public class UserDto : BaseEntity
     public int? EmployeeId { get; set; }
     public string? EmployeeName { get; set; }
     public string? PasswordHash { get; set; }
+    public string? ProfileImage { get; set; }
 }

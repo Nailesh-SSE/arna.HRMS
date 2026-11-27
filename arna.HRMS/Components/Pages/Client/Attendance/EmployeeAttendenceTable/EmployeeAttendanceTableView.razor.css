@@ -1,107 +1,115 @@
-﻿/* ─────────────────────────────────────
-   GLOBAL OVERFLOW FIX (IMPORTANT)
+/* ─────────────────────────────────────
+   TABLE SCROLL CONTAINER
 ───────────────────────────────────── */
 
-/* Allow tooltip to escape all containers */
-.card,
-.card-body,
-.app-table-wrapper,
-.att-table-scroll,
-.att-list-table {
-    overflow-y: visible !important;
+::deep .att-list-table,
+.att-list-table,
+.app-table-wrapper {
+    max-height: 540px;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f8fafc;
+    border-radius: 12px;
 }
 
-/* Keep horizontal scroll where needed */
-.app-table-wrapper,
-.att-table-scroll,
-.att-list-table {
-    overflow-x: auto;
+::deep .att-list-table::-webkit-scrollbar,
+.att-list-table::-webkit-scrollbar,
+.app-table-wrapper::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
+::deep .att-list-table::-webkit-scrollbar-track,
+.att-list-table::-webkit-scrollbar-track,
+.app-table-wrapper::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 10px;
+}
+
+::deep .att-list-table::-webkit-scrollbar-thumb,
+.att-list-table::-webkit-scrollbar-thumb,
+.app-table-wrapper::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 10px;
+}
+
+::deep .att-list-table::-webkit-scrollbar-thumb:hover,
+.att-list-table::-webkit-scrollbar-thumb:hover,
+.app-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+}
 
 /* ─────────────────────────────────────
-   TABLE WRAPPER
+   STICKY TABLE HEADER
 ───────────────────────────────────── */
-
-.app-table-wrapper {
-    white-space: nowrap;
-    max-height: 420px;
-    scrollbar-width: thin;
-    scrollbar-color: #dee2e6 transparent;
+::deep .att-list-table thead th,
+::deep .att-list-table .sticky-th,
+.sticky-th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background-color: #fafbfc !important;
+    box-shadow: 0 1px 0 #e2e8f0 !important;
 }
-
-    .app-table-wrapper::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
-    }
-
-    .app-table-wrapper::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    .app-table-wrapper::-webkit-scrollbar-thumb {
-        background-color: #dee2e6;
-        border-radius: 10px;
-    }
-
 
 /* ─────────────────────────────────────
    TABLE LAYOUT
 ───────────────────────────────────── */
-
 .custom-table {
     table-layout: fixed;
     width: 100%;
 }
 
-.sticky-th {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: var(--bs-light, #f8f9fa) !important;
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
-}
-
 .custom-td {
-    font-size: 15px;
+    font-size: 0.875rem;
 }
-
 
 /* ─────────────────────────────────────
-   PAGINATION
+   EMPTY STATE
 ───────────────────────────────────── */
-
-::deep .pagination .page-link {
-    border: none;
-    color: #6c757d;
-    padding: 4px 10px;
-    font-size: .85rem;
+.att-table-empty-icon {
+    width: 64px;
+    height: 64px;
 }
 
-::deep .pagination .page-item.active .page-link {
-    background: #4e73df;
-    color: #fff;
-    border-radius: 6px;
+.att-table-empty-text {
+    max-width: 300px;
 }
 
-::deep .pagination .page-link:hover {
-    background: #e9ecef;
-    border-radius: 6px;
+/* ─────────────────────────────────────
+   ROW HIGHLIGHTS
+───────────────────────────────────── */
+::deep .att-table-weekend {
+    background-color: rgba(var(--bs-secondary-rgb), 0.05) !important;
 }
 
+::deep .att-table-absent {
+    background-color: rgba(var(--bs-danger-rgb), 0.05) !important;
+}
+
+::deep .att-table-late {
+    background-color: rgba(var(--bs-warning-rgb), 0.05) !important;
+}
+
+::deep .att-table-holiday {
+    background-color: rgba(var(--bs-info-rgb), 0.05) !important;
+}
+
+::deep .att-table-weekend td {
+    background: repeating-linear-gradient(135deg, #f1f5f9, #f1f5f9 6px, #e2e8f0 6px, #e2e8f0 7px);
+}
 
 /* ══════════════════════════════════════
    TOOLTIP (BREAK DURATION)
 ══════════════════════════════════════ */
-
-/* Host */
 .att-tip-host {
     position: relative;
     display: inline-flex;
     align-items: center;
 }
 
-/* Trigger */
 .att-tip-trigger {
     display: inline-flex;
     align-items: center;
@@ -109,7 +117,6 @@
     cursor: default;
 }
 
-/* Icon */
 .att-tip-icon {
     font-size: 0.7rem;
     color: #6c757d;
@@ -122,13 +129,9 @@
     color: #4e73df;
 }
 
-/* Tooltip box */
 .att-tip-box {
     display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: #1e2a3a;
     color: #fff;
     border-radius: 8px;
@@ -140,24 +143,19 @@
     pointer-events: none;
 }
 
-    /* Arrow */
-    .att-tip-box::after {
-        content: "";
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 6px solid transparent;
-        border-top-color: #1e2a3a;
-    }
-
-/* Show */
-.att-tip-host:hover .att-tip-box {
+.att-tip-box.visible {
     display: block;
 }
 
-
-/* Tooltip content */
+.att-tip-box::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e2a3a;
+}
 
 .att-tip-header {
     font-size: 0.65rem;
@@ -178,10 +176,10 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-    .att-tip-row:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-    }
+.att-tip-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
 
 .att-tip-label {
     color: #94a3b8;
@@ -202,67 +200,9 @@
     color: #fbbf24;
 }
 
-
-/* ─────────────────────────────────────
-   EMPTY STATE
-───────────────────────────────────── */
-
-.att-table-empty-icon {
-    width: 64px;
-    height: 64px;
-}
-
-.att-table-empty-text {
-    max-width: 300px;
-}
-
-
-/* ─────────────────────────────────────
-   ROW HIGHLIGHTS
-───────────────────────────────────── */
-
-::deep .att-table-weekend {
-    background-color: rgba(var(--bs-secondary-rgb), 0.05) !important;
-}
-
-::deep .att-table-absent {
-    background-color: rgba(var(--bs-danger-rgb), 0.05) !important;
-}
-
-::deep .att-table-late {
-    background-color: rgba(var(--bs-warning-rgb), 0.05) !important;
-}
-
-::deep .att-table-holiday {
-    background-color: rgba(var(--bs-info-rgb), 0.05) !important;
-}
-::deep .att-table-weekend td {
-    background: repeating-linear-gradient( 135deg, #e5e7eb, #e5e7eb 6px, #d1d5db 6px, #d1d5db 7px );
-}
-
-/* ─────────────────────────────────────
-   RESPONSIVE
-───────────────────────────────────── */
-
 @media (max-width: 575.98px) {
     .att-table-empty-icon {
         width: 52px;
         height: 52px;
-    }
-
-    .att-table-scroll {
-        max-height: none; /* prevent clipping */
-    }
-}
-
-@media (min-width: 576px) and (max-width: 991.98px) {
-    .att-table-scroll {
-        max-height: none;
-    }
-}
-
-@media (min-width: 992px) {
-    .att-table-scroll {
-        max-height: none;
     }
 }

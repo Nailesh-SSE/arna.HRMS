@@ -1,60 +1,214 @@
-﻿/* Trigger avatar */
+/* ════════════ TRIGGER BUTTON ════════════ */
+.usermenu-btn {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0 !important;
+    padding: 3px 10px 3px 4px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.usermenu-btn:hover {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Remove default harsh blue outline/box-shadow */
+.usermenu-btn:focus,
+.usermenu-btn:focus-visible,
+.usermenu-btn:active,
+.usermenu-btn.show,
+.show > .usermenu-btn {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+    border-color: #818cf8 !important;
+    background-color: #f8fafc !important;
+}
+
+/* Trigger avatar */
 .usermenu-avatar {
     width: 32px;
     height: 32px;
     font-size: 0.75rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
 }
 
-/* Dropdown large avatar */
-.usermenu-avatar-lg {
-    width: 46px;
-    height: 46px;
-    font-size: 0.95rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+/* Online indicator dot on trigger avatar */
+.usermenu-online-dot {
+    width: 9px;
+    height: 9px;
+    bottom: 0px;
+    right: 0px;
+    box-shadow: 0 0 0 1.5px #ffffff;
 }
 
-/* Name max-width (prevents overflow) */
+/* Name max-width and typography */
 .usermenu-name-width {
-    max-width: 120px;
+    max-width: 140px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    color: #0f172a;
 }
 
 /* Role text size */
 .usermenu-role-text {
+    font-size: 0.68rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Chevron */
+.usermenu-chevron {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    transition: transform 0.2s ease, color 0.2s ease;
+    margin-left: 2px;
+}
+
+.usermenu-btn.show .usermenu-chevron,
+.show > .usermenu-btn .usermenu-chevron {
+    transform: rotate(180deg);
+    color: #4f46e5;
+}
+
+/* ════════════ DROPDOWN MENU ════════════ */
+.usermenu-dropdown {
+    min-width: 280px;
+    border: 1px solid rgba(226, 232, 240, 0.9) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05) !important;
+    background: #ffffff;
+    margin-top: 8px !important;
+    animation: usermenuDropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes usermenuDropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Profile section header */
+.usermenu-profile-header {
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(124, 58, 237, 0.03));
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Dropdown large avatar */
+.usermenu-avatar-lg {
+    width: 48px;
+    height: 48px;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+}
+
+/* Online indicator dot on large avatar */
+.usermenu-online-dot-lg {
+    width: 12px;
+    height: 12px;
+    bottom: 1px;
+    right: 1px;
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+.usermenu-fullname {
+    font-size: 0.925rem;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+}
+
+.usermenu-email {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 1px;
+}
+
+/* Badges */
+.usermenu-role-badge {
     font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background-color: rgba(79, 70, 229, 0.1);
+    color: #4f46e5;
+    letter-spacing: 0.2px;
 }
 
-/* Chevron size */
-.usermenu-chevron-size {
+.usermenu-empid-badge {
     font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background-color: #f1f5f9;
+    color: #475569;
+    letter-spacing: 0.2px;
 }
 
-/* Online indicator dot */
-.usermenu-online-dot {
-    width: 10px;
-    height: 10px;
-    bottom: 2px;
-    right: 2px;
+/* Menu Items */
+.usermenu-item {
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: #1e293b;
 }
 
-/* Dropdown width */
-.usermenu-dropdown-width {
-    min-width: 260px;
+.usermenu-item:hover,
+.usermenu-item:focus {
+    background-color: #f8fafc !important;
+    border-color: #f1f5f9 !important;
 }
 
-/* Profile section background */
-.usermenu-profile-bg {
-    background: linear-gradient( 135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05) );
+.usermenu-item:active {
+    background-color: #f1f5f9 !important;
 }
 
-/* Menu icon circles */
-.usermenu-icon-circle {
-    width: 32px;
-    height: 32px;
-    font-size: 0.82rem;
+.usermenu-item-title {
+    font-size: 0.825rem;
 }
 
-/* Sub-text under menu items */
-.usermenu-sub-text {
-    font-size: 0.65rem;
+.usermenu-item-sub {
+    font-size: 0.68rem;
+}
+
+.usermenu-arrow {
+    font-size: 0.7rem;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.usermenu-item:hover .usermenu-arrow {
+    opacity: 0.9 !important;
+    transform: translateX(2px);
+}
+
+.usermenu-icon-box {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+    transition: transform 0.15s ease;
+}
+
+.usermenu-item:hover .usermenu-icon-box {
+    transform: scale(1.06);
+}
+
+/* Danger Item (Sign Out) */
+.usermenu-item-danger:hover,
+.usermenu-item-danger:focus {
+    background-color: #fef2f2 !important;
+    border-color: #fee2e2 !important;
+}
+
+.usermenu-item-danger:active {
+    background-color: #fee2e2 !important;
 }

@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common.Result;
+using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.Enums;
 using arna.HRMS.Models.ViewModels.Attendance;
 using arna.HRMS.Services.Http;
@@ -16,6 +16,7 @@ public interface IAttendanceRequestService
     Task<ApiResult<bool>> UpdateAttendanceRequestAsync(AttendanceRequestViewModel model);
     Task<ApiResult<bool>> DeleteAttendanceRequestAsync(int id);
     Task<ApiResult<bool>> UpdateRequestStatusAsync(int id, Status status, int Empid);
+    Task<ApiResult<int>> BulkApproveAsync(List<int> ids, int empId);
     Task<ApiResult<bool>> CancelRequestAsync(int id, int empId);
 }
 
@@ -71,6 +72,11 @@ public class AttendanceRequestService : IAttendanceRequestService
     public async Task<ApiResult<bool>> UpdateRequestStatusAsync(int id, Status status, int EmpId)
     {
         return await _attendanceRequest.UpdateStatusAsync(id, status, EmpId);
+    }
+
+    public async Task<ApiResult<int>> BulkApproveAsync(List<int> ids, int empId)
+    {
+        return await _attendanceRequest.BulkApproveAsync(ids, empId);
     }
 
     public async Task<ApiResult<bool>> CancelRequestAsync(int id, int empId)

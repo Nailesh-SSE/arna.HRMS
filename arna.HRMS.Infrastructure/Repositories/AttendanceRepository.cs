@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.DTOs;
+using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Repository;
@@ -24,17 +24,27 @@ public class AttendanceRepository
 
     #region Basic Queries
 
-    public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId)
+    public Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId) =>
+        GetAttendanceByStatusAndEmployeeId(status, empId, null, null);
+
+    public async Task<List<Attendance>> GetAttendanceByStatusAndEmployeeId(AttendanceStatus? status, int? empId, DateTime? fromDate, DateTime? toDate)
     {
         var query = _baseRepository.Query()
+            .AsNoTracking()
             .Include(x => x.Employee)
-            .Where(x => x.IsActive && !x.IsDeleted);
+            .Where(x => !x.IsDeleted);
 
         if (status.HasValue)
             query = query.Where(x => x.StatusId == status.Value); 
 
         if (empId.HasValue)
             query = query.Where(x => x.EmployeeId == empId.Value);
+
+        if (fromDate.HasValue)
+            query = query.Where(x => x.Date >= fromDate.Value.Date);
+
+        if (toDate.HasValue)
+            query = query.Where(x => x.Date <= toDate.Value.Date);
 
         return await query
             .OrderByDescending(x => x.Id)
@@ -44,7 +54,8 @@ public class AttendanceRepository
     public async Task<Attendance?> GetAttendanceByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted && x.Id == id)
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.Id == id)
             .FirstOrDefaultAsync();
     }
 
@@ -72,9 +83,12 @@ public class AttendanceRepository
         var startDate = selectedDate?.Date ?? new DateTime(finalYear, finalMonth, 1);
         var endDate = selectedDate?.Date ?? startDate.AddMonths(1).AddDays(-1);
 
+        // Perf 2: Include Employee in the query to avoid separate N+1 fetch
         var baseQuery = _baseRepository.Query()
-            .Where(a => a.IsActive && !a.IsDeleted &&
-                        a.Employee.IsActive && !a.Employee.IsDeleted &&
+            .AsNoTracking()
+            .Include(a => a.Employee)
+            .Where(a => !a.IsDeleted &&
+                        !a.Employee.IsDeleted &&
                         a.Date >= startDate && a.Date <= endDate);
 
         if (empId.HasValue && empId > 0)
@@ -102,7 +116,7 @@ public class AttendanceRepository
 
         var employeeLookup = employees.ToDictionary(
             e => e.Id,
-            e => new { e.FullName, e.EmployeeNumber });
+            e => new { e.FullName, e.EmployeeNumber, e.ProfileImage });
 
         var festivalDates = (await _festivalHolidayRepository
                 .GetByMonthAsync(finalYear, finalMonth))
@@ -141,6 +155,7 @@ public class AttendanceRepository
                                 EmployeeId = employeeId,
                                 EmployeeName = emp.FullName ?? "Unknown",
                                 EmployeeNumber = emp.EmployeeNumber ?? string.Empty,
+                                ProfileImage = emp.ProfileImage,
                                 ClockIn = null,
                                 ClockOut = null,
                                 WorkingHours = TimeSpan.Zero,
@@ -188,17 +203,21 @@ public class AttendanceRepository
 
                         var statuses = records.Select(x => x.StatusId).Distinct();
 
+                        var note = records.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.Notes))?.Notes;
+
                         return new EmployeeDailyAttendanceDto
                         {
                             Date = date,
                             EmployeeId = employeeId,
                             EmployeeName = emp.FullName ?? "Unknown",
                             EmployeeNumber = emp.EmployeeNumber ?? string.Empty,
+                            ProfileImage = emp.ProfileImage,
                             ClockIn = firstClockIn,
                             ClockOut = lastClockOut,
                             WorkingHours = TimeSpan.FromSeconds(workingSeconds),
                             TotalHours = TimeSpan.FromSeconds(totalSeconds),
                             Breaks = breaks,   // ← THIS is what was missing
+                            Note = note,
                             Status = CalculateStatus(
                                                  statuses,
                                                  isFestivalHoliday,
@@ -224,6 +243,7 @@ public class AttendanceRepository
     public async Task<DateTime?> GetLastAttendanceDateAsync(int employeeId)
     {
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(x =>
                 x.IsActive &&
                 !x.IsDeleted &&
@@ -234,21 +254,24 @@ public class AttendanceRepository
             .FirstOrDefaultAsync();
     }
 
+    public async Task<bool> HasAttendanceOnDateAsync(int employeeId, DateTime date)
+    {
+        var targetDate = date.Date;
+        return await _baseRepository.Query()
+            .AsNoTracking()
+            .AnyAsync(x => x.EmployeeId == employeeId && !x.IsDeleted && x.Date.Date == targetDate);
+    }
+
     public async Task<Attendance?> GetLastAttendanceTodayAsync(int employeeId)
     {
+        var today = DateTime.Today;
+
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(a =>
-                a.IsActive &&
-                !a.IsDeleted &&
                 a.EmployeeId == employeeId &&
-                (
-                    a.StatusId == AttendanceStatus.Present ||
-                    a.StatusId == AttendanceStatus.Late ||
-                    a.StatusId == AttendanceStatus.HalfDay
-                ) &&
-                (a.ClockIn != null || a.ClockOut != null)
-            )
-            .OrderByDescending(a => a.CreatedOn)
+                a.Date.Date == today)
+            .OrderByDescending(a => a.Id)
             .FirstOrDefaultAsync();
     }
 
@@ -257,6 +280,7 @@ public class AttendanceRepository
         var today = DateTime.Today;
 
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(a =>
                 a.IsActive &&
                 !a.IsDeleted &&
@@ -271,24 +295,60 @@ public class AttendanceRepository
             .ToListAsync();
     }
 
-    public async Task<bool> DeleteAttendanceAsync(DateTime date, int empId)
+    public async Task<bool> DeleteAttendanceAsync(DateTime date, int empId, AttendanceStatus? statusId = null)
     {
-        var entity = await _baseRepository.Query()
-            .FirstOrDefaultAsync(ar =>
-                ar.Date == date &&
+        var targetDate = date.Date;
+        var query = _baseRepository.Query()
+            .Where(ar =>
+                ar.Date.Date == targetDate &&
                 ar.EmployeeId == empId &&
-                ar.IsActive &&
                 !ar.IsDeleted);
 
-        if (entity == null)
+        if (statusId.HasValue)
+        {
+            query = query.Where(ar => ar.StatusId == statusId.Value);
+        }
+
+        var entities = await query.ToListAsync();
+
+        if (!entities.Any())
             return false;
 
-        entity.IsActive = false;
-        entity.IsDeleted = true;
-        entity.UpdatedOn = DateTime.Now;
+        await entities.Aggregate(Task.CompletedTask, async (prev, entity) =>
+        {
+            await prev;
+            entity.IsActive = false;
+            entity.IsDeleted = true;
+            entity.UpdatedOn = DateTime.Now;
+            await _baseRepository.UpdateAsync(entity);
+        });
 
-        await _baseRepository.UpdateAsync(entity);
         return true;
+    }
+
+    public async Task EnsureLeaveAttendanceAsync(int employeeId, DateTime date, string reason)
+    {
+        var targetDate = date.Date;
+        var existing = await _baseRepository.Query()
+            .FirstOrDefaultAsync(a =>
+                a.EmployeeId == employeeId &&
+                a.Date.Date == targetDate &&
+                !a.IsDeleted);
+
+        if (existing == null)
+        {
+            await _baseRepository.AddAsync(new Attendance
+            {
+                EmployeeId = employeeId,
+                Date = targetDate,
+                StatusId = AttendanceStatus.Leave,
+                TotalHours = TimeSpan.Zero,
+                Notes = string.IsNullOrWhiteSpace(reason) ? "Approved Leave" : reason,
+                IsActive = true,
+                IsDeleted = false,
+                DeviceId = DeviceType.LaptopDesktop
+            });
+        }
     }
 
     #region Helpers
@@ -298,27 +358,34 @@ public class AttendanceRepository
         bool isFestivalHoliday,
         DateOnly date)
     {
-        var hasAttendance = statuses.Any();
+        // Materialize once to avoid multiple enumerations
+        var statusList = statuses as IList<AttendanceStatus> ?? statuses.ToList();
+        var hasAttendance = statusList.Count > 0;
 
-        if (isFestivalHoliday)
+        // Check for actual work records first — if they clocked in, they're present
+        if (statusList.Contains(AttendanceStatus.Present))
+            return "Present";
+
+        if (statusList.Contains(AttendanceStatus.Late))
+            return "Late";
+
+        if (statusList.Contains(AttendanceStatus.HalfDay))
+            return "HalfDay";
+
+        // Only show Holiday/WeeklyOff if no actual work was done
+        if (isFestivalHoliday && !hasAttendance)
             return "Holiday";
 
         if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday && !hasAttendance)
             return "WeeklyOff";
 
-        if (statuses.Contains(AttendanceStatus.Present))
-            return "Present";
+        if (isFestivalHoliday)
+            return "Holiday";
 
-        if (statuses.Contains(AttendanceStatus.Late))
-            return "Late";
-
-        if (statuses.Contains(AttendanceStatus.HalfDay))
-            return "HalfDay";
-
-        if (statuses.Contains(AttendanceStatus.Leave))
+        if (statusList.Contains(AttendanceStatus.Leave))
             return "Leave";
 
-        if (statuses.Contains(AttendanceStatus.Absent))
+        if (statusList.Contains(AttendanceStatus.Absent))
             return "Absent";
 
         return string.Empty;

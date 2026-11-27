@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
@@ -20,63 +20,101 @@ public class DashboardService : IDashboardService
     }
     public async Task<ServiceResult<DashboardDto>> GetDashboardAsync(Status? status, int? employeeId)
     {
-        DashboardDto dashboard;
+        var result = employeeId.HasValue
+            ? await BuildEmployeeDashboardAsync(status, employeeId.Value)
+            : await BuildAdminDashboardAsync();
 
-        if (employeeId.HasValue)
+        return result;
+    }
+
+    private async Task<ServiceResult<DashboardDto>> BuildEmployeeDashboardAsync(Status? status, int employeeId)
+    {
+        var employee = await _repository.EmployeeDashboardAsync(status, employeeId);
+        if (employee == null)
         {
-            var employee = await _repository.EmployeeDashboardAsync(status, employeeId);
-            var leaveTypes = await _leaveService.GetEmployeeLeaveTypesAsync();
-
-            if (employee == null)
-                return ServiceResult<DashboardDto>.Fail("Employee not found");
-
-            dashboard = new DashboardDto
-            {
-                Employees = new List<EmployeeDto>
-                {
-                    _mapper.Map<EmployeeDto>(employee)
-                },
-
-                Requests = _mapper.Map<List<LeaveRequestDto>>(employee.LeaveRequests),
-
-                LeaveTypes = leaveTypes.Data!
-            };
-        }
-        else
-        {
-            var employees = await _repository.AdminDashboardAsync();
-
-            dashboard = new DashboardDto
-            {
-                Employees = _mapper.Map<List<EmployeeDto>>(employees),
-                Requests = employees
-                    .SelectMany(x => x.LeaveRequests)
-                    .Select(x => _mapper.Map<LeaveRequestDto>(x))
-                    .ToList(),
-                AttendanceRequests = employees
-                    .SelectMany(a => a.AttendanceRequest)
-                    .Select(x => _mapper.Map<AttendanceRequestDto>(x))
-                    .ToList()
-
-            };
-            
+            var notFound = ServiceResult<DashboardDto>.Fail("Employee not found");
+            return notFound;
         }
 
-        dashboard.Attendance = await _repository.GetTodayPresentEmployeesAsync();
-        dashboard.PresentEmployee = dashboard.Attendance.Count;
-        dashboard.AttendanceTotalRequests = dashboard.AttendanceRequests.Count;
-        dashboard.AttendancePendingRequests = dashboard.AttendanceRequests.Count(x => x.StatusId == Status.Pending);
-        dashboard.LeaveEmployees = await _repository.GetTodayLeaveEmployeesAsync();
-        dashboard.TotalEmployees = dashboard.Employees.Count;
+        var leaveTypes = await _leaveService.GetEmployeeLeaveTypesAsync();
 
-        var allEmployeeRecords = new List<EmployeeDailyAttendanceDto>();
-        if (dashboard.Attendance != null) allEmployeeRecords.AddRange(dashboard.Attendance);
-        if (dashboard.LeaveEmployees != null) allEmployeeRecords.AddRange(dashboard.LeaveEmployees);
+        var requests = _mapper.Map<List<LeaveRequestDto>>(employee.LeaveRequests);
+        var attendanceRequests = _mapper.Map<List<AttendanceRequestDto>>(employee.AttendanceRequest);
 
-        if (dashboard.TotalEmployees > 0 && allEmployeeRecords.Any())
+        var dashboard = new DashboardDto
         {
-            var totalWorkingHours = allEmployeeRecords.Sum(x => x.WorkingHours.TotalHours);
-            var totalBreakHours = allEmployeeRecords.Sum(x => x.BreakDuration.TotalHours);
+            Employees = new List<EmployeeDto> { _mapper.Map<EmployeeDto>(employee) },
+            Requests = requests,
+            AttendanceRequests = attendanceRequests,
+            LeaveTypes = leaveTypes.Data ?? new List<LeaveTypeDto>(),
+            TotalEmployees = 1,
+            LeaveTotalRequests = requests.Count,
+            LeavePendingRequests = requests.Count(x => x.StatusId == Status.Pending),
+            LeaveApprovedRequests = requests.Count(x => x.StatusId == Status.Approved),
+            LeaveRejectedRequests = requests.Count(x => x.StatusId == Status.Rejected),
+            LeaveCancledRequests = requests.Count(x => x.StatusId == Status.Cancelled),
+            AttendanceTotalRequests = attendanceRequests.Count,
+            AttendancePendingRequests = attendanceRequests.Count(x => x.StatusId == Status.Pending)
+        };
+
+        var response = ServiceResult<DashboardDto>.Success(dashboard);
+        return response;
+    }
+
+    private async Task<ServiceResult<DashboardDto>> BuildAdminDashboardAsync()
+    {
+        var employees = await _repository.AdminDashboardAsync();
+        var recentLeaves = await _repository.GetAllRecentLeaveRequestsAsync();
+        var recentAttReqs = await _repository.GetAllRecentAttendanceRequestsAsync();
+
+        var employeeDtos = _mapper.Map<List<EmployeeDto>>(employees);
+        var requests = _mapper.Map<List<LeaveRequestDto>>(recentLeaves);
+        var attendanceRequests = _mapper.Map<List<AttendanceRequestDto>>(recentAttReqs);
+
+        var presentList = await _repository.GetTodayPresentEmployeesAsync();
+        var presentEmpIds = presentList.Select(p => p.EmployeeId).ToHashSet();
+        var leaveList = await _repository.GetTodayLeaveEmployeesAsync(presentEmpIds, employees);
+        var monthStats = await _repository.GetCurrentMonthAttendanceStatsAsync();
+
+        var dashboard = new DashboardDto
+        {
+            Employees = employeeDtos,
+            Requests = requests,
+            AttendanceRequests = attendanceRequests,
+            Attendance = presentList,
+            PresentEmployee = presentList.Count,
+            LeaveEmployees = leaveList,
+            TotalEmployees = employeeDtos.Count,
+            AttendanceTotalRequests = attendanceRequests.Count,
+            AttendancePendingRequests = attendanceRequests.Count(x => x.StatusId == Status.Pending),
+            LeaveTotalRequests = requests.Count,
+            LeavePendingRequests = requests.Count(x => x.StatusId == Status.Pending),
+            LeaveApprovedRequests = requests.Count(x => x.StatusId == Status.Approved),
+            LeaveRejectedRequests = requests.Count(x => x.StatusId == Status.Rejected),
+            LeaveCancledRequests = requests.Count(x => x.StatusId == Status.Cancelled),
+            AbsentEmployee = Math.Max(0, employeeDtos.Count - presentList.Count - leaveList.Count),
+            MonthPresentEmployee = monthStats.Present,
+            MonthLeaveEmployee = monthStats.Leave,
+            MonthAbsentEmployee = monthStats.Absent,
+            MonthHalfDayEmployee = monthStats.HalfDay
+        };
+
+        CalculateAverageHours(dashboard, presentList, leaveList);
+
+        var response = ServiceResult<DashboardDto>.Success(dashboard);
+        return response;
+    }
+
+    private static void CalculateAverageHours(DashboardDto dashboard, List<EmployeeDailyAttendanceDto> present, List<EmployeeDailyAttendanceDto> onLeave)
+    {
+        var allRecords = new List<EmployeeDailyAttendanceDto>();
+        if (present != null) allRecords.AddRange(present);
+        if (onLeave != null) allRecords.AddRange(onLeave);
+
+        if (dashboard.TotalEmployees > 0 && allRecords.Any())
+        {
+            var totalWorkingHours = allRecords.Sum(x => x.WorkingHours.TotalHours);
+            var totalBreakHours = allRecords.Sum(x => x.BreakDuration.TotalHours);
 
             dashboard.AvgWorkingHours = (int)(totalWorkingHours / dashboard.TotalEmployees);
             dashboard.AvgBreakHours = (int)(totalBreakHours / dashboard.TotalEmployees);
@@ -86,17 +124,5 @@ public class DashboardService : IDashboardService
             dashboard.AvgWorkingHours = 0;
             dashboard.AvgBreakHours = 0;
         }
-
-        dashboard.AttendanceTotalRequests = dashboard.AttendanceRequests.Count;
-        dashboard.AttendancePendingRequests = dashboard.AttendanceRequests.Count(x => x.StatusId == Status.Pending);
-        dashboard.LeaveEmployees = dashboard.LeaveEmployees ?? new List<EmployeeDailyAttendanceDto>();
-        dashboard.AbsentEmployee = dashboard.TotalEmployees - dashboard.PresentEmployee;
-        dashboard.LeaveTotalRequests = dashboard.Requests.Count;
-        dashboard.LeavePendingRequests = dashboard.Requests.Count(x => x.StatusId == Status.Pending);
-        dashboard.LeaveApprovedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Approved);
-        dashboard.LeaveRejectedRequests = dashboard.Requests.Count(x => x.StatusId == Status.Rejected);
-        dashboard.LeaveCancledRequests = dashboard.Requests.Count(x => x.StatusId == Status.Cancelled);
-
-        return ServiceResult<DashboardDto>.Success(dashboard);
     }
 }

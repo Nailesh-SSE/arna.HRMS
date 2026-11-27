@@ -1,0 +1,195 @@
+@using arna.HRMS.Models.ViewModels
+@using Microsoft.AspNetCore.Components.Forms
+
+<div class="card border-0 shadow-sm rounded-3 h-100 profile-side-card">
+    <div class="card-body p-4 text-center d-flex flex-column">
+        
+        <!-- Avatar & Upload -->
+        <div class="profile-avatar-wrapper position-relative mx-auto mb-3">
+            @if (!string.IsNullOrWhiteSpace(Profile.ProfileImage))
+            {
+                <img src="@Profile.ProfileImage" alt="@DisplayName" class="profile-avatar-circle profile-avatar-img" />
+            }
+            else
+            {
+                <div class="profile-avatar-circle">
+                    @Initials
+                </div>
+            }
+
+            @if (Profile.IsEmployee)
+            {
+                <label for="profileImageInput" class="avatar-upload-btn" title="Upload or change profile picture">
+                    <i class="bi bi-camera-fill"></i>
+                    <InputFile id="profileImageInput" OnChange="OnImageUpload" accept=".jpg,.jpeg,.png,.webp" class="d-none" />
+                </label>
+            }
+        </div>
+
+        @if (IsUploadingImage)
+        {
+            <div class="small text-primary mb-2 d-flex align-items-center justify-content-center gap-1.5">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span>Uploading photo...</span>
+            </div>
+        }
+
+        @if (Profile.IsEmployee && !string.IsNullOrWhiteSpace(Profile.ProfileImage))
+        {
+            <button type="button" class="btn btn-link btn-sm text-danger text-decoration-none p-0 mb-2 small"
+                    @onclick="OnRemoveImage" disabled="@IsUploadingImage" title="Remove profile picture">
+                <i class="bi bi-trash3 me-1"></i>Remove Photo
+            </button>
+        }
+
+        <!-- Full Name & Badges -->
+        <h4 class="fw-bold text-dark mb-1 fs-5">@DisplayName</h4>
+        
+        @if (Profile.IsEmployee)
+        {
+            <div class="text-muted small mb-2">
+                @if (!string.IsNullOrEmpty(Profile.Position))
+                {
+                    <span class="text-dark fw-medium">@FormatText(Profile.Position)</span>
+                }
+                @if (!string.IsNullOrEmpty(Profile.DepartmentName))
+                {
+                    <span> &bull; @Profile.DepartmentName</span>
+                }
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                @if (!string.IsNullOrEmpty(Profile.EmployeeNumber))
+                {
+                    <span class="badge bg-light text-secondary border font-monospace px-2 py-1 small">
+                        @Profile.EmployeeNumber
+                    </span>
+                }
+                <span class="badge @(Profile.IsActive ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" : "bg-danger bg-opacity-10 text-danger") rounded-pill px-2.5 py-1 small">
+                    <i class="bi @(Profile.IsActive ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1"></i>
+                    @(Profile.IsActive ? "Active" : "Inactive")
+                </span>
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small">
+                    @RoleDisplay
+                </span>
+            </div>
+        }
+        else
+        {
+            <div class="text-muted small mb-2">
+                @if (!string.IsNullOrEmpty(Profile.Username))
+                {
+                    <span class="font-monospace">@@@Profile.Username</span>
+                }
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2.5 py-1 small">
+                    @RoleDisplay
+                </span>
+                <span class="badge @(Profile.IsActive ? "bg-success bg-opacity-10 text-success border border-success border-opacity-25" : "bg-danger bg-opacity-10 text-danger") rounded-pill px-2.5 py-1 small">
+                    <i class="bi @(Profile.IsActive ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1"></i>
+                    @(Profile.IsActive ? "Active & Verified" : "Inactive")
+                </span>
+            </div>
+        }
+
+        <!-- Quick Summary List -->
+        <div class="border-top pt-3 mt-1 text-start profile-quick-list flex-grow-1">
+            <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
+                <span class="text-muted small">Work Email</span>
+                <span class="text-dark small fw-medium text-truncate ms-2" style="max-width: 170px;" title="@(!string.IsNullOrEmpty(Profile.OfficeEmail) ? Profile.OfficeEmail : Profile.Email)">
+                    @(!string.IsNullOrEmpty(Profile.OfficeEmail) ? Profile.OfficeEmail : Profile.Email)
+                </span>
+            </div>
+
+            <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
+                <span class="text-muted small">Phone</span>
+                <span class="text-dark small fw-medium">
+                    @(string.IsNullOrEmpty(Profile.PhoneNumber) ? "—" : Profile.PhoneNumber)
+                </span>
+            </div>
+
+            @if (Profile.IsEmployee)
+            {
+                <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Department</span>
+                    <span class="text-dark small fw-medium text-truncate ms-2" style="max-width: 170px;">
+                        @(string.IsNullOrEmpty(Profile.DepartmentName) ? "—" : Profile.DepartmentName)
+                    </span>
+                </div>
+
+                <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">Joining Date</span>
+                    <span class="text-dark small fw-medium">
+                        @(Profile.HireDate?.ToString("MMM dd, yyyy") ?? "—")
+                    </span>
+                </div>
+
+                <div class="quick-item d-flex align-items-center justify-content-between py-2">
+                    <span class="text-muted small">Tenure</span>
+                    <span class="text-dark small fw-medium">
+                        @ExperienceString
+                    </span>
+                </div>
+            }
+            else
+            {
+                <div class="quick-item d-flex align-items-center justify-content-between py-2 border-bottom">
+                    <span class="text-muted small">System Access</span>
+                    <span class="text-dark small fw-medium">Full Administrator</span>
+                </div>
+
+                <div class="quick-item d-flex align-items-center justify-content-between py-2">
+                    <span class="text-muted small">Registered On</span>
+                    <span class="text-dark small fw-medium">
+                        @Profile.CreatedOn.ToString("MMM dd, yyyy")
+                    </span>
+                </div>
+            }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-grid gap-2 pt-3 border-top mt-3">
+            @if (!IsEditMode)
+            {
+                <button class="btn btn-primary btn-sm rounded-pill shadow-sm"
+                        @onclick="OnEnterEditMode">
+                    <i class="bi bi-pencil me-1.5"></i>Edit Personal Details
+                </button>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill"
+                        @onclick="OnChangePassword">
+                    <i class="bi bi-key me-1.5"></i>Change Password
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-outline-secondary btn-sm rounded-pill"
+                        @onclick="OnCancelEdit"
+                        disabled="@IsSaving">
+                    <i class="bi bi-x-lg me-1.5"></i>Cancel Edit
+                </button>
+            }
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public ProfileViewModel Profile { get; set; } = null!;
+    [Parameter] public string DisplayName { get; set; } = string.Empty;
+    [Parameter] public string Initials { get; set; } = "EM";
+    [Parameter] public string RoleDisplay { get; set; } = string.Empty;
+    [Parameter] public string ExperienceString { get; set; } = string.Empty;
+    [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public bool IsUploadingImage { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnImageUpload { get; set; }
+    [Parameter] public EventCallback OnRemoveImage { get; set; }
+    [Parameter] public EventCallback OnEnterEditMode { get; set; }
+    [Parameter] public EventCallback OnCancelEdit { get; set; }
+    [Parameter] public EventCallback OnChangePassword { get; set; }
+
+    private static string FormatText(string? text) =>
+        System.Text.RegularExpressions.Regex.Replace(text ?? "", "(\\B[A-Z])", " $1").Trim();
+}

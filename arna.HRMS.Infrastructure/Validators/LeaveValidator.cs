@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
@@ -31,8 +31,9 @@ public class LeaveValidator
             return ValidationResult.Fail("Invalid request");
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Leave Type ID");
-        var exist = _repository.GetLeaveTypeByIdAsync(dto.Id);
-        if (exist.Result == null)
+        // Bug 4 FIX: Added await — was missing, causing .Result deadlock
+        var exist = await _repository.GetLeaveTypeByIdAsync(dto.Id);
+        if (exist == null)
             return ValidationResult.Fail("No Data Found");
 
         return await ValidateLeaveTypeCommonAsync(dto);
@@ -71,8 +72,9 @@ public class LeaveValidator
             return ValidationResult.Fail("Invalid request");
         if (dto.Id <= 0)
             return ValidationResult.Fail("Invalid Leave Request ID");
-        var exist = _repository.GetLeaveRequestByIdAsync(dto.Id);
-        if (exist.Result == null)
+        // Bug 4 FIX: Added await — was missing, causing .Result deadlock
+        var exist = await _repository.GetLeaveRequestByIdAsync(dto.Id);
+        if (exist == null)
             return ValidationResult.Fail("No Such Data Found");
 
         return await ValidateLeaveRequestCommonAsync(dto);
@@ -96,6 +98,12 @@ public class LeaveValidator
 
         if (dto.StartDate.Date > dto.EndDate.Date)
             errors.Add("Start date cannot be after End date");
+
+        if (dto.Reason != "Auto Leave Marked" && dto.ApprovalNotes != "Auto Approved")
+        {
+            if (dto.StartDate.Date < DateTime.Today.Date || dto.EndDate.Date < DateTime.Today.Date)
+                errors.Add("Leave dates cannot be in the past");
+        }
 
         return Task.FromResult(
             errors.Any()

@@ -1,0 +1,159 @@
+/* =============================================================== */
+/* 3. CORE CONTENT CARDS (WEEKLY STRIP)                            */
+/* =============================================================== */
+.content-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* 7-DAY WEEKLY ATTENDANCE STRIP */
+.week-strip-container {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.75rem 0.6rem;
+    width: 100%;
+}
+
+.week-day-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 4px 6px 4px;
+    transition: all 0.2s ease;
+    min-height: 92px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.week-day-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+}
+
+.week-day-normal {
+    border-color: #e2e8f0;
+}
+
+.week-day-today {
+    background: #eff6ff !important;
+    border: 1.5px solid #3b82f6 !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15) !important;
+}
+
+.week-day-today .week-day-name {
+    color: #1d4ed8 !important;
+    font-weight: 700;
+}
+
+.week-day-today .week-day-date {
+    color: #475569 !important;
+    font-weight: 600;
+}
+
+.week-day-weekend {
+    background: #f8fafc !important;
+    border: 1px dashed #e2e8f0 !important;
+    opacity: 0.85;
+}
+
+.week-day-leave {
+    background: #fffdf5 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+.week-day-name {
+    font-size: 0.78rem;
+    color: #475569;
+}
+
+/* High Contrast Day Badges */
+.day-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 7px;
+    border-radius: 9999px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+/* 1. Today Clocked In (Live Green) */
+.day-badge-live {
+    background-color: #ecfdf5 !important;
+    color: #059669 !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+/* 2. Today Clocked Out / Paused */
+.day-badge-paused {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+/* 3. Past Present Day */
+.day-badge-present {
+    background-color: #f0fdf4 !important;
+    color: #16a34a !important;
+    border: 1px solid rgba(22, 163, 74, 0.2) !important;
+}
+
+/* 4. On Leave */
+.day-badge-leave {
+    background-color: #fffbeb !important;
+    color: #b45309 !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+/* 5. Weekend / Off */
+.day-badge-off {
+    background-color: #f8fafc !important;
+    color: #94a3b8 !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* 6. Upcoming / Default */
+.day-badge-upcoming {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* 7. Absent */
+.day-badge-absent {
+    background-color: #fef2f2 !important;
+    color: #dc2626 !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+/* Live Green Pulsing Dot */
+.day-badge-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: liveDotPulse 2s infinite;
+}
+
+@keyframes liveDotPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}

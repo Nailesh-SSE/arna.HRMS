@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Service;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,36 +17,42 @@ public class ReportController : ControllerBase
 
     [HttpGet("daily-attendance-report")]
     public async Task<IActionResult> DailyAttendanceReportAsync(
-    [FromQuery] int? year,
-    [FromQuery] int? month,
-    [FromQuery] int? employeeId,
-    [FromQuery] AttendanceStatus? statusId,
-    [FromQuery] DeviceType? device,
-    [FromQuery] DateTime? FromDate,
-    [FromQuery] DateTime? ToDate)
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] int? employeeId,
+        [FromQuery] AttendanceStatus? statusId,
+        [FromQuery] DeviceType? device,
+        [FromQuery] DateTime? FromDate,
+        [FromQuery] DateTime? ToDate)
     {
-        var result = await _reportService.GetDailyAttendanceReport(year, month, employeeId, statusId, device, FromDate, ToDate);
-
-        if (!result.IsSuccess)
-            return BadRequest(result.Message);
-
-        return Ok(result);
+        try
+        {
+            var result = await _reportService.GetDailyAttendanceReport(year, month, employeeId, statusId, device, FromDate, ToDate);
+            return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 
     [HttpGet("employees-attendance-report")]
     public async Task<IActionResult> EmployeeAttendanceReportAsync(
-    [FromQuery] int? year,
-    [FromQuery] int? month,
-    [FromQuery] int? employeeId,
-    [FromQuery] DateTime? FromDate,
-    [FromQuery] DateTime? ToDate)
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        [FromQuery] int? employeeId,
+        [FromQuery] DateTime? FromDate,
+        [FromQuery] DateTime? ToDate)
     {
-        var result = await _reportService.GetEmployeeAttendanceReport(year, month, employeeId, FromDate, ToDate);
-
-        if (!result.IsSuccess)
-            return BadRequest(result.Message);
-
-        return Ok(result);
+        try
+        {
+            var result = await _reportService.GetEmployeeAttendanceReport(year, month, employeeId, FromDate, ToDate);
+            return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 
     [HttpGet("leave-summary-report")]
@@ -57,13 +63,17 @@ public class ReportController : ControllerBase
         [FromQuery] DateTime? FromDate,
         [FromQuery] DateTime? ToDate)
     {
-        var result = await _reportService.GetLeaveSummaryReport(year, month, departmentId, FromDate, ToDate);
-
-        if (!result.IsSuccess)
-            return BadRequest(result.Message);
-
-        return Ok(result);
+        try
+        {
+            var result = await _reportService.GetLeaveSummaryReport(year, month, departmentId, FromDate, ToDate);
+            return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
+
     [HttpGet("employee-leave-details-report")]
     public async Task<IActionResult> EmployeeLeaveDetailsReportAsync(
         [FromQuery] int? year,
@@ -73,11 +83,14 @@ public class ReportController : ControllerBase
         [FromQuery] int? employeeId,
         [FromQuery] string? employeeNumber)
     {
-        var result = await _reportService.GetEmployeeLeaveDetailsReport(year, month, FromDate, ToDate, employeeId, employeeNumber);
-
-        if (!result.IsSuccess)
-            return BadRequest(result.Message);
-
-        return Ok(result);
+        try
+        {
+            var result = await _reportService.GetEmployeeLeaveDetailsReport(year, month, FromDate, ToDate, employeeId, employeeNumber);
+            return result.IsSuccess ? Ok(result) : BadRequest(result.Message);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, ex.Message);
+        }
     }
 }

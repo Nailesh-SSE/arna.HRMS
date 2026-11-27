@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -18,6 +18,7 @@ public class UserRepository
     public async Task<List<User>> GetUsersAsync()
     {
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(x => !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.Role)
@@ -32,6 +33,19 @@ public class UserRepository
             .Include(x => x.Employee)
             .Include(x => x.Role)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<bool> UsernameExistsAsync(string username, int? excludeUserId = null)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return false;
+
+        username = username.Trim().ToLower();
+
+        return await _baseRepository.Query()
+            .AnyAsync(x => !x.IsDeleted &&
+                           (excludeUserId == null || x.Id != excludeUserId.Value) &&
+                           x.Username.Trim().ToLower() == username);
     }
 
     public Task<User> CreateUserAsync(User user)
@@ -72,6 +86,7 @@ public class UserRepository
         phoneNumber = phoneNumber?.Trim();
 
         return await _baseRepository.Query()
+            .AsNoTracking()
             .Where(x => !x.IsDeleted)
             .AnyAsync(x =>
                 x.Id != id &&

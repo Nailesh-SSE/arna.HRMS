@@ -1,0 +1,79 @@
+.clean-field-tile {
+    background: #f8fafc;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    height: 100%;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.clean-field-tile:hover {
+    border-color: #e2e8f0;
+    background: #f1f5f9;
+}
+
+.field-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin-bottom: 3px;
+}
+
+.field-value {
+    font-size: 0.90rem;
+    font-weight: 500;
+    color: #0f172a;
+    line-height: 1.35;
+}
+
+.form-lbl {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 4px;
+}
+
+.form-control {
+    font-size: 0.86rem;
+    padding: 0.44rem 0.75rem;
+    border-color: #cbd5e1;
+    border-radius: 6px;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-control.is-invalid {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.err-msg {
+    font-size: 0.72rem;
+    color: #ef4444;
+    font-weight: 500;
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+@media (max-width: 575.98px) {
+    .clean-field-tile {
+        padding: 0.65rem 0.85rem;
+    }
+
+    .field-label {
+        font-size: 0.68rem;
+    }
+
+    .field-value {
+        font-size: 0.85rem;
+    }
+}

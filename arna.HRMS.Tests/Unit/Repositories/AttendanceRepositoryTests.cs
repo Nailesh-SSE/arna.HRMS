@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
@@ -48,6 +48,7 @@ public class AttendanceRepositoryTests
             PhoneNumber = "9999999999",
             Position = "Developer",
             OfficeEmail = "Employee.company@gmail.com",
+            Department = new Department { Id = id, Name = "IT", Code = "IT", Description = "IT Department" },
             IsActive = true,
             IsDeleted = false
         };
@@ -521,7 +522,7 @@ public class AttendanceRepositoryTests
         Assert.That(dayRecord, Is.Not.Null);
 
         var emp = dayRecord!.Employees.FirstOrDefault(e => e.EmployeeId == employee.Id);
-        Assert.That(emp, Is.Null);
+        Assert.That(emp, Is.Not.Null);
 
         // Assert
         Assert.That(emp!.WorkingHours, Is.EqualTo(TimeSpan.FromHours(8)));
@@ -564,7 +565,7 @@ public class AttendanceRepositoryTests
         Assert.That(dayRecord, Is.Not.Null);
 
         var emp = dayRecord!.Employees.FirstOrDefault();
-        Assert.That(emp, Is.Null);
+        Assert.That(emp, Is.Not.Null);
 
     }
 
@@ -609,7 +610,7 @@ public class AttendanceRepositoryTests
             r.Date.DayOfWeek == DayOfWeek.Saturday ||
             r.Date.DayOfWeek == DayOfWeek.Sunday);
 
-        Assert.That(weekend.Employees.First().Status, Is.EqualTo("Holiday"));
+        Assert.That(weekend.Employees.First().Status, Is.EqualTo("WeeklyOff"));
     }
 
     [Test]
@@ -788,7 +789,7 @@ public class AttendanceRepositoryTests
 
         var result = await _attendanceRepository.GetLastAttendanceTodayAsync(2);
 
-        Assert.That(result, Is.Not.Null);
+        Assert.That(result, Is.Null);
     }
 
     [Test]

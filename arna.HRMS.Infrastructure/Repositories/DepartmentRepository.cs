@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Repository;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +16,8 @@ public class DepartmentRepository
     public async Task<List<Department>> GetDepartmentsAsync()
     {
         return await _baseRepository.Query()
-            .Where(d => d.IsActive && !d.IsDeleted)
+            .AsNoTracking()
+            .Where(d => !d.IsDeleted)
             .Include(d => d.ParentDepartment)
             .OrderByDescending(d => d.Id) 
             .ToListAsync();
@@ -25,7 +26,8 @@ public class DepartmentRepository
     public async Task<Department?> GetDepartmentByIdAsync(int id)
     {
         return await _baseRepository.Query()
-            .Where(d => d.Id == id && d.IsActive && !d.IsDeleted)
+            .AsNoTracking()
+            .Where(d => d.Id == id && !d.IsDeleted)
             .FirstOrDefaultAsync();
     }
 
@@ -44,7 +46,6 @@ public class DepartmentRepository
         var department = await _baseRepository.Query()
             .FirstOrDefaultAsync(d =>
                 d.Id == id &&
-                d.IsActive &&
                 !d.IsDeleted);
 
         if (department == null)
@@ -66,7 +67,7 @@ public class DepartmentRepository
         name = name.Trim().ToLower();
 
         return await _baseRepository.Query()
-            .Where(d => d.IsActive && !d.IsDeleted)
+            .Where(d => !d.IsDeleted)
             .AnyAsync(d =>
                 d.Id != id &&
                 d.Name.Trim().ToLower() == name

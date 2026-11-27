@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Infrastructure.Repositories;
 
@@ -29,8 +29,8 @@ public class DepartmentValidator
         if (instance.Id <= 0)
             return ValidationResult.Fail("Invalid Department ID");
 
-        var exist = _repository.GetDepartmentByIdAsync(instance.Id);
-        if (exist.Result == null)
+        var exist = await _repository.GetDepartmentByIdAsync(instance.Id);
+        if (exist == null)
             return ValidationResult.Fail("Data not found");
 
         return await ValidateCommonAsync(instance);
@@ -55,9 +55,9 @@ public class DepartmentValidator
         else if (instance.Code.Length > 50)
             errors.Add("Department Code must be at most 50 characters");
 
-        // Description
-        if (string.IsNullOrWhiteSpace(instance.Description))
-            errors.Add("Department Description Required");
+        // Description (optional)
+        if (!string.IsNullOrWhiteSpace(instance.Description) && instance.Description.Length > 500)
+            errors.Add("Department Description must be at most 500 characters");
 
         // Duplicate 
         var duplicate = await _repository.DepartmentExistsAsync(instance.Name, instance.Id);

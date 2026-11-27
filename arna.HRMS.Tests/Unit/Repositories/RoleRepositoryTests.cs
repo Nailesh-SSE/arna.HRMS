@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Infrastructure.Data;
 using arna.HRMS.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +26,7 @@ public class RoleRepositoryTests
     }
 
     [Test]
-    public async Task GetRolesAsync_ShouldReturnOnlyActiveAndNotDeletedRoles()
+    public async Task GetRolesAsync_ShouldReturnNotDeletedRoles()
     {
         // Arrange
         _dbContext.Roles.AddRange(
@@ -43,13 +43,8 @@ public class RoleRepositoryTests
         // Assert
         Assert.That(result, Is.Not.Null);
         Assert.That(result, Is.InstanceOf<List<Role>>());
-        Assert.That(result.Count, Is.EqualTo(1));
-
-        var role = result.First();
-
-        Assert.That(role.Id, Is.EqualTo(1));
-        Assert.That(role.IsActive, Is.True);
-        Assert.That(role.IsDeleted, Is.False);
+        Assert.That(result.Count, Is.EqualTo(2));
+        Assert.That(result.Any(r => r.Id == 3), Is.False);
     }
 
     [Test]
@@ -75,7 +70,7 @@ public class RoleRepositoryTests
     }
 
     [Test]
-    public async Task GetRolesAsync_ShouldReturnEmptyList_WhenNoActiveRoles()
+    public async Task GetRolesAsync_ShouldReturnInactiveRoles_WhenNotDeleted()
     {
         // Arrange
         _dbContext.Roles.Add(
@@ -89,8 +84,8 @@ public class RoleRepositoryTests
 
         // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result, Is.Empty);
-        Assert.That(result.Count, Is.EqualTo(0));
+        Assert.That(result.Count, Is.EqualTo(1));
+        Assert.That(result[0].IsActive, Is.False);
     }
 
     [Test]
@@ -149,7 +144,7 @@ public class RoleRepositoryTests
     }
 
     [Test]
-    public async Task GetRoleByIdAsync_ShouldReturnNull_WhenRoleIsInactive()
+    public async Task GetRoleByIdAsync_ShouldReturnRole_WhenRoleIsInactive()
     {
         // Arrange
         var role = new Role
@@ -167,7 +162,8 @@ public class RoleRepositoryTests
         var result = await _repository.GetRoleByIdAsync(2);
 
         // Assert
-        Assert.That(result, Is.Null);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.IsActive, Is.False);
     }
 
     [Test]

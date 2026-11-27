@@ -1,0 +1,155 @@
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels.Leave
+
+<div class="col-12 col-xl-6">
+    <div class="dash-card h-100 d-flex flex-column">
+
+        <div class="dash-card-header">
+            <div class="d-flex align-items-center gap-2.5">
+                <div class="dash-card-icon-box">
+                    <i class="bi bi-file-earmark-text"></i>
+                </div>
+                <h6 class="dash-card-title mb-0 d-flex align-items-center gap-2">
+                    <span>Pending Leave Requests</span>
+                    @if (Requests.Any())
+                    {
+                        <span class="badge bg-warning bg-opacity-25 text-warning fw-bold rounded-pill px-2" style="font-size: 0.72rem;">@Requests.Count</span>
+                    }
+                </h6>
+            </div>
+
+            <a href="/admin-leave-requests" class="dash-view-all-link">
+                View All
+            </a>
+        </div>
+
+        <div class="card-body p-0 flex-grow-1">
+            <div class="dash-table-wrapper">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>EMP ID</th>
+                            <th>EMPLOYEE</th>
+                            <th>LEAVE TYPE</th>
+                            <th>DURATION</th>
+                            <th>STATUS</th>
+                            <th class="text-center">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Requests.Any())
+                        {
+                            @foreach (var req in Requests)
+                            {
+                                <tr>
+                                    <td class="font-monospace text-secondary small">@(string.IsNullOrWhiteSpace(req.EmployeeNumber) ? $"EMP{req.EmployeeId:D3}" : req.EmployeeNumber)</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if (!string.IsNullOrWhiteSpace(req.ProfileImage))
+                                            {
+                                                <img src="@req.ProfileImage" alt="@req.EmployeeName" class="avatar-circle avatar-sm avatar-img" />
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-circle avatar-sm">
+                                                    @GetInitials(req.EmployeeName)
+                                                </div>
+                                            }
+                                            <span class="fw-medium text-dark text-truncate">@(string.IsNullOrWhiteSpace(req.EmployeeName) ? "Employee" : req.EmployeeName)</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="@GetLeaveTypeBadgeClass(req.LeaveTypeName)">
+                                            @(string.IsNullOrWhiteSpace(req.LeaveTypeName) ? "Leave" : FormatLeaveName(req.LeaveTypeName))
+                                        </span>
+                                    </td>
+                                    <td class="text-secondary small">@FormatDuration(req.StartDate, req.EndDate)</td>
+                                    <td>
+                                        <span class="@GetStatusBadgeClass(req.StatusId)">
+                                            @req.StatusId
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (req.StatusId == Status.Pending)
+                                        {
+                                            <div class="d-inline-flex align-items-center gap-1.5">
+                                                <button type="button" class="dash-action-btn dash-action-approve"
+                                                        title="Approve"
+                                                        @onclick="() => OnApprove.InvokeAsync(req)">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                                <button type="button" class="dash-action-btn dash-action-reject"
+                                                        title="Reject"
+                                                        @onclick="() => OnReject.InvokeAsync(req)">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">&mdash;</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted small">
+                                    <i class="bi bi-check2-circle text-success me-1"></i> No pending leave requests
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<LeaveRequestViewModel> Requests { get; set; } = new List<LeaveRequestViewModel>();
+    [Parameter] public EventCallback<LeaveRequestViewModel> OnApprove { get; set; }
+    [Parameter] public EventCallback<LeaveRequestViewModel> OnReject { get; set; }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "EM";
+        return arna.HRMS.Helper.Avatar.AvatarHelper.GetInitials(name);
+    }
+
+    private static string FormatDuration(DateTime start, DateTime end)
+    {
+        if (start.Date == end.Date)
+            return start.ToString("MMM dd");
+
+        return $"{start:MMM dd} - {end:MMM dd}";
+    }
+
+    private static string FormatLeaveName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "Leave";
+        return System.Text.RegularExpressions.Regex.Replace(name, "(\\B[A-Z])", " $1").Trim();
+    }
+
+    private static string GetLeaveTypeBadgeClass(string? type)
+    {
+        var clean = (type ?? "").Replace(" ", "").ToLowerInvariant();
+        return clean switch
+        {
+            "sickleave" or "sick" => "dash-badge-leave-sick",
+            "casualleave" or "casual" => "dash-badge-leave-casual",
+            _ => "dash-badge-leave-paid"
+        };
+    }
+
+    private static string GetStatusBadgeClass(Status status) => status switch
+    {
+        Status.Approved => "dash-badge-status-approved",
+        Status.Rejected => "dash-badge-status-rejected",
+        Status.Cancelled => "dash-badge-status-cancelled",
+        _ => "dash-badge-status-pending"
+    };
+}

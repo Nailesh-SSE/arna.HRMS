@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common.Result;
+using arna.HRMS.Models.Common.Result;
 using arna.HRMS.Models.Enums;
 using arna.HRMS.Models.ViewModels.Attendance;
 using arna.HRMS.Services.Http;
@@ -12,6 +12,7 @@ public interface IAttendanceService
     Task<ApiResult<AttendanceViewModel>> GetClockStatusAsync(int employeeId);
     Task<(double Latitude, double Longitude)?> GetCurrentLocationAsync();
     Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId);
+    Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId, DateTime? fromDate, DateTime? toDate);
     Task<ApiResult<AttendanceViewModel>> GetAttendanceByIdAsync(int id);
     Task<ApiResult<List<MonthlyAttendanceViewModel>>> GetAttendanceByMonthAsync(int year, int month, int? empId, DateTime? date, AttendanceStatus? statusId);
     Task<ApiResult<List<AttendanceViewModel>>> GetTodayClockinEntryAsync(int employeeId);
@@ -75,9 +76,12 @@ public class AttendanceService : IAttendanceService
         _tcs?.TrySetResult(null);
     }
 
-    public async Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId)
+    public Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId) =>
+        GetAttendanceByEmployeeOrStatusAsync(status, employeeId, null, null);
+
+    public async Task<ApiResult<List<AttendanceViewModel>>> GetAttendanceByEmployeeOrStatusAsync(AttendanceStatus? status, int? employeeId, DateTime? fromDate, DateTime? toDate)
     {
-        return await _attendance.GetAttendanceByStatusAndEmployeeIdAsync(status, employeeId); 
+        return await _attendance.GetAttendanceByStatusAndEmployeeIdAsync(status, employeeId, fromDate, toDate); 
     }
 
     public async Task<ApiResult<AttendanceViewModel>> GetAttendanceByIdAsync(int id)

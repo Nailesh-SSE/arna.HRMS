@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Enums;
+using arna.HRMS.Core.Enums;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -37,11 +37,16 @@ public class AttendanceReportDto
 
     public AttendanceStatus? AttendanceStatus { get; set; }
 
+    [NotMapped]
+    public string? ProfileImage { get; set; }
+
     [JsonIgnore]
     [NotMapped]
     public List<DeviceType>? Devices =>
-        Device?
-            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .Select(x => (DeviceType)int.Parse(x.Trim()))
-            .ToList();
+        string.IsNullOrWhiteSpace(Device)
+            ? new List<DeviceType> { DeviceType.LaptopDesktop }
+            : Device
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => int.TryParse(x.Trim(), out var val) && val > 0 ? (DeviceType)val : DeviceType.LaptopDesktop)
+                .ToList();
 }

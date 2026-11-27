@@ -1,0 +1,545 @@
+﻿@using arna.HRMS.Components.Loader
+@using arna.HRMS.Components.Pages.Attendance
+@using arna.HRMS.Components.Pages.Client.ClockInAndOut
+@using arna.HRMS.Components.Pages.Home.EmployeeDashboard.Components
+@using arna.HRMS.Models.Enums
+@using arna.HRMS.Models.ViewModels
+@using arna.HRMS.Models.ViewModels.Attendance
+@using arna.HRMS.Models.ViewModels.Dashboard
+@using arna.HRMS.Models.ViewModels.Leave
+@using arna.HRMS.Services
+@using arna.HRMS.Services.Dashboard
+@using arna.HRMS.Services.Common
+
+@inject NavigationManager Nav
+@inject IDashboardService dashboardService
+@inject IAttendanceService ClockService
+@inject IAttendanceRequestService AttendanceRequestService
+@inject IFestivalHolidayService HolidayService
+@inject IJSRuntime JS
+@inject NotificationService NotificationService
+
+<Loader Visible="@isLoading" Message="@loaderMessage" />
+
+<div class="dash-fade-in employee-dashboard-root pb-4">
+
+    <!-- 1. CLOCK IN/OUT SECTION -->
+    <EmployeeClockWidget EmployeeId="@EmployeeId" OnClockStatusChanged="OnClockStatusChanged" />
+
+    <!-- 2. SECOND ROW: 4 KPI CARDS -->
+    <EmployeeKpis AttendancePercentage="@attendancePercentage"
+                  PresentDaysCount="@presentDaysCount"
+                  TotalBalance="@totalBalance"
+                  PendingCount="@pendingCount"
+                  MonthlyHoursDisplay="@monthlyHoursDisplay"
+                  MonthlyProgressPercent="@monthlyProgressPercent" />
+
+    <!-- 3. THIRD ROW: WORK SCHEDULE & RECENT REQUESTS -->
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+            <EmployeeWeeklyShiftStrip CurrentWeekDays="@currentWeekDays"
+                                      TotalWeekHoursDisplay="@totalWeekHoursDisplay"
+                                      AvgDailyHoursDisplay="@avgDailyHoursDisplay" />
+        </div>
+        <div class="col-12 col-lg-6">
+            <EmployeeRecentRequests CombinedRecentRequests="@combinedRecentRequests" />
+        </div>
+    </div>
+
+    <!-- 4. FOURTH ROW: UPCOMING HOLIDAYS & QUICK ACTIONS -->
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-lg-6">
+            <EmployeeUpcomingHolidays UpcomingHolidays="@upcomingHolidays" />
+        </div>
+        <div class="col-12 col-lg-6">
+            <EmployeeQuickActions />
+        </div>
+    </div>
+
+</div>
+
+@code {
+    [Parameter] public string UserFullName { get; set; } = "";
+    [Parameter] public int EmployeeId { get; set; }
+
+    // State & Flags
+    private bool isLoading = true;
+    private string loaderMessage = "Loading Employee Dashboard...";
+
+    // Summary Metric values
+    private string weeklyHoursDisplay = "00h 00m";
+    private string monthlyHoursDisplay = "00h 00m";
+    private int weeklyProgressPercent = 0;
+    private int monthlyProgressPercent = 0;
+
+    // Weekly Attendance Strip
+    private List<WeeklyDayAttendanceItem> currentWeekDays = new();
+    private string totalWeekHoursDisplay = "00h 00m";
+    private string avgDailyHoursDisplay = "00h 00m";
+
+    // Attendance stats
+    private int attendancePercentage = 0;
+    private int presentDaysCount = 0;
+    private int absentDaysCount = 0;
+    private int halfDaysCount = 0;
+    private int leaveDaysCount = 0;
+
+    // Leave & Request stats
+    private DashboardViewModel dashboard = new();
+    private List<LeaveTypeViewModel> leaveTypes = new();
+    private List<LeaveRequestViewModel> myRequests = new();
+    private List<LeaveRequestViewModel> recentRequests = new();
+    private List<CombinedRequestItem> combinedRecentRequests = new();
+    private List<LeaveBalanceViewModel> leaveBalances = new();
+    private Dictionary<int, string> leaveTypeNames = new();
+
+    private int totalBalance = 0;
+    private int pendingCount = 0;
+    private int totalRequestsCount = 0;
+
+    // Holidays
+    private List<FestivalHolidayViewModel> upcomingHolidays = new();
+
+    // ====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+    // LIFECYCLE
+    // ====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllDashboardDataAsync();
+    }
+
+    private async Task OnClockStatusChanged()
+    {
+        await LoadAllDashboardDataAsync();
+        StateHasChanged();
+    }
+
+    // ====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+    // DATA LOADING
+    // ====================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
+    private async Task LoadAllDashboardDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+
+            var dashboardTask = LoadDashboardStatsAsync();
+            var attendanceTask = LoadMonthlyMetricsAsync();
+            var holidayTask = LoadUpcomingHolidaysAsync();
+
+            await Task.WhenAll(dashboardTask, attendanceTask, holidayTask);
+            await LoadCombinedRecentRequestsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Dashboard] Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadUpcomingHolidaysAsync()
+    {
+        try
+        {
+            var res = await HolidayService.GetFestivalHolidayAsync();
+            if (res?.IsSuccess == true && res.Data != null && res.Data.Any())
+            {
+                var now = DateTime.Today;
+                upcomingHolidays = res.Data
+                    .Where(h => h.Date.Date >= now)
+                    .OrderBy(h => h.Date)
+                    .Take(4)
+                    .ToList();
+            }
+            else
+            {
+                upcomingHolidays = new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Holidays] Error: {ex.Message}");
+            upcomingHolidays = new();
+        }
+    }
+
+    private async Task LoadDashboardStatsAsync()
+    {
+        try
+        {
+            var response = await dashboardService.GetAllAsync(null, EmployeeId);
+            if (response?.IsSuccess == true && response.Data != null)
+            {
+                dashboard = response.Data;
+                leaveTypes = dashboard.LeaveTypes ?? new();
+                myRequests = dashboard.Requests ?? new();
+
+                leaveTypeNames = leaveTypes.ToDictionary(
+                    t => t.Id,
+                    t => FormatName(t.LeaveNameId.ToString()));
+
+                var leavePending = myRequests.Count(r => r.StatusId == Status.Pending);
+                var attPending = dashboard.AttendanceRequests != null
+                    ? dashboard.AttendanceRequests.Count(r => r.StatusId == Status.Pending)
+                    : 0;
+
+                pendingCount = leavePending + attPending;
+                totalRequestsCount = myRequests.Count + (dashboard.AttendanceRequests?.Count ?? 0);
+
+                recentRequests = myRequests
+                    .OrderByDescending(r => r.StartDate)
+                    .Take(5)
+                    .ToList();
+
+                BuildBalances();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DashboardStats] Error: {ex.Message}");
+        }
+    }
+
+    private void BuildBalances()
+    {
+        var (start, end) = GetFinancialYear();
+
+        var approved = myRequests
+            .Where(r => r.StatusId == Status.Approved &&
+                        r.StartDate >= start &&
+                        r.StartDate <= end)
+            .ToList();
+
+        var usedByType = approved
+            .GroupBy(x => x.LeaveTypeId)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.LeaveDays));
+
+        leaveBalances = leaveTypes
+            .Where(t => t.IsActive)
+            .Select(t =>
+            {
+                usedByType.TryGetValue(t.Id, out var used);
+                return new LeaveBalanceViewModel
+                {
+                    LeaveTypeId = t.Id,
+                    LeaveTypeName = t.LeaveNameId.ToString(),
+                    TotalDays = t.MaxPerYear,
+                    UsedDays = used
+                };
+            }).ToList();
+
+        totalBalance = leaveBalances.Sum(b => b.RemainingDays);
+    }
+
+    private (DateTime start, DateTime end) GetFinancialYear()
+    {
+        var today = DateTime.Today;
+        int year = today.Month >= 4 ? today.Year : today.Year - 1;
+        var start = new DateTime(year, 4, 1);
+        var end = new DateTime(year + 1, 3, 31);
+        return (start, end);
+    }
+
+    private async Task LoadMonthlyMetricsAsync()
+    {
+        try
+        {
+            var now = DateTime.Today;
+            var monthlyAttResult = await ClockService.GetAttendanceByMonthAsync(now.Year, now.Month, EmployeeId, null, null);
+            var monthlyList = monthlyAttResult?.Data ?? new List<MonthlyAttendanceViewModel>();
+
+            if (monthlyList.Any())
+            {
+                var allDays = monthlyList
+                    .SelectMany(m => m.Employees.Where(e => e.EmployeeId == EmployeeId))
+                    .ToList();
+
+                if (allDays.Any())
+                {
+                    var pDays = allDays.Count(d => d.Status == "Present" || d.Status == "Late");
+                    var aDays = allDays.Count(d => d.Status == "Absent");
+                    var hDays = allDays.Count(d => d.Status == "HalfDay");
+                    var lDays = allDays.Count(d => d.Status == "Leave");
+
+                    presentDaysCount = pDays;
+                    absentDaysCount = aDays;
+                    halfDaysCount = hDays;
+                    leaveDaysCount = lDays;
+
+                    var workingTotal = presentDaysCount + absentDaysCount + halfDaysCount + leaveDaysCount;
+                    attendancePercentage = workingTotal > 0
+                        ? (int)Math.Round((presentDaysCount + (halfDaysCount * 0.5)) * 100.0 / workingTotal)
+                        : 0;
+
+                    var monthSecs = allDays.Sum(d => d.WorkingHours.TotalSeconds);
+                    var monthSpan = TimeSpan.FromSeconds(monthSecs);
+                    monthlyHoursDisplay = $"{((int)monthSpan.TotalHours):D2}h {monthSpan.Minutes:D2}m";
+
+                    int monthlyWorkingDays = DateTime.DaysInMonth(now.Year, now.Month);
+                    int weekendDays = 0;
+                    for (int d = 1; d <= monthlyWorkingDays; d++)
+                    {
+                        var dt = new DateTime(now.Year, now.Month, d);
+                        if (dt.DayOfWeek == DayOfWeek.Saturday || dt.DayOfWeek == DayOfWeek.Sunday)
+                            weekendDays++;
+                    }
+                    var targetMonthHours = (monthlyWorkingDays - weekendDays) * 8.0;
+                    monthlyProgressPercent = targetMonthHours > 0
+                        ? Math.Min(100, (int)Math.Round((monthSpan.TotalHours / targetMonthHours) * 100))
+                        : 0;
+                }
+
+                await CalculateWeekDaysAsync(allDays);
+            }
+            else
+            {
+                await CalculateWeekDaysAsync(new List<EmployeeDailyAttendanceViewModel>());
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[MonthlyMetrics] Error: {ex.Message}");
+            await CalculateWeekDaysAsync(new List<EmployeeDailyAttendanceViewModel>());
+        }
+    }
+
+    private async Task CalculateWeekDaysAsync(List<EmployeeDailyAttendanceViewModel> attendanceRecords)
+    {
+        var today = DateTime.Today;
+        int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+        var monday = today.AddDays(-1 * diff).Date;
+
+        var days = new List<WeeklyDayAttendanceItem>();
+        double totalSecs = 0;
+        int workDaysCount = 0;
+
+        for (int i = 0; i < 7; i++)
+        {
+            var date = monday.AddDays(i);
+            var isToday = date == today;
+            var isWeekend = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+
+            var item = new WeeklyDayAttendanceItem
+            {
+                DayOfWeek = date.DayOfWeek,
+                DayName = date.ToString("ddd").ToUpper(),
+                DateFormatted = date.ToString("dd MMM"),
+                Date = date,
+                IsToday = isToday,
+                IsWeekend = isWeekend
+            };
+
+            if (isWeekend)
+            {
+                item.DurationDisplay = "--";
+                item.StatusLabel = "Weekend";
+                item.StatusClass = "day-weekend";
+            }
+            else if (myRequests.Any(r => r.StatusId == Status.Approved && r.StartDate.Date <= date && r.EndDate.Date >= date))
+            {
+                item.IsLeave = true;
+                item.DurationDisplay = "Leave";
+                item.StatusLabel = "On Leave";
+                item.StatusClass = "day-leave";
+            }
+            else if (isToday)
+            {
+                var record = attendanceRecords?.FirstOrDefault(d => d.Date.Date == today);
+                if (record != null && record.WorkingHours > TimeSpan.Zero)
+                {
+                    var hrs = record.WorkingHours;
+                    item.DurationDisplay = $"{((int)hrs.TotalHours):D2}h {hrs.Minutes:D2}m";
+                    item.StatusLabel = "Active";
+                    item.StatusClass = "day-today";
+                    totalSecs += hrs.TotalSeconds;
+                    workDaysCount++;
+                }
+                else
+                {
+                    item.DurationDisplay = "Today";
+                    item.StatusLabel = "Today";
+                    item.StatusClass = "day-today";
+                }
+            }
+            else if (date < today)
+            {
+                var record = attendanceRecords?.FirstOrDefault(d => d.Date.Date == date);
+                if (record != null && (record.Status == "Leave" || record.Status == "Holiday"))
+                {
+                    item.IsLeave = true;
+                    item.DurationDisplay = "Leave";
+                    item.StatusLabel = record.Status;
+                    item.StatusClass = "day-leave";
+                }
+                else if (record != null && record.WorkingHours > TimeSpan.Zero)
+                {
+                    var hrs = record.WorkingHours;
+                    item.DurationDisplay = $"{((int)hrs.TotalHours):D2}h {hrs.Minutes:D2}m";
+                    item.StatusLabel = "Present";
+                    item.StatusClass = "day-present";
+                    totalSecs += hrs.TotalSeconds;
+                    workDaysCount++;
+                }
+                else
+                {
+                    item.DurationDisplay = "--";
+                    item.StatusLabel = "Absent";
+                    item.StatusClass = "day-absent";
+                }
+            }
+            else
+            {
+                item.DurationDisplay = "--:--";
+                item.StatusLabel = "Upcoming";
+                item.StatusClass = "day-upcoming";
+            }
+
+            days.Add(item);
+        }
+
+        currentWeekDays = days;
+
+        var weekSpan = TimeSpan.FromSeconds(totalSecs);
+        totalWeekHoursDisplay = $"{((int)weekSpan.TotalHours):D2}h {weekSpan.Minutes:D2}m";
+
+        if (workDaysCount > 0 && weekSpan.TotalSeconds > 0)
+        {
+            var avgSpan = TimeSpan.FromSeconds(weekSpan.TotalSeconds / workDaysCount);
+            avgDailyHoursDisplay = $"{((int)avgSpan.TotalHours):D2}h {avgSpan.Minutes:D2}m";
+        }
+        else
+        {
+            avgDailyHoursDisplay = "00h 00m";
+        }
+    }
+
+    private async Task LoadCombinedRecentRequestsAsync()
+    {
+        var list = new List<CombinedRequestItem>();
+
+        try
+        {
+            // 1. Process Leave Requests from Backend Dashboard
+            var leaveList = dashboard.Requests ?? myRequests ?? new List<LeaveRequestViewModel>();
+            var mappedLeaves = leaveList.Select(req =>
+            {
+                var rawName = !string.IsNullOrWhiteSpace(req.LeaveTypeName)
+                    ? req.LeaveTypeName
+                    : GetLeaveTypeName(req.LeaveTypeId);
+                var typeName = FormatName(rawName);
+
+                var dateRange = FormatLeaveDateRange(req.StartDate, req.EndDate);
+                var createdOn = req.CreatedOn != default 
+                    ? req.CreatedOn.ToString("MMM dd, yyyy") 
+                    : req.StartDate.ToString("MMM dd, yyyy");
+
+                return new CombinedRequestItem
+                {
+                    Id = req.Id,
+                    RequestType = "Leave Request",
+                    RequestName = typeName,
+                    DateRangeDisplay = dateRange,
+                    CreatedOnDisplay = createdOn,
+                    StatusId = req.StatusId,
+                    SortDate = req.CreatedOn != default ? req.CreatedOn : req.StartDate,
+                    LinkUrl = "/emp-leave-management"
+                };
+            });
+            list.AddRange(mappedLeaves);
+
+            // 2. Process Attendance Requests from Backend Dashboard
+            var attendanceList = dashboard.AttendanceRequests;
+            if ((attendanceList == null || !attendanceList.Any()) && EmployeeId > 0)
+            {
+                var attResult = await AttendanceRequestService.GetAllAsync(EmployeeId);
+                if (attResult?.IsSuccess == true && attResult.Data != null)
+                {
+                    attendanceList = attResult.Data;
+                }
+            }
+
+            if (attendanceList != null && attendanceList.Any())
+            {
+                var mappedAtts = attendanceList.Select(req =>
+                {
+                    var reasonName = GetAttendanceReasonTitle(req.ReasonTypeId);
+                    var attDate = req.FromDate ?? (req.CreatedOn != default ? req.CreatedOn : DateTime.Today);
+                    var dateDisplay = attDate.ToString("MMM dd, yyyy");
+                    var createdOn = req.CreatedOn != default 
+                        ? req.CreatedOn.ToString("MMM dd, yyyy") 
+                        : attDate.ToString("MMM dd, yyyy");
+
+                    return new CombinedRequestItem
+                    {
+                        Id = req.Id,
+                        RequestType = "Attendance Request",
+                        RequestName = reasonName,
+                        DateRangeDisplay = dateDisplay,
+                        CreatedOnDisplay = createdOn,
+                        StatusId = req.StatusId,
+                        SortDate = req.CreatedOn != default ? req.CreatedOn : attDate,
+                        LinkUrl = "/emp-attendance-management"
+                    };
+                });
+                list.AddRange(mappedAtts);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CombinedRequests] Error: {ex.Message}");
+        }
+
+        if (list.Any())
+        {
+            combinedRecentRequests = list
+                .OrderByDescending(r => r.SortDate)
+                .Take(5)
+                .ToList();
+
+            pendingCount = list.Count(r => r.StatusId == Status.Pending);
+        }
+        else
+        {
+            combinedRecentRequests = new();
+            pendingCount = 0;
+        }
+    }
+
+    private static string FormatLeaveDateRange(DateTime start, DateTime end)
+    {
+        if (start.Date == end.Date)
+        {
+            return start.ToString("MMM dd, yyyy");
+        }
+        if (start.Year == end.Year)
+        {
+            return $"{start:MMM dd} - {end:MMM dd, yyyy}";
+        }
+        return $"{start:MMM dd, yyyy} - {end:MMM dd, yyyy}";
+    }
+
+    private static string GetAttendanceReasonTitle(AttendanceReasonType? reasonType) => reasonType switch
+    {
+        AttendanceReasonType.WorkFromHome => "Work From Home",
+        AttendanceReasonType.ForgotToClockIn => "Missed Clock-In",
+        AttendanceReasonType.ForgotToClockOut => "Missed Clock-Out",
+        AttendanceReasonType.LateClockIn => "Late Arrival Regularize",
+        AttendanceReasonType.EarlyClockOut => "Early Departure Regularize",
+        AttendanceReasonType.ClientVisit => "Client Site Visit",
+        AttendanceReasonType.TechnicalIssue => "Technical Punch Issue",
+        AttendanceReasonType.CompOffRequest => "Comp-Off Request",
+        _ => "Attendance Regularization"
+    };
+
+    private string GetLeaveTypeName(int id) =>
+        leaveTypeNames.TryGetValue(id, out var n) ? n : $"Leave #{id}";
+
+    private static string FormatName(string name) =>
+        System.Text.RegularExpressions.Regex.Replace(name ?? "", "([A-Z])", " $1").Trim();
+}
+

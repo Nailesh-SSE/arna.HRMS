@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Service;
@@ -27,62 +27,97 @@ public class DepartmentService : IDepartmentService
     public async Task<ServiceResult<List<DepartmentDto>>> GetDepartmentsAsync()
     {
         var departments = await _repository.GetDepartmentsAsync();
-
         var dtoList = _mapper.Map<List<DepartmentDto>>(departments);
-
-        return ServiceResult<List<DepartmentDto>>.Success(dtoList);
+        var response = ServiceResult<List<DepartmentDto>>.Success(dtoList);
+        return response;
     }
 
     public async Task<ServiceResult<DepartmentDto?>> GetDepartmentByIdAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<DepartmentDto?>.Fail("Invalid department ID.");
+        {
+            var failId = ServiceResult<DepartmentDto?>.Fail("Invalid department ID");
+            return failId;
+        }
 
         var department = await _repository.GetDepartmentByIdAsync(id);
-
         if (department == null)
-            return ServiceResult<DepartmentDto?>.Fail("Department not found.");
+        {
+            var failNotFound = ServiceResult<DepartmentDto?>.Fail("Department not found");
+            return failNotFound;
+        }
 
-        return ServiceResult<DepartmentDto?>.Success(_mapper.Map<DepartmentDto>(department));
+        var dto = _mapper.Map<DepartmentDto>(department);
+        if (dto == null)
+        {
+            var failMap = ServiceResult<DepartmentDto?>.Fail("Failed to Find department.");
+            return failMap;
+        }
+
+        var response = ServiceResult<DepartmentDto?>.Success(dto);
+        return response;
     }
 
     public async Task<ServiceResult<DepartmentDto>> CreateDepartmentAsync(DepartmentDto dto)
     {
         var validation = await _validator.ValidateCreateAsync(dto);
-
         if (!validation.IsValid)
-            return ServiceResult<DepartmentDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+        {
+            var failVal = ServiceResult<DepartmentDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+            return failVal;
+        }
 
         var entity = _mapper.Map<Department>(dto);
-
         var created = await _repository.CreateDepartmentAsync(entity);
+        var mapped = _mapper.Map<DepartmentDto>(created);
+        if (mapped == null)
+        {
+            var failMap = ServiceResult<DepartmentDto>.Fail("Failed to create department.");
+            return failMap;
+        }
 
-        return ServiceResult<DepartmentDto>.Success(_mapper.Map<DepartmentDto>(created), "Department created successfully.");
+        var response = ServiceResult<DepartmentDto>.Success(mapped, "Department created successfully.");
+        return response;
     }
 
     public async Task<ServiceResult<DepartmentDto>> UpdateDepartmentAsync(DepartmentDto dto)
     {
         var validation = await _validator.ValidateUpdateAsync(dto);
-
         if (!validation.IsValid)
-            return ServiceResult<DepartmentDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+        {
+            var failVal = ServiceResult<DepartmentDto>.Fail(string.Join(Environment.NewLine, validation.Errors));
+            return failVal;
+        }
 
         var entity = _mapper.Map<Department>(dto);
-
         var updated = await _repository.UpdateDepartmentAsync(entity);
+        var mapped = _mapper.Map<DepartmentDto>(updated);
+        if (mapped == null)
+        {
+            var failMap = ServiceResult<DepartmentDto>.Fail("Failed to Update department.");
+            return failMap;
+        }
 
-        return ServiceResult<DepartmentDto>.Success(_mapper.Map<DepartmentDto>(updated), "Department updated successfully.");
+        var response = ServiceResult<DepartmentDto>.Success(mapped, "Department updated successfully.");
+        return response;
     }
 
     public async Task<ServiceResult<bool>> DeleteDepartmentAsync(int id)
     {
         if (id <= 0)
-            return ServiceResult<bool>.Fail("Invalid department ID.");
+        {
+            var failId = ServiceResult<bool>.Fail("Department not found");
+            return failId;
+        }
 
         var deleted = await _repository.DeleteDepartmentAsync(id);
+        if (deleted)
+        {
+            var success = ServiceResult<bool>.Success(true, "Department deleted successfully.");
+            return success;
+        }
 
-        return deleted
-            ? ServiceResult<bool>.Success(true, "Department deleted successfully.")
-            : ServiceResult<bool>.Fail("Department not found.");
+        var failNotFound = ServiceResult<bool>.Fail("Department not found");
+        return failNotFound;
     }
 }

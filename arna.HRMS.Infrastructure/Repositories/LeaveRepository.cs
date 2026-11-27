@@ -1,6 +1,7 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Core.Interfaces.Repository;
+using arna.HRMS.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace arna.HRMS.Infrastructure.Repositories;
@@ -9,13 +10,16 @@ public class LeaveRepository
 {
     private readonly IBaseRepository<LeaveType> _leaveTypeRepository;
     private readonly IBaseRepository<LeaveRequest> _leaveRequestRepository;
+    private readonly ApplicationDbContext _context;
 
     public LeaveRepository(
         IBaseRepository<LeaveType> leaveTypeRepository,
-        IBaseRepository<LeaveRequest> leaveRequestRepository)
+        IBaseRepository<LeaveRequest> leaveRequestRepository,
+        ApplicationDbContext? context = null)
     {
         _leaveTypeRepository = leaveTypeRepository;
         _leaveRequestRepository = leaveRequestRepository;
+        _context = context;
     }
 
     // =========================
@@ -25,7 +29,8 @@ public class LeaveRepository
     public async Task<List<LeaveType>> GetLeaveTypesAsync()
     {
         return await _leaveTypeRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
     }
@@ -33,19 +38,35 @@ public class LeaveRepository
     public async Task<LeaveType?> GetLeaveTypeByIdAsync(int id)
     {
         return await _leaveTypeRepository.Query()
-            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
     }
 
     public async Task<bool> LeaveTypeExistsAsync(LeaveName leaveName, int? id)
     {
         return await _leaveTypeRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted)
             .AnyAsync(x => x.LeaveNameId == leaveName && x.Id != id);
     }
 
-    public Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType)
+    public async Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType)
     {
-        return _leaveTypeRepository.AddAsync(leaveType);
+        var existing = await _leaveTypeRepository.Query()
+            .FirstOrDefaultAsync(x => x.LeaveNameId == leaveType.LeaveNameId);
+
+        if (existing != null)
+        {
+            existing.IsDeleted = false;
+            existing.IsActive = leaveType.IsActive;
+            existing.MaxPerYear = leaveType.MaxPerYear;
+            existing.IsPaid = leaveType.IsPaid;
+            existing.Description = leaveType.Description;
+            existing.UpdatedOn = DateTime.Now;
+            return await _leaveTypeRepository.UpdateAsync(existing);
+        }
+
+        return await _leaveTypeRepository.AddAsync(leaveType);
     }
 
     public Task<LeaveType> UpdateLeaveTypeAsync(LeaveType leaveType)
@@ -56,7 +77,7 @@ public class LeaveRepository
     public async Task<bool> DeleteLeaveTypeAsync(int id)
     {
         var leaveType = await _leaveTypeRepository.Query()
-            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
 
         if (leaveType == null)
             return false;
@@ -75,8 +96,12 @@ public class LeaveRepository
 
     public async Task<List<LeaveRequest>> GetLeaveRequestsAsync()
     {
+        // Perf 5 FIX: Default to last 12 months to avoid loading entire history
+        var twelveMonthsAgo = DateTime.Today.AddMonths(-12);
+
         return await _leaveRequestRepository.Query()
-            .Where(x => x.IsActive && !x.IsDeleted)
+            .AsNoTracking()
+            .Where(x => !x.IsDeleted && x.StartDate >= twelveMonthsAgo)
             .Include(x => x.Employee)
             .Include(x => x.LeaveType)
             .Include(x => x.ApprovedByEmployee)
@@ -87,7 +112,8 @@ public class LeaveRepository
     public async Task<List<LeaveRequest>> GetLeaveRequestsByFilterAsync(Status? status, int? employeeId)
     {
         IQueryable<LeaveRequest> query = _leaveRequestRepository.Query()
-        .Where(x => x.IsActive && !x.IsDeleted)
+        .AsNoTracking()
+        .Where(x => !x.IsDeleted)
         .Include(x => x.Employee)
         .Include(x => x.LeaveType)
         .Include(x => x.ApprovedByEmployee);
@@ -106,7 +132,8 @@ public class LeaveRepository
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(int id)
     {
         return await _leaveRequestRepository.Query()
-            .Where(x => x.Id == id && x.IsActive && !x.IsDeleted)
+            .AsNoTracking()
+            .Where(x => x.Id == id && !x.IsDeleted)
             .Include(x => x.Employee)
             .Include(x => x.LeaveType)
             .Include(x => x.ApprovedByEmployee)
@@ -116,9 +143,9 @@ public class LeaveRepository
     public async Task<List<LeaveRequest>> GetLeaveRequestByEmployeeIdAsync(int employeeId)
     {
         return await _leaveRequestRepository.Query()
+            .AsNoTracking()
             .Where(x =>
                 x.EmployeeId == employeeId &&
-                x.IsActive &&
                 !x.IsDeleted &&
                 x.StatusId != Status.Cancelled)
             .Include(x => x.Employee)
@@ -141,9 +168,9 @@ public class LeaveRepository
     public async Task<bool> DeleteLeaveRequestAsync(int id)
     {
         var leaveRequest = await _leaveRequestRepository.Query()
-            .FirstOrDefaultAsync(x => x.Id == id && x.IsActive && !x.IsDeleted);
+            .FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
 
-        if (leaveRequest == null || leaveRequest.StatusId == Status.Approved)
+        if (leaveRequest == null || leaveRequest.StatusId == Status.Approved || leaveRequest.StatusId == Status.Rejected)
             return false;
 
         leaveRequest.IsActive = false;
@@ -159,18 +186,12 @@ public class LeaveRepository
         var leaveRequest = await _leaveRequestRepository.Query()
             .FirstOrDefaultAsync(x =>
                 x.Id == leaveRequestId &&
-                x.IsActive && 
                 !x.IsDeleted);
 
         if (leaveRequest == null)
             return false;
 
-        bool canUpdate =
-            leaveRequest.StatusId == Status.Pending ||
-            (leaveRequest.StatusId == Status.Approved && status == Status.Rejected) ||
-            (leaveRequest.StatusId == Status.Rejected && status == Status.Approved);
-
-        if (!canUpdate)
+        if (leaveRequest.StatusId != Status.Pending)
             return false;
 
         leaveRequest.StatusId = status;
@@ -182,13 +203,37 @@ public class LeaveRepository
         return true;
     }
 
+    public async Task<List<LeaveRequest>> BulkApproveLeaveRequestsAsync(List<int> requestIds, int approvedBy)
+    {
+        if (requestIds == null || !requestIds.Any())
+            return new List<LeaveRequest>();
+
+        var requestsToApprove = await _context.LeaveRequests
+            .Where(lr => requestIds.Contains(lr.Id) && lr.StatusId == Status.Pending && !lr.IsDeleted)
+            .ToListAsync();
+
+        if (!requestsToApprove.Any())
+            return new List<LeaveRequest>();
+
+        var now = DateTime.Now;
+        requestsToApprove.ForEach(lr =>
+        {
+            lr.StatusId = Status.Approved;
+            lr.ApprovedBy = approvedBy;
+            lr.ApprovedDate = now;
+            lr.UpdatedOn = now;
+        });
+
+        await _context.SaveChangesAsync();
+        return requestsToApprove;
+    }
+
     public async Task<bool> CancelLeaveRequestAsync(int id, int employeeId)
     {
         var leaveRequest = await _leaveRequestRepository.Query()
             .FirstOrDefaultAsync(x =>
                 x.Id == id &&
                 x.EmployeeId == employeeId &&
-                x.IsActive &&
                 !x.IsDeleted);
 
         if (leaveRequest == null || leaveRequest.StatusId != Status.Pending)
@@ -199,5 +244,91 @@ public class LeaveRepository
 
         await _leaveRequestRepository.UpdateAsync(leaveRequest);
         return true;
+    }
+
+    public async Task<List<LeaveRequest>> GetApprovedLeavesOverlappingRangeAsync(int employeeId, DateTime startDate, DateTime endDate)
+    {
+        var start = startDate.Date;
+        var end = endDate.Date;
+        return await _leaveRequestRepository.Query()
+            .Where(x =>
+                x.EmployeeId == employeeId &&
+                x.IsActive && !x.IsDeleted &&
+                x.StatusId == Status.Approved &&
+                x.StartDate.Date <= end &&
+                x.EndDate.Date >= start)
+            .ToListAsync();
+    }
+
+    public Task<List<LeaveRequest>> GetApprovedLeavesCoveringDateAsync(int employeeId, DateTime date)
+    {
+        return GetApprovedLeavesOverlappingRangeAsync(employeeId, date, date);
+    }
+
+    public async Task<bool> SoftDeleteLeaveRequestAsync(LeaveRequest leave)
+    {
+        leave.IsActive = false;
+        leave.IsDeleted = true;
+        leave.StatusId = Status.Cancelled;
+        leave.UpdatedOn = DateTime.Now;
+
+        await _leaveRequestRepository.UpdateAsync(leave);
+        return true;
+    }
+
+    public async Task<bool> EmployeeWorkedOnDateAsync(int employeeId, DateTime date)
+    {
+        var targetDate = date.Date;
+        var leaves = await GetApprovedLeavesCoveringDateAsync(employeeId, targetDate);
+
+        if (!leaves.Any())
+            return true;
+
+        await leaves.Aggregate(Task.CompletedTask, async (prev, leave) =>
+        {
+            await prev;
+            await ProcessWorkedDayLeaveAsync(leave, targetDate);
+        });
+
+        return true;
+    }
+
+    private async Task ProcessWorkedDayLeaveAsync(LeaveRequest leave, DateTime targetDate)
+    {
+        await SoftDeleteLeaveRequestAsync(leave);
+
+        if (targetDate > leave.StartDate.Date)
+        {
+            await CreateLeaveSegmentAsync(leave, leave.StartDate.Date, targetDate.AddDays(-1));
+        }
+
+        if (targetDate < leave.EndDate.Date)
+        {
+            await CreateLeaveSegmentAsync(leave, targetDate.AddDays(1), leave.EndDate.Date);
+        }
+    }
+
+    private async Task CreateLeaveSegmentAsync(LeaveRequest source, DateTime start, DateTime end)
+    {
+        var days = (end - start).Days + 1;
+        if (days <= 0) return;
+
+        var segment = new LeaveRequest
+        {
+            EmployeeId = source.EmployeeId,
+            LeaveTypeId = source.LeaveTypeId,
+            StartDate = start,
+            EndDate = end,
+            LeaveDays = days,
+            Reason = source.Reason,
+            StatusId = Status.Approved,
+            ApprovalNotes = "Auto Adjusted",
+            ApprovedBy = source.ApprovedBy,
+            ApprovedDate = source.ApprovedDate ?? DateTime.Now,
+            IsActive = true,
+            IsDeleted = false,
+            CreatedOn = DateTime.Now
+        };
+        await _leaveRequestRepository.AddAsync(segment);
     }
 }

@@ -1,10 +1,11 @@
-﻿@using System.Linq.Expressions
+@using System.Linq.Expressions
 @using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
 
-<div class="mb-3">
+<div class="app-textarea-wrapper @WrapperClass">
     @if (!string.IsNullOrWhiteSpace(Label))
     {
-        <label class="form-label fw-semibold">
+        <label class="form-label">
             @Label
             @if (IsRequired)
             {
@@ -13,64 +14,154 @@
         </label>
     }
 
-    <textarea class="form-control"
-              rows="@Rows"
-              value="@Value"
-              placeholder="@Placeholder"
-              readonly="@ReadOnly"
-              disabled="@Disabled"
-              @onchange="OnChange"
-              @attributes="AdditionalAttributes">
-    </textarea>
-
-    @if (ValidationExpression != null)
+    @if (!string.IsNullOrWhiteSpace(Icon))
     {
-        <ValidationMessage For="ValidationExpression" />
+        <div class="input-group">
+            <span class="input-group-text align-items-start pt-2 @(IsInvalid ? "border-danger text-danger" : "")">
+                <i class="bi @Icon"></i>
+            </span>
+            <textarea class="form-control @(IsInvalid ? "is-invalid" : "")"
+                      rows="@Rows"
+                      value="@Value"
+                      placeholder="@Placeholder"
+                      readonly="@ReadOnly"
+                      disabled="@Disabled"
+                      @onchange="OnChange"
+                      @oninput="OnInput"
+                      @onblur="HandleBlur"
+                      @attributes="AdditionalAttributes">
+            </textarea>
+        </div>
+    }
+    else
+    {
+        <textarea class="form-control @(IsInvalid ? "is-invalid" : "")"
+                  rows="@Rows"
+                  value="@Value"
+                  placeholder="@Placeholder"
+                  readonly="@ReadOnly"
+                  disabled="@Disabled"
+                  @onchange="OnChange"
+                  @oninput="OnInput"
+                  @onblur="HandleBlur"
+                  @attributes="AdditionalAttributes">
+        </textarea>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(HelpText))
+    {
+        <small class="text-muted d-block mt-1">@HelpText</small>
+    }
+
+    @if (IsInvalid && !string.IsNullOrEmpty(FirstErrorMessage))
+    {
+        <div class="text-danger small mt-1">
+            @FirstErrorMessage
+        </div>
     }
 </div>
 
 @code {
     [CascadingParameter] private EditContext? EditContext { get; set; }
 
-    /* ---------------- PARAMETERS ---------------- */
-
     [Parameter] public string? Label { get; set; }
-    [Parameter] public bool IsRequired { get; set; } = false;
-
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public bool IsRequired { get; set; }
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
-
-    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public string Placeholder { get; set; } = string.Empty;
     [Parameter] public int Rows { get; set; } = 3;
+    [Parameter] public string WrapperClass { get; set; } = string.Empty;
+    [Parameter] public string? HelpText { get; set; }
 
-    [Parameter] public bool ReadOnly { get; set; } = false;
-    [Parameter] public bool Disabled { get; set; } = false;
-
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public bool Disabled { get; set; }
     [Parameter] public Expression<Func<object>>? ValidationExpression { get; set; }
-
+    [Parameter] public EventCallback<FocusEventArgs> OnBlur { get; set; }
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
-    /* ---------------- PRIVATE ---------------- */
-
     private FieldIdentifier _fieldIdentifier;
+    private bool _isTouched;
+    private EditContext? _previousEditContext;
+
+    private bool HasError => EditContext != null && ValidationExpression != null && EditContext.GetValidationMessages(_fieldIdentifier).Any();
+
+    private bool IsInvalid => HasError && (_isTouched || (EditContext != null && EditContext.IsModified(_fieldIdentifier)));
+
+    private string? FirstErrorMessage => EditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault();
 
     protected override void OnParametersSet()
     {
         if (EditContext != null && ValidationExpression != null)
         {
             _fieldIdentifier = FieldIdentifier.Create(ValidationExpression);
+            if (EditContext != _previousEditContext)
+            {
+                if (_previousEditContext != null)
+                {
+                    _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+                    _previousEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
+                }
+                _previousEditContext = EditContext;
+                _previousEditContext.OnValidationRequested += HandleValidationRequested;
+                _previousEditContext.OnValidationStateChanged += HandleValidationStateChanged;
+            }
+        }
+    }
+
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs e)
+    {
+        _isTouched = true;
+        StateHasChanged();
+    }
+
+    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        if (ReadOnly || Disabled) return;
+
+        var newVal = e.Value?.ToString();
+        await ValueChanged.InvokeAsync(newVal);
+
+        if (_isTouched || HasError)
+        {
+            NotifyFieldChanged();
         }
     }
 
     private async Task OnChange(ChangeEventArgs e)
     {
-        if (!ReadOnly && !Disabled)
-        {
-            await ValueChanged.InvokeAsync(e.Value?.ToString());
+        if (ReadOnly || Disabled) return;
 
-            if (ValidationExpression != null)
-                EditContext?.NotifyFieldChanged(_fieldIdentifier);
+        await ValueChanged.InvokeAsync(e.Value?.ToString());
+        NotifyFieldChanged();
+    }
+
+    private async Task HandleBlur(FocusEventArgs e)
+    {
+        _isTouched = true;
+        NotifyFieldChanged();
+        if (OnBlur.HasDelegate)
+            await OnBlur.InvokeAsync(e);
+    }
+
+    private void NotifyFieldChanged()
+    {
+        if (ValidationExpression != null && EditContext != null)
+            EditContext.NotifyFieldChanged(_fieldIdentifier);
+    }
+
+    public void Dispose()
+    {
+        if (_previousEditContext != null)
+        {
+            _previousEditContext.OnValidationRequested -= HandleValidationRequested;
+            _previousEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
         }
     }
 }

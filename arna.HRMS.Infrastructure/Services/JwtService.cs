@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using arna.HRMS.Core.Interfaces.Service;
 using arna.HRMS.Infrastructure.Dependency.Identity;
 using arna.HRMS.Infrastructure.Repositories;
@@ -35,6 +35,7 @@ public class JwtService : IJwtService
             new Claim("FullName", user.FullName ?? string.Empty),
             new Claim("EmployeeId", user.EmployeeId.ToString() ?? string.Empty),
             new Claim("RoleId", user.RoleId.ToString() ?? string.Empty),
+            new Claim("ProfileImage", user.Employee?.ProfileImage ?? string.Empty),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));

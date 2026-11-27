@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Entities;
+using arna.HRMS.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -34,6 +34,10 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
             .IsRequired()
             .HasMaxLength(10);
         
+        builder.Property(e => e.ProfileImage)
+            .IsRequired(false)
+            .HasMaxLength(500);
+
         builder.Property(e => e.Salary)
             .HasPrecision(18, 2); 
 

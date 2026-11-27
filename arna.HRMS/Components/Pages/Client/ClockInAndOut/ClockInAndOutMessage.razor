@@ -1,4 +1,4 @@
-﻿@namespace arna.HRMS.Components.Pages.Attendance
+@namespace arna.HRMS.Components.Pages.Attendance
 @using Microsoft.AspNetCore.Components.Forms
 @using arna.HRMS.Models.ViewModels
 @using arna.HRMS.Models.ViewModels.Attendance
@@ -6,26 +6,83 @@
 <EditForm Model="Model" OnValidSubmit="HandleSubmit">
     <DataAnnotationsValidator />
 
+    @if (IsMissedYesterday && IsClockIn)
+    {
+        <div class="alert alert-danger border-0 rounded-3 shadow-sm d-flex align-items-start gap-2.5 p-3 mb-3" style="background: rgba(220, 53, 69, 0.1); border-left: 4px solid #dc3545 !important;">
+            <div class="text-danger flex-shrink-0 mt-0.5">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            </div>
+            <div class="small">
+                <div class="fw-bold text-danger mb-1">Missed Clock-Out Notice</div>
+                <p class="text-muted mb-0" style="font-size: 0.82rem; line-height: 1.4;">
+                    You forgot to clock out on your previous session. Clocking in will start a new session for today.
+                </p>
+            </div>
+        </div>
+    }
+
+    @if (IsWeekendDuty && IsClockIn)
+    {
+        <div class="alert alert-warning border-0 rounded-3 shadow-sm d-flex align-items-start gap-2.5 p-3 mb-3" style="background: rgba(255, 193, 7, 0.12); border-left: 4px solid #ffc107 !important;">
+            <div class="text-warning flex-shrink-0 mt-0.5">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+            </div>
+            <div class="small">
+                <div class="fw-bold text-dark mb-1 d-flex align-items-center gap-1.5">
+                    <span>Weekend / Non-Working Day Notice</span>
+                    <span class="badge bg-warning text-dark rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">@DateTime.Today.DayOfWeek</span>
+                </div>
+                <p class="text-muted mb-0" style="font-size: 0.82rem; line-height: 1.4;">
+                    Today is a scheduled Weekly Off. If you are working overtime, support, or special weekend duty, please ensure it is authorized and specify the task/reason below.
+                </p>
+            </div>
+        </div>
+    }
+
     <div class="mb-3">
-        <label class="form-label fw-semibold">Note</label>
+        <label class="form-label fw-semibold">
+            Note @(IsWeekendDuty && IsClockIn ? "(Reason for Weekend Duty)" : "")
+            <span class="text-danger">*</span>
+        </label>
 
         <InputTextArea class="form-control"
                        @bind-Value="Model.Notes"
                        rows="3"
-                       placeholder="Write note..." />
+                       placeholder="@(IsWeekendDuty && IsClockIn ? "Describe your weekend duty / overtime task..." : "Write a note regarding your session...")" />
 
-        <ValidationMessage For="@(() => Model.Notes)" />
+        <ValidationMessage For="@(() => Model.Notes)" class="text-danger small mt-1" />
     </div>
 
-    <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">
-            Save
-        </button>
+    @if (IsWeekendDuty && IsClockIn)
+    {
+        <div class="form-check mb-3">
+            <input class="form-check-input @(showConfirmError ? "is-invalid" : "")" 
+                   type="checkbox" 
+                   id="weekendDutyConfirmCheck" 
+                   @bind="confirmedWeekendDuty"
+                   @bind:after="() => { if (confirmedWeekendDuty) showConfirmError = false; }" />
+            <label class="form-check-label small text-secondary" for="weekendDutyConfirmCheck">
+                I confirm this is authorized weekend / overtime work.
+            </label>
+            @if (showConfirmError)
+            {
+                <div class="text-danger small mt-1">
+                    <i class="bi bi-exclamation-circle me-1"></i>Please confirm authorized weekend work before clocking in.
+                </div>
+            }
+        </div>
+    }
 
+    <div class="d-flex gap-2 justify-content-end">
         <button type="button"
-                class="btn btn-secondary"
+                class="btn btn-light border px-3"
                 @onclick="OnCancel">
             Cancel
+        </button>
+
+        <button type="submit" class="btn @(IsClockIn ? "btn-primary" : "btn-danger") px-3 d-flex align-items-center gap-1.5">
+            <i class="bi @(IsClockIn ? "bi-box-arrow-in-right" : "bi-box-arrow-right")"></i>
+            @(IsClockIn ? "Confirm Clock In" : "Confirm Clock Out")
         </button>
     </div>
 </EditForm>
@@ -34,14 +91,36 @@
     [Parameter, EditorRequired]
     public AttendanceViewModel Model { get; set; } = default!;
 
+    [Parameter]
+    public bool IsClockIn { get; set; } = true;
+
+    [Parameter]
+    public bool IsMissedYesterday { get; set; }
+
+    [Parameter]
+    public bool? IsWeekend { get; set; }
+
     [Parameter, EditorRequired]
     public EventCallback OnSubmit { get; set; }
 
     [Parameter]
     public EventCallback OnCancel { get; set; }
 
+    private bool confirmedWeekendDuty;
+    private bool showConfirmError;
+
+    private bool IsWeekendDuty =>
+        IsWeekend ?? (DateTime.Today.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday);
+
     private async Task HandleSubmit()
     {
+        if (IsWeekendDuty && IsClockIn && !confirmedWeekendDuty)
+        {
+            showConfirmError = true;
+            return;
+        }
+
+        showConfirmError = false;
         await OnSubmit.InvokeAsync();
     }
 }

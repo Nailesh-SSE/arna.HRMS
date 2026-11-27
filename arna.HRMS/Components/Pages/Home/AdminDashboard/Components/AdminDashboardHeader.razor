@@ -1,0 +1,29 @@
+<div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
+    <div>
+        <h3 class="dash-greeting-title mb-1">
+            @Greeting, @AdminName
+        </h3>
+        <p class="dash-greeting-subtitle mb-0">
+            Here's an overview of your organization's HR activities and workforce attendance.
+        </p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 bg-white border rounded-3 shadow-xs text-muted small fw-medium">
+            <i class="bi bi-calendar3 text-primary"></i>
+            <span>@DisplayDate</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs fw-medium"
+                @onclick="OnRefresh" disabled="@IsRefreshing" title="Refresh dashboard data">
+            <i class="bi bi-arrow-clockwise @(IsRefreshing ? "spin-animation" : "")"></i>
+            <span>@(IsRefreshing ? "Refreshing..." : "Refresh")</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Greeting { get; set; } = "Welcome";
+    [Parameter] public string AdminName { get; set; } = "Super Admin";
+    [Parameter] public string DisplayDate { get; set; } = string.Empty;
+    [Parameter] public bool IsRefreshing { get; set; }
+    [Parameter] public EventCallback OnRefresh { get; set; }
+}

@@ -1,0 +1,105 @@
+.profile-side-card {
+    border: 1px solid #e2e8f0 !important;
+    background: #ffffff;
+}
+
+.profile-avatar-wrapper {
+    width: 68px;
+    height: 68px;
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar-img {
+    object-fit: cover;
+    border: 2px solid #bae6fd;
+}
+
+.avatar-upload-btn {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 26px;
+    height: 26px;
+    background-color: #0284c7;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    font-size: 0.75rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.avatar-upload-btn:hover {
+    background-color: #0369a1;
+    transform: scale(1.1);
+}
+
+.profile-avatar-circle {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.profile-quick-list .quick-item {
+    font-size: 0.86rem;
+    border-color: #f1f5f9 !important;
+}
+
+@media (max-width: 575.98px) {
+    .profile-avatar-wrapper {
+        width: 68px;
+        height: 68px;
+        position: relative;
+        display: inline-block;
+    }
+
+    .profile-avatar-img {
+        object-fit: cover;
+        border: 2px solid #bae6fd;
+    }
+
+    .avatar-upload-btn {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 26px;
+        height: 26px;
+        background-color: #0284c7;
+        color: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 2px solid #ffffff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        font-size: 0.75rem;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .avatar-upload-btn:hover {
+        background-color: #0369a1;
+        transform: scale(1.1);
+    }
+
+    .profile-avatar-circle {
+        width: 56px;
+        height: 56px;
+        font-size: 1.35rem;
+    }
+}

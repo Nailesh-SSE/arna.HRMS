@@ -1,0 +1,61 @@
+@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Models.Common.Table
+@using arna.HRMS.Models.ViewModels.Attendance
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(15, 23, 42, 0.45); backdrop-filter: blur(2px);"
+         @onclick="OnClose">
+        <div class="modal-dialog modal-xl modal-dialog-centered" @onclick:stopPropagation="true">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+
+                <div class="modal-header border-bottom py-3 px-4 bg-white">
+                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center mb-0">
+                        <span class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle me-2.5" style="width: 32px; height: 32px;">
+                            <i class="bi bi-calendar-check-fill"></i>
+                        </span>
+                        Employees On Leave Today
+                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill ms-2 px-2.5 py-1">@Employees.Count</span>
+                    </h6>
+                    <button type="button" class="btn-close"
+                            @onclick="OnClose" />
+                </div>
+
+                <div class="modal-body p-0">
+                    @if (Employees != null && Employees.Any())
+                    {
+                        <div class="p-3">
+                            <AppTable TItem="EmployeeDailyAttendanceViewModel"
+                                      Items="Employees"
+                                      Columns="TableSchemas.PresentEmployee"
+                                      ShowActions="false" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle mb-3" style="width: 64px; height: 64px;">
+                                <i class="bi bi-calendar2-check fs-2 text-muted"></i>
+                            </div>
+                            <div class="fw-semibold text-dark fs-6">No Leaves Recorded Today</div>
+                            <small class="text-muted">All active staff are scheduled to work</small>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer border-top py-2.5 px-4 bg-light">
+                    <button type="button" class="btn btn-sm btn-secondary px-3" @onclick="OnClose">
+                        Close
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public List<EmployeeDailyAttendanceViewModel> Employees { get; set; } = new();
+    [Parameter] public EventCallback OnClose { get; set; }
+}

@@ -1,0 +1,25 @@
+﻿.dash-greeting-title {
+    font-size: 1.65rem;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.dash-greeting-subtitle {
+    font-size: 0.88rem;
+    color: #64748b;
+}
+
+.spin-animation {
+    animation: dashSpin 0.75s linear infinite;
+}
+
+@keyframes dashSpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+

@@ -1,4 +1,4 @@
-﻿@using arna.HRMS.Components.lib.components.ui.Forms
+@using arna.HRMS.Components.lib.components.ui.Forms
 @using arna.HRMS.Components.lib.components.ui.Model
 @using arna.HRMS.Models.Dropdown
 @using arna.HRMS.Models.Enums
@@ -78,7 +78,8 @@
                 <AppInput Label="Break Duration (HH:mm)"
                           Type="text"
                           Value="@(request.BreakDuration?.ToString(@"hh\:mm") ?? "00:00")"
-                          ValueChanged="@(v => OnTimeSpanChanged(v, t => request.BreakDuration = t))" />
+                          ValueChanged="@(v => OnTimeSpanChanged(v, t => request.BreakDuration = t))"
+                          ValidationExpression="@(() => request.BreakDuration)" />
 
                 <div class="row mb-4">
                     <div class="col-6">

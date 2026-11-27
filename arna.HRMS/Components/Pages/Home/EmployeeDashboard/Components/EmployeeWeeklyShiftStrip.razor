@@ -1,0 +1,111 @@
+@using arna.HRMS.Models.ViewModels.Dashboard
+
+<div class="card border-0 shadow-sm rounded-3 h-100 content-card">
+    <div class="card-header bg-transparent border-0 pt-3 px-3 px-lg-4 pb-2">
+        <h6 class="fw-semibold mb-0 d-flex align-items-center text-dark">
+            <i class="bi bi-calendar2-week-fill text-primary me-2"></i> Weekly Attendance & Shifts
+        </h6>
+        <small class="text-muted">Monday to Sunday schedule & logged activity</small>
+    </div>
+    
+    <div class="card-body px-3 px-lg-4 py-3 d-flex flex-column justify-content-between">
+        <div class="d-flex flex-column gap-3">
+            
+            <!-- 7-Day Visual Activity Strip -->
+            <div class="week-strip-container">
+                <div class="row g-2 text-center">
+                    @foreach (var day in CurrentWeekDays)
+                    {
+                        <div class="col">
+                            <div class="week-day-card @(day.IsToday ? "week-day-today" : day.IsLeave ? "week-day-leave" : day.IsWeekend ? "week-day-weekend" : "week-day-normal") rounded-3 h-100 d-flex flex-column justify-content-between">
+                                <div class="week-day-header mb-1">
+                                    <span class="week-day-name fw-semibold d-block">@day.DayName</span>
+                                    <span class="week-day-date text-muted" style="font-size: 0.70rem;">@day.DateFormatted</span>
+                                </div>
+                                
+                                <div class="week-day-hours py-1">
+                                    @if (day.IsLeave)
+                                    {
+                                        <span class="fw-semibold text-warning-emphasis small d-block">Leave</span>
+                                    }
+                                    else if (day.IsWeekend)
+                                    {
+                                        <span class="text-muted small d-block">--</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-semibold @(day.IsToday ? "text-primary fw-bold" : "text-dark") small d-block" style="font-size: 0.82rem;">@day.DurationDisplay</span>
+                                    }
+                                </div>
+
+                                <div class="week-day-status mt-1">
+                                    @if (day.IsLeave)
+                                    {
+                                        <span class="day-badge day-badge-leave">
+                                            <i class="bi bi-umbrella-fill me-1"></i> Leave
+                                        </span>
+                                    }
+                                    else if (day.IsWeekend)
+                                    {
+                                        <span class="day-badge day-badge-off">
+                                            <i class="bi bi-calendar-x me-1"></i> Off
+                                        </span>
+                                    }
+                                    else if (day.IsToday)
+                                    {
+                                        <span class="day-badge day-badge-live">
+                                            <span class="day-badge-dot me-1"></span> @day.StatusLabel
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="day-badge @(day.StatusClass == "day-present" ? "day-badge-present" : "day-badge-absent")">
+                                            @if (day.StatusClass == "day-present")
+                                            {
+                                                <i class="bi bi-check-circle me-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-x-circle me-1"></i>
+                                            }
+                                            @day.StatusLabel
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- 2 Summary Metrics Highlight Tiles (Week Total & Daily Avg only) -->
+            <div class="row g-3 pt-1">
+                <div class="col-6">
+                    <div class="p-2.5 rounded-3 bg-light border text-center">
+                        <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500;">Week Total</span>
+                        <span class="fw-bold text-dark fs-6">@TotalWeekHoursDisplay</span>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-2.5 rounded-3 bg-light border text-center">
+                        <span class="text-muted d-block" style="font-size: 0.75rem; font-weight: 500;">Daily Avg</span>
+                        <span class="fw-bold text-dark fs-6">@AvgDailyHoursDisplay</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer Details -->
+        <div class="pt-3 border-top mt-3 d-flex align-items-center justify-content-between text-muted small">
+            <span><i class="bi bi-shield-check text-success me-1.5"></i> Standard 8h work + 1h break policy</span>
+            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-20 rounded-pill px-2.5 py-1">In Good Standing</span>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<WeeklyDayAttendanceItem> CurrentWeekDays { get; set; } = new();
+    [Parameter] public string TotalWeekHoursDisplay { get; set; } = "00h 00m";
+    [Parameter] public string AvgDailyHoursDisplay { get; set; } = "00h 00m";
+}

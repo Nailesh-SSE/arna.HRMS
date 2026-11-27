@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Core.Common.Results;
+using arna.HRMS.Core.Common.Results;
 using arna.HRMS.Core.DTOs;
 using arna.HRMS.Core.Enums;
 using arna.HRMS.Infrastructure.Repositories;
@@ -35,8 +35,8 @@ public class AttendanceRequestValidator
             return ValidationResult.Fail("Invalid Attendance Request ID");
         if (dto.EmployeeId > 0)
         {
-            var exits = _repository.GetAttendanceRequestByIdAsync(dto.Id);
-            if (exits.Result == null)
+            var exits = await _repository.GetAttendanceRequestByIdAsync(dto.Id);
+            if (exits == null)
                 return ValidationResult.Fail("No Data Found");
         }
 
@@ -51,8 +51,8 @@ public class AttendanceRequestValidator
         if (id <= 0)
             return ValidationResult.Fail("Invalid AttendanceRequest ID");
 
-        var exist = _repository.GetAttendanceRequestByIdAsync(id);
-        if (exist.Result == null)
+        var exist = await _repository.GetAttendanceRequestByIdAsync(id);
+        if (exist == null)
             return ValidationResult.Fail("Invalid Attendance Request ID");
 
         if (status == Status.Cancelled)
@@ -80,6 +80,17 @@ public class AttendanceRequestValidator
         if (dto.EmployeeId <= 0)
             errors.Add("EmployeeId is required");
 
+        ValidateDates(dto, errors);
+        ValidateTimeAndHours(dto, errors);
+        ValidateMetadata(dto, errors);
+
+        return errors.Any()
+                ? Task.FromResult(ValidationResult.Fail(errors.ToArray()))
+                : Task.FromResult(ValidationResult.Success());
+    }
+
+    private static void ValidateDates(AttendanceRequestDto dto, List<string> errors)
+    {
         if (dto.FromDate == null)
             errors.Add("From Date is required");
 
@@ -88,13 +99,19 @@ public class AttendanceRequestValidator
 
         if (dto.FromDate != null && dto.ToDate != null)
         {
-            if (dto.FromDate.Value.Date > DateTime.Now.Date || dto.ToDate.Value.Date > DateTime.Now.Date)
-                errors.Add("Future Date is not allowed");
+            if (dto.FromDate.Value.Date >= DateTime.Now.Date)
+                errors.Add("Future or current From Date is not allowed");
+
+            if (dto.ToDate.Value.Date >= DateTime.Now.Date)
+                errors.Add("Future or current To Date is not allowed");
 
             if (dto.FromDate.Value.Date > dto.ToDate.Value.Date)
                 errors.Add("From Date cannot be greater than To Date");
         }
+    }
 
+    private static void ValidateTimeAndHours(AttendanceRequestDto dto, List<string> errors)
+    {
         if (dto.ClockIn == null)
             errors.Add("ClockIn is required");
 
@@ -103,13 +120,19 @@ public class AttendanceRequestValidator
 
         if (dto.ClockIn != null && dto.ClockOut != null)
         {
-            if (dto.FromDate == dto.ToDate && dto.ClockOut <= dto.ClockIn)
+            if (dto.FromDate.HasValue && dto.ToDate.HasValue && dto.FromDate.Value.Date == dto.ToDate.Value.Date && dto.ClockOut <= dto.ClockIn)
                 errors.Add("ClockOut must be greater than ClockIn for same-day requests");
         }
-        
+
         if (dto.TotalHours > TimeSpan.FromHours(24))
             errors.Add("Shift cannot be more then 24hr");
-        
+
+        if (dto.BreakDuration != null && dto.TotalHours < dto.BreakDuration)
+            errors.Add("Break duration cannot be greater than total hours");
+    }
+
+    private static void ValidateMetadata(AttendanceRequestDto dto, List<string> errors)
+    {
         if (dto.LocationId == null)
             errors.Add("Location is required");
 
@@ -119,18 +142,10 @@ public class AttendanceRequestValidator
         if (dto.BreakDuration == null)
             errors.Add("Break duration is required");
 
-        if(string.IsNullOrWhiteSpace(dto.Description))
+        if (string.IsNullOrWhiteSpace(dto.Description))
             errors.Add("Description is requied");
 
         if (dto.Description?.Length > 500)
             errors.Add("Description cannot exceed 500 characters");
-
-      // Break duration and total hours basic sanity checks
-        if (dto.BreakDuration != null && dto.TotalHours < dto.BreakDuration)
-            errors.Add("Break duration cannot be greater than total hours");
-
-        return errors.Any()
-                ? Task.FromResult(ValidationResult.Fail(errors.ToArray()))
-                : Task.FromResult(ValidationResult.Success());
     }
 }

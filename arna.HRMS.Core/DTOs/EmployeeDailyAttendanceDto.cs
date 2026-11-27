@@ -1,10 +1,11 @@
-﻿namespace arna.HRMS.Core.DTOs;
+namespace arna.HRMS.Core.DTOs;
 
 public class EmployeeDailyAttendanceDto
 {
     public int EmployeeId { get; set; }
     public string EmployeeNumber { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
+    public string? ProfileImage { get; set; }
     public DateTime Date { get; set; }
     public TimeSpan? ClockIn { get; set; }
     public TimeSpan? ClockOut { get; set; }
@@ -15,4 +16,3 @@ public class EmployeeDailyAttendanceDto
     public string? Status { get; set; }
     public string? Note { get; set; }
 }
-

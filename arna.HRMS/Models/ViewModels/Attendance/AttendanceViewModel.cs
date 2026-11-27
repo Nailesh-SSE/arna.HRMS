@@ -1,4 +1,4 @@
-﻿using arna.HRMS.Models.Common;
+using arna.HRMS.Models.Common;
 using arna.HRMS.Models.Enums;
 using System.ComponentModel.DataAnnotations;
 
@@ -12,8 +12,10 @@ public class AttendanceViewModel : CommonViewModel
     public TimeSpan? ClockOutTime { get; set; }
     public AttendanceStatus StatusId { get; set; }
 
-    [Required(ErrorMessage = "Note is required")]
-    public string Notes { get; set; }
+    [Required(ErrorMessage = "Note is required.")]
+    [StringLength(500, ErrorMessage = "Note cannot exceed 500 characters.")]
+    public string Notes { get; set; } = string.Empty;
+
     public Double? Latitude { get; set; }
     public Double? Longitude { get; set; }
     public TimeSpan? WorkingHours { get; set; }
